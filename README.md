@@ -4,8 +4,9 @@ Android Hangul keyboard focused on standard IME behavior, hardware-key friendlin
 
 ## Status
 
-P1A input pipeline complete; the stateful Hangul composer and editor/session
-reliability layer are the next implementation phases.
+P1A source-neutral input and P1B checked editor/session reliability are
+complete. Real Android lifecycle instrumentation is the remaining P1 gate
+before the stateful Hangul composer.
 
 ## Stack
 
@@ -16,9 +17,10 @@ reliability layer are the next implementation phases.
 
 The app uses Android's standard `InputMethodService` entry point. Event
 normalization, semantic jamo, 2-beolsik hardware mapping, dispatch disposition,
-and matched key-up tracking are plain Java and JVM-tested. The current
-stateless compatibility-jamo fallback keeps scaffold input visible; the
-stateful Hangul composer remains planned.
+matched key-up tracking, immutable transition plans, checked editor execution,
+Unicode-safe deletion, and bounded selection reconciliation are plain Java and
+JVM-tested. The current stateless compatibility-jamo fallback keeps scaffold
+input visible; the stateful Hangul composer remains planned.
 
 ## Documentation
 

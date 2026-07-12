@@ -19,6 +19,17 @@ public final class HardwareKeyLifecycleTest {
     }
 
     @Test
+    public void releasedHandledDownLetsOriginalDownAndMatchingUpDelegate() {
+        InputDispatcher dispatcher = new InputDispatcher();
+        ProjectKeyEvent down = textDown(7, 29);
+
+        Assert.assertTrue(dispatcher.dispatch(down).isHandled());
+        dispatcher.releaseForDelegation(down);
+
+        Assert.assertEquals(DispatchResult.delegate(), dispatcher.dispatch(keyUp(7, 29, false)));
+    }
+
+    @Test
     public void trackedRepeatIsConsumedWithoutOutputAndUntrackedRepeatDelegates() {
         InputDispatcher dispatcher = new InputDispatcher();
 

@@ -36,6 +36,15 @@ public final class InputDispatcher {
         consumedHardwareKeys.clear();
     }
 
+    public void releaseForDelegation(ProjectKeyEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event must not be null");
+        }
+        if (event.source() == InputSource.HARDWARE && event.action() == InputAction.DOWN) {
+            consumedHardwareKeys.remove(new PressedKey(event.deviceId(), event.keyCode()));
+        }
+    }
+
     private DispatchResult dispatchHardware(ProjectKeyEvent event) {
         PressedKey key = new PressedKey(event.deviceId(), event.keyCode());
 

@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ReteKey IME</string>
     <string name="ime_name">ReteKey IME</string>
+    <string name="editor_unavailable">Editor unavailable. Tap the text field and try again.</string>
 </resources>
