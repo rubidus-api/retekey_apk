@@ -4,7 +4,8 @@ Android Hangul keyboard focused on standard IME behavior, hardware-key friendlin
 
 ## Status
 
-Initial scaffold.
+P1A input pipeline complete; the stateful Hangul composer and editor/session
+reliability layer are the next implementation phases.
 
 ## Stack
 
@@ -13,7 +14,11 @@ Initial scaffold.
 - Android Gradle Plugin 9.2.1
 - Gradle Wrapper 9.4.1
 
-The app uses Android's standard `InputMethodService` entry point. The Hangul composition and keymap logic are kept in plain Java so they can be tested without Android UI.
+The app uses Android's standard `InputMethodService` entry point. Event
+normalization, semantic jamo, 2-beolsik hardware mapping, dispatch disposition,
+and matched key-up tracking are plain Java and JVM-tested. The current
+stateless compatibility-jamo fallback keeps scaffold input visible; the
+stateful Hangul composer remains planned.
 
 ## Documentation
 

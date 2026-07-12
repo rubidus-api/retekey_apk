@@ -1,14 +1,14 @@
 package dev.hellgates.retekeyime;
 
-public final class ProjectKeyEvent {
-    private final InputSource source;
+public final class RawHardwareKeyEvent {
     private final InputAction action;
     private final String stableKeyId;
     private final int keyCode;
     private final int scanCode;
     private final int deviceId;
     private final int deviceSource;
-    private final String text;
+    private final int unicodeValue;
+    private final String characters;
     private final boolean shift;
     private final boolean ctrl;
     private final boolean alt;
@@ -19,19 +19,17 @@ public final class ProjectKeyEvent {
     private final int rawMetaState;
     private final int repeatCount;
     private final boolean canceled;
-    private final boolean deadKey;
-    private final int combiningAccentCodePoint;
-    private final SemanticInput semanticInput;
+    private final SemanticInput mappedInput;
 
-    private ProjectKeyEvent(Builder builder) {
-        this.source = builder.source;
+    private RawHardwareKeyEvent(Builder builder) {
         this.action = builder.action;
         this.stableKeyId = builder.stableKeyId;
         this.keyCode = builder.keyCode;
         this.scanCode = builder.scanCode;
         this.deviceId = builder.deviceId;
         this.deviceSource = builder.deviceSource;
-        this.text = builder.text;
+        this.unicodeValue = builder.unicodeValue;
+        this.characters = builder.characters;
         this.shift = builder.shift;
         this.ctrl = builder.ctrl;
         this.alt = builder.alt;
@@ -42,24 +40,11 @@ public final class ProjectKeyEvent {
         this.rawMetaState = builder.rawMetaState;
         this.repeatCount = builder.repeatCount;
         this.canceled = builder.canceled;
-        this.deadKey = builder.deadKey || builder.combiningAccentCodePoint != 0;
-        this.combiningAccentCodePoint = builder.combiningAccentCodePoint;
-        this.semanticInput = builder.semanticInput;
+        this.mappedInput = builder.mappedInput;
     }
 
-    public static Builder builder(InputSource source, InputAction action) {
-        return new Builder(source, action);
-    }
-
-    public static ProjectKeyEvent softwareDown(String stableKeyId, SemanticInput input) {
-        return builder(InputSource.SOFTWARE, InputAction.DOWN)
-            .stableKeyId(stableKeyId)
-            .semanticInput(input)
-            .build();
-    }
-
-    public InputSource source() {
-        return source;
+    public static Builder builder(InputAction action, int keyCode) {
+        return new Builder(action, keyCode);
     }
 
     public InputAction action() {
@@ -86,8 +71,12 @@ public final class ProjectKeyEvent {
         return deviceSource;
     }
 
-    public String text() {
-        return text;
+    public int unicodeValue() {
+        return unicodeValue;
+    }
+
+    public String characters() {
+        return characters;
     }
 
     public boolean shift() {
@@ -130,35 +119,19 @@ public final class ProjectKeyEvent {
         return canceled;
     }
 
-    public boolean hasCombiningAccent() {
-        return deadKey;
-    }
-
-    public boolean hasDeadKey() {
-        return deadKey;
-    }
-
-    public int combiningAccentCodePoint() {
-        return combiningAccentCodePoint;
-    }
-
-    public boolean hasSemanticInput() {
-        return semanticInput != null;
-    }
-
-    public SemanticInput semanticInput() {
-        return semanticInput;
+    public SemanticInput mappedInput() {
+        return mappedInput;
     }
 
     public static final class Builder {
-        private final InputSource source;
         private final InputAction action;
+        private final int keyCode;
         private String stableKeyId = "";
-        private int keyCode;
         private int scanCode;
         private int deviceId = -1;
         private int deviceSource;
-        private String text = "";
+        private int unicodeValue;
+        private String characters = "";
         private boolean shift;
         private boolean ctrl;
         private boolean alt;
@@ -169,16 +142,14 @@ public final class ProjectKeyEvent {
         private int rawMetaState;
         private int repeatCount;
         private boolean canceled;
-        private boolean deadKey;
-        private int combiningAccentCodePoint;
-        private SemanticInput semanticInput;
+        private SemanticInput mappedInput;
 
-        private Builder(InputSource source, InputAction action) {
-            if (source == null || action == null) {
-                throw new IllegalArgumentException("source and action are required");
+        private Builder(InputAction action, int keyCode) {
+            if (action == null) {
+                throw new IllegalArgumentException("action must not be null");
             }
-            this.source = source;
             this.action = action;
+            this.keyCode = keyCode;
         }
 
         public Builder stableKeyId(String stableKeyId) {
@@ -186,11 +157,6 @@ public final class ProjectKeyEvent {
                 throw new IllegalArgumentException("stableKeyId must not be null");
             }
             this.stableKeyId = stableKeyId;
-            return this;
-        }
-
-        public Builder keyCode(int keyCode) {
-            this.keyCode = keyCode;
             return this;
         }
 
@@ -209,11 +175,16 @@ public final class ProjectKeyEvent {
             return this;
         }
 
-        public Builder text(String text) {
-            if (text == null) {
-                throw new IllegalArgumentException("text must not be null");
+        public Builder unicodeValue(int unicodeValue) {
+            this.unicodeValue = unicodeValue;
+            return this;
+        }
+
+        public Builder characters(String characters) {
+            if (characters == null) {
+                throw new IllegalArgumentException("characters must not be null");
             }
-            this.text = text;
+            this.characters = characters;
             return this;
         }
 
@@ -270,29 +241,13 @@ public final class ProjectKeyEvent {
             return this;
         }
 
-        public Builder combiningAccentCodePoint(int codePoint) {
-            if (codePoint != 0 && !UnicodeScalar.isValid(codePoint)) {
-                throw new IllegalArgumentException("invalid combining accent code point");
-            }
-            this.combiningAccentCodePoint = codePoint;
-            if (codePoint != 0) {
-                this.deadKey = true;
-            }
+        public Builder mappedInput(SemanticInput mappedInput) {
+            this.mappedInput = mappedInput;
             return this;
         }
 
-        public Builder deadKey(boolean deadKey) {
-            this.deadKey = deadKey;
-            return this;
-        }
-
-        public Builder semanticInput(SemanticInput semanticInput) {
-            this.semanticInput = semanticInput;
-            return this;
-        }
-
-        public ProjectKeyEvent build() {
-            return new ProjectKeyEvent(this);
+        public RawHardwareKeyEvent build() {
+            return new RawHardwareKeyEvent(this);
         }
     }
 }
