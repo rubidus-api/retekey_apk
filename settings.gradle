@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "retekey_ime"
 include ":app"
+include ":testhost"

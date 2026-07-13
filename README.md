@@ -5,8 +5,9 @@ Android Hangul keyboard focused on standard IME behavior, hardware-key friendlin
 ## Status
 
 P1A source-neutral input and P1B checked editor/session reliability are
-complete. Real Android lifecycle instrumentation is the remaining P1 gate
-before the stateful Hangul composer.
+complete. The T012-core instrumentation APK, separate editor/control host, and
+state-restoring runner now assemble; real API/device execution remains the P1
+gate before the stateful Hangul composer.
 
 ## Stack
 
@@ -44,6 +45,21 @@ Use the checked-in wrapper rather than a system Gradle:
 
 ```sh
 ./gradlew testDebugUnitTest assembleDebug
+```
+
+Compile the Android lifecycle harness without changing device state:
+
+```sh
+./gradlew :testhost:assembleDebug :app:assembleInstrumentationAndroidTest
+```
+
+Run it only on an authorized, unlocked test device. The runner preserves and
+restores the previously selected/enabled IME state and never prints its id.
+The host also needs `adb`, `sha256sum`, `base64`, and util-linux `flock`:
+
+```sh
+scripts/run-ime-instrumentation.sh connected
+scripts/run-ime-instrumentation.sh matrix
 ```
 
 The workspace build target is arch-dev through ignored private configuration:

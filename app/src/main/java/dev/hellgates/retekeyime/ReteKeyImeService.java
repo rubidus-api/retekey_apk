@@ -11,7 +11,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import java.util.Locale;
 
-public final class ReteKeyImeService extends InputMethodService {
+public class ReteKeyImeService extends InputMethodService {
     private final InputDispatcher dispatcher = new InputDispatcher();
     private final InputSessionController<ScaffoldSessionState> sessionController =
         new InputSessionController<>();
@@ -325,6 +325,22 @@ public final class ReteKeyImeService extends InputMethodService {
             Toast.LENGTH_SHORT
         );
         editorFailureToast.show();
+    }
+
+    protected final long observedSessionGeneration() {
+        return sessionController.generation();
+    }
+
+    protected final boolean isObservedSessionActive() {
+        return sessionActive;
+    }
+
+    protected final SynchronizationState observedSynchronizationState() {
+        return sessionController.syncState();
+    }
+
+    protected final int observedPendingExpectationCount() {
+        return sessionController.pendingExpectationCount();
     }
 
     private enum ScaffoldSessionState {
