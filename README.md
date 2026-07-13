@@ -62,6 +62,11 @@ scripts/run-ime-instrumentation.sh connected
 scripts/run-ime-instrumentation.sh matrix
 ```
 
+The private matrix file is declarative, not a shell script: use exactly one
+plain `KEY=value` line for each key named by `--help`; blank lines and full-line
+`#` comments are allowed. Unknown, duplicate, executable, or malformed content
+is rejected without printing its values.
+
 The workspace build target is arch-dev through ignored private configuration:
 
 ```sh
