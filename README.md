@@ -1,13 +1,17 @@
 # ReteKey IME
 
-Android Hangul keyboard focused on standard IME behavior, hardware-key friendliness, and efficient Korean input.
+MIT-licensed Android Hangul keyboard focused on standard IME behavior, hardware-key friendliness, and efficient Korean input.
 
 ## Status
 
-P1A source-neutral input and P1B checked editor/session reliability are
-complete. The T012-core instrumentation APK, separate editor/control host, and
-state-restoring runner now assemble; real API/device execution remains the P1
-gate before the stateful Hangul composer.
+P1A source-neutral input and P1B checked editor/session reliability are complete.
+T012-core is verified on a real Android lane (API 33 emulator): start, view,
+restart without finish, and teardown behave as specified against the actual
+framework callback stream. The stateful Hangul composer (P2) is next; the full
+API matrix and the Galaxy Note20 gate remain open.
+
+The touch layout is one orthogonal ten-column grid shared by English QWERTY and
+Korean 2-beolsik: equal keys, a three-column space bar, and no staggered rows.
 
 ## Stack
 
@@ -36,6 +40,7 @@ input visible; the stateful Hangul composer remains planned.
   fault injection, real IME lifecycle, and exhaustive/model robustness
 - `docs/resources/sources-and-licenses.md`: pinned build tools, Jamotong,
   Android, AOSP, and Unicode evidence/provenance boundaries
+- `docs/manual/emulator-lane.md`: the device-free T012 emulator lane
 - `docs/manual/`: durable manuals
 
 ## Build
@@ -61,6 +66,16 @@ The host also needs `adb`, `sha256sum`, `base64`, and util-linux `flock`:
 scripts/run-ime-instrumentation.sh connected
 scripts/run-ime-instrumentation.sh matrix
 ```
+
+On a host with no device and no KVM, the emulator lane boots its own guest under
+plain TCG emulation and runs the same case on it:
+
+```sh
+scripts/emulator-lane.sh run
+```
+
+See `docs/manual/emulator-lane.md` for why it pins an API 33 AOSP ATD x86_64
+image and what the lane does and does not prove.
 
 The private matrix file is declarative, not a shell script: use exactly one
 plain `KEY=value` line for each key named by `--help`; blank lines and full-line
