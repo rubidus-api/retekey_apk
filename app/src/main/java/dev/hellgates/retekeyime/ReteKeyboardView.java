@@ -20,8 +20,10 @@ public final class ReteKeyboardView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
-    private final Runnable openPopup = this::openPopupForHeldKey;
-    private KeyboardLayoutId layoutId = KeyboardLayoutId.KO_DUBEOLSIK;
+    private final Runnable openPopup = this::handleLongPress;
+    private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
+    private boolean symbolActive;
+    private NumpadMode numpadMode = NumpadMode.NUMBERS;
     private int heldRow = -1;
     private int heldKey = -1;
     private LongPressPopup popup;
@@ -35,12 +37,14 @@ public final class ReteKeyboardView extends View {
         setClickable(true);
     }
 
-    /** The layout currently drawn and hit-tested, including the active shift layer. */
+    /** The layout currently drawn and hit-tested, including layer, shift, and keypad mode. */
     public KeyboardLayout layout() {
-        return KeyboardLayouts.of(layoutId, shiftLayer.isActive());
+        return symbolActive
+            ? KeyboardLayouts.symbol(numpadMode)
+            : KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
     }
 
-    /** Clears one-shot, popup, and pointer state when the editor session changes. */
+    /** Clears transient one-shot and pointer state when the editor session changes. */
     public void resetLayerState() {
         shiftLayer.clear();
         cancelHold();
@@ -59,7 +63,7 @@ public final class ReteKeyboardView extends View {
 
         canvas.drawColor(Color.rgb(245, 246, 248));
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(Math.max(18.0f, rowHeight * 0.38f));
+        paint.setTextSize(Math.max(18.0f, rowHeight * 0.36f));
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             List<SoftwareKeySpec> keys = rows.get(rowIndex);
@@ -81,8 +85,8 @@ public final class ReteKeyboardView extends View {
                     top + (bottom - top) * 0.62f,
                     paint
                 );
-                if (key.hasLongPress()) {
-                    // A dot marks the keys that hide alternates, so holding is discoverable.
+                if (key.hasLongPress() || key.hasLongPressControl()) {
+                    // A dot marks keys that hide more behind a hold, so it is discoverable.
                     paint.setColor(Color.rgb(139, 148, 158));
                     canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
                 }
@@ -150,7 +154,8 @@ public final class ReteKeyboardView extends View {
         }
         heldRow = rowIndex;
         heldKey = keyIndex;
-        if (layout.rows().get(rowIndex).get(keyIndex).hasLongPress()) {
+        SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
+        if (key.hasLongPress() || key.hasLongPressControl()) {
             postDelayed(openPopup, ViewConfiguration.getLongPressTimeout());
         }
     }
@@ -170,6 +175,7 @@ public final class ReteKeyboardView extends View {
         LongPressPopup openedPopup = popup;
         int rowIndex = heldRow;
         int keyIndex = heldKey;
+        boolean controlFired = longPressControlFired;
         removeCallbacks(openPopup);
 
         if (openedPopup != null) {
@@ -187,6 +193,10 @@ public final class ReteKeyboardView extends View {
         }
 
         cancelHold();
+        if (controlFired) {
+            // A held control (period to symbol layer) already acted; a tap must not also fire.
+            return;
+        }
         if (rowIndex < 0 || keyIndex < 0) {
             return;
         }
@@ -209,8 +219,18 @@ public final class ReteKeyboardView extends View {
         }
     }
 
-    private void openPopupForHeldKey() {
+    private boolean longPressControlFired;
+
+    private void handleLongPress() {
         if (heldRow < 0 || heldKey < 0) {
+            return;
+        }
+        SoftwareKeySpec key = layout().rows().get(heldRow).get(heldKey);
+        if (key.hasLongPressControl()) {
+            applyControl(key.longPressControl());
+            longPressControlFired = true;
+            heldRow = -1;
+            heldKey = -1;
             return;
         }
         popup = LongPressPopup.open(layout(), heldRow, heldKey, getWidth(), getHeight());
@@ -224,6 +244,7 @@ public final class ReteKeyboardView extends View {
         heldKey = -1;
         popup = null;
         popupIndex = -1;
+        longPressControlFired = false;
     }
 
     private void consumeOneShotShift() {
@@ -259,22 +280,56 @@ public final class ReteKeyboardView extends View {
     }
 
     private void applyControl(ControlKey control) {
-        if (control == ControlKey.SHIFT) {
-            shiftLayer.advance();
-        } else if (control == ControlKey.LAYOUT_TOGGLE) {
-            layoutId = KeyboardLayouts.other(layoutId);
-            shiftLayer.clear();
+        switch (control) {
+            case SHIFT:
+                shiftLayer.advance();
+                break;
+            case LAYOUT_TOGGLE:
+                letterLayoutId = KeyboardLayouts.otherLetters(letterLayoutId);
+                symbolActive = false;
+                shiftLayer.clear();
+                break;
+            case SYMBOL_LAYER:
+                symbolActive = true;
+                numpadMode = NumpadMode.NUMBERS;
+                shiftLayer.clear();
+                break;
+            case LETTER_LAYER:
+                symbolActive = false;
+                shiftLayer.clear();
+                break;
+            case NUMLOCK:
+                numpadMode = numpadMode == NumpadMode.ARROWS
+                    ? NumpadMode.NUMBERS
+                    : NumpadMode.ARROWS;
+                break;
+            case FUNCTION_LOCK:
+                numpadMode = numpadMode == NumpadMode.FUNCTIONS
+                    ? NumpadMode.NUMBERS
+                    : NumpadMode.FUNCTIONS;
+                break;
+            default:
+                break;
         }
         invalidate();
     }
 
     private int keyFillColor(SoftwareKeySpec key) {
-        if (key.isControl() && key.control() == ControlKey.SHIFT) {
-            if (shiftLayer.isSticky()) {
+        if (key.isControl()) {
+            ControlKey control = key.control();
+            if (control == ControlKey.SHIFT) {
+                if (shiftLayer.isSticky()) {
+                    return Color.rgb(159, 190, 233);
+                }
+                if (shiftLayer.isActive()) {
+                    return Color.rgb(196, 214, 240);
+                }
+            }
+            if (control == ControlKey.NUMLOCK && numpadMode == NumpadMode.ARROWS) {
                 return Color.rgb(159, 190, 233);
             }
-            if (shiftLayer.isActive()) {
-                return Color.rgb(196, 214, 240);
+            if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
+                return Color.rgb(159, 190, 233);
             }
         }
         if (!key.enabled() && !key.isControl()) {

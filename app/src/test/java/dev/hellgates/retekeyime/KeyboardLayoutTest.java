@@ -22,7 +22,10 @@ public final class KeyboardLayoutTest {
         KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, false),
         KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, true),
         KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false),
-        KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, true)
+        KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, true),
+        KeyboardLayouts.symbol(NumpadMode.NUMBERS),
+        KeyboardLayouts.symbol(NumpadMode.ARROWS),
+        KeyboardLayouts.symbol(NumpadMode.FUNCTIONS)
     );
 
     @Test
@@ -216,7 +219,6 @@ public final class KeyboardLayoutTest {
             "touch.modifier.ctrl",
             "touch.modifier.meta",
             "touch.modifier.alt",
-            "touch.layer.symbols",
             "touch.edit.tab",
             "touch.menu"
         )) {
@@ -225,6 +227,27 @@ public final class KeyboardLayoutTest {
             assertFalse(id + " must stay disabled until its action exists", key.enabled());
             assertFalse(id + " is not a view-local control", key.isControl());
         }
+    }
+
+    @Test
+    public void theSymbolKeyEntersTheSymbolLayer() {
+        SoftwareKeySpec symbolKey = KeyboardLayouts
+            .of(KeyboardLayoutId.KO_DUBEOLSIK, false)
+            .findById("touch.layer.symbols");
+        assertNotNull(symbolKey);
+        assertTrue(symbolKey.isControl());
+        assertEquals(ControlKey.SYMBOL_LAYER, symbolKey.control());
+    }
+
+    @Test
+    public void holdingThePeriodSwitchesToTheSymbolLayer() {
+        SoftwareKeySpec period = KeyboardLayouts
+            .of(KeyboardLayoutId.KO_DUBEOLSIK, false)
+            .findById("touch.text.period");
+        assertNotNull(period);
+        assertEquals(SemanticInput.text("."), period.semanticInput());
+        assertTrue(period.hasLongPressControl());
+        assertEquals(ControlKey.SYMBOL_LAYER, period.longPressControl());
     }
 
     @Test
@@ -282,11 +305,11 @@ public final class KeyboardLayoutTest {
     public void layoutToggleSwapsTheTwoBaseLayouts() {
         assertEquals(
             KeyboardLayoutId.KO_DUBEOLSIK,
-            KeyboardLayouts.other(KeyboardLayoutId.EN_QWERTY)
+            KeyboardLayouts.otherLetters(KeyboardLayoutId.EN_QWERTY)
         );
         assertEquals(
             KeyboardLayoutId.EN_QWERTY,
-            KeyboardLayouts.other(KeyboardLayoutId.KO_DUBEOLSIK)
+            KeyboardLayouts.otherLetters(KeyboardLayoutId.KO_DUBEOLSIK)
         );
     }
 

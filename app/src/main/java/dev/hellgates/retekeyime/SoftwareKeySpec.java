@@ -11,6 +11,7 @@ public final class SoftwareKeySpec {
     private final ControlKey control;
     private final int columnSpan;
     private final List<String> longPressTexts;
+    private final ControlKey longPressControl;
 
     private SoftwareKeySpec(
         String stableKeyId,
@@ -18,7 +19,8 @@ public final class SoftwareKeySpec {
         SemanticInput semanticInput,
         ControlKey control,
         int columnSpan,
-        List<String> longPressTexts
+        List<String> longPressTexts,
+        ControlKey longPressControl
     ) {
         if (stableKeyId == null || stableKeyId.isEmpty()) {
             throw new IllegalArgumentException("stable key id must not be empty");
@@ -32,12 +34,16 @@ public final class SoftwareKeySpec {
         if (semanticInput != null && control != null) {
             throw new IllegalArgumentException("a key is either semantic or view-local, not both");
         }
+        if (!longPressTexts.isEmpty() && longPressControl != null) {
+            throw new IllegalArgumentException("a long press is either text or a control, not both");
+        }
         this.stableKeyId = stableKeyId;
         this.label = label;
         this.semanticInput = semanticInput;
         this.control = control;
         this.columnSpan = columnSpan;
         this.longPressTexts = longPressTexts;
+        this.longPressControl = longPressControl;
     }
 
     public static SoftwareKeySpec enabled(
@@ -54,7 +60,8 @@ public final class SoftwareKeySpec {
             semanticInput,
             null,
             1,
-            Collections.emptyList()
+            Collections.emptyList(),
+            null
         );
     }
 
@@ -62,11 +69,27 @@ public final class SoftwareKeySpec {
         if (control == null) {
             throw new IllegalArgumentException("control key requires a control command");
         }
-        return new SoftwareKeySpec(stableKeyId, label, null, control, 1, Collections.emptyList());
+        return new SoftwareKeySpec(
+            stableKeyId,
+            label,
+            null,
+            control,
+            1,
+            Collections.emptyList(),
+            null
+        );
     }
 
     public static SoftwareKeySpec disabled(String stableKeyId, String label) {
-        return new SoftwareKeySpec(stableKeyId, label, null, null, 1, Collections.emptyList());
+        return new SoftwareKeySpec(
+            stableKeyId,
+            label,
+            null,
+            null,
+            1,
+            Collections.emptyList(),
+            null
+        );
     }
 
     public SoftwareKeySpec withColumnSpan(int newColumnSpan) {
@@ -76,7 +99,8 @@ public final class SoftwareKeySpec {
             semanticInput,
             control,
             newColumnSpan,
-            longPressTexts
+            longPressTexts,
+            longPressControl
         );
     }
 
@@ -103,7 +127,27 @@ public final class SoftwareKeySpec {
             semanticInput,
             control,
             columnSpan,
-            Collections.unmodifiableList(candidates)
+            Collections.unmodifiableList(candidates),
+            longPressControl
+        );
+    }
+
+    /**
+     * A view-local command reached by holding the key, while a tap still commits the key's own
+     * input. The period uses this to switch to the symbol layer without spending a second key.
+     */
+    public SoftwareKeySpec withLongPressControl(ControlKey longPressCommand) {
+        if (longPressCommand == null) {
+            throw new IllegalArgumentException("long-press control must not be null");
+        }
+        return new SoftwareKeySpec(
+            stableKeyId,
+            label,
+            semanticInput,
+            control,
+            columnSpan,
+            longPressTexts,
+            longPressCommand
         );
     }
 
@@ -113,6 +157,17 @@ public final class SoftwareKeySpec {
 
     public boolean hasLongPress() {
         return !longPressTexts.isEmpty();
+    }
+
+    public boolean hasLongPressControl() {
+        return longPressControl != null;
+    }
+
+    public ControlKey longPressControl() {
+        if (longPressControl == null) {
+            throw new IllegalStateException("key has no long-press control");
+        }
+        return longPressControl;
     }
 
     /** The event for the alternate character at {@code index} of the long-press popup. */
