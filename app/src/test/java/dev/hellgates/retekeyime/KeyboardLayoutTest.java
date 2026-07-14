@@ -109,11 +109,11 @@ public final class KeyboardLayoutTest {
             labels(korean, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "ㅋ", "ㅌ", "ㅊ", "ㅍ", "ㅠ", "ㅜ", "ㅡ", ",", "⌫"),
+            Arrays.asList("⇧", "ㅋ", "ㅌ", "ㅊ", "ㅍ", "ㅠ", "ㅜ", "ㅡ", ".", "⌫"),
             labels(korean, 2)
         );
         assertEquals(
-            Arrays.asList("!#1", "한/영", ".", "space", "←", "↓", "↑", "→"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "space", "한/영", "!#1", "Tab", "☰"),
             labels(korean, 3)
         );
     }
@@ -130,8 +130,13 @@ public final class KeyboardLayoutTest {
             labels(english, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "z", "x", "c", "v", "b", "n", "m", ",", "⌫"),
+            Arrays.asList("⇧", "z", "x", "c", "v", "b", "n", "m", ".", "⌫"),
             labels(english, 2)
+        );
+        assertEquals(
+            "the bottom row is identical in every layout",
+            labels(KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false), 3),
+            labels(english, 3)
         );
     }
 
@@ -208,11 +213,12 @@ public final class KeyboardLayoutTest {
     public void navigationAndSymbolPlaceholdersStayDisabled() {
         KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
         for (String id : Arrays.asList(
-            "touch.navigation.left",
-            "touch.navigation.right",
-            "touch.navigation.up",
-            "touch.navigation.down",
-            "touch.layer.symbols"
+            "touch.modifier.ctrl",
+            "touch.modifier.meta",
+            "touch.modifier.alt",
+            "touch.layer.symbols",
+            "touch.edit.tab",
+            "touch.menu"
         )) {
             SoftwareKeySpec key = korean.findById(id);
             assertNotNull(id, key);

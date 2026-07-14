@@ -59,7 +59,7 @@ public final class KeyboardLayouts {
             letter("z", shifted), letter("x", shifted), letter("c", shifted),
             letter("v", shifted), letter("b", shifted), letter("n", shifted),
             letter("m", shifted),
-            commaKey(), backspaceKey()
+            periodKey(), backspaceKey()
         ));
         rows.add(bottomRow());
         return KeyboardLayout.of(KeyboardLayoutId.EN_QWERTY, shifted, COLUMNS, rows);
@@ -100,24 +100,35 @@ public final class KeyboardLayouts {
             vowel("yu", "ㅠ", 17),
             vowel("u", "ㅜ", 13),
             vowel("eu", "ㅡ", 18),
-            commaKey(), backspaceKey()
+            periodKey(), backspaceKey()
         ));
         rows.add(bottomRow());
         return KeyboardLayout.of(KeyboardLayoutId.KO_DUBEOLSIK, shifted, COLUMNS, rows);
     }
 
+    /**
+     * The bottom row is identical in every layout, as RFC-0002's wide-profile candidate specified:
+     * Ctrl, Meta, Alt, a three-column space bar, the layout toggle, the symbol layer (which also
+     * owns navigation and the other special keys), Tab, and the menu key that opens settings and
+     * the keyboard's own functions.
+     *
+     * <p>Only space and the layout toggle act today. The modifiers, the symbol/navigation layer,
+     * Tab, and the menu need a raw-key action, a second layer, and a settings surface that do not
+     * exist yet, so they are drawn disabled rather than silently doing nothing. `Meta` is never
+     * labelled `Win`.
+     */
     private static List<SoftwareKeySpec> bottomRow() {
         return KeyboardLayout.row(
-            SoftwareKeySpec.disabled("touch.layer.symbols", "!#1"),
-            SoftwareKeySpec.control("touch.layout.toggle", "한/영", ControlKey.LAYOUT_TOGGLE),
-            SoftwareKeySpec.enabled("touch.text.period", ".", SemanticInput.text(".")),
+            SoftwareKeySpec.disabled("touch.modifier.ctrl", "Ctrl"),
+            SoftwareKeySpec.disabled("touch.modifier.meta", "Meta"),
+            SoftwareKeySpec.disabled("touch.modifier.alt", "Alt"),
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            SoftwareKeySpec.disabled("touch.navigation.left", "←"),
-            SoftwareKeySpec.disabled("touch.navigation.down", "↓"),
-            SoftwareKeySpec.disabled("touch.navigation.up", "↑"),
-            SoftwareKeySpec.disabled("touch.navigation.right", "→")
+            SoftwareKeySpec.control("touch.layout.toggle", "한/영", ControlKey.LAYOUT_TOGGLE),
+            SoftwareKeySpec.disabled("touch.layer.symbols", "!#1"),
+            SoftwareKeySpec.disabled("touch.edit.tab", "Tab"),
+            SoftwareKeySpec.disabled("touch.menu", "☰")
         );
     }
 
@@ -145,8 +156,14 @@ public final class KeyboardLayouts {
         );
     }
 
-    private static SoftwareKeySpec commaKey() {
-        return SoftwareKeySpec.enabled("touch.text.comma", ",", SemanticInput.text(","));
+    /**
+     * The one punctuation key. Holding it reveals the rest of the everyday punctuation instead of
+     * spending a second cell on a comma.
+     */
+    private static SoftwareKeySpec periodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period", ".", SemanticInput.text("."))
+            .withLongPress(",", "?", "!", ":", ";", "'", "\"", "-", "_", "#", "*", "&");
     }
 
     private static SoftwareKeySpec letter(String lowercase, boolean shifted) {
