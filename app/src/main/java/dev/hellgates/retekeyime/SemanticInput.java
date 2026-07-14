@@ -7,12 +7,15 @@ public final class SemanticInput {
         TEXT,
         JAMO,
         DELETE_BACKWARD,
-        FLUSH
+        FLUSH,
+        PRIMARY_ACTION
     }
 
     private static final SemanticInput DELETE_BACKWARD =
         new SemanticInput(Kind.DELETE_BACKWARD, "", null);
     private static final SemanticInput FLUSH = new SemanticInput(Kind.FLUSH, "", null);
+    private static final SemanticInput PRIMARY_ACTION =
+        new SemanticInput(Kind.PRIMARY_ACTION, "", null);
 
     private final Kind kind;
     private final String text;
@@ -44,6 +47,14 @@ public final class SemanticInput {
 
     public static SemanticInput flush() {
         return FLUSH;
+    }
+
+    /**
+     * The editor's primary action: Enter, or whatever action the focused editor requests.
+     * The editor profile, not the layout, decides what it means.
+     */
+    public static SemanticInput primaryAction() {
+        return PRIMARY_ACTION;
     }
 
     public Kind kind() {

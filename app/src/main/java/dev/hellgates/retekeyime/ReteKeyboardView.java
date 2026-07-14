@@ -16,10 +16,10 @@ public final class ReteKeyboardView extends View {
         void accept(ProjectKeyEvent event);
     }
 
-    private static final List<List<SoftwareKeySpec>> ROWS = ScaffoldKeyboardLayout.rows();
-
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
+    private final ShiftLayerState shiftLayer = new ShiftLayerState();
+    private KeyboardLayoutId layoutId = KeyboardLayoutId.KO_DUBEOLSIK;
 
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
@@ -29,31 +29,47 @@ public final class ReteKeyboardView extends View {
         setClickable(true);
     }
 
+    /** The layout currently drawn and hit-tested, including the active shift layer. */
+    public KeyboardLayout layout() {
+        return KeyboardLayouts.of(layoutId, shiftLayer.isActive());
+    }
+
+    /** Clears one-shot and sticky view state when the editor session changes. */
+    public void resetLayerState() {
+        shiftLayer.clear();
+        invalidate();
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        KeyboardLayout layout = layout();
         int width = getWidth();
         int height = getHeight();
-        int rowCount = ROWS.size();
-        int rowHeight = Math.max(1, height / rowCount);
+        List<List<SoftwareKeySpec>> rows = layout.rows();
+        int rowHeight = Math.max(1, height / rows.size());
 
         canvas.drawColor(Color.rgb(245, 246, 248));
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(Math.max(18.0f, rowHeight * 0.38f));
 
-        for (int row = 0; row < rowCount; row++) {
-            List<SoftwareKeySpec> keys = ROWS.get(row);
-            int top = row * height / rowCount;
-            int bottom = (row + 1) * height / rowCount;
-            for (int col = 0; col < keys.size(); col++) {
-                int left = col * width / keys.size();
-                int right = (col + 1) * width / keys.size();
-                paint.setColor(Color.rgb(221, 225, 231));
+        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+            List<SoftwareKeySpec> keys = rows.get(rowIndex);
+            int top = layout.rowEdge(rowIndex, height);
+            int bottom = layout.rowEdge(rowIndex + 1, height);
+            for (int keyIndex = 0; keyIndex < keys.size(); keyIndex++) {
+                SoftwareKeySpec key = keys.get(keyIndex);
+                int startColumn = layout.startColumn(rowIndex, keyIndex);
+                int left = layout.columnEdge(startColumn, width);
+                int right = layout.columnEdge(startColumn + key.columnSpan(), width);
+                paint.setColor(keyFillColor(key));
                 canvas.drawRect(left + 2, top + 2, right - 2, bottom - 2, paint);
-                paint.setColor(Color.rgb(22, 27, 34));
+                paint.setColor(key.enabled() || key.isControl()
+                    ? Color.rgb(22, 27, 34)
+                    : Color.rgb(139, 148, 158));
                 canvas.drawText(
-                    keys.get(col).label(),
+                    key.label(),
                     (left + right) * 0.5f,
                     top + (bottom - top) * 0.62f,
                     paint
@@ -68,9 +84,25 @@ public final class ReteKeyboardView extends View {
             return true;
         }
 
-        SoftwareKeySpec key = keyAt(event.getX(), event.getY());
-        if (key != null && key.enabled()) {
+        SoftwareKeySpec key = layout().keyAt(
+            event.getX(),
+            event.getY(),
+            getWidth(),
+            getHeight()
+        );
+        if (key == null) {
+            return true;
+        }
+        if (key.isControl()) {
+            applyControl(key.control());
+            performClick();
+            return true;
+        }
+        if (key.enabled()) {
             sink.accept(key.pressEvent());
+            if (shiftLayer.consumeOneShot()) {
+                invalidate();
+            }
             performClick();
         }
         return true;
@@ -82,15 +114,29 @@ public final class ReteKeyboardView extends View {
         return true;
     }
 
-    private SoftwareKeySpec keyAt(float x, float y) {
-        int width = getWidth();
-        int height = getHeight();
-        if (width <= 0 || height <= 0 || x < 0.0f || y < 0.0f || x >= width || y >= height) {
-            return null;
+    private void applyControl(ControlKey control) {
+        if (control == ControlKey.SHIFT) {
+            shiftLayer.advance();
+        } else if (control == ControlKey.LAYOUT_TOGGLE) {
+            layoutId = KeyboardLayouts.other(layoutId);
+            shiftLayer.clear();
         }
-        int rowIndex = Math.min(ROWS.size() - 1, (int) (y * ROWS.size() / height));
-        List<SoftwareKeySpec> row = ROWS.get(rowIndex);
-        int colIndex = Math.min(row.size() - 1, (int) (x * row.size() / width));
-        return row.get(colIndex);
+        invalidate();
     }
+
+    private int keyFillColor(SoftwareKeySpec key) {
+        if (key.isControl() && key.control() == ControlKey.SHIFT) {
+            if (shiftLayer.isSticky()) {
+                return Color.rgb(159, 190, 233);
+            }
+            if (shiftLayer.isActive()) {
+                return Color.rgb(196, 214, 240);
+            }
+        }
+        if (!key.enabled() && !key.isControl()) {
+            return Color.rgb(233, 236, 240);
+        }
+        return Color.rgb(221, 225, 231);
+    }
+
 }

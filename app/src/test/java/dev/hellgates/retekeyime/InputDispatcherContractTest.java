@@ -58,7 +58,7 @@ public final class InputDispatcherContractTest {
             "hardware.key.r",
             false
         );
-        ProjectKeyEvent software = ScaffoldKeyboardLayout
+        ProjectKeyEvent software = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false)
             .findById("touch.ko2.giyeok")
             .pressEvent();
         ProjectKeyEvent hardware = HardwareEventNormalizer.normalize(
@@ -149,7 +149,8 @@ public final class InputDispatcherContractTest {
         });
 
         recordingDispatcher.dispatch(
-            ScaffoldKeyboardLayout.findById("touch.ko2.giyeok").pressEvent()
+            KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false)
+                .findById("touch.ko2.giyeok").pressEvent()
         );
         recordingDispatcher.dispatch(HardwareEventNormalizer.normalize(
             RawHardwareKeyEvent.builder(InputAction.DOWN, 38)

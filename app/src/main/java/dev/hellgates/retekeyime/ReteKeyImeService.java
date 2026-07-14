@@ -12,17 +12,20 @@ import android.view.inputmethod.InputMethodSubtype;
 import java.util.Locale;
 
 public class ReteKeyImeService extends InputMethodService {
-    private final InputDispatcher dispatcher = new InputDispatcher();
+    private final InputDispatcher dispatcher =
+        new InputDispatcher(new ScaffoldInputProcessor(this::currentEditorProfile));
     private final InputSessionController<ScaffoldSessionState> sessionController =
         new InputSessionController<>();
     private HardwareSemanticMapper hardwareMapper = HardwareSemanticMapper.none();
     private EditorProfile editorProfile = EditorProfile.unsupported();
     private boolean sessionActive;
     private Toast editorFailureToast;
+    private ReteKeyboardView keyboardView;
 
     @Override
     public View onCreateInputView() {
-        return new ReteKeyboardView(this, this::dispatchSoftwareInput);
+        keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
+        return keyboardView;
     }
 
     @Override
@@ -115,6 +118,9 @@ public class ReteKeyImeService extends InputMethodService {
             editorProfile.capabilities()
         );
         sessionActive = true;
+        if (keyboardView != null) {
+            keyboardView.resetLayerState();
+        }
         updateHardwareMapper(currentSubtype());
     }
 
@@ -210,6 +216,10 @@ public class ReteKeyImeService extends InputMethodService {
         if (result == null || result.isFailure()) {
             showEditorFailure();
         }
+    }
+
+    private EditorProfile currentEditorProfile() {
+        return editorProfile;
     }
 
     private void updateHardwareMapper(InputMethodSubtype subtype) {

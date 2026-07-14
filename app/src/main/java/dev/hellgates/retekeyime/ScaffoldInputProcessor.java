@@ -1,5 +1,8 @@
 package dev.hellgates.retekeyime;
 
+import java.util.Objects;
+import java.util.function.Supplier;
+
 /**
  * No-loss scaffold behavior used until the stateful Hangul composer lands.
  */
@@ -14,6 +17,16 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
         "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
     };
     private static final int VOWEL_BASE = 0x314f;
+
+    private final Supplier<EditorProfile> editorProfile;
+
+    public ScaffoldInputProcessor() {
+        this(EditorProfile::unsupported);
+    }
+
+    public ScaffoldInputProcessor(Supplier<EditorProfile> editorProfile) {
+        this.editorProfile = Objects.requireNonNull(editorProfile, "editorProfile");
+    }
 
     @Override
     public DispatchResult process(SemanticInput input) {
@@ -32,6 +45,10 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
                 return DispatchResult.handled(KeyAction.deleteBackward());
             case FLUSH:
                 return DispatchResult.handled();
+            case PRIMARY_ACTION:
+                return EditorActionPolicy.enter(
+                    Objects.requireNonNull(editorProfile.get(), "editor profile")
+                );
             default:
                 throw new IllegalStateException("unsupported semantic input: " + input.kind());
         }
