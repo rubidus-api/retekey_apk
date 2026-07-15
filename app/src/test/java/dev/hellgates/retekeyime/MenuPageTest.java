@@ -13,35 +13,49 @@ public final class MenuPageTest {
     private final KeyboardLayout menu = KeyboardLayouts.menu();
 
     @Test
-    public void hasFourRowsOfTenColumns() {
+    public void hasFourRowsOfTenEqualColumns() {
         assertEquals(10, menu.columns());
         assertEquals(4, menu.rows().size());
-        // Each of the top three rows holds five two-column tiles.
+        // Every menu key is one column wide, the same size as other pages' keys.
         for (int row = 0; row < 3; row++) {
-            int span = 0;
-            for (SoftwareKeySpec key : menu.rows().get(row)) {
-                span += key.columnSpan();
+            List<SoftwareKeySpec> keys = menu.rows().get(row);
+            assertEquals("row " + row + " has ten keys", 10, keys.size());
+            for (SoftwareKeySpec key : keys) {
+                assertEquals("menu keys are one column wide", 1, key.columnSpan());
             }
-            assertEquals("row " + row + " fills ten columns", 10, span);
-            assertEquals("row " + row + " has five tiles", 5, menu.rows().get(row).size());
         }
     }
 
     @Test
-    public void theWorkingTilesAreWiredToTheirControls() {
+    public void theEditingTilesAreWiredToTheirControls() {
         assertEquals(ControlKey.OPEN_SETTINGS, menu.findById("touch.menu.settings").control());
-        assertEquals(ControlKey.INSERT_DATE, menu.findById("touch.menu.date").control());
-        assertEquals(ControlKey.UNDO, menu.findById("touch.menu.undo").control());
         assertEquals(ControlKey.COPY, menu.findById("touch.menu.copy").control());
+        assertEquals(ControlKey.CUT, menu.findById("touch.menu.cut").control());
         assertEquals(ControlKey.PASTE, menu.findById("touch.menu.paste").control());
+        assertEquals(ControlKey.SELECT_ALL, menu.findById("touch.menu.selectall").control());
+        assertEquals(ControlKey.UNDO, menu.findById("touch.menu.undo").control());
+        assertEquals(ControlKey.REDO, menu.findById("touch.menu.redo").control());
+        assertEquals(ControlKey.INSERT_DATE, menu.findById("touch.menu.date").control());
         assertEquals(ControlKey.HEIGHT_DOWN, menu.findById("touch.menu.height.down").control());
         assertEquals(ControlKey.HEIGHT_UP, menu.findById("touch.menu.height.up").control());
+        assertEquals(ControlKey.SWITCH_IME, menu.findById("touch.menu.switchime").control());
+    }
+
+    @Test
+    public void theCursorTilesSendRawKeys() {
+        SoftwareKeySpec left = menu.findById("touch.menu.cursor.left");
+        assertTrue("cursor keys are enabled", left.enabled());
+        assertEquals(SemanticInput.Kind.RAW_KEY, left.semanticInput().kind());
+        assertEquals(RawKey.LEFT, left.semanticInput().rawKey());
+        assertEquals(RawKey.END, menu.findById("touch.menu.cursor.end").semanticInput().rawKey());
+        assertEquals(RawKey.PAGE_UP,
+            menu.findById("touch.menu.cursor.pageup").semanticInput().rawKey());
     }
 
     @Test
     public void thePlaceholderTilesStayDisabled() {
         for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
-            "touch.menu.voice", "touch.menu.custom1", "touch.menu.custom2",
+            "touch.menu.voice", "touch.menu.custom1", "touch.menu.custom2", "touch.menu.theme",
             "touch.menu.onehand.left", "touch.menu.onehand.right", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);
@@ -51,18 +65,10 @@ public final class MenuPageTest {
     }
 
     @Test
-    public void tilesAreTwoColumnsWide() {
-        assertEquals(2, menu.findById("touch.menu.settings").columnSpan());
-        assertEquals(2, menu.findById("touch.menu.emoji").columnSpan());
-    }
-
-    @Test
     public void theBottomRowReturnsToLetters() {
-        List<SoftwareKeySpec> bottom = menu.rows().get(3);
-        SoftwareKeySpec returnKey = bottom.get(5);
+        SoftwareKeySpec returnKey = menu.rows().get(3).get(5);
         assertEquals("가", returnKey.label());
         assertEquals(ControlKey.PREVIOUS_LAYER, returnKey.control());
-        // The ☰ key is still present and re-opens the menu page.
         assertEquals(ControlKey.MENU_LAYER, menu.findById("touch.menu").control());
     }
 }

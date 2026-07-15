@@ -35,6 +35,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnOpenSettings(this::openSettings);
         keyboardView.setOnEditCommand(this::performEditCommand);
         keyboardView.setOnInsertDate(this::insertCurrentDate);
+        keyboardView.setOnSwitchIme(this::showImePicker);
         return keyboardView;
     }
 
@@ -54,13 +55,21 @@ public class ReteKeyImeService extends InputMethodService {
         }
     }
 
-    /** Commits the current date and time as text, e.g. "2026. 12.23.(화) 13:59". */
+    /** Commits the current date and time as text, e.g. "2026. 12. 23.(월) 13:59". */
     private void insertCurrentDate() {
         DateTimeFormatter formatter =
-            DateTimeFormatter.ofPattern("yyyy. MM.dd.(E) HH:mm", Locale.KOREAN);
+            DateTimeFormatter.ofPattern("yyyy. MM. dd.(E) HH:mm", Locale.KOREAN);
         String stamp = LocalDateTime.now().format(formatter);
         dispatchSoftwareInput(
             ProjectKeyEvent.softwareDown("touch.menu.date", SemanticInput.text(stamp)));
+    }
+
+    /** Opens the system input-method picker (keyboard chooser) from the 키보드전환 tile. */
+    private void showImePicker() {
+        InputMethodManager manager = getSystemService(InputMethodManager.class);
+        if (manager != null) {
+            manager.showInputMethodPicker();
+        }
     }
 
     @Override

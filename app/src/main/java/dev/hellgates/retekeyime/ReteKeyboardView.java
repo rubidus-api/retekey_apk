@@ -48,8 +48,10 @@ public final class ReteKeyboardView extends View {
     private Runnable onOpenSettings;
     /** Invoked with an editor context-menu id (copy/paste/undo) for the host to perform. */
     private IntConsumer onEditCommand;
-    /** Invoked when the 날짜입력 tile is tapped; the host inserts the current date and time. */
+    /** Invoked when the 날짜 tile is tapped; the host inserts the current date and time. */
     private Runnable onInsertDate;
+    /** Invoked when the 키보드전환 tile is tapped; the host opens the input-method picker. */
+    private Runnable onSwitchIme;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
@@ -78,9 +80,14 @@ public final class ReteKeyboardView extends View {
         this.onEditCommand = handler;
     }
 
-    /** Sets the handler the 날짜입력 tile runs to insert the current date and time. */
+    /** Sets the handler the 날짜 tile runs to insert the current date and time. */
     public void setOnInsertDate(Runnable handler) {
         this.onInsertDate = handler;
+    }
+
+    /** Sets the handler the 키보드전환 tile runs to open the input-method picker. */
+    public void setOnSwitchIme(Runnable handler) {
+        this.onSwitchIme = handler;
     }
 
     private SharedPreferences prefs() {
@@ -534,15 +541,29 @@ public final class ReteKeyboardView extends View {
             case COPY:
                 runEditCommand(android.R.id.copy);
                 break;
+            case CUT:
+                runEditCommand(android.R.id.cut);
+                break;
             case PASTE:
                 runEditCommand(android.R.id.paste);
                 break;
             case UNDO:
                 runEditCommand(android.R.id.undo);
                 break;
+            case REDO:
+                runEditCommand(android.R.id.redo);
+                break;
+            case SELECT_ALL:
+                runEditCommand(android.R.id.selectAll);
+                break;
             case INSERT_DATE:
                 if (onInsertDate != null) {
                     onInsertDate.run();
+                }
+                break;
+            case SWITCH_IME:
+                if (onSwitchIme != null) {
+                    onSwitchIme.run();
                 }
                 break;
             case CTRL:

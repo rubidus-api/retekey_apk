@@ -259,38 +259,59 @@ public final class KeyboardLayouts {
 
     private static KeyboardLayout buildMenu() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        // Each tile spans two columns, so five tiles fill the ten-column grid.
+        // Ten one-column keys per row, the same size as every other page's keys; long labels
+        // auto-fit to the key width. Row 1: editing and clipboard. Row 2: cursor navigation.
+        // Row 3: keyboard adjustment and function placeholders.
         rows.add(KeyboardLayout.row(
             menuControl("settings", "설정", ControlKey.OPEN_SETTINGS),
+            menuControl("copy", "복사", ControlKey.COPY),
+            menuControl("cut", "잘라내기", ControlKey.CUT),
+            menuControl("paste", "붙여넣기", ControlKey.PASTE),
+            menuControl("selectall", "전체선택", ControlKey.SELECT_ALL),
+            menuControl("undo", "실행취소", ControlKey.UNDO),
+            menuControl("redo", "다시실행", ControlKey.REDO),
             menuDisabled("emoji", "이모지"),
             menuDisabled("clipboard", "클립보드"),
-            menuControl("date", "날짜입력", ControlKey.INSERT_DATE),
-            menuDisabled("voice", "음성입력")
+            menuControl("date", "날짜", ControlKey.INSERT_DATE)
         ));
         rows.add(KeyboardLayout.row(
-            menuControl("undo", "실행취소", ControlKey.UNDO),
-            menuControl("copy", "복사", ControlKey.COPY),
-            menuControl("paste", "붙여넣기", ControlKey.PASTE),
-            menuDisabled("custom1", "커스텀 1"),
-            menuDisabled("custom2", "커스텀 2")
+            menuRaw("cursor.left", "←", RawKey.LEFT),
+            menuRaw("cursor.right", "→", RawKey.RIGHT),
+            menuRaw("cursor.up", "↑", RawKey.UP),
+            menuRaw("cursor.down", "↓", RawKey.DOWN),
+            menuRaw("cursor.home", "처음", RawKey.HOME),
+            menuRaw("cursor.end", "끝", RawKey.END),
+            menuRaw("cursor.pageup", "PgUp", RawKey.PAGE_UP),
+            menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),
+            menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE),
+            menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
             menuControl("height.down", "높이 −", ControlKey.HEIGHT_DOWN),
             menuControl("height.up", "높이 ＋", ControlKey.HEIGHT_UP),
+            menuControl("switchime", "키보드전환", ControlKey.SWITCH_IME),
             menuDisabled("onehand.left", "한손 ◀"),
             menuDisabled("onehand.right", "한손 ▶"),
-            menuDisabled("onehand.full", "전체폭")
+            menuDisabled("onehand.full", "전체폭"),
+            menuDisabled("theme", "테마"),
+            menuDisabled("voice", "음성"),
+            menuDisabled("custom1", "커스텀1"),
+            menuDisabled("custom2", "커스텀2")
         ));
         rows.add(bottomRow(returnToLettersKey()));
         return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);
     }
 
     private static SoftwareKeySpec menuControl(String id, String label, ControlKey control) {
-        return SoftwareKeySpec.control("touch.menu." + id, label, control).withColumnSpan(2);
+        return SoftwareKeySpec.control("touch.menu." + id, label, control);
     }
 
     private static SoftwareKeySpec menuDisabled(String id, String label) {
-        return SoftwareKeySpec.disabled("touch.menu." + id, label).withColumnSpan(2);
+        return SoftwareKeySpec.disabled("touch.menu." + id, label);
+    }
+
+    private static SoftwareKeySpec menuRaw(String id, String label, RawKey rawKey) {
+        return SoftwareKeySpec.enabled("touch.menu." + id, label, SemanticInput.rawKey(rawKey));
     }
 
     private static List<SoftwareKeySpec> bottomRow(SoftwareKeySpec layerKey) {

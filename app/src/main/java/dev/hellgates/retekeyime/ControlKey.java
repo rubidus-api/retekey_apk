@@ -31,10 +31,18 @@ public enum ControlKey {
     COPY,
     /** Paste the clipboard via the host's editor context-menu action. */
     PASTE,
+    /** Cut the selection via the host's editor context-menu action. */
+    CUT,
     /** Undo the last edit via the host's editor context-menu action. */
     UNDO,
+    /** Redo the last undone edit via the host's editor context-menu action. */
+    REDO,
+    /** Select all text via the host's editor context-menu action. */
+    SELECT_ALL,
     /** Insert the current date and time as text through the host. */
     INSERT_DATE,
+    /** Open the system input-method picker (keyboard chooser) through the host. */
+    SWITCH_IME,
     /**
      * Latching modifiers. Their armed state is view-local; it feeds the raw-key action so a
      * subsequent raw key becomes a chord.
