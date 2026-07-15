@@ -12,4 +12,10 @@
     <string name="settings_height_value">Height: %1$d%%</string>
     <string name="settings_preview">Preview</string>
     <string name="settings_reset">Default</string>
+    <string name="settings_feedback_label">Key-press feedback</string>
+    <string name="settings_feedback_hint">Set the strength of each; drag a slider to 0 to turn it off.</string>
+    <string name="settings_haptic">Vibration strength</string>
+    <string name="settings_sound">Sound volume</string>
+    <string name="settings_visual">Visual highlight</string>
+    <string name="settings_percent_value">%1$d%%</string>
 </resources>

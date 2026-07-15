@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -100,6 +101,26 @@ public final class SettingsActivity extends Activity {
             LinearLayout.LayoutParams.MATCH_PARENT, dp(PREVIEW_BASE_DP));
         root.addView(previewBar, previewParams);
 
+        TextView feedbackHeader = new TextView(this);
+        feedbackHeader.setText(R.string.settings_feedback_label);
+        feedbackHeader.setTextSize(20);
+        feedbackHeader.setTextColor(Color.rgb(22, 27, 34));
+        feedbackHeader.setPadding(0, dp(28), 0, 0);
+        root.addView(feedbackHeader);
+
+        TextView feedbackHint = new TextView(this);
+        feedbackHint.setText(R.string.settings_feedback_hint);
+        feedbackHint.setTextColor(Color.rgb(90, 98, 110));
+        feedbackHint.setPadding(0, dp(6), 0, dp(8));
+        root.addView(feedbackHint);
+
+        addPercentSlider(root, R.string.settings_visual,
+            KeyFeedback.KEY_VISUAL, KeyFeedback.DEFAULT_VISUAL);
+        addPercentSlider(root, R.string.settings_haptic,
+            KeyFeedback.KEY_HAPTIC, KeyFeedback.DEFAULT_HAPTIC);
+        addPercentSlider(root, R.string.settings_sound,
+            KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
+
         Button reset = new Button(this);
         reset.setText(R.string.settings_reset);
         reset.setOnClickListener(this::resetHeight);
@@ -110,7 +131,10 @@ public final class SettingsActivity extends Activity {
         resetParams.gravity = Gravity.END;
         root.addView(reset, resetParams);
 
-        setContentView(root);
+        // The controls are taller than a phone screen, so make the whole screen scroll.
+        ScrollView scroller = new ScrollView(this);
+        scroller.addView(root);
+        setContentView(scroller);
         applyPercent(slider.getProgress());
     }
 
@@ -125,6 +149,46 @@ public final class SettingsActivity extends Activity {
         valueLabel.setText(getString(R.string.settings_height_value, Math.round(scale * 100)));
         previewParams.height = Math.round(dp(PREVIEW_BASE_DP) * scale);
         previewBar.setLayoutParams(previewParams);
+    }
+
+    /** Adds a titled 0–100% slider bound to a 0–1 float preference. */
+    private void addPercentSlider(LinearLayout root, int titleRes, String prefKey, float defaultValue) {
+        TextView label = new TextView(this);
+        label.setTextColor(Color.rgb(40, 90, 170));
+        label.setPadding(0, dp(10), 0, 0);
+        root.addView(label);
+
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(100);
+        int start = Math.round(clampUnit(prefs().getFloat(prefKey, defaultValue)) * 100);
+        bar.setProgress(start);
+        bar.setPadding(dp(4), dp(8), dp(4), dp(8));
+        label.setText(getString(titleRes) + "  " + getString(R.string.settings_percent_value, start));
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                prefs().edit().putFloat(prefKey, progress / 100.0f).apply();
+                label.setText(getString(titleRes) + "  "
+                    + getString(R.string.settings_percent_value, progress));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar b) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar b) {
+            }
+        });
+        root.addView(bar, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    }
+
+    private static float clampUnit(float value) {
+        if (Float.isNaN(value)) {
+            return 0.0f;
+        }
+        return Math.max(0.0f, Math.min(1.0f, value));
     }
 
     private void resetHeight(View view) {

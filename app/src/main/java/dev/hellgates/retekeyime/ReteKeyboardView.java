@@ -27,6 +27,7 @@ public final class ReteKeyboardView extends View {
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
+    private final KeyFeedback feedback;
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
     private final Runnable onHoldElapsed = this::handleLongPress;
@@ -68,6 +69,8 @@ public final class ReteKeyboardView extends View {
         setClickable(true);
         heightScale = KeyboardHeightScale.clamp(
             prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
+        feedback = new KeyFeedback(context);
+        feedback.reload(prefs());
     }
 
     /** Sets the handler the 설정 tile runs to open settings; the service owns the launch. */
@@ -157,6 +160,7 @@ public final class ReteKeyboardView extends View {
         shiftLayer.clear();
         armedModifiers.clear();
         cancelHold();
+        feedback.reload(prefs());
         invalidate();
     }
 
@@ -183,6 +187,12 @@ public final class ReteKeyboardView extends View {
                 int right = layout.columnEdge(startColumn + key.columnSpan(), width);
                 paint.setColor(keyFillColor(key));
                 canvas.drawRect(left + 2, top + 2, right - 2, bottom - 2, paint);
+                if (rowIndex == heldRow && keyIndex == heldKey && feedback.visualIntensity() > 0.0f) {
+                    // Visual press feedback: a translucent overlay whose opacity tracks the setting.
+                    paint.setColor(Color.argb(
+                        Math.round(feedback.visualIntensity() * 130.0f), 78, 132, 214));
+                    canvas.drawRect(left + 2, top + 2, right - 2, bottom - 2, paint);
+                }
                 paint.setColor(key.enabled() || key.isControl()
                     ? Color.rgb(22, 27, 34)
                     : Color.rgb(139, 148, 158));
@@ -266,6 +276,7 @@ public final class ReteKeyboardView extends View {
                     endResize();
                 } else {
                     releaseHold(event.getX(), event.getY());
+                    invalidate();
                 }
                 return true;
             case MotionEvent.ACTION_CANCEL:
@@ -327,6 +338,9 @@ public final class ReteKeyboardView extends View {
         }
         heldRow = rowIndex;
         heldKey = keyIndex;
+        // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
+        feedback.playKeyDown();
+        invalidate();
         SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
         // Shift, and any key with a long press, react to a hold.
         if (key.hasLongPress()
