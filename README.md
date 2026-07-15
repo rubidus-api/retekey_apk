@@ -18,23 +18,23 @@ QWERTY, Korean 2-beolsik, special characters, and special keys.
 
 Korean 2-beolsik:
 
-![Korean 2-beolsik layout](docs/images/keyboard-korean.png)
+![Korean 2-beolsik layout](assets/keyboard-korean.png)
 
 Holding the period opens the special-characters page. Every key commits text:
 
-![Special characters page](docs/images/keyboard-chars.png)
+![Special characters page](assets/keyboard-chars.png)
 
 The `pad` key opens the special-keys page: a right-hand keypad plus special keys.
 The digits and `+ - = .` commit text; Esc, PrtSc, ScrLk, Pause, and Menu send key
 events; 한자/Lang and the right-hand modifiers are muted until their systems land.
 `Num` turns the keypad into arrows/navigation:
 
-![Special keys page](docs/images/keyboard-keys.png)
+![Special keys page](assets/keyboard-keys.png)
 
 `Fn` swaps the whole page to the function and media keys. F1-F12 send key events;
 F13-F15 (no Android keycode), the media keys, and Back stay muted:
 
-![Special keys, Fn page](docs/images/keyboard-keys-fn.png)
+![Special keys, Fn page](assets/keyboard-keys-fn.png)
 
 > These images are rendered from the actual layout data. A live screenshot from
 > the emulator lane is not shown because that host is headless with no KVM and no
@@ -58,19 +58,9 @@ input visible; the stateful Hangul composer remains planned.
 
 ## Documentation
 
-- `SPEC.md`: current design and architecture
-- `REQUIREMENTS.md`: accepted requirements
-- `docs/rfc/rfc-0001-implementation-plan.md`: first implementation plan
-- `docs/rfc/rfc-0003-jamotong-automata-lineage.md`: accepted Hangul-core
-  lineage and touch/input separation
-- `docs/rfc/rfc-0004-android-ime-reliability.md`: accepted lifecycle, editor
-  failure, verification, and release contract
-- `docs/tests/test-index.md`: T000-T013 verification catalog, including editor
-  fault injection, real IME lifecycle, and exhaustive/model robustness
-- `docs/resources/sources-and-licenses.md`: pinned build tools, Jamotong,
-  Android, AOSP, and Unicode evidence/provenance boundaries
-- `docs/manual/emulator-lane.md`: the device-free T012 emulator lane
-- `docs/manual/`: durable manuals
+Design RFCs, the verification catalog, decisions, and the changelog are kept in a
+private companion repository and are not part of this public surface.
+
 
 ## Build
 
