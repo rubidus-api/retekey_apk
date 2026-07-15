@@ -74,6 +74,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (passThroughChord(event)) {
+            return super.onKeyDown(keyCode, event);
+        }
         if (usesRawKeyCompatibility()) {
             return super.onKeyDown(keyCode, event);
         }
@@ -100,6 +103,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (passThroughChord(event)) {
+            return super.onKeyUp(keyCode, event);
+        }
         if (usesRawKeyCompatibility()) {
             return super.onKeyUp(keyCode, event);
         }
@@ -125,6 +131,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyMultiple(int keyCode, int count, KeyEvent event) {
+        if (passThroughChord(event)) {
+            return super.onKeyMultiple(keyCode, count, event);
+        }
         if (usesRawKeyCompatibility()) {
             return super.onKeyMultiple(keyCode, count, event);
         }
@@ -337,6 +346,16 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean usesRawKeyCompatibility() {
         return editorProfile.capabilities().deletionMode()
             == EditorCapabilities.DeletionMode.RAW_KEY;
+    }
+
+    /** Modifier keys and Ctrl/Alt/Meta chords are app shortcuts; the IME must not consume them. */
+    private static boolean passThroughChord(KeyEvent event) {
+        return ModifierChordPolicy.passThroughToApp(
+            KeyEvent.isModifierKey(event.getKeyCode()),
+            event.isCtrlPressed(),
+            event.isAltPressed(),
+            event.isMetaPressed()
+        );
     }
 
     private static EditorBounds initialBounds(EditorInfo editorInfo) {
