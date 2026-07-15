@@ -225,7 +225,8 @@ public final class KeyboardLayouts {
             rawKey("esc", "Esc", RawKey.ESCAPE), rawKey("prtsc", "PrtSc", RawKey.PRINT_SCREEN),
             rawKey("scrlk", "ScrLk", RawKey.SCROLL_LOCK), rawKey("pause", "Pause", RawKey.BREAK),
             disabled("hanja", "한자"), numKey(),
-            padCell(mode, 0), padCell(mode, 1), padCell(mode, 2), digit("0", "0")
+            padCell(mode, 0), padCell(mode, 1), padCell(mode, 2),
+            rawKey("del", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
             disabled("ralt", "RAlt"), disabled("rctrl", "RCtrl"), disabled("rshift", "RShft"),
@@ -290,11 +291,11 @@ public final class KeyboardLayouts {
             menuControl("height.down", "높이 −", ControlKey.HEIGHT_DOWN),
             menuControl("height.up", "높이 ＋", ControlKey.HEIGHT_UP),
             menuControl("switchime", "키보드전환", ControlKey.SWITCH_IME),
+            menuControl("manageime", "키보드관리", ControlKey.MANAGE_IME),
             menuDisabled("onehand.left", "한손 ◀"),
             menuDisabled("onehand.right", "한손 ▶"),
             menuDisabled("onehand.full", "전체폭"),
             menuDisabled("theme", "테마"),
-            menuDisabled("voice", "음성"),
             menuDisabled("custom1", "커스텀1"),
             menuDisabled("custom2", "커스텀2")
         ));

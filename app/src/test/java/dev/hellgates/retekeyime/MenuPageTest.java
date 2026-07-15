@@ -39,6 +39,7 @@ public final class MenuPageTest {
         assertEquals(ControlKey.HEIGHT_DOWN, menu.findById("touch.menu.height.down").control());
         assertEquals(ControlKey.HEIGHT_UP, menu.findById("touch.menu.height.up").control());
         assertEquals(ControlKey.SWITCH_IME, menu.findById("touch.menu.switchime").control());
+        assertEquals(ControlKey.MANAGE_IME, menu.findById("touch.menu.manageime").control());
     }
 
     @Test
@@ -55,7 +56,7 @@ public final class MenuPageTest {
     @Test
     public void thePlaceholderTilesStayDisabled() {
         for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
-            "touch.menu.voice", "touch.menu.custom1", "touch.menu.custom2", "touch.menu.theme",
+            "touch.menu.custom1", "touch.menu.custom2", "touch.menu.theme",
             "touch.menu.onehand.left", "touch.menu.onehand.right", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);

@@ -43,6 +43,8 @@ public enum ControlKey {
     INSERT_DATE,
     /** Open the system input-method picker (keyboard chooser) through the host. */
     SWITCH_IME,
+    /** Open the system screen for enabling/disabling installed keyboards, through the host. */
+    MANAGE_IME,
     /**
      * Latching modifiers. Their armed state is view-local; it feeds the raw-key action so a
      * subsequent raw key becomes a chord.

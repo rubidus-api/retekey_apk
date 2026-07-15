@@ -31,6 +31,10 @@ public final class ReteKeyboardView extends View {
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
     private final Runnable onHoldElapsed = this::handleLongPress;
+    // Held strongly so the weak listener registration in the preferences survives; it applies
+    // settings changes (feedback strengths, height) to a keyboard that is already on screen.
+    private final SharedPreferences.OnSharedPreferenceChangeListener prefsListener =
+        (changed, key) -> reloadPreferences();
     private enum Page { LETTERS, SPECIAL_CHARS, SPECIAL_KEYS, MENU }
 
     /** One height step applied by the menu's 높이 −/＋ tiles. */
@@ -53,6 +57,8 @@ public final class ReteKeyboardView extends View {
     private Runnable onInsertDate;
     /** Invoked when the 키보드전환 tile is tapped; the host opens the input-method picker. */
     private Runnable onSwitchIme;
+    /** Invoked when the 키보드관리 tile is tapped; the host opens the enable-keyboards screen. */
+    private Runnable onManageIme;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
@@ -91,6 +97,11 @@ public final class ReteKeyboardView extends View {
     /** Sets the handler the 키보드전환 tile runs to open the input-method picker. */
     public void setOnSwitchIme(Runnable handler) {
         this.onSwitchIme = handler;
+    }
+
+    /** Sets the handler the 키보드관리 tile runs to open the enable-keyboards settings screen. */
+    public void setOnManageIme(Runnable handler) {
+        this.onManageIme = handler;
     }
 
     private SharedPreferences prefs() {
@@ -153,6 +164,31 @@ public final class ReteKeyboardView extends View {
             default:
                 return KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
         }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        prefs().registerOnSharedPreferenceChangeListener(prefsListener);
+        reloadPreferences();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        prefs().unregisterOnSharedPreferenceChangeListener(prefsListener);
+        super.onDetachedFromWindow();
+    }
+
+    /** Applies persisted settings (feedback strengths and height) to the on-screen keyboard. */
+    private void reloadPreferences() {
+        feedback.reload(prefs());
+        float storedScale = KeyboardHeightScale.clamp(
+            prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
+        if (storedScale != heightScale) {
+            heightScale = storedScale;
+            requestLayout();
+        }
+        invalidate();
     }
 
     /** Clears transient one-shot and pointer state when the editor session changes. */
@@ -578,6 +614,11 @@ public final class ReteKeyboardView extends View {
             case SWITCH_IME:
                 if (onSwitchIme != null) {
                     onSwitchIme.run();
+                }
+                break;
+            case MANAGE_IME:
+                if (onManageIme != null) {
+                    onManageIme.run();
                 }
                 break;
             case CTRL:

@@ -20,7 +20,7 @@ public final class SpecialKeysPageTest {
     public void theBaseKeypadLayoutMatchesTheSpec() {
         assertEquals(KeyboardLayoutId.SPECIAL_KEYS, NUMBERS.id());
         assertEquals(
-            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "한자", "Num", "7", "8", "9", "0"),
+            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "한자", "Num", "7", "8", "9", "Del"),
             labels(NUMBERS, 0)
         );
         assertEquals(
@@ -44,7 +44,7 @@ public final class SpecialKeysPageTest {
 
     @Test
     public void digitsAndArithmeticCommitText() {
-        for (String label : Arrays.asList("7", "8", "9", "0", "4", "5", "6", "1", "2", "3",
+        for (String label : Arrays.asList("7", "8", "9", "4", "5", "6", "1", "2", "3",
             "+", "-", "=", ".")) {
             SoftwareKeySpec key = findByLabel(NUMBERS, label);
             assertNotNull(label, key);
@@ -70,8 +70,8 @@ public final class SpecialKeysPageTest {
         assertEquals(RawKey.HOME, ARROWS.rows().get(0).get(6).semanticInput().rawKey());
         assertEquals(RawKey.LEFT, findByLabel(ARROWS, "←").semanticInput().rawKey());
         assertEquals(RawKey.PAGE_DOWN, findByLabel(ARROWS, "PgDn").semanticInput().rawKey());
-        // 0 / Enter / Backspace strip and the special keys stay put.
-        assertEquals("0", ARROWS.rows().get(0).get(9).label());
+        // Del / Enter / Backspace strip and the special keys stay put.
+        assertEquals("Del", ARROWS.rows().get(0).get(9).label());
         assertEquals("Esc", ARROWS.rows().get(0).get(0).label());
     }
 

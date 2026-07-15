@@ -36,6 +36,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnEditCommand(this::performEditCommand);
         keyboardView.setOnInsertDate(this::insertCurrentDate);
         keyboardView.setOnSwitchIme(this::showImePicker);
+        keyboardView.setOnManageIme(this::openKeyboardManagement);
         return keyboardView;
     }
 
@@ -70,6 +71,14 @@ public class ReteKeyImeService extends InputMethodService {
         if (manager != null) {
             manager.showInputMethodPicker();
         }
+    }
+
+    /** Opens the system screen for enabling/disabling installed keyboards, from the 키보드관리 tile. */
+    private void openKeyboardManagement() {
+        Intent intent = new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        requestHideSelf(0);
     }
 
     @Override
