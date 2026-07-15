@@ -11,6 +11,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class ReteKeyImeService extends InputMethodService {
@@ -31,15 +33,34 @@ public class ReteKeyImeService extends InputMethodService {
     public View onCreateInputView() {
         keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
         keyboardView.setOnOpenSettings(this::openSettings);
+        keyboardView.setOnEditCommand(this::performEditCommand);
+        keyboardView.setOnInsertDate(this::insertCurrentDate);
         return keyboardView;
     }
 
-    /** Opens ReteKey's settings screen from the ☰ menu key, and hides the keyboard behind it. */
+    /** Opens ReteKey's settings screen from the menu's 설정 tile, hiding the keyboard behind it. */
     private void openSettings() {
         Intent intent = new Intent(this, SettingsActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         requestHideSelf(0);
+    }
+
+    /** Runs an editor context-menu command (copy/paste/undo) on the focused editor. */
+    private void performEditCommand(int contextMenuId) {
+        InputConnection inputConnection = getCurrentInputConnection();
+        if (inputConnection != null) {
+            inputConnection.performContextMenuAction(contextMenuId);
+        }
+    }
+
+    /** Commits the current date and time as text, e.g. "2026. 12.23.(화) 13:59". */
+    private void insertCurrentDate() {
+        DateTimeFormatter formatter =
+            DateTimeFormatter.ofPattern("yyyy. MM.dd.(E) HH:mm", Locale.KOREAN);
+        String stamp = LocalDateTime.now().format(formatter);
+        dispatchSoftwareInput(
+            ProjectKeyEvent.softwareDown("touch.menu.date", SemanticInput.text(stamp)));
     }
 
     @Override

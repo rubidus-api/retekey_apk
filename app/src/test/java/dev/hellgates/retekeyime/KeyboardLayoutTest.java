@@ -214,12 +214,12 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
-    public void theMenuKeyOpensSettings() {
+    public void theMenuKeyOpensTheMenuPage() {
         KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
         SoftwareKeySpec menu = korean.findById("touch.menu");
         assertNotNull(menu);
-        assertTrue("the ☰ menu key is a control that opens settings", menu.isControl());
-        assertEquals(ControlKey.OPEN_SETTINGS, menu.control());
+        assertTrue("the ☰ menu key is a control that opens the menu page", menu.isControl());
+        assertEquals(ControlKey.MENU_LAYER, menu.control());
     }
 
     @Test

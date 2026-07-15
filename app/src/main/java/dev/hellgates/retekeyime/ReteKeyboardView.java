@@ -14,6 +14,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.IntConsumer;
 
 @SuppressLint("ViewConstructor")
 public final class ReteKeyboardView extends View {
@@ -29,7 +30,10 @@ public final class ReteKeyboardView extends View {
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
     private final Runnable onHoldElapsed = this::handleLongPress;
-    private enum Page { LETTERS, SPECIAL_CHARS, SPECIAL_KEYS }
+    private enum Page { LETTERS, SPECIAL_CHARS, SPECIAL_KEYS, MENU }
+
+    /** One height step applied by the menu's 높이 −/＋ tiles. */
+    private static final float HEIGHT_STEP = 0.1f;
 
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
     private Page page = Page.LETTERS;
@@ -40,8 +44,12 @@ public final class ReteKeyboardView extends View {
     private int popupIndex = -1;
     private boolean holdConsumed;
 
-    /** Invoked when the ☰ menu key is tapped; the host service opens the settings screen. */
+    /** Invoked when the 설정 tile is tapped; the host service opens the settings screen. */
     private Runnable onOpenSettings;
+    /** Invoked with an editor context-menu id (copy/paste/undo) for the host to perform. */
+    private IntConsumer onEditCommand;
+    /** Invoked when the 날짜입력 tile is tapped; the host inserts the current date and time. */
+    private Runnable onInsertDate;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
@@ -60,9 +68,19 @@ public final class ReteKeyboardView extends View {
             prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
     }
 
-    /** Sets the handler the ☰ menu key runs to open settings; the service owns the launch. */
+    /** Sets the handler the 설정 tile runs to open settings; the service owns the launch. */
     public void setOnOpenSettings(Runnable handler) {
         this.onOpenSettings = handler;
+    }
+
+    /** Sets the handler for editor context-menu commands (copy/paste/undo) from menu tiles. */
+    public void setOnEditCommand(IntConsumer handler) {
+        this.onEditCommand = handler;
+    }
+
+    /** Sets the handler the 날짜입력 tile runs to insert the current date and time. */
+    public void setOnInsertDate(Runnable handler) {
+        this.onInsertDate = handler;
     }
 
     private SharedPreferences prefs() {
@@ -120,6 +138,8 @@ public final class ReteKeyboardView extends View {
                 return KeyboardLayouts.specialChars();
             case SPECIAL_KEYS:
                 return KeyboardLayouts.specialKeys(numpadMode);
+            case MENU:
+                return KeyboardLayouts.menu();
             default:
                 return KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
         }
@@ -431,6 +451,12 @@ public final class ReteKeyboardView extends View {
         }
     }
 
+    private void runEditCommand(int contextMenuId) {
+        if (onEditCommand != null) {
+            onEditCommand.accept(contextMenuId);
+        }
+    }
+
     private int rowAt(KeyboardLayout layout, float y) {
         int height = getHeight();
         if (height <= 0 || y < 0.0f || y >= height) {
@@ -476,6 +502,10 @@ public final class ReteKeyboardView extends View {
                 numpadMode = NumpadMode.NUMBERS;
                 shiftLayer.clear();
                 break;
+            case MENU_LAYER:
+                page = Page.MENU;
+                shiftLayer.clear();
+                break;
             case PREVIOUS_LAYER:
                 page = Page.LETTERS;
                 shiftLayer.clear();
@@ -493,6 +523,26 @@ public final class ReteKeyboardView extends View {
             case OPEN_SETTINGS:
                 if (onOpenSettings != null) {
                     onOpenSettings.run();
+                }
+                break;
+            case HEIGHT_UP:
+                setKeyboardHeightScale(heightScale + HEIGHT_STEP, true);
+                break;
+            case HEIGHT_DOWN:
+                setKeyboardHeightScale(heightScale - HEIGHT_STEP, true);
+                break;
+            case COPY:
+                runEditCommand(android.R.id.copy);
+                break;
+            case PASTE:
+                runEditCommand(android.R.id.paste);
+                break;
+            case UNDO:
+                runEditCommand(android.R.id.undo);
+                break;
+            case INSERT_DATE:
+                if (onInsertDate != null) {
+                    onInsertDate.run();
                 }
                 break;
             case CTRL:

@@ -6,5 +6,7 @@ public enum KeyboardLayoutId {
     /** The special-characters page (reached by holding the period). */
     SPECIAL_CHARS,
     /** The special-keys page: keypad plus the special/function keys (reached by the pad key). */
-    SPECIAL_KEYS
+    SPECIAL_KEYS,
+    /** The menu-and-functions page (reached by the ☰ menu key). */
+    MENU
 }

@@ -49,6 +49,7 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout KEYS_NUMBERS = buildSpecialKeys(NumpadMode.NUMBERS);
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
     private static final KeyboardLayout KEYS_FUNCTIONS = buildSpecialKeys(NumpadMode.FUNCTIONS);
+    private static final KeyboardLayout MENU = buildMenu();
 
     private KeyboardLayouts() {
     }
@@ -71,6 +72,11 @@ public final class KeyboardLayouts {
 
     public static KeyboardLayout specialChars() {
         return CHARS;
+    }
+
+    /** The menu-and-functions page (reached by the ☰ menu key). */
+    public static KeyboardLayout menu() {
+        return MENU;
     }
 
     /** The special-keys page in a specific keypad/function mode. */
@@ -249,6 +255,44 @@ public final class KeyboardLayouts {
 
     // ---- Shared keys ----
 
+    // ---- Menu page: settings, edit commands, height, and function placeholders ----
+
+    private static KeyboardLayout buildMenu() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        // Each tile spans two columns, so five tiles fill the ten-column grid.
+        rows.add(KeyboardLayout.row(
+            menuControl("settings", "설정", ControlKey.OPEN_SETTINGS),
+            menuDisabled("emoji", "이모지"),
+            menuDisabled("clipboard", "클립보드"),
+            menuControl("date", "날짜입력", ControlKey.INSERT_DATE),
+            menuDisabled("voice", "음성입력")
+        ));
+        rows.add(KeyboardLayout.row(
+            menuControl("undo", "실행취소", ControlKey.UNDO),
+            menuControl("copy", "복사", ControlKey.COPY),
+            menuControl("paste", "붙여넣기", ControlKey.PASTE),
+            menuDisabled("custom1", "커스텀 1"),
+            menuDisabled("custom2", "커스텀 2")
+        ));
+        rows.add(KeyboardLayout.row(
+            menuControl("height.down", "높이 −", ControlKey.HEIGHT_DOWN),
+            menuControl("height.up", "높이 ＋", ControlKey.HEIGHT_UP),
+            menuDisabled("onehand.left", "한손 ◀"),
+            menuDisabled("onehand.right", "한손 ▶"),
+            menuDisabled("onehand.full", "전체폭")
+        ));
+        rows.add(bottomRow(returnToLettersKey()));
+        return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);
+    }
+
+    private static SoftwareKeySpec menuControl(String id, String label, ControlKey control) {
+        return SoftwareKeySpec.control("touch.menu." + id, label, control).withColumnSpan(2);
+    }
+
+    private static SoftwareKeySpec menuDisabled(String id, String label) {
+        return SoftwareKeySpec.disabled("touch.menu." + id, label).withColumnSpan(2);
+    }
+
     private static List<SoftwareKeySpec> bottomRow(SoftwareKeySpec layerKey) {
         return KeyboardLayout.row(
             SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL),
@@ -260,7 +304,7 @@ public final class KeyboardLayouts {
             SoftwareKeySpec.control("touch.layout.toggle", "한/영", ControlKey.LAYOUT_TOGGLE),
             layerKey,
             SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
-            SoftwareKeySpec.control("touch.menu", "☰", ControlKey.OPEN_SETTINGS)
+            SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER)
         );
     }
 
