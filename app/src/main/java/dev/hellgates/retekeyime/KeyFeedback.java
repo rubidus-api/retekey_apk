@@ -44,17 +44,31 @@ final class KeyFeedback {
         return visual;
     }
 
-    /** Plays the haptic tick and click sound for a key press, honoring each strength. */
+    /**
+     * Plays the haptic tick and click sound for a key press, honoring each strength. Feedback is
+     * best-effort: device-specific vibrator/audio failures must never crash the keyboard, so every
+     * call is guarded.
+     */
     void playKeyDown() {
         if (sound > 0.0f && audio != null) {
-            audio.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD, sound);
+            try {
+                audio.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD, sound);
+            } catch (RuntimeException ignored) {
+                // A device that refuses the sound effect must not break typing.
+            }
         }
-        if (haptic > 0.0f && vibrator != null && vibrator.hasVibrator()) {
-            int durationMs = 15 + Math.round(haptic * 25.0f);
-            int amplitude = vibrator.hasAmplitudeControl()
-                ? Math.max(1, Math.round(haptic * 255.0f))
-                : VibrationEffect.DEFAULT_AMPLITUDE;
-            vibrator.vibrate(VibrationEffect.createOneShot(durationMs, amplitude));
+        if (haptic > 0.0f && vibrator != null) {
+            try {
+                if (vibrator.hasVibrator()) {
+                    int durationMs = 15 + Math.round(haptic * 25.0f);
+                    int amplitude = vibrator.hasAmplitudeControl()
+                        ? Math.max(1, Math.round(haptic * 255.0f))
+                        : VibrationEffect.DEFAULT_AMPLITUDE;
+                    vibrator.vibrate(VibrationEffect.createOneShot(durationMs, amplitude));
+                }
+            } catch (RuntimeException ignored) {
+                // Some devices throw from the vibrator; feedback is optional, typing is not.
+            }
         }
     }
 

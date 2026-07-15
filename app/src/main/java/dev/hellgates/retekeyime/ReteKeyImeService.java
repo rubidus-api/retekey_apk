@@ -44,8 +44,7 @@ public class ReteKeyImeService extends InputMethodService {
     private void openSettings() {
         Intent intent = new Intent(this, SettingsActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        requestHideSelf(0);
+        launchFromKeyboard(intent);
     }
 
     /** Runs an editor context-menu command (copy/paste/undo) on the focused editor. */
@@ -69,16 +68,29 @@ public class ReteKeyImeService extends InputMethodService {
     private void showImePicker() {
         InputMethodManager manager = getSystemService(InputMethodManager.class);
         if (manager != null) {
-            manager.showInputMethodPicker();
+            try {
+                manager.showInputMethodPicker();
+            } catch (RuntimeException ignored) {
+                // Opening the picker must never crash the keyboard.
+            }
         }
+    }
+
+    /** Starts an activity from the keyboard, hiding it, without ever crashing on a bad intent. */
+    private void launchFromKeyboard(Intent intent) {
+        try {
+            startActivity(intent);
+        } catch (RuntimeException ignored) {
+            // ActivityNotFound / security failures must not take down the IME.
+        }
+        requestHideSelf(0);
     }
 
     /** Opens the system screen for enabling/disabling installed keyboards, from the 키보드관리 tile. */
     private void openKeyboardManagement() {
         Intent intent = new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        requestHideSelf(0);
+        launchFromKeyboard(intent);
     }
 
     @Override

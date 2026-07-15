@@ -239,7 +239,18 @@ public final class ReteKeyboardView extends View {
                     top + (bottom - top) * 0.62f,
                     paint
                 );
-                if (key.hasLongPress() || key.hasLongPressControl()) {
+                if (key.longPressTexts().size() == 1) {
+                    // A single long-press character is hinted in small text at the top-right corner.
+                    paint.setColor(Color.rgb(120, 130, 145));
+                    float hint = (bottom - top) * 0.22f;
+                    paint.setTextSize(hint);
+                    canvas.drawText(
+                        key.longPressTexts().get(0),
+                        right - hint * 0.75f,
+                        top + hint * 1.15f,
+                        paint
+                    );
+                } else if (key.hasLongPress() || key.hasLongPressControl()) {
                     paint.setColor(Color.rgb(139, 148, 158));
                     canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
                 }

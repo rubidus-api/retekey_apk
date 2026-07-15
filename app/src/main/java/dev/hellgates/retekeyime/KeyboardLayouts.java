@@ -186,8 +186,11 @@ public final class KeyboardLayouts {
         rows.add(KeyboardLayout.row(
             shiftKey(false),
             text("underscore", "_"), text("semicolon", ";"), text("colon", ":"),
-            text("backtick", "`"), text("apostrophe", "'"), text("quote", "\""),
-            text("question", "?"), text("tilde", "~"),
+            text("backtick", "`").withLongPress("-"),
+            text("apostrophe", "'").withLongPress("="),
+            text("quote", "\"").withLongPress("÷"),
+            text("question", "?").withLongPress("×"),
+            text("tilde", "~").withLongPress("+"),
             backspaceKey()
         ));
         rows.add(bottomRow(padKey()));
