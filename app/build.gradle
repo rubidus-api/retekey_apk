@@ -18,8 +18,8 @@ android {
         applicationId = "dev.hellgates.retekeyime"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -41,7 +41,11 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            // Shrink with R8: the app is pure Java but AGP bundles kotlin-stdlib, so without
+            // shrinking the unused stdlib dominates the dex (~2 MB). R8 keeps only reachable code.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             if (keystorePropsFile.exists()) {
                 signingConfig signingConfigs.release
             }
