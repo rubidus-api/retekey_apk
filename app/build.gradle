@@ -2,6 +2,14 @@ plugins {
     id "com.android.application"
 }
 
+// Release signing is configured only when a local, gitignored keystore.properties is present.
+// Public clones without it still build debug and unit tests; a release build there is unsigned.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "dev.hellgates.retekeyime"
     compileSdk = 36
@@ -20,7 +28,24 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    signingConfigs {
+        if (keystorePropsFile.exists()) {
+            release {
+                storeFile rootProject.file(keystoreProps["storeFile"])
+                storePassword keystoreProps["storePassword"]
+                keyAlias keystoreProps["keyAlias"]
+                keyPassword keystoreProps["keyPassword"]
+            }
+        }
+    }
+
     buildTypes {
+        release {
+            minifyEnabled false
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
         instrumentation {
             initWith debug
             applicationIdSuffix = ".instrumentation"
