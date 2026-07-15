@@ -138,7 +138,12 @@ public final class InputSessionController<S> {
                 ExecutionResult.StateEffect.KEEP_CURRENT
             );
         }
-        boolean reserved = !plan.actions().isEmpty();
+        // A raw-key (TYPE_NULL terminal) editor never reports a selection to confirm against, so
+        // its operations are fire-and-forget: they must not reserve ledger entries that could never
+        // be retired, or the session would drift into AWAITING_CONFIRMATION and then desynchronize.
+        boolean statelessEditor =
+            capabilities.deletionMode() == EditorCapabilities.DeletionMode.RAW_KEY;
+        boolean reserved = !plan.actions().isEmpty() && !statelessEditor;
         if (reserved && !ledger.hasCapacity()) {
             desynchronize();
             return localFailure(
@@ -286,7 +291,13 @@ public final class InputSessionController<S> {
             case ADOPT_PROPOSED_AWAITING_CONFIRMATION:
                 currentState = plan.proposedState();
                 workingBounds = plan.expectation().workingBounds();
-                syncState = SynchronizationState.AWAITING_CONFIRMATION;
+                if (capabilities.deletionMode() == EditorCapabilities.DeletionMode.RAW_KEY) {
+                    // Terminal-style editors never confirm, so settle into a clean neutral state
+                    // (WAITING_FOR_BOUNDS) instead of awaiting a confirmation that never comes.
+                    syncState = stateAfterNoEditorMutation();
+                } else {
+                    syncState = SynchronizationState.AWAITING_CONFIRMATION;
+                }
                 break;
             case KEEP_CURRENT:
                 if (reserved) {

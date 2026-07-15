@@ -82,7 +82,13 @@ public final class CheckedEditorExecutor {
         if (!context.capabilities().isSupported()) {
             return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
         }
-        if (requiresSelection(plan.actions()) && !context.bounds().hasSelection()) {
+        if (requiresSelection(plan.actions())
+            && context.capabilities().deletionMode()
+                == EditorCapabilities.DeletionMode.RICH_TEXT
+            && !context.bounds().hasSelection()) {
+            // Only rich-text deletion needs the cursor position (deleteSurroundingText). A raw-key
+            // editor deletes with a key event, so it must not be blocked when the selection is
+            // unknown — otherwise backspace stops working in terminals.
             return notDispatched(plan, ExecutionResult.Reason.INVALID_SELECTION);
         }
         if (context.capabilities().isSensitive()

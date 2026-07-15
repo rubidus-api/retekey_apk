@@ -59,6 +59,38 @@ public final class InputSessionControllerTest {
     }
 
     @Test
+    public void rawKeyTerminalCommitsStayStatelessAndNeverDesynchronize() {
+        // A terminal (RAW_KEY / TYPE_NULL) never reports a selection; repeated commits must not
+        // accumulate pending expectations or drift into AWAITING_CONFIRMATION and desynchronize.
+        EditorCapabilities rawKey = EditorCapabilities.rawKey();
+        InputSessionController<String> controller = new InputSessionController<>(4);
+        long generation = controller.start("neutral", EditorBounds.unknown(), rawKey);
+        for (int i = 0; i < 50; i++) {
+            ExecutionResult r = controller.execute(
+                controller.plan(
+                    DispatchResult.handled(KeyAction.commitText("x")),
+                    "s" + i,
+                    EditorBounds.unknown()
+                ),
+                () -> EditorEndpoint.of(generation, new FakeEditorBridge())
+            );
+            Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, r.outcome());
+            Assert.assertEquals(0, controller.pendingExpectationCount());
+        }
+        Assert.assertEquals(SynchronizationState.WAITING_FOR_BOUNDS, controller.syncState());
+        // The terminal keeps reporting an unknown selection; that must not desynchronize the session.
+        Assert.assertEquals(
+            SelectionReconcileResult.WAITING_FOR_BOUNDS,
+            controller.updateSelection(generation, EditorBounds.unknown()));
+        // Input still works afterwards.
+        ExecutionResult after = controller.execute(
+            controller.plan(
+                DispatchResult.handled(KeyAction.commitText("y")), "after", EditorBounds.unknown()),
+            () -> EditorEndpoint.of(generation, new FakeEditorBridge()));
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, after.outcome());
+    }
+
+    @Test
     public void dispatchedPlanAdoptsTentativeStateUntilMatchingFeedback() {
         InputSessionController<String> controller = new InputSessionController<>(4);
         long generation = controller.start("initial", START, RICH);
