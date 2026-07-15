@@ -513,7 +513,8 @@ public final class InputSessionControllerTest {
         AtomicInteger blockedResolves = new AtomicInteger();
         ExecutionResult blocked = controller.execute(
             controller.plan(
-                DispatchResult.handled(KeyAction.commitText("x")),
+                // Deletion still requires a known selection, so it stays blocked here.
+                DispatchResult.handled(KeyAction.deleteBackward()),
                 "must-not-adopt",
                 EditorBounds.unknown()
             ),

@@ -57,9 +57,13 @@ public final class CheckedEditorExecutor {
             );
         }
 
+        boolean rawEditor = context.capabilities().deletionMode()
+            == EditorCapabilities.DeletionMode.RAW_KEY;
+        // A raw-key editor (a terminal like Termius reporting TYPE_NULL) uses key events for
+        // deletion and enter, but plain committed text still goes through the ordinary commit path
+        // so typed characters actually land.
         if (isSingleRawKey(plan.actions())
-            || context.capabilities().deletionMode()
-                == EditorCapabilities.DeletionMode.RAW_KEY) {
+            || (rawEditor && !isSingleCommitText(plan.actions()))) {
             return executeRawCompatibility(plan, endpoint);
         }
         return executeRichPlan(plan, context, endpoint);
@@ -90,7 +94,8 @@ public final class CheckedEditorExecutor {
         }
         if (context.capabilities().deletionMode()
             == EditorCapabilities.DeletionMode.RAW_KEY
-            && !isSingleRawCompatibleAction(plan.actions())) {
+            && !isSingleRawCompatibleAction(plan.actions())
+            && !isSingleCommitText(plan.actions())) {
             return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
         }
         if (context.capabilities().deletionMode()
@@ -129,6 +134,10 @@ public final class CheckedEditorExecutor {
             || kind == KeyAction.Kind.PERFORM_EDITOR_ACTION;
     }
 
+    private static boolean isSingleCommitText(List<KeyAction> actions) {
+        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.COMMIT_TEXT;
+    }
+
     private static boolean isSingleRawKey(List<KeyAction> actions) {
         return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.RAW_KEY;
     }
@@ -147,11 +156,12 @@ public final class CheckedEditorExecutor {
     }
 
     private static boolean requiresSelection(List<KeyAction> actions) {
+        // Only backward deletion needs a known selection: deleteSurroundingText depends on the
+        // cursor position. Inserting or composing text lands at the editor's own cursor regardless
+        // of what the IME knows, so those must not be blocked — otherwise editors that never report
+        // a selection (terminals like Termius, some custom views) can never receive typed text.
         for (KeyAction action : actions) {
-            if (action.kind() == KeyAction.Kind.COMMIT_TEXT
-                || action.kind() == KeyAction.Kind.SET_COMPOSING_TEXT
-                || action.kind() == KeyAction.Kind.DELETE_BACKWARD
-                || action.kind() == KeyAction.Kind.FINISH_COMPOSING) {
+            if (action.kind() == KeyAction.Kind.DELETE_BACKWARD) {
                 return true;
             }
         }

@@ -349,9 +349,10 @@ public final class CheckedEditorExecutorTest {
             plan(4, 1, Collections.singletonList(KeyAction.commitText("x"))),
             ExecutionResult.Reason.STALE_REVISION
         );
+        // Only deletion requires a known selection; committing text no longer does.
         assertPreflightFailure(
             ExecutionContext.active(4, 2, EditorBounds.unknown(), RICH),
-            plan(4, 2, Collections.singletonList(KeyAction.commitText("x"))),
+            plan(4, 2, Collections.singletonList(KeyAction.deleteBackward())),
             ExecutionResult.Reason.INVALID_SELECTION
         );
         assertPreflightFailure(
@@ -468,7 +469,40 @@ public final class CheckedEditorExecutorTest {
     }
 
     @Test
-    public void unknownSelectionRejectsFinishComposingBeforeConnectionResolution() {
+    public void commitTextSucceedsWithUnknownSelection() {
+        // Terminals (e.g. Termius) never report a selection; committing text must still work.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        ExecutionResult result = EXECUTOR.execute(
+            plan(1, 0, Collections.singletonList(KeyAction.commitText("hi"))),
+            ExecutionContext.active(1, 0, EditorBounds.unknown(), RICH),
+            () -> EditorEndpoint.of(1, bridge)
+        );
+
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+        Assert.assertTrue(
+            "the commit reached the editor",
+            bridge.trace().contains("commitText:length=2:cursor=1"));
+    }
+
+    @Test
+    public void commitTextReachesRawKeyTerminalEditor() {
+        // TYPE_NULL editors (RAW_KEY caps, e.g. a terminal) use key events for deletion but still
+        // receive plain committed text through the ordinary commit path.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        ExecutionResult result = EXECUTOR.execute(
+            plan(1, 0, Collections.singletonList(KeyAction.commitText("hi"))),
+            ExecutionContext.active(1, 0, EditorBounds.unknown(), EditorCapabilities.rawKey()),
+            () -> EditorEndpoint.of(1, bridge)
+        );
+
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+        Assert.assertTrue(
+            "the commit reached the terminal editor",
+            bridge.trace().contains("commitText:length=2:cursor=1"));
+    }
+
+    @Test
+    public void unknownSelectionRejectsDeletionBeforeConnectionResolution() {
         AtomicInteger resolves = new AtomicInteger();
         TransitionPlan<String> plan = TransitionPlan.of(
             1,
@@ -476,7 +510,7 @@ public final class CheckedEditorExecutorTest {
             DispatchResult.Disposition.HANDLED,
             "state",
             EditorBounds.unknown(),
-            Collections.singletonList(KeyAction.finishComposing())
+            Collections.singletonList(KeyAction.deleteBackward())
         );
 
         ExecutionResult result = EXECUTOR.execute(
