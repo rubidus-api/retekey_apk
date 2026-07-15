@@ -184,7 +184,8 @@ final class FakeEditorBridge implements EditorBridge {
     @Override
     public EditorCallResult sendRawKey(RawEditorKey key) {
         return record(
-            "sendRawKey:kind=" + key.kind() + ":action=" + key.action(),
+            "sendRawKey:key=" + key.key() + ":modifiers=" + key.modifiers()
+                + ":action=" + key.action(),
             () -> applyRawKey(key)
         );
     }
@@ -240,10 +241,16 @@ final class FakeEditorBridge implements EditorBridge {
         if (key.action() != RawEditorKey.Action.DOWN) {
             return;
         }
-        if (key.kind() == RawEditorKey.Kind.DELETE) {
-            deleteCodePoints(1, 0);
-        } else {
-            replace("\n", false);
+        switch (key.key()) {
+            case BACKSPACE:
+                deleteCodePoints(1, 0);
+                break;
+            case ENTER:
+                replace("\n", false);
+                break;
+            default:
+                // Navigation and other raw keys do not change this fake's text model.
+                break;
         }
     }
 }

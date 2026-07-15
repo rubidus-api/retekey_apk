@@ -219,10 +219,38 @@ public final class ReteKeyboardView extends View {
             return;
         }
         if (held.enabled()) {
-            sink.accept(held.pressEvent());
+            sink.accept(pressEventWithModifiers(held));
             consumeOneShotShift();
             performClick();
         }
+    }
+
+    /** Folds the armed Ctrl/Meta/Alt into a raw key so it forms a chord; other keys are unchanged. */
+    private ProjectKeyEvent pressEventWithModifiers(SoftwareKeySpec key) {
+        SemanticInput input = key.semanticInput();
+        if (input.kind() != SemanticInput.Kind.RAW_KEY || armedModifiers.isEmpty()) {
+            return key.pressEvent();
+        }
+        Set<KeyModifier> mods = EnumSet.noneOf(KeyModifier.class);
+        for (ControlKey armed : armedModifiers) {
+            switch (armed) {
+                case CTRL:
+                    mods.add(KeyModifier.CTRL);
+                    break;
+                case ALT:
+                    mods.add(KeyModifier.ALT);
+                    break;
+                case META:
+                    mods.add(KeyModifier.META);
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (mods.isEmpty()) {
+            return key.pressEvent();
+        }
+        return ProjectKeyEvent.softwareDown(key.stableKeyId(), input.withModifiers(mods));
     }
 
     private void handleLongPress() {

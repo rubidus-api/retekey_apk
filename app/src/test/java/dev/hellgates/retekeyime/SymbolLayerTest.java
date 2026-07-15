@@ -98,19 +98,31 @@ public final class SymbolLayerTest {
     }
 
     @Test
-    public void specialKeysStayDisabledUntilRawKeyLands() {
-        for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
-            for (int keyIndex = 0; keyIndex <= 4; keyIndex++) {
-                SoftwareKeySpec key = SPECIAL.rows().get(rowIndex).get(keyIndex);
-                if (key.control() == ControlKey.SHIFT) {
-                    continue;
-                }
-                assertFalse(
-                    "special key must stay disabled: " + key.label(),
-                    key.enabled()
-                );
-                assertFalse(key.isControl());
-            }
+    public void theRawSpecialKeysSendKeyEvents() {
+        for (String id : Arrays.asList(
+            "touch.special.esc", "touch.special.prtsc", "touch.special.scrlk",
+            "touch.special.pause", "touch.special.menu"
+        )) {
+            SoftwareKeySpec key = SPECIAL.findById(id);
+            assertNotNull(id, key);
+            assertTrue(id + " sends a raw key", key.enabled());
+            assertEquals(SemanticInput.Kind.RAW_KEY, key.semanticInput().kind());
+        }
+        assertEquals(RawKey.ESCAPE, SPECIAL.findById("touch.special.esc").semanticInput().rawKey());
+        assertEquals(RawKey.MENU, SPECIAL.findById("touch.special.menu").semanticInput().rawKey());
+    }
+
+    @Test
+    public void mediaAndKoreanSpecialKeysStayDisabledPendingTheirSystems() {
+        for (String id : Arrays.asList(
+            "touch.special.play", "touch.special.mute", "touch.special.volup",
+            "touch.special.voldn", "touch.special.hanja", "touch.special.lang",
+            "touch.special.rctrl", "touch.special.ralt", "touch.special.rshift"
+        )) {
+            SoftwareKeySpec key = SPECIAL.findById(id);
+            assertNotNull(id, key);
+            assertFalse(id + " stays disabled for now", key.enabled());
+            assertFalse(key.isControl());
         }
     }
 
@@ -152,6 +164,21 @@ public final class SymbolLayerTest {
         assertEquals("F7", functions.rows().get(0).get(6).label());
         assertEquals("F1", functions.rows().get(2).get(6).label());
         assertEquals("F3", functions.rows().get(2).get(8).label());
+    }
+
+    @Test
+    public void theArrowAndFunctionPadsSendRawKeys() {
+        KeyboardLayout arrows = KeyboardLayouts.symbol(NumpadMode.ARROWS, false);
+        SoftwareKeySpec left = arrows.rows().get(1).get(6);
+        assertEquals("←", left.label());
+        assertTrue(left.enabled());
+        assertEquals(RawKey.LEFT, left.semanticInput().rawKey());
+        assertEquals(RawKey.HOME, arrows.rows().get(0).get(6).semanticInput().rawKey());
+        assertEquals(RawKey.PAGE_DOWN, arrows.rows().get(2).get(8).semanticInput().rawKey());
+
+        KeyboardLayout functions = KeyboardLayouts.symbol(NumpadMode.FUNCTIONS, false);
+        assertEquals(RawKey.F7, functions.rows().get(0).get(6).semanticInput().rawKey());
+        assertEquals(RawKey.F1, functions.rows().get(2).get(6).semanticInput().rawKey());
     }
 
     @Test

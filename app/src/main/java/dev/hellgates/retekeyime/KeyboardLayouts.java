@@ -22,7 +22,17 @@ public final class KeyboardLayouts {
     private static final String[] ARROW_CELLS = {
         "Home", "↑", "PgUp", "←", "Ins", "→", "End", "↓", "PgDn"
     };
+    private static final RawKey[] ARROW_KEYS = {
+        RawKey.HOME, RawKey.UP, RawKey.PAGE_UP,
+        RawKey.LEFT, RawKey.INSERT, RawKey.RIGHT,
+        RawKey.END, RawKey.DOWN, RawKey.PAGE_DOWN
+    };
     private static final int[] FUNCTION_CELLS = {7, 8, 9, 4, 5, 6, 1, 2, 3};
+    private static final RawKey[] FUNCTION_KEYS = {
+        RawKey.F7, RawKey.F8, RawKey.F9,
+        RawKey.F4, RawKey.F5, RawKey.F6,
+        RawKey.F1, RawKey.F2, RawKey.F3
+    };
 
     private static final SoftwareKeySpec[][] PUNCTUATION = {
         {
@@ -42,15 +52,19 @@ public final class KeyboardLayouts {
         }
     };
 
-    // The special keys are drawn but disabled until the raw-key action and a media session land.
+    // The raw special keys are live. The media keys need a media session (still disabled), and
+    // 한자 / Lang belong to RFC-0006 Korean input, so they stay disabled here.
     private static final SoftwareKeySpec[][] SPECIAL_KEYS = {
         {
-            special("esc", "Esc"), special("prtsc", "PrtSc"), special("scrlk", "ScrLk"),
-            special("pause", "Pause"), special("hanja", "한자")
+            rawSpecial("esc", "Esc", RawKey.ESCAPE),
+            rawSpecial("prtsc", "PrtSc", RawKey.PRINT_SCREEN),
+            rawSpecial("scrlk", "ScrLk", RawKey.SCROLL_LOCK),
+            rawSpecial("pause", "Pause", RawKey.BREAK),
+            special("hanja", "한자")
         },
         {
             special("rctrl", "RCtrl"), special("ralt", "RAlt"), special("rshift", "RShft"),
-            special("menu", "Menu"), special("lang", "Lang")
+            rawSpecial("menu", "Menu", RawKey.MENU), special("lang", "Lang")
         },
         {
             null, special("play", "Play"), special("mute", "Mute"),
@@ -255,11 +269,16 @@ public final class KeyboardLayouts {
                 return symDigit("num." + digit, digit);
             }
             case ARROWS:
-                return SoftwareKeySpec.disabled("touch.numpad.arrow." + cell, ARROW_CELLS[cell]);
+                return SoftwareKeySpec.enabled(
+                    "touch.numpad.arrow." + cell,
+                    ARROW_CELLS[cell],
+                    SemanticInput.rawKey(ARROW_KEYS[cell])
+                );
             default:
-                return SoftwareKeySpec.disabled(
+                return SoftwareKeySpec.enabled(
                     "touch.numpad.fn." + cell,
-                    "F" + FUNCTION_CELLS[cell]
+                    "F" + FUNCTION_CELLS[cell],
+                    SemanticInput.rawKey(FUNCTION_KEYS[cell])
                 );
         }
     }
@@ -316,6 +335,10 @@ public final class KeyboardLayouts {
 
     private static SoftwareKeySpec special(String id, String label) {
         return SoftwareKeySpec.disabled("touch.special." + id, label);
+    }
+
+    private static SoftwareKeySpec rawSpecial(String id, String label, RawKey key) {
+        return SoftwareKeySpec.enabled("touch.special." + id, label, SemanticInput.rawKey(key));
     }
 
     private static SoftwareKeySpec letter(String lowercase, boolean shifted) {

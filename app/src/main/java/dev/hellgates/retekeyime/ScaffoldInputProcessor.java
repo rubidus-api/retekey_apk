@@ -49,6 +49,10 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
                 return EditorActionPolicy.enter(
                     Objects.requireNonNull(editorProfile.get(), "editor profile")
                 );
+            case RAW_KEY:
+                return DispatchResult.handled(
+                    KeyAction.rawKey(input.rawKey(), input.modifiers())
+                );
             default:
                 throw new IllegalStateException("unsupported semantic input: " + input.kind());
         }

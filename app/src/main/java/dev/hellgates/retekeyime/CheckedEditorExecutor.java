@@ -57,8 +57,9 @@ public final class CheckedEditorExecutor {
             );
         }
 
-        if (context.capabilities().deletionMode()
-            == EditorCapabilities.DeletionMode.RAW_KEY) {
+        if (isSingleRawKey(plan.actions())
+            || context.capabilities().deletionMode()
+                == EditorCapabilities.DeletionMode.RAW_KEY) {
             return executeRawCompatibility(plan, endpoint);
         }
         return executeRichPlan(plan, context, endpoint);
@@ -124,7 +125,12 @@ public final class CheckedEditorExecutor {
         KeyAction.Kind kind = actions.get(0).kind();
         return kind == KeyAction.Kind.DELETE_BACKWARD
             || kind == KeyAction.Kind.RAW_ENTER
+            || kind == KeyAction.Kind.RAW_KEY
             || kind == KeyAction.Kind.PERFORM_EDITOR_ACTION;
+    }
+
+    private static boolean isSingleRawKey(List<KeyAction> actions) {
+        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.RAW_KEY;
     }
 
     private static boolean containsRawEnter(List<KeyAction> actions) {
@@ -161,11 +167,20 @@ public final class CheckedEditorExecutor {
         if (action.kind() == KeyAction.Kind.PERFORM_EDITOR_ACTION) {
             return executeFocusAction(plan, endpoint, action, 0, 0);
         }
-        RawEditorKey.Kind rawKind = action.kind() == KeyAction.Kind.RAW_ENTER
-            ? RawEditorKey.Kind.ENTER
-            : RawEditorKey.Kind.DELETE;
+        RawKey rawKey;
+        java.util.Set<KeyModifier> modifiers;
+        if (action.kind() == KeyAction.Kind.RAW_KEY) {
+            rawKey = action.rawKey();
+            modifiers = action.modifiers();
+        } else {
+            rawKey = action.kind() == KeyAction.Kind.RAW_ENTER
+                ? RawKey.ENTER
+                : RawKey.BACKSPACE;
+            modifiers = java.util.Collections.emptySet();
+        }
         EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
-            rawKind,
+            rawKey,
+            modifiers,
             RawEditorKey.Action.DOWN
         )));
         if (down.isStaleSession()) {
@@ -175,7 +190,8 @@ public final class CheckedEditorExecutor {
             );
         }
         EditorCallResult up = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
-            rawKind,
+            rawKey,
+            modifiers,
             RawEditorKey.Action.UP
         )));
         if (!down.isSucceeded() || !up.isSucceeded()) {
@@ -439,6 +455,7 @@ public final class CheckedEditorExecutor {
                 return executeRichDelete(endpoint, bounds, capabilities);
             case PERFORM_EDITOR_ACTION:
             case RAW_ENTER:
+            case RAW_KEY:
                 throw new IllegalStateException("terminal action reached batched executor");
             default:
                 throw new IllegalStateException("unsupported editor action kind");
@@ -558,7 +575,7 @@ public final class CheckedEditorExecutor {
     ) {
         EditorBridge bridge = endpoint.bridge();
         EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
-            RawEditorKey.Kind.DELETE,
+            RawKey.BACKSPACE,
             RawEditorKey.Action.DOWN
         )));
         if (down.isStaleSession()) {
@@ -569,7 +586,7 @@ public final class CheckedEditorExecutor {
             );
         }
         EditorCallResult up = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
-            RawEditorKey.Kind.DELETE,
+            RawKey.BACKSPACE,
             RawEditorKey.Action.UP
         )));
         int operationCount = priorOperationCount + 2;

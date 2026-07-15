@@ -198,8 +198,8 @@ public final class UnicodeDeletionTest {
         );
 
         Assert.assertEquals(Arrays.asList(
-            "sendRawKey:kind=DELETE:action=DOWN",
-            "sendRawKey:kind=DELETE:action=UP"
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=DOWN",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=UP"
         ), bridge.trace());
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
     }
@@ -221,7 +221,7 @@ public final class UnicodeDeletionTest {
                 );
 
                 Assert.assertEquals(2, bridge.trace().size());
-                Assert.assertEquals("sendRawKey:kind=DELETE:action=UP", bridge.trace().get(1));
+                Assert.assertEquals("sendRawKey:key=BACKSPACE:modifiers=[]:action=UP", bridge.trace().get(1));
                 Assert.assertEquals(ExecutionResult.Outcome.UNCERTAIN, result.outcome());
                 Assert.assertEquals(
                     failure.isRejected()
@@ -282,8 +282,8 @@ public final class UnicodeDeletionTest {
                 "beginBatchEdit",
                 "deleteCodePoints:before=1:after=0",
                 "getTextBeforeCursor:max=2:flags=0",
-                "sendRawKey:kind=DELETE:action=DOWN",
-                "sendRawKey:kind=DELETE:action=UP",
+                "sendRawKey:key=BACKSPACE:modifiers=[]:action=DOWN",
+                "sendRawKey:key=BACKSPACE:modifiers=[]:action=UP",
                 "endBatchEdit"
             ), bridge.trace());
             Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
@@ -305,8 +305,8 @@ public final class UnicodeDeletionTest {
         Assert.assertEquals(Arrays.asList(
             "beginBatchEdit",
             "deleteCodePoints:before=1:after=0",
-            "sendRawKey:kind=DELETE:action=DOWN",
-            "sendRawKey:kind=DELETE:action=UP",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=DOWN",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=UP",
             "endBatchEdit"
         ), bridge.trace());
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());

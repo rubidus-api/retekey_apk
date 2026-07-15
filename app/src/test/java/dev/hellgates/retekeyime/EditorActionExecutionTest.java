@@ -152,8 +152,8 @@ public final class EditorActionExecutionTest {
         );
 
         Assert.assertEquals(Arrays.asList(
-            "sendRawKey:kind=ENTER:action=DOWN",
-            "sendRawKey:kind=ENTER:action=UP"
+            "sendRawKey:key=ENTER:modifiers=[]:action=DOWN",
+            "sendRawKey:key=ENTER:modifiers=[]:action=UP"
         ), bridge.trace());
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
     }

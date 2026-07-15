@@ -25,8 +25,14 @@ turn the pad into the arrow cluster or the function keys.
 
 ![Symbol and number layer](docs/images/keyboard-symbol.png)
 
-Its Shift page carries the special keys (drawn muted here because they and the
-bottom-row modifiers act once the raw-key action lands):
+The Num toggle turns the keypad into arrows and navigation, which send real key
+events to the editor:
+
+![Arrow / navigation mode](docs/images/keyboard-arrows.png)
+
+Its Shift page carries the special keys. Esc, PrtSc, ScrLk, Pause, and Menu send
+key events; the media keys, 한자/Lang, and the right-hand modifiers stay muted
+until their systems land (RFC-0005/0006):
 
 ![Special-key page](docs/images/keyboard-special.png)
 

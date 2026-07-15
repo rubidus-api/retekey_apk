@@ -87,16 +87,14 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             int action = key.action() == RawEditorKey.Action.DOWN
                 ? KeyEvent.ACTION_DOWN
                 : KeyEvent.ACTION_UP;
-            int keyCode = key.kind() == RawEditorKey.Kind.DELETE
-                ? KeyEvent.KEYCODE_DEL
-                : KeyEvent.KEYCODE_ENTER;
+            int metaState = metaStateFor(key.modifiers());
             KeyEvent event = new KeyEvent(
                 downTime,
                 eventTime,
                 action,
-                keyCode,
+                keyCodeFor(key.key()),
                 0,
-                0,
+                metaState,
                 KeyCharacterMap.VIRTUAL_KEYBOARD,
                 0,
                 RAW_KEY_FLAGS
@@ -111,6 +109,65 @@ public final class InputConnectionEditorBridge implements EditorBridge {
                 rawKeyDownTime = 0;
             }
             return EditorCallResult.runtimeFailure();
+        }
+    }
+
+    static int metaStateFor(java.util.Set<KeyModifier> modifiers) {
+        int meta = 0;
+        for (KeyModifier modifier : modifiers) {
+            switch (modifier) {
+                case CTRL:
+                    meta |= KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
+                    break;
+                case ALT:
+                    meta |= KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON;
+                    break;
+                case SHIFT:
+                    meta |= KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON;
+                    break;
+                case META:
+                    meta |= KeyEvent.META_META_ON | KeyEvent.META_META_LEFT_ON;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return meta;
+    }
+
+    static int keyCodeFor(RawKey key) {
+        switch (key) {
+            case ENTER: return KeyEvent.KEYCODE_ENTER;
+            case BACKSPACE: return KeyEvent.KEYCODE_DEL;
+            case ESCAPE: return KeyEvent.KEYCODE_ESCAPE;
+            case TAB: return KeyEvent.KEYCODE_TAB;
+            case FORWARD_DELETE: return KeyEvent.KEYCODE_FORWARD_DEL;
+            case INSERT: return KeyEvent.KEYCODE_INSERT;
+            case LEFT: return KeyEvent.KEYCODE_DPAD_LEFT;
+            case RIGHT: return KeyEvent.KEYCODE_DPAD_RIGHT;
+            case UP: return KeyEvent.KEYCODE_DPAD_UP;
+            case DOWN: return KeyEvent.KEYCODE_DPAD_DOWN;
+            case HOME: return KeyEvent.KEYCODE_MOVE_HOME;
+            case END: return KeyEvent.KEYCODE_MOVE_END;
+            case PAGE_UP: return KeyEvent.KEYCODE_PAGE_UP;
+            case PAGE_DOWN: return KeyEvent.KEYCODE_PAGE_DOWN;
+            case PRINT_SCREEN: return KeyEvent.KEYCODE_SYSRQ;
+            case SCROLL_LOCK: return KeyEvent.KEYCODE_SCROLL_LOCK;
+            case BREAK: return KeyEvent.KEYCODE_BREAK;
+            case MENU: return KeyEvent.KEYCODE_MENU;
+            case F1: return KeyEvent.KEYCODE_F1;
+            case F2: return KeyEvent.KEYCODE_F2;
+            case F3: return KeyEvent.KEYCODE_F3;
+            case F4: return KeyEvent.KEYCODE_F4;
+            case F5: return KeyEvent.KEYCODE_F5;
+            case F6: return KeyEvent.KEYCODE_F6;
+            case F7: return KeyEvent.KEYCODE_F7;
+            case F8: return KeyEvent.KEYCODE_F8;
+            case F9: return KeyEvent.KEYCODE_F9;
+            case F10: return KeyEvent.KEYCODE_F10;
+            case F11: return KeyEvent.KEYCODE_F11;
+            case F12: return KeyEvent.KEYCODE_F12;
+            default: return KeyEvent.KEYCODE_UNKNOWN;
         }
     }
 
