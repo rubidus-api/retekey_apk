@@ -260,7 +260,7 @@ public final class KeyboardLayouts {
             SoftwareKeySpec.control("touch.layout.toggle", "한/영", ControlKey.LAYOUT_TOGGLE),
             layerKey,
             SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
-            SoftwareKeySpec.disabled("touch.menu", "☰")
+            SoftwareKeySpec.control("touch.menu", "☰", ControlKey.OPEN_SETTINGS)
         );
     }
 

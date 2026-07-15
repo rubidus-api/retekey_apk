@@ -17,6 +17,8 @@ public enum ControlKey {
     NUMLOCK,
     /** Toggle the special-keys page to its function/media variant. */
     FUNCTION_LOCK,
+    /** Open ReteKey's settings screen. Handled by the host service, not the input pipeline. */
+    OPEN_SETTINGS,
     /**
      * Latching modifiers. Their armed state is view-local; it feeds the raw-key action so a
      * subsequent raw key becomes a chord.

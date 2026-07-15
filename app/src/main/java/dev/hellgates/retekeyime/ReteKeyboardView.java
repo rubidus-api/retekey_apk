@@ -40,6 +40,8 @@ public final class ReteKeyboardView extends View {
     private int popupIndex = -1;
     private boolean holdConsumed;
 
+    /** Invoked when the ☰ menu key is tapped; the host service opens the settings screen. */
+    private Runnable onOpenSettings;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
@@ -56,6 +58,11 @@ public final class ReteKeyboardView extends View {
         setClickable(true);
         heightScale = KeyboardHeightScale.clamp(
             prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
+    }
+
+    /** Sets the handler the ☰ menu key runs to open settings; the service owns the launch. */
+    public void setOnOpenSettings(Runnable handler) {
+        this.onOpenSettings = handler;
     }
 
     private SharedPreferences prefs() {
@@ -482,6 +489,11 @@ public final class ReteKeyboardView extends View {
                 numpadMode = numpadMode == NumpadMode.FUNCTIONS
                     ? NumpadMode.NUMBERS
                     : NumpadMode.FUNCTIONS;
+                break;
+            case OPEN_SETTINGS:
+                if (onOpenSettings != null) {
+                    onOpenSettings.run();
+                }
                 break;
             case CTRL:
             case META:

@@ -5,4 +5,11 @@
     <string name="preview_hint">Enable ReteKey, then type in the field to try the keyboard.</string>
     <string name="preview_field_hint">Type here…</string>
     <string name="preview_pick_keyboard">Choose keyboard</string>
+    <string name="preview_open_settings">⚙ Settings</string>
+    <string name="settings_title">ReteKey settings</string>
+    <string name="settings_height_label">Keyboard height</string>
+    <string name="settings_height_hint">Slide to adjust the keyboard\'s vertical height. You can also drag two fingers up or down on the keyboard.</string>
+    <string name="settings_height_value">Height: %1$d%%</string>
+    <string name="settings_preview">Preview</string>
+    <string name="settings_reset">Default</string>
 </resources>

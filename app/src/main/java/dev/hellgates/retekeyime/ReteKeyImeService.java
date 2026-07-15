@@ -1,5 +1,6 @@
 package dev.hellgates.retekeyime;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build;
@@ -29,7 +30,16 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public View onCreateInputView() {
         keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
+        keyboardView.setOnOpenSettings(this::openSettings);
         return keyboardView;
+    }
+
+    /** Opens ReteKey's settings screen from the ☰ menu key, and hides the keyboard behind it. */
+    private void openSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        requestHideSelf(0);
     }
 
     @Override

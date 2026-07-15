@@ -214,12 +214,12 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
-    public void navigationAndSymbolPlaceholdersStayDisabled() {
+    public void theMenuKeyOpensSettings() {
         KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
         SoftwareKeySpec menu = korean.findById("touch.menu");
         assertNotNull(menu);
-        assertFalse("the menu key stays disabled until its surface exists", menu.enabled());
-        assertFalse(menu.isControl());
+        assertTrue("the ☰ menu key is a control that opens settings", menu.isControl());
+        assertEquals(ControlKey.OPEN_SETTINGS, menu.control());
     }
 
     @Test

@@ -1,6 +1,7 @@
 package dev.hellgates.retekeyime;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.InputType;
@@ -61,7 +62,16 @@ public final class PreviewActivity extends Activity {
         chooser.setOnClickListener(this::showKeyboardPicker);
         root.addView(chooser);
 
+        Button settings = new Button(this);
+        settings.setText(R.string.preview_open_settings);
+        settings.setOnClickListener(this::openSettings);
+        root.addView(settings);
+
         setContentView(root);
+    }
+
+    private void openSettings(View view) {
+        startActivity(new Intent(this, SettingsActivity.class));
     }
 
     @Override
