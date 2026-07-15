@@ -1,5 +1,6 @@
 package dev.hellgates.retekeyime;
 
+import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build;
 import android.widget.Toast;
@@ -22,6 +23,8 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean sessionActive;
     private Toast editorFailureToast;
     private ReteKeyboardView keyboardView;
+    private SoftKeyboardVisibilityPolicy.Mode softKeyboardMode =
+        SoftKeyboardVisibilityPolicy.Mode.HIDE_WHEN_HARDWARE;
 
     @Override
     public View onCreateInputView() {
@@ -211,6 +214,23 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public boolean onEvaluateFullscreenMode() {
         return false;
+    }
+
+    @Override
+    public boolean onEvaluateInputViewShown() {
+        super.onEvaluateInputViewShown();
+        // Hide the on-screen keyboard when a hardware keyboard is usable; input still passes
+        // through the service. The mode will be user-configurable once settings land (RFC-0007).
+        return SoftKeyboardVisibilityPolicy.shouldShow(
+            hasActiveHardwareKeyboard(),
+            softKeyboardMode
+        );
+    }
+
+    private boolean hasActiveHardwareKeyboard() {
+        Configuration config = getResources().getConfiguration();
+        return config.keyboard != Configuration.KEYBOARD_NOKEYS
+            && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
     }
 
     private void dispatchSoftwareInput(ProjectKeyEvent event) {
