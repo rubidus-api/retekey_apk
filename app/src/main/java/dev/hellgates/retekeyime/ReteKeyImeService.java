@@ -12,8 +12,9 @@ import android.view.inputmethod.InputMethodSubtype;
 import java.util.Locale;
 
 public class ReteKeyImeService extends InputMethodService {
-    private final InputDispatcher dispatcher =
-        new InputDispatcher(new ScaffoldInputProcessor(this::currentEditorProfile));
+    private final HangulInputProcessor inputProcessor =
+        new HangulInputProcessor(this::currentEditorProfile);
+    private final InputDispatcher dispatcher = new InputDispatcher(inputProcessor);
     private final InputSessionController<ScaffoldSessionState> sessionController =
         new InputSessionController<>();
     private HardwareSemanticMapper hardwareMapper = HardwareSemanticMapper.none();
@@ -108,6 +109,7 @@ public class ReteKeyImeService extends InputMethodService {
     public void onStartInput(EditorInfo attribute, boolean restarting) {
         super.onStartInput(attribute, restarting);
         dispatcher.reset();
+        inputProcessor.reset();
         editorProfile = AndroidEditorProfileClassifier.classify(
             attribute,
             Build.VERSION.SDK_INT
@@ -296,6 +298,7 @@ public class ReteKeyImeService extends InputMethodService {
             sessionController.finish();
             sessionActive = false;
         }
+        inputProcessor.reset();
         editorProfile = EditorProfile.unsupported();
         if (editorFailureToast != null) {
             editorFailureToast.cancel();
