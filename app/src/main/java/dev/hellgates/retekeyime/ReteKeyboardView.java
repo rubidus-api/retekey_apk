@@ -2,9 +2,11 @@ package dev.hellgates.retekeyime;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -18,6 +20,9 @@ public final class ReteKeyboardView extends View {
     public interface InputSink {
         void accept(ProjectKeyEvent event);
     }
+
+    private static final String PREFS = "retekey_view";
+    private static final String KEY_HEIGHT_SCALE = "height_scale";
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
@@ -35,12 +40,70 @@ public final class ReteKeyboardView extends View {
     private int popupIndex = -1;
     private boolean holdConsumed;
 
+    /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
+    private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
+    // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
+    private boolean resizing;
+    private float resizeStartMidY;
+    private int resizeStartHeight;
+    private int resizeBaseHeight;
+
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
         this.sink = Objects.requireNonNull(sink, "sink");
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
+        heightScale = KeyboardHeightScale.clamp(
+            prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
+    }
+
+    private SharedPreferences prefs() {
+        return getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    /** The base (scale-1.0) keyboard height in pixels for the current rows and display density. */
+    private int baseHeightPx() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        return KeyboardHeightScale.baseHeightPx(layout().rows().size(), metrics.density);
+    }
+
+    /** The current height multiplier; 1.0 is the default. Exposed for a future settings screen. */
+    public float keyboardHeightScale() {
+        return heightScale;
+    }
+
+    /** Sets the height multiplier, clamps it, optionally persists it, and re-lays out. */
+    public void setKeyboardHeightScale(float scale, boolean persist) {
+        float clamped = KeyboardHeightScale.clamp(scale);
+        if (clamped == heightScale && !persist) {
+            return;
+        }
+        heightScale = clamped;
+        if (persist) {
+            prefs().edit().putFloat(KEY_HEIGHT_SCALE, heightScale).apply();
+        }
+        requestLayout();
+        invalidate();
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int desired = KeyboardHeightScale.heightForScale(heightScale, baseHeightPx());
+        int height;
+        switch (MeasureSpec.getMode(heightMeasureSpec)) {
+            case MeasureSpec.EXACTLY:
+                height = MeasureSpec.getSize(heightMeasureSpec);
+                break;
+            case MeasureSpec.AT_MOST:
+                height = Math.min(desired, MeasureSpec.getSize(heightMeasureSpec));
+                break;
+            default:
+                height = desired;
+                break;
+        }
+        setMeasuredDimension(width, height);
     }
 
     /** The layout currently drawn and hit-tested, including layer, shift, and keypad mode. */
@@ -71,11 +134,9 @@ public final class ReteKeyboardView extends View {
         int width = getWidth();
         int height = getHeight();
         List<List<SoftwareKeySpec>> rows = layout.rows();
-        int rowHeight = Math.max(1, height / rows.size());
 
         canvas.drawColor(Color.rgb(245, 246, 248));
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(Math.max(18.0f, rowHeight * 0.34f));
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             List<SoftwareKeySpec> keys = rows.get(rowIndex);
@@ -91,6 +152,7 @@ public final class ReteKeyboardView extends View {
                 paint.setColor(key.enabled() || key.isControl()
                     ? Color.rgb(22, 27, 34)
                     : Color.rgb(139, 148, 158));
+                fitLabel(key.label(), right - left, bottom - top);
                 canvas.drawText(
                     key.label(),
                     (left + right) * 0.5f,
@@ -107,10 +169,22 @@ public final class ReteKeyboardView extends View {
         drawPopup(canvas);
     }
 
+    /** Sizes {@link #paint} so {@code label} fits a cell of the given size, tracking cell size. */
+    private void fitLabel(String label, int cellWidth, int cellHeight) {
+        float cap = cellHeight * KeyLabelFit.HEIGHT_RATIO;
+        float minSize = 10.0f * getResources().getDisplayMetrics().density;
+        paint.setTextSize(cap);
+        float measured = paint.measureText(label);
+        float size = KeyLabelFit.fitSize(
+            measured, cap, cellWidth * KeyLabelFit.WIDTH_RATIO, minSize);
+        paint.setTextSize(size);
+    }
+
     private void drawPopup(Canvas canvas) {
         if (popup == null) {
             return;
         }
+        int cellHeight = popup.bottom() - popup.top();
         for (int index = 0; index < popup.candidateCount(); index++) {
             int left = popup.cellLeft(index);
             int right = left + popup.cellWidth();
@@ -119,6 +193,7 @@ public final class ReteKeyboardView extends View {
                 : Color.rgb(255, 255, 255));
             canvas.drawRect(left + 2, popup.top() + 2, right - 2, popup.bottom() - 2, paint);
             paint.setColor(Color.rgb(22, 27, 34));
+            fitLabel(popup.candidate(index), popup.cellWidth(), cellHeight);
             canvas.drawText(
                 popup.candidate(index),
                 (left + right) * 0.5f,
@@ -134,19 +209,72 @@ public final class ReteKeyboardView extends View {
             case MotionEvent.ACTION_DOWN:
                 beginHold(event.getX(), event.getY());
                 return true;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                if (event.getPointerCount() >= 2) {
+                    beginResize(event);
+                }
+                return true;
             case MotionEvent.ACTION_MOVE:
-                trackHold(event.getX(), event.getY());
+                if (resizing) {
+                    trackResize(event);
+                } else {
+                    trackHold(event.getX(), event.getY());
+                }
+                return true;
+            case MotionEvent.ACTION_POINTER_UP:
+                // Dropping back below two fingers ends the resize; commit the new height.
+                if (resizing && event.getPointerCount() <= 2) {
+                    endResize();
+                }
                 return true;
             case MotionEvent.ACTION_UP:
-                releaseHold(event.getX(), event.getY());
+                if (resizing) {
+                    endResize();
+                } else {
+                    releaseHold(event.getX(), event.getY());
+                }
                 return true;
             case MotionEvent.ACTION_CANCEL:
-                cancelHold();
-                invalidate();
+                if (resizing) {
+                    endResize();
+                } else {
+                    cancelHold();
+                    invalidate();
+                }
                 return true;
             default:
                 return true;
         }
+    }
+
+    private void beginResize(MotionEvent event) {
+        // A second finger means the user is resizing, not typing: drop any pending key press.
+        cancelHold();
+        resizing = true;
+        resizeStartMidY = midY(event);
+        resizeStartHeight = getHeight();
+        resizeBaseHeight = baseHeightPx();
+    }
+
+    private void trackResize(MotionEvent event) {
+        if (event.getPointerCount() < 2) {
+            return;
+        }
+        // Dragging the two fingers up (mid-point Y decreasing) grows the bottom-anchored keyboard.
+        float delta = resizeStartMidY - midY(event);
+        int target = Math.round(resizeStartHeight + delta);
+        setKeyboardHeightScale(
+            KeyboardHeightScale.scaleForHeight(target, resizeBaseHeight), false);
+    }
+
+    private void endResize() {
+        resizing = false;
+        // Persist whatever scale the drag settled on.
+        setKeyboardHeightScale(heightScale, true);
+    }
+
+    private static float midY(MotionEvent event) {
+        return (event.getY(0) + event.getY(1)) * 0.5f;
     }
 
     @Override
