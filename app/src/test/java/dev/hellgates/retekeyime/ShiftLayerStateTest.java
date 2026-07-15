@@ -12,51 +12,64 @@ public final class ShiftLayerStateTest {
         ShiftLayerState shift = new ShiftLayerState();
         assertEquals(ShiftLayerState.State.OFF, shift.state());
         assertFalse(shift.isActive());
-        assertFalse(shift.isSticky());
+        assertFalse(shift.isLocked());
     }
 
     @Test
-    public void tapsCycleOffOneShotStickyOff() {
+    public void aTapArmsOneShotAndAnotherTapCancels() {
         ShiftLayerState shift = new ShiftLayerState();
-        shift.advance();
+        shift.tap();
         assertEquals(ShiftLayerState.State.ONE_SHOT, shift.state());
         assertTrue(shift.isActive());
-        assertFalse(shift.isSticky());
+        assertFalse(shift.isLocked());
 
-        shift.advance();
-        assertEquals(ShiftLayerState.State.STICKY, shift.state());
-        assertTrue(shift.isSticky());
-
-        shift.advance();
+        shift.tap();
         assertEquals(ShiftLayerState.State.OFF, shift.state());
-        assertFalse(shift.isActive());
     }
 
     @Test
     public void oneShotIsConsumedByASingleKey() {
         ShiftLayerState shift = new ShiftLayerState();
-        shift.advance();
+        shift.tap();
         assertTrue(shift.consumeOneShot());
         assertEquals(ShiftLayerState.State.OFF, shift.state());
         assertFalse(shift.consumeOneShot());
     }
 
     @Test
-    public void stickyShiftSurvivesKeyPresses() {
+    public void aHoldTogglesTheLockOnAndOff() {
         ShiftLayerState shift = new ShiftLayerState();
-        shift.advance();
-        shift.advance();
+        shift.toggleLock();
+        assertEquals(ShiftLayerState.State.LOCKED, shift.state());
+        assertTrue(shift.isLocked());
+        assertTrue(shift.isActive());
+
+        shift.toggleLock();
+        assertEquals(ShiftLayerState.State.OFF, shift.state());
+    }
+
+    @Test
+    public void aLockedShiftSurvivesKeyPresses() {
+        ShiftLayerState shift = new ShiftLayerState();
+        shift.toggleLock();
         assertFalse(shift.consumeOneShot());
-        assertTrue(shift.isSticky());
+        assertTrue(shift.isLocked());
         assertFalse(shift.consumeOneShot());
         assertTrue(shift.isActive());
     }
 
     @Test
-    public void clearDropsEveryLayer() {
+    public void aTapClearsALock() {
         ShiftLayerState shift = new ShiftLayerState();
-        shift.advance();
-        shift.advance();
+        shift.toggleLock();
+        shift.tap();
+        assertEquals(ShiftLayerState.State.OFF, shift.state());
+    }
+
+    @Test
+    public void clearDropsEveryState() {
+        ShiftLayerState shift = new ShiftLayerState();
+        shift.toggleLock();
         shift.clear();
         assertEquals(ShiftLayerState.State.OFF, shift.state());
         assertFalse(shift.isActive());

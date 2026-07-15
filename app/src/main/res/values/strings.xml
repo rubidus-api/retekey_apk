@@ -2,4 +2,7 @@
     <string name="app_name">ReteKey IME</string>
     <string name="ime_name">ReteKey IME</string>
     <string name="editor_unavailable">Editor unavailable. Tap the text field and try again.</string>
+    <string name="preview_hint">Enable ReteKey, then type in the field to try the keyboard.</string>
+    <string name="preview_field_hint">Type here…</string>
+    <string name="preview_pick_keyboard">Choose keyboard</string>
 </resources>

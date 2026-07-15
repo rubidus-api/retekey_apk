@@ -13,6 +13,29 @@ API matrix and the Galaxy Note20 gate remain open.
 The touch layout is one orthogonal ten-column grid shared by English QWERTY and
 Korean 2-beolsik: equal keys, a three-column space bar, and no staggered rows.
 
+## Layout
+
+Korean 2-beolsik, on the shared ten-column grid:
+
+![Korean 2-beolsik layout](docs/images/keyboard-korean.png)
+
+The symbol layer (the `!#1` key, or holding the period): a right-hand digit pad,
+the four arithmetic operators, and the everyday punctuation; the Num and Fn keys
+turn the pad into the arrow cluster or the function keys.
+
+![Symbol and number layer](docs/images/keyboard-symbol.png)
+
+Its Shift page carries the special keys (drawn muted here because they and the
+bottom-row modifiers act once the raw-key action lands):
+
+![Special-key page](docs/images/keyboard-special.png)
+
+> These images are rendered from the actual layout data. A live screenshot from
+> the emulator lane is not shown because that host is headless with no KVM and no
+> window, so `screencap` returns a blank framebuffer; capture on a real device or
+> a GUI emulator for device screenshots. `PreviewActivity` (the app's launcher
+> screen) provides a text field for trying the keyboard on such a device.
+
 ## Stack
 
 - Java/JDK 17 LTS

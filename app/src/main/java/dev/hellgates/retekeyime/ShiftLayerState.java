@@ -1,15 +1,14 @@
 package dev.hellgates.retekeyime;
 
 /**
- * Shift follows the RFC-0002 rule: a tap on inactive Shift arms it for one key, a tap while armed
- * makes it sticky, and a tap while sticky clears it. It is view-local state and never reaches the
- * dispatcher.
+ * Shift state. A tap arms it for exactly one key; holding it toggles a persistent lock on or off.
+ * It is view-local and never reaches the dispatcher.
  */
 public final class ShiftLayerState {
     public enum State {
         OFF,
         ONE_SHOT,
-        STICKY
+        LOCKED
     }
 
     private State state = State.OFF;
@@ -18,18 +17,14 @@ public final class ShiftLayerState {
         return state;
     }
 
-    public void advance() {
-        switch (state) {
-            case OFF:
-                state = State.ONE_SHOT;
-                break;
-            case ONE_SHOT:
-                state = State.STICKY;
-                break;
-            default:
-                state = State.OFF;
-                break;
-        }
+    /** A tap: off arms one-shot, one-shot cancels, a lock clears. */
+    public void tap() {
+        state = state == State.OFF ? State.ONE_SHOT : State.OFF;
+    }
+
+    /** A hold: toggles the persistent lock. */
+    public void toggleLock() {
+        state = state == State.LOCKED ? State.OFF : State.LOCKED;
     }
 
     /** Consumes an armed one-shot after a key press. Returns true when the layer changed. */
@@ -49,7 +44,7 @@ public final class ShiftLayerState {
         return state != State.OFF;
     }
 
-    public boolean isSticky() {
-        return state == State.STICKY;
+    public boolean isLocked() {
+        return state == State.LOCKED;
     }
 }

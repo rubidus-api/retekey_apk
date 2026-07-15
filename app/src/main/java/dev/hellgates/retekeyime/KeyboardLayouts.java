@@ -8,10 +8,11 @@ import java.util.List;
  *
  * <p>Every layout shares one orthogonal ten-column grid. The letter layouts (English QWERTY and
  * Korean 2-beolsik) share their cells so a key keeps its position across a language switch. The
- * symbol layer replaces the letters with numbers, punctuation, arithmetic, and a right-hand 3x3
- * keypad whose meaning follows {@link NumpadMode}. Every key occupies exactly one column except the
- * space bar, which spans three. The bottom row is identical everywhere but for its layer key, which
- * reads {@code !#1} on letters and {@code ABC} on the symbol layer.
+ * symbol layer replaces the letters with numbers, punctuation, and a right-hand 3x3 keypad; its
+ * Shift page swaps the punctuation block for the special keys. Every key occupies exactly one
+ * column except the space bar, which spans three. The bottom row is identical everywhere but for
+ * its layer key, which reads {@code !#1} on letters and {@code 이전} (previous layout) on the
+ * symbol layer.
  */
 public final class KeyboardLayouts {
     public static final int COLUMNS = 10;
@@ -23,13 +24,51 @@ public final class KeyboardLayouts {
     };
     private static final int[] FUNCTION_CELLS = {7, 8, 9, 4, 5, 6, 1, 2, 3};
 
+    private static final SoftwareKeySpec[][] PUNCTUATION = {
+        {
+            symText("bang", "!", "¡"), symText("question", "?", "¿"),
+            symText("hash", "#", "@", "$"), symText("star", "*", "%", "^"),
+            symText("amp", "&", "|", "§")
+        },
+        {
+            symText("comma", ",", ""), symText("colon", ":", ""),
+            symText("semicolon", ";", ""), symText("apostrophe", "'", "\"", "`"),
+            symText("underscore", "_", "~")
+        },
+        // The bottom row of the block is the four arithmetic operators, grouped for the keypad.
+        {
+            null, symText("plus", "+", "±"), symText("minus", "-", "–", "—"),
+            symText("times", "×", "*"), symText("divide", "÷", "/", "\\")
+        }
+    };
+
+    // The special keys are drawn but disabled until the raw-key action and a media session land.
+    private static final SoftwareKeySpec[][] SPECIAL_KEYS = {
+        {
+            special("esc", "Esc"), special("prtsc", "PrtSc"), special("scrlk", "ScrLk"),
+            special("pause", "Pause"), special("hanja", "한자")
+        },
+        {
+            special("rctrl", "RCtrl"), special("ralt", "RAlt"), special("rshift", "RShft"),
+            special("menu", "Menu"), special("lang", "Lang")
+        },
+        {
+            null, special("play", "Play"), special("mute", "Mute"),
+            special("volup", "Vol+"), special("voldn", "Vol-")
+        }
+    };
+
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
     private static final KeyboardLayout KO_BASE = korean(false);
     private static final KeyboardLayout KO_SHIFTED = korean(true);
-    private static final KeyboardLayout SYM_NUMBERS = buildSymbol(NumpadMode.NUMBERS);
-    private static final KeyboardLayout SYM_ARROWS = buildSymbol(NumpadMode.ARROWS);
-    private static final KeyboardLayout SYM_FUNCTIONS = buildSymbol(NumpadMode.FUNCTIONS);
+    private static final KeyboardLayout SYM_NUMBERS = buildSymbol(NumpadMode.NUMBERS, false);
+    private static final KeyboardLayout SYM_ARROWS = buildSymbol(NumpadMode.ARROWS, false);
+    private static final KeyboardLayout SYM_FUNCTIONS = buildSymbol(NumpadMode.FUNCTIONS, false);
+    private static final KeyboardLayout SYM_SPECIAL_NUMBERS = buildSymbol(NumpadMode.NUMBERS, true);
+    private static final KeyboardLayout SYM_SPECIAL_ARROWS = buildSymbol(NumpadMode.ARROWS, true);
+    private static final KeyboardLayout SYM_SPECIAL_FUNCTIONS =
+        buildSymbol(NumpadMode.FUNCTIONS, true);
 
     private KeyboardLayouts() {
     }
@@ -44,14 +83,24 @@ public final class KeyboardLayouts {
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             default:
-                return SYM_NUMBERS;
+                return symbol(NumpadMode.NUMBERS, shifted);
         }
     }
 
-    /** The symbol layer in a specific keypad mode. */
-    public static KeyboardLayout symbol(NumpadMode mode) {
+    /** The symbol layer in a specific keypad mode; its Shift page shows the special keys. */
+    public static KeyboardLayout symbol(NumpadMode mode, boolean special) {
         if (mode == null) {
             throw new IllegalArgumentException("numpad mode must not be null");
+        }
+        if (special) {
+            switch (mode) {
+                case NUMBERS:
+                    return SYM_SPECIAL_NUMBERS;
+                case ARROWS:
+                    return SYM_SPECIAL_ARROWS;
+                default:
+                    return SYM_SPECIAL_FUNCTIONS;
+            }
         }
         switch (mode) {
             case NUMBERS:
@@ -136,57 +185,60 @@ public final class KeyboardLayouts {
         return KeyboardLayout.of(KeyboardLayoutId.KO_DUBEOLSIK, shifted, COLUMNS, rows);
     }
 
-    private static KeyboardLayout buildSymbol(NumpadMode mode) {
+    private static KeyboardLayout buildSymbol(NumpadMode mode, boolean special) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        // Columns 0-4: punctuation, or the special keys on the Shift page. Column 5: Num/Fn plus a
+        // spare. Columns 6-8: the 3x3 keypad. Column 9: the 0/Enter/Backspace strip.
         rows.add(KeyboardLayout.row(
-            symDigit("0", "0"),
-            symText("bang", "!", "¡"),
-            symText("question", "?", "¿"),
-            symText("hash", "#", "@", "$"),
-            symText("star", "*", "%", "^"),
-            symText("amp", "&", "|", "§"),
+            block(special, 0, 0), block(special, 0, 1), block(special, 0, 2),
+            block(special, 0, 3), block(special, 0, 4),
             SoftwareKeySpec.control("touch.numpad.numlock", "Num", ControlKey.NUMLOCK),
-            numpadKey(mode, 0), numpadKey(mode, 1), numpadKey(mode, 2)
+            numpadKey(mode, 0), numpadKey(mode, 1), numpadKey(mode, 2),
+            symDigit("0", "0")
         ));
         rows.add(KeyboardLayout.row(
-            enterKey(),
-            symText("comma", ",", ""),
-            symText("colon", ":", ""),
-            symText("semicolon", ";", ""),
-            symText("apostrophe", "'", "\"", "`"),
-            symText("hyphen", "-", "–", "—"),
+            block(special, 1, 0), block(special, 1, 1), block(special, 1, 2),
+            block(special, 1, 3), block(special, 1, 4),
             SoftwareKeySpec.control("touch.numpad.fnlock", "Fn", ControlKey.FUNCTION_LOCK),
-            numpadKey(mode, 3), numpadKey(mode, 4), numpadKey(mode, 5)
+            numpadKey(mode, 3), numpadKey(mode, 4), numpadKey(mode, 5),
+            enterKey()
         ));
         rows.add(KeyboardLayout.row(
-            symText("period", ".", ""),
-            symText("underscore", "_", "~"),
-            symText("plus", "+", "±"),
-            symText("times", "×", "*"),
-            symText("divide", "÷", "/", "\\"),
-            symText("equals", "=", "(", ")", "[", "]", "{", "}", "<", ">"),
-            backspaceKey(),
-            numpadKey(mode, 6), numpadKey(mode, 7), numpadKey(mode, 8)
+            shiftKey(special),
+            block(special, 2, 1), block(special, 2, 2), block(special, 2, 3),
+            block(special, 2, 4),
+            // A decimal point for the keypad, holding it reaches equals and the brackets.
+            symText("period", ".", "=", "(", ")", "[", "]", "{", "}", "<", ">"),
+            numpadKey(mode, 6), numpadKey(mode, 7), numpadKey(mode, 8),
+            backspaceKey()
         ));
         rows.add(bottomRow(true));
-        return KeyboardLayout.of(KeyboardLayoutId.SYMBOL, false, COLUMNS, rows);
+        return KeyboardLayout.of(KeyboardLayoutId.SYMBOL, special, COLUMNS, rows);
     }
 
-    /** The bottom row, shared by every layout except for its layer key. */
+    /** One cell of the symbol layer's left block: punctuation, or a special key on the Shift page. */
+    private static SoftwareKeySpec block(boolean special, int row, int col) {
+        if (!special) {
+            return PUNCTUATION[row][col];
+        }
+        return SPECIAL_KEYS[row][col];
+    }
+
+    /** The bottom row, shared by every layout except for its layer key. Modifiers latch. */
     private static List<SoftwareKeySpec> bottomRow(boolean symbolLayer) {
         SoftwareKeySpec layerKey = symbolLayer
-            ? SoftwareKeySpec.control("touch.layer.letters", "ABC", ControlKey.LETTER_LAYER)
+            ? SoftwareKeySpec.control("touch.layer.previous", "이전", ControlKey.PREVIOUS_LAYER)
             : SoftwareKeySpec.control("touch.layer.symbols", "!#1", ControlKey.SYMBOL_LAYER);
         return KeyboardLayout.row(
-            SoftwareKeySpec.disabled("touch.modifier.ctrl", "Ctrl"),
-            SoftwareKeySpec.disabled("touch.modifier.meta", "Meta"),
-            SoftwareKeySpec.disabled("touch.modifier.alt", "Alt"),
+            SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL),
+            SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META),
+            SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT),
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
             SoftwareKeySpec.control("touch.layout.toggle", "한/영", ControlKey.LAYOUT_TOGGLE),
             layerKey,
-            SoftwareKeySpec.disabled("touch.edit.tab", "Tab"),
+            SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
             SoftwareKeySpec.disabled("touch.menu", "☰")
         );
     }
@@ -212,10 +264,10 @@ public final class KeyboardLayouts {
         }
     }
 
-    private static SoftwareKeySpec shiftKey(boolean shifted) {
+    private static SoftwareKeySpec shiftKey(boolean active) {
         return SoftwareKeySpec.control(
             "touch.modifier.shift",
-            shifted ? "⇧•" : "⇧",
+            active ? "⇧•" : "⇧",
             ControlKey.SHIFT
         );
     }
@@ -260,6 +312,10 @@ public final class KeyboardLayouts {
             return key;
         }
         return longPress.length == 0 ? key : key.withLongPress(longPress);
+    }
+
+    private static SoftwareKeySpec special(String id, String label) {
+        return SoftwareKeySpec.disabled("touch.special." + id, label);
     }
 
     private static SoftwareKeySpec letter(String lowercase, boolean shifted) {

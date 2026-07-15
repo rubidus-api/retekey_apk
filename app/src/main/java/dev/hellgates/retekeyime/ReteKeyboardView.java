@@ -8,8 +8,10 @@ import android.graphics.Paint;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @SuppressLint("ViewConstructor")
 public final class ReteKeyboardView extends View {
@@ -20,7 +22,8 @@ public final class ReteKeyboardView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
-    private final Runnable openPopup = this::handleLongPress;
+    private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
+    private final Runnable onHoldElapsed = this::handleLongPress;
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
     private boolean symbolActive;
     private NumpadMode numpadMode = NumpadMode.NUMBERS;
@@ -28,6 +31,7 @@ public final class ReteKeyboardView extends View {
     private int heldKey = -1;
     private LongPressPopup popup;
     private int popupIndex = -1;
+    private boolean holdConsumed;
 
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
@@ -40,13 +44,14 @@ public final class ReteKeyboardView extends View {
     /** The layout currently drawn and hit-tested, including layer, shift, and keypad mode. */
     public KeyboardLayout layout() {
         return symbolActive
-            ? KeyboardLayouts.symbol(numpadMode)
+            ? KeyboardLayouts.symbol(numpadMode, shiftLayer.isActive())
             : KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
     }
 
     /** Clears transient one-shot and pointer state when the editor session changes. */
     public void resetLayerState() {
         shiftLayer.clear();
+        armedModifiers.clear();
         cancelHold();
         invalidate();
     }
@@ -63,7 +68,7 @@ public final class ReteKeyboardView extends View {
 
         canvas.drawColor(Color.rgb(245, 246, 248));
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(Math.max(18.0f, rowHeight * 0.36f));
+        paint.setTextSize(Math.max(18.0f, rowHeight * 0.34f));
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             List<SoftwareKeySpec> keys = rows.get(rowIndex);
@@ -86,7 +91,6 @@ public final class ReteKeyboardView extends View {
                     paint
                 );
                 if (key.hasLongPress() || key.hasLongPressControl()) {
-                    // A dot marks keys that hide more behind a hold, so it is discoverable.
                     paint.setColor(Color.rgb(139, 148, 158));
                     canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
                 }
@@ -155,8 +159,11 @@ public final class ReteKeyboardView extends View {
         heldRow = rowIndex;
         heldKey = keyIndex;
         SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
-        if (key.hasLongPress() || key.hasLongPressControl()) {
-            postDelayed(openPopup, ViewConfiguration.getLongPressTimeout());
+        // Shift, and any key with a long press, react to a hold.
+        if (key.hasLongPress()
+            || key.hasLongPressControl()
+            || (key.isControl() && key.control() == ControlKey.SHIFT)) {
+            postDelayed(onHoldElapsed, ViewConfiguration.getLongPressTimeout());
         }
     }
 
@@ -175,13 +182,12 @@ public final class ReteKeyboardView extends View {
         LongPressPopup openedPopup = popup;
         int rowIndex = heldRow;
         int keyIndex = heldKey;
-        boolean controlFired = longPressControlFired;
-        removeCallbacks(openPopup);
+        boolean consumed = holdConsumed;
+        removeCallbacks(onHoldElapsed);
 
         if (openedPopup != null) {
             int index = openedPopup.indexAt(x, y);
-            // Releasing outside the popup cancels the choice rather than committing the base key:
-            // the user already saw the alternates and moved away from them.
+            // Releasing outside the popup cancels the choice rather than committing the base key.
             if (index >= 0) {
                 sink.accept(openedPopup.key().longPressEvent(index));
                 consumeOneShotShift();
@@ -193,8 +199,8 @@ public final class ReteKeyboardView extends View {
         }
 
         cancelHold();
-        if (controlFired) {
-            // A held control (period to symbol layer) already acted; a tap must not also fire.
+        if (consumed) {
+            // A hold (shift lock, or a layer switch) already acted; the tap must not also fire.
             return;
         }
         if (rowIndex < 0 || keyIndex < 0) {
@@ -219,18 +225,20 @@ public final class ReteKeyboardView extends View {
         }
     }
 
-    private boolean longPressControlFired;
-
     private void handleLongPress() {
         if (heldRow < 0 || heldKey < 0) {
             return;
         }
         SoftwareKeySpec key = layout().rows().get(heldRow).get(heldKey);
+        if (key.isControl() && key.control() == ControlKey.SHIFT) {
+            shiftLayer.toggleLock();
+            holdConsumed = true;
+            invalidate();
+            return;
+        }
         if (key.hasLongPressControl()) {
             applyControl(key.longPressControl());
-            longPressControlFired = true;
-            heldRow = -1;
-            heldKey = -1;
+            holdConsumed = true;
             return;
         }
         popup = LongPressPopup.open(layout(), heldRow, heldKey, getWidth(), getHeight());
@@ -239,12 +247,12 @@ public final class ReteKeyboardView extends View {
     }
 
     private void cancelHold() {
-        removeCallbacks(openPopup);
+        removeCallbacks(onHoldElapsed);
         heldRow = -1;
         heldKey = -1;
         popup = null;
         popupIndex = -1;
-        longPressControlFired = false;
+        holdConsumed = false;
     }
 
     private void consumeOneShotShift() {
@@ -282,7 +290,7 @@ public final class ReteKeyboardView extends View {
     private void applyControl(ControlKey control) {
         switch (control) {
             case SHIFT:
-                shiftLayer.advance();
+                shiftLayer.tap();
                 break;
             case LAYOUT_TOGGLE:
                 letterLayoutId = KeyboardLayouts.otherLetters(letterLayoutId);
@@ -294,7 +302,7 @@ public final class ReteKeyboardView extends View {
                 numpadMode = NumpadMode.NUMBERS;
                 shiftLayer.clear();
                 break;
-            case LETTER_LAYER:
+            case PREVIOUS_LAYER:
                 symbolActive = false;
                 shiftLayer.clear();
                 break;
@@ -308,6 +316,15 @@ public final class ReteKeyboardView extends View {
                     ? NumpadMode.NUMBERS
                     : NumpadMode.FUNCTIONS;
                 break;
+            case CTRL:
+            case META:
+            case ALT:
+            case TAB:
+                // Latch the modifier. Its armed state is view-local until the raw-key action lands.
+                if (!armedModifiers.remove(control)) {
+                    armedModifiers.add(control);
+                }
+                break;
             default:
                 break;
         }
@@ -318,7 +335,7 @@ public final class ReteKeyboardView extends View {
         if (key.isControl()) {
             ControlKey control = key.control();
             if (control == ControlKey.SHIFT) {
-                if (shiftLayer.isSticky()) {
+                if (shiftLayer.isLocked()) {
                     return Color.rgb(159, 190, 233);
                 }
                 if (shiftLayer.isActive()) {
@@ -329,6 +346,9 @@ public final class ReteKeyboardView extends View {
                 return Color.rgb(159, 190, 233);
             }
             if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
+                return Color.rgb(159, 190, 233);
+            }
+            if (armedModifiers.contains(control)) {
                 return Color.rgb(159, 190, 233);
             }
         }

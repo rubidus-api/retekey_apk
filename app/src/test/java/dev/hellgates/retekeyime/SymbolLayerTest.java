@@ -11,123 +11,153 @@ import java.util.List;
 import org.junit.Test;
 
 public final class SymbolLayerTest {
+    private static final KeyboardLayout BASE = KeyboardLayouts.symbol(NumpadMode.NUMBERS, false);
+    private static final KeyboardLayout SPECIAL = KeyboardLayouts.symbol(NumpadMode.NUMBERS, true);
+
     @Test
-    public void numberModeShowsTheLeftStripDigitsToggleColumnAndPad() {
-        KeyboardLayout symbol = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
-        assertEquals(KeyboardLayoutId.SYMBOL, symbol.id());
+    public void baseNumberPageLayout() {
+        assertEquals(KeyboardLayoutId.SYMBOL, BASE.id());
         assertEquals(
-            Arrays.asList("0", "!", "?", "#", "*", "&", "Num", "7", "8", "9"),
-            labels(symbol, 0)
+            Arrays.asList("!", "?", "#", "*", "&", "Num", "7", "8", "9", "0"),
+            labels(BASE, 0)
         );
         assertEquals(
-            Arrays.asList("⏎", ",", ":", ";", "'", "-", "Fn", "4", "5", "6"),
-            labels(symbol, 1)
+            Arrays.asList(",", ":", ";", "'", "_", "Fn", "4", "5", "6", "⏎"),
+            labels(BASE, 1)
         );
         assertEquals(
-            Arrays.asList(".", "_", "+", "×", "÷", "=", "⌫", "1", "2", "3"),
-            labels(symbol, 2)
+            Arrays.asList("⇧", "+", "-", "×", "÷", ".", "1", "2", "3", "⌫"),
+            labels(BASE, 2)
         );
     }
 
     @Test
-    public void theLeftStripKeepsZeroEnterAndPeriodForCalculatorCompatibility() {
-        KeyboardLayout symbol = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
-        assertEquals(SemanticInput.text("0"), symbol.rows().get(0).get(0).semanticInput());
+    public void theRightColumnIsZeroEnterBackspaceTopToBottom() {
+        assertEquals(SemanticInput.text("0"), BASE.rows().get(0).get(9).semanticInput());
         assertEquals(
             SemanticInput.Kind.PRIMARY_ACTION,
-            symbol.rows().get(1).get(0).semanticInput().kind()
-        );
-        assertEquals(SemanticInput.text("."), symbol.rows().get(2).get(0).semanticInput());
-    }
-
-    @Test
-    public void theBottomRowIsSharedExceptForTheLayerKey() {
-        KeyboardLayout letters = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
-        KeyboardLayout symbol = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
-        int bottom = symbol.rows().size() - 1;
-        assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "space", "한/영", "ABC", "Tab", "☰"),
-            labels(symbol, bottom)
+            BASE.rows().get(1).get(9).semanticInput().kind()
         );
         assertEquals(
-            ControlKey.LETTER_LAYER,
-            symbol.findById("touch.layer.letters").control()
+            SemanticInput.Kind.DELETE_BACKWARD,
+            BASE.rows().get(2).get(9).semanticInput().kind()
         );
-        // The layer key is the only difference from the letter layouts' bottom row.
-        assertEquals("!#1", letters.rows().get(bottom).get(5).label());
-        assertEquals("ABC", symbol.rows().get(bottom).get(5).label());
     }
 
     @Test
-    public void theArithmeticAndPunctuationCommitAsText() {
-        KeyboardLayout symbol = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
-        for (String id : Arrays.asList(
-            "touch.sym.plus", "touch.sym.times", "touch.sym.divide", "touch.sym.equals",
-            "touch.sym.comma", "touch.sym.bang", "touch.sym.question"
-        )) {
-            SoftwareKeySpec key = symbol.findById(id);
-            assertNotNull(id, key);
-            assertTrue(id + " commits text", key.enabled());
-            assertEquals(SemanticInput.Kind.TEXT, key.semanticInput().kind());
-        }
-        assertEquals(SemanticInput.text("×"), symbol.findById("touch.sym.times").semanticInput());
-        assertEquals(SemanticInput.text("÷"), symbol.findById("touch.sym.divide").semanticInput());
+    public void theFourArithmeticOperatorsAreGroupedAndEqualsBecameAPeriod() {
+        assertEquals(
+            Arrays.asList("+", "-", "×", "÷"),
+            Arrays.asList(
+                BASE.rows().get(2).get(1).label(),
+                BASE.rows().get(2).get(2).label(),
+                BASE.rows().get(2).get(3).label(),
+                BASE.rows().get(2).get(4).label()
+            )
+        );
+        SoftwareKeySpec period = BASE.findById("touch.sym.period");
+        assertEquals(".", period.label());
+        assertEquals(SemanticInput.text("."), period.semanticInput());
+        // Equals is no longer its own key; it hangs off the period's long press.
+        assertTrue(period.longPressTexts().contains("="));
     }
 
     @Test
-    public void theNineDigitsAreOnTheRightPad() {
-        KeyboardLayout symbol = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
-        List<String> pad = new ArrayList<>();
-        for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
-            for (int keyIndex = 7; keyIndex <= 9; keyIndex++) {
-                pad.add(symbol.rows().get(rowIndex).get(keyIndex).label());
-            }
-        }
-        assertEquals(Arrays.asList("7", "8", "9", "4", "5", "6", "1", "2", "3"), pad);
-        for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
-            for (int keyIndex = 7; keyIndex <= 9; keyIndex++) {
-                SoftwareKeySpec key = symbol.rows().get(rowIndex).get(keyIndex);
-                assertEquals(SemanticInput.Kind.TEXT, key.semanticInput().kind());
-            }
-        }
+    public void shiftAtColumnZeroRowTwoLikeTheLetterLayouts() {
+        SoftwareKeySpec shift = BASE.rows().get(2).get(0);
+        assertTrue(shift.isControl());
+        assertEquals(ControlKey.SHIFT, shift.control());
     }
 
     @Test
-    public void numlockTurnsThePadIntoArrowsAndFnIntoFunctionKeys() {
-        KeyboardLayout arrows = KeyboardLayouts.symbol(NumpadMode.ARROWS);
-        assertEquals("Home", arrows.rows().get(0).get(7).label());
-        assertEquals("↑", arrows.rows().get(0).get(8).label());
-        assertEquals("→", arrows.rows().get(1).get(9).label());
-        assertEquals("↓", arrows.rows().get(2).get(8).label());
-
-        KeyboardLayout functions = KeyboardLayouts.symbol(NumpadMode.FUNCTIONS);
-        assertEquals("F7", functions.rows().get(0).get(7).label());
-        assertEquals("F1", functions.rows().get(2).get(7).label());
-        assertEquals("F3", functions.rows().get(2).get(9).label());
+    public void theShiftPageShowsTheSpecialKeys() {
+        assertEquals(
+            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "한자", "Num", "7", "8", "9", "0"),
+            labels(SPECIAL, 0)
+        );
+        assertEquals(
+            Arrays.asList("RCtrl", "RAlt", "RShft", "Menu", "Lang", "Fn", "4", "5", "6", "⏎"),
+            labels(SPECIAL, 1)
+        );
+        // Play / Mute / Vol+ / Vol- are the media row; Lang sits above Vol-, as requested.
+        assertEquals(
+            Arrays.asList("⇧•", "Play", "Mute", "Vol+", "Vol-", ".", "1", "2", "3", "⌫"),
+            labels(SPECIAL, 2)
+        );
     }
 
     @Test
-    public void arrowAndFunctionKeysStayDisabledUntilRawKeyLands() {
-        for (NumpadMode mode : Arrays.asList(NumpadMode.ARROWS, NumpadMode.FUNCTIONS)) {
-            KeyboardLayout symbol = KeyboardLayouts.symbol(mode);
-            for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
-                for (int keyIndex = 7; keyIndex <= 9; keyIndex++) {
-                    SoftwareKeySpec key = symbol.rows().get(rowIndex).get(keyIndex);
-                    assertFalse(
-                        mode + " pad key must stay disabled: " + key.label(),
-                        key.enabled()
-                    );
-                    assertFalse(key.isControl());
+    public void mediaKeysDoNotAppearOnTheBaseNumberPage() {
+        for (String label : Arrays.asList("Play", "Mute", "Vol+", "Vol-", "Esc", "한자")) {
+            for (List<SoftwareKeySpec> row : BASE.rows()) {
+                for (SoftwareKeySpec key : row) {
+                    assertFalse(label + " must be Shift-only", label.equals(key.label()));
                 }
             }
         }
     }
 
     @Test
+    public void specialKeysStayDisabledUntilRawKeyLands() {
+        for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
+            for (int keyIndex = 0; keyIndex <= 4; keyIndex++) {
+                SoftwareKeySpec key = SPECIAL.rows().get(rowIndex).get(keyIndex);
+                if (key.control() == ControlKey.SHIFT) {
+                    continue;
+                }
+                assertFalse(
+                    "special key must stay disabled: " + key.label(),
+                    key.enabled()
+                );
+                assertFalse(key.isControl());
+            }
+        }
+    }
+
+    @Test
+    public void theBottomRowUsesThePreviousLayerKeyAndLatchingModifiers() {
+        int bottom = BASE.rows().size() - 1;
+        assertEquals(
+            Arrays.asList("Ctrl", "Meta", "Alt", "space", "한/영", "이전", "Tab", "☰"),
+            labels(BASE, bottom)
+        );
+        assertEquals(ControlKey.PREVIOUS_LAYER, BASE.findById("touch.layer.previous").control());
+        assertEquals(ControlKey.CTRL, BASE.findById("touch.modifier.ctrl").control());
+        assertEquals(ControlKey.META, BASE.findById("touch.modifier.meta").control());
+        assertEquals(ControlKey.ALT, BASE.findById("touch.modifier.alt").control());
+        assertEquals(ControlKey.TAB, BASE.findById("touch.edit.tab").control());
+    }
+
+    @Test
+    public void theNineDigitsAreOnTheRightPadAndCommitText() {
+        List<String> pad = new ArrayList<>();
+        for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
+            for (int keyIndex = 6; keyIndex <= 8; keyIndex++) {
+                SoftwareKeySpec key = BASE.rows().get(rowIndex).get(keyIndex);
+                pad.add(key.label());
+                assertEquals(SemanticInput.Kind.TEXT, key.semanticInput().kind());
+            }
+        }
+        assertEquals(Arrays.asList("7", "8", "9", "4", "5", "6", "1", "2", "3"), pad);
+    }
+
+    @Test
+    public void numlockTurnsThePadIntoArrowsAndFnIntoFunctionKeys() {
+        KeyboardLayout arrows = KeyboardLayouts.symbol(NumpadMode.ARROWS, false);
+        assertEquals("Home", arrows.rows().get(0).get(6).label());
+        assertEquals("↑", arrows.rows().get(0).get(7).label());
+        assertEquals("↓", arrows.rows().get(2).get(7).label());
+
+        KeyboardLayout functions = KeyboardLayouts.symbol(NumpadMode.FUNCTIONS, false);
+        assertEquals("F7", functions.rows().get(0).get(6).label());
+        assertEquals("F1", functions.rows().get(2).get(6).label());
+        assertEquals("F3", functions.rows().get(2).get(8).label());
+    }
+
+    @Test
     public void theToggleKeysAreViewLocalControls() {
-        KeyboardLayout symbol = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
-        assertEquals(ControlKey.NUMLOCK, symbol.findById("touch.numpad.numlock").control());
-        assertEquals(ControlKey.FUNCTION_LOCK, symbol.findById("touch.numpad.fnlock").control());
+        assertEquals(ControlKey.NUMLOCK, BASE.findById("touch.numpad.numlock").control());
+        assertEquals(ControlKey.FUNCTION_LOCK, BASE.findById("touch.numpad.fnlock").control());
     }
 
     private static List<String> labels(KeyboardLayout layout, int rowIndex) {

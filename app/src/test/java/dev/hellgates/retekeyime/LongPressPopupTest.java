@@ -13,7 +13,7 @@ import org.junit.Test;
 public final class LongPressPopupTest {
     private static final int WIDTH = 1080;
     private static final int HEIGHT = 720;
-    private static final KeyboardLayout SYMBOL = KeyboardLayouts.symbol(NumpadMode.NUMBERS);
+    private static final KeyboardLayout SYMBOL = KeyboardLayouts.symbol(NumpadMode.NUMBERS, false);
 
     @Test
     public void aSymbolKeyHidesItsVariantsBehindAHold() {
@@ -26,7 +26,7 @@ public final class LongPressPopupTest {
 
     @Test
     public void plainSymbolKeysHaveNoPopup() {
-        for (String id : Arrays.asList("touch.sym.comma", "touch.sym.colon", "touch.sym.period")) {
+        for (String id : Arrays.asList("touch.sym.comma", "touch.sym.colon", "touch.sym.semicolon")) {
             SoftwareKeySpec key = SYMBOL.findById(id);
             assertNotNull(id, key);
             assertFalse(id + " has no long press", key.hasLongPress());
@@ -36,11 +36,11 @@ public final class LongPressPopupTest {
 
     @Test
     public void everyVariantCommitsItsOwnCharacter() {
-        SoftwareKeySpec equals = SYMBOL.findById("touch.sym.equals");
-        List<String> variants = Arrays.asList("(", ")", "[", "]", "{", "}", "<", ">");
-        assertEquals(variants, equals.longPressTexts());
+        SoftwareKeySpec period = SYMBOL.findById("touch.sym.period");
+        List<String> variants = Arrays.asList("=", "(", ")", "[", "]", "{", "}", "<", ">");
+        assertEquals(variants, period.longPressTexts());
         for (int index = 0; index < variants.size(); index++) {
-            ProjectKeyEvent event = equals.longPressEvent(index);
+            ProjectKeyEvent event = period.longPressEvent(index);
             assertEquals(SemanticInput.text(variants.get(index)), event.semanticInput());
             assertEquals(InputSource.SOFTWARE, event.source());
         }
@@ -48,7 +48,7 @@ public final class LongPressPopupTest {
 
     @Test
     public void keysWithoutVariantsOpenNoPopup() {
-        int keyIndex = indexOf(SYMBOL, 0, "touch.sym.0");
+        int keyIndex = indexOf(SYMBOL, 0, "touch.sym.0");  // the 0 on the right strip
         assertTrue(keyIndex >= 0);
         assertNull(LongPressPopup.open(SYMBOL, 0, keyIndex, WIDTH, HEIGHT));
     }
@@ -63,9 +63,9 @@ public final class LongPressPopupTest {
 
     @Test
     public void thePopupStaysInsideTheKeyboardAndShowsEveryVariant() {
-        LongPressPopup popup = equalsPopup();
+        LongPressPopup popup = periodPopup();
         assertNotNull(popup);
-        assertEquals(8, popup.candidateCount());
+        assertEquals(9, popup.candidateCount());
         assertTrue("popup starts inside the view", popup.left() >= 0);
         assertTrue("popup ends inside the view", popup.right() <= WIDTH);
         assertTrue("popup sits inside the view", popup.top() >= 0);
@@ -73,7 +73,7 @@ public final class LongPressPopupTest {
 
     @Test
     public void everyCandidateCellSelectsItsOwnCandidate() {
-        LongPressPopup popup = equalsPopup();
+        LongPressPopup popup = periodPopup();
         float y = popup.top() + 1.0f;
         for (int index = 0; index < popup.candidateCount(); index++) {
             float x = popup.cellLeft(index) + popup.cellWidth() * 0.5f;
@@ -83,16 +83,16 @@ public final class LongPressPopupTest {
 
     @Test
     public void slidingPastThePopupEdgesSelectsNothing() {
-        LongPressPopup popup = equalsPopup();
+        LongPressPopup popup = periodPopup();
         float y = popup.top() + 1.0f;
         assertEquals(-1, popup.indexAt(popup.left() - 1.0f, y));
         assertEquals(-1, popup.indexAt(popup.right(), y));
         assertEquals(-1, popup.indexAt(popup.left() + 1.0f, popup.bottom() + 1.0f));
     }
 
-    private static LongPressPopup equalsPopup() {
-        int keyIndex = indexOf(SYMBOL, 2, "touch.sym.equals");
-        assertTrue("the equals key sits in the third row", keyIndex >= 0);
+    private static LongPressPopup periodPopup() {
+        int keyIndex = indexOf(SYMBOL, 2, "touch.sym.period");
+        assertTrue("the period key sits in the third row", keyIndex >= 0);
         return LongPressPopup.open(SYMBOL, 2, keyIndex, WIDTH, HEIGHT);
     }
 

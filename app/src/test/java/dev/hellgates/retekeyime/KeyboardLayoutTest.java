@@ -23,9 +23,12 @@ public final class KeyboardLayoutTest {
         KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, true),
         KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false),
         KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, true),
-        KeyboardLayouts.symbol(NumpadMode.NUMBERS),
-        KeyboardLayouts.symbol(NumpadMode.ARROWS),
-        KeyboardLayouts.symbol(NumpadMode.FUNCTIONS)
+        KeyboardLayouts.symbol(NumpadMode.NUMBERS, false),
+        KeyboardLayouts.symbol(NumpadMode.ARROWS, false),
+        KeyboardLayouts.symbol(NumpadMode.FUNCTIONS, false),
+        KeyboardLayouts.symbol(NumpadMode.NUMBERS, true),
+        KeyboardLayouts.symbol(NumpadMode.ARROWS, true),
+        KeyboardLayouts.symbol(NumpadMode.FUNCTIONS, true)
     );
 
     @Test
@@ -215,18 +218,19 @@ public final class KeyboardLayoutTest {
     @Test
     public void navigationAndSymbolPlaceholdersStayDisabled() {
         KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
-        for (String id : Arrays.asList(
-            "touch.modifier.ctrl",
-            "touch.modifier.meta",
-            "touch.modifier.alt",
-            "touch.edit.tab",
-            "touch.menu"
-        )) {
-            SoftwareKeySpec key = korean.findById(id);
-            assertNotNull(id, key);
-            assertFalse(id + " must stay disabled until its action exists", key.enabled());
-            assertFalse(id + " is not a view-local control", key.isControl());
-        }
+        SoftwareKeySpec menu = korean.findById("touch.menu");
+        assertNotNull(menu);
+        assertFalse("the menu key stays disabled until its surface exists", menu.enabled());
+        assertFalse(menu.isControl());
+    }
+
+    @Test
+    public void theBottomRowModifiersAreLatchingControls() {
+        KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        assertEquals(ControlKey.CTRL, korean.findById("touch.modifier.ctrl").control());
+        assertEquals(ControlKey.META, korean.findById("touch.modifier.meta").control());
+        assertEquals(ControlKey.ALT, korean.findById("touch.modifier.alt").control());
+        assertEquals(ControlKey.TAB, korean.findById("touch.edit.tab").control());
     }
 
     @Test
