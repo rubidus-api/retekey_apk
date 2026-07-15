@@ -22,9 +22,10 @@
 /gradle/*
 !/gradle/wrapper
 
-# app/: build script, main sources, and JVM unit tests only
+# app/: build script, R8 rules, main sources, and JVM unit tests only
 /app/*
 !/app/build.gradle
+!/app/proguard-rules.pro
 !/app/src
 /app/src/*
 !/app/src/main
