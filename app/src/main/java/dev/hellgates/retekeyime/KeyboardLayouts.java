@@ -199,15 +199,15 @@ public final class KeyboardLayouts {
                 numKey(), fnRawKey(0), fnRawKey(1), fnRawKey(2), rawKey("f10", "F10", RawKey.F10)
             ));
             rows.add(KeyboardLayout.row(
-                disabled("brightup", "☀+"), disabled("brightdown", "☀-"),
+                disabled("brightup", "밝게"), disabled("brightdown", "어둡게"),
                 disabled("volup", "Vol+"), disabled("voldown", "Vol-"),
                 disabled("mute", "Mute"),
                 fnKey(), fnRawKey(3), fnRawKey(4), fnRawKey(5), enterKey()
             ));
             rows.add(KeyboardLayout.row(
                 shiftKey(false),
-                disabled("prevtrack", "⏮"), disabled("playpause", "⏯"),
-                disabled("nexttrack", "⏭"),
+                disabled("prevtrack", "이전곡"), disabled("playpause", "재생"),
+                disabled("nexttrack", "다음곡"),
                 rawKey("search", "검색", RawKey.SEARCH), disabled("back", "뒤로"),
                 fnRawKey(6), fnRawKey(7), fnRawKey(8), backspaceKey()
             ));
