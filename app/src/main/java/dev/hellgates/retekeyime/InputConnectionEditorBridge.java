@@ -155,6 +155,7 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case SCROLL_LOCK: return KeyEvent.KEYCODE_SCROLL_LOCK;
             case BREAK: return KeyEvent.KEYCODE_BREAK;
             case MENU: return KeyEvent.KEYCODE_MENU;
+            case SEARCH: return KeyEvent.KEYCODE_SEARCH;
             case F1: return KeyEvent.KEYCODE_F1;
             case F2: return KeyEvent.KEYCODE_F2;
             case F3: return KeyEvent.KEYCODE_F3;

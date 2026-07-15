@@ -10,31 +10,31 @@ restart without finish, and teardown behave as specified against the actual
 framework callback stream. The stateful Hangul composer (P2) is next; the full
 API matrix and the Galaxy Note20 gate remain open.
 
-The touch layout is one orthogonal ten-column grid shared by English QWERTY and
-Korean 2-beolsik: equal keys, a three-column space bar, and no staggered rows.
+The touch layout is one orthogonal ten-column grid with equal keys, a
+three-column space bar, and no staggered rows. It has four pages: English
+QWERTY, Korean 2-beolsik, special characters, and special keys.
 
 ## Layout
 
-Korean 2-beolsik, on the shared ten-column grid:
+Korean 2-beolsik:
 
 ![Korean 2-beolsik layout](docs/images/keyboard-korean.png)
 
-The symbol layer (the `!#1` key, or holding the period): a right-hand digit pad,
-the four arithmetic operators, and the everyday punctuation; the Num and Fn keys
-turn the pad into the arrow cluster or the function keys.
+Holding the period opens the special-characters page. Every key commits text:
 
-![Symbol and number layer](docs/images/keyboard-symbol.png)
+![Special characters page](docs/images/keyboard-chars.png)
 
-The Num toggle turns the keypad into arrows and navigation, which send real key
-events to the editor:
+The `pad` key opens the special-keys page: a right-hand keypad plus special keys.
+The digits and `+ - = .` commit text; Esc, PrtSc, ScrLk, Pause, and Menu send key
+events; 한자/Lang and the right-hand modifiers are muted until their systems land.
+`Num` turns the keypad into arrows/navigation:
 
-![Arrow / navigation mode](docs/images/keyboard-arrows.png)
+![Special keys page](docs/images/keyboard-keys.png)
 
-Its Shift page carries the special keys. Esc, PrtSc, ScrLk, Pause, and Menu send
-key events; the media keys, 한자/Lang, and the right-hand modifiers stay muted
-until their systems land (RFC-0005/0006):
+`Fn` swaps the whole page to the function and media keys. F1-F12 send key events;
+F13-F15 (no Android keycode), the media keys, and Back stay muted:
 
-![Special-key page](docs/images/keyboard-special.png)
+![Special keys, Fn page](docs/images/keyboard-keys-fn.png)
 
 > These images are rendered from the actual layout data. A live screenshot from
 > the emulator lane is not shown because that host is headless with no KVM and no

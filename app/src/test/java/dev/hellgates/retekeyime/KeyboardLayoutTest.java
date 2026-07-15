@@ -23,12 +23,10 @@ public final class KeyboardLayoutTest {
         KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, true),
         KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false),
         KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, true),
-        KeyboardLayouts.symbol(NumpadMode.NUMBERS, false),
-        KeyboardLayouts.symbol(NumpadMode.ARROWS, false),
-        KeyboardLayouts.symbol(NumpadMode.FUNCTIONS, false),
-        KeyboardLayouts.symbol(NumpadMode.NUMBERS, true),
-        KeyboardLayouts.symbol(NumpadMode.ARROWS, true),
-        KeyboardLayouts.symbol(NumpadMode.FUNCTIONS, true)
+        KeyboardLayouts.specialChars(),
+        KeyboardLayouts.specialKeys(NumpadMode.NUMBERS),
+        KeyboardLayouts.specialKeys(NumpadMode.ARROWS),
+        KeyboardLayouts.specialKeys(NumpadMode.FUNCTIONS)
     );
 
     @Test
@@ -119,7 +117,7 @@ public final class KeyboardLayoutTest {
             labels(korean, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "space", "한/영", "!#1", "Tab", "☰"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "space", "한/영", "pad", "Tab", "☰"),
             labels(korean, 3)
         );
     }
@@ -234,24 +232,25 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
-    public void theSymbolKeyEntersTheSymbolLayer() {
-        SoftwareKeySpec symbolKey = KeyboardLayouts
+    public void thePadKeyEntersTheSpecialKeysPage() {
+        SoftwareKeySpec padKey = KeyboardLayouts
             .of(KeyboardLayoutId.KO_DUBEOLSIK, false)
-            .findById("touch.layer.symbols");
-        assertNotNull(symbolKey);
-        assertTrue(symbolKey.isControl());
-        assertEquals(ControlKey.SYMBOL_LAYER, symbolKey.control());
+            .findById("touch.layer.pad");
+        assertNotNull(padKey);
+        assertTrue(padKey.isControl());
+        assertEquals("pad", padKey.label());
+        assertEquals(ControlKey.SPECIAL_KEYS_LAYER, padKey.control());
     }
 
     @Test
-    public void holdingThePeriodSwitchesToTheSymbolLayer() {
+    public void holdingThePeriodSwitchesToTheSpecialCharsPage() {
         SoftwareKeySpec period = KeyboardLayouts
             .of(KeyboardLayoutId.KO_DUBEOLSIK, false)
             .findById("touch.text.period");
         assertNotNull(period);
         assertEquals(SemanticInput.text("."), period.semanticInput());
         assertTrue(period.hasLongPressControl());
-        assertEquals(ControlKey.SYMBOL_LAYER, period.longPressControl());
+        assertEquals(ControlKey.SPECIAL_CHARS_LAYER, period.longPressControl());
     }
 
     @Test

@@ -24,8 +24,10 @@ public final class ReteKeyboardView extends View {
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
     private final Runnable onHoldElapsed = this::handleLongPress;
+    private enum Page { LETTERS, SPECIAL_CHARS, SPECIAL_KEYS }
+
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
-    private boolean symbolActive;
+    private Page page = Page.LETTERS;
     private NumpadMode numpadMode = NumpadMode.NUMBERS;
     private int heldRow = -1;
     private int heldKey = -1;
@@ -43,9 +45,14 @@ public final class ReteKeyboardView extends View {
 
     /** The layout currently drawn and hit-tested, including layer, shift, and keypad mode. */
     public KeyboardLayout layout() {
-        return symbolActive
-            ? KeyboardLayouts.symbol(numpadMode, shiftLayer.isActive())
-            : KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
+        switch (page) {
+            case SPECIAL_CHARS:
+                return KeyboardLayouts.specialChars();
+            case SPECIAL_KEYS:
+                return KeyboardLayouts.specialKeys(numpadMode);
+            default:
+                return KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
+        }
     }
 
     /** Clears transient one-shot and pointer state when the editor session changes. */
@@ -322,16 +329,20 @@ public final class ReteKeyboardView extends View {
                 break;
             case LAYOUT_TOGGLE:
                 letterLayoutId = KeyboardLayouts.otherLetters(letterLayoutId);
-                symbolActive = false;
+                page = Page.LETTERS;
                 shiftLayer.clear();
                 break;
-            case SYMBOL_LAYER:
-                symbolActive = true;
+            case SPECIAL_CHARS_LAYER:
+                page = Page.SPECIAL_CHARS;
+                shiftLayer.clear();
+                break;
+            case SPECIAL_KEYS_LAYER:
+                page = Page.SPECIAL_KEYS;
                 numpadMode = NumpadMode.NUMBERS;
                 shiftLayer.clear();
                 break;
             case PREVIOUS_LAYER:
-                symbolActive = false;
+                page = Page.LETTERS;
                 shiftLayer.clear();
                 break;
             case NUMLOCK:
