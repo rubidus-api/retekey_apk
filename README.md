@@ -2,6 +2,12 @@
 
 MIT-licensed Android Hangul keyboard focused on standard IME behavior, hardware-key friendliness, and efficient Korean input.
 
+## Download
+
+**[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)** &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
+
+Current release: **v0.1.6** — [retekey-0.1.6.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.6/retekey-0.1.6.apk)
+
 ## Status
 
 P1A source-neutral input and P1B checked editor/session reliability are complete.
