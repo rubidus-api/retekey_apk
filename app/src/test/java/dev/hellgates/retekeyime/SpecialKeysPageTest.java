@@ -24,11 +24,11 @@ public final class SpecialKeysPageTest {
             labels(NUMBERS, 0)
         );
         assertEquals(
-            Arrays.asList("RAlt", "RCtrl", "RShft", "Menu", "Lang", "Fn", "4", "5", "6", "⏎"),
+            Arrays.asList("RAlt", "RCtrl", "RShft", "Menu", "Lang", "Fn", "4", "5", "6", "⌫"),
             labels(NUMBERS, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "가", "+", "-", "=", ".", "1", "2", "3", "⌫"),
+            Arrays.asList("⇧", "가", "+", "-", "=", ".", "1", "2", "3", "⏎"),
             labels(NUMBERS, 2)
         );
     }
@@ -82,11 +82,11 @@ public final class SpecialKeysPageTest {
             labels(FUNCTIONS, 0)
         );
         assertEquals(
-            Arrays.asList("밝게", "어둡게", "Vol+", "Vol-", "Mute", "Fn", "F4", "F5", "F6", "⏎"),
+            Arrays.asList("밝게", "어둡게", "Vol+", "Vol-", "Mute", "Fn", "F4", "F5", "F6", "⌫"),
             labels(FUNCTIONS, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "이전곡", "재생", "다음곡", "검색", "뒤로", "F1", "F2", "F3", "⌫"),
+            Arrays.asList("⇧", "이전곡", "재생", "다음곡", "검색", "뒤로", "F1", "F2", "F3", "⏎"),
             labels(FUNCTIONS, 2)
         );
         // F1-F12 send key events; F13-F15 have no Android keycode, so they stay disabled.

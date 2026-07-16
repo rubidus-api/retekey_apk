@@ -109,11 +109,11 @@ public final class KeyboardLayoutTest {
             labels(korean, 0)
         );
         assertEquals(
-            Arrays.asList("ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅗ", "ㅓ", "ㅏ", "ㅣ", "⏎"),
+            Arrays.asList("ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅗ", "ㅓ", "ㅏ", "ㅣ", "⌫"),
             labels(korean, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "ㅋ", "ㅌ", "ㅊ", "ㅍ", "ㅠ", "ㅜ", "ㅡ", ".", "⌫"),
+            Arrays.asList("⇧", "ㅋ", "ㅌ", "ㅊ", "ㅍ", "ㅠ", "ㅜ", "ㅡ", ".", "⏎"),
             labels(korean, 2)
         );
         assertEquals(
@@ -130,11 +130,11 @@ public final class KeyboardLayoutTest {
             labels(english, 0)
         );
         assertEquals(
-            Arrays.asList("a", "s", "d", "f", "g", "h", "j", "k", "l", "⏎"),
+            Arrays.asList("a", "s", "d", "f", "g", "h", "j", "k", "l", "⌫"),
             labels(english, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "z", "x", "c", "v", "b", "n", "m", ".", "⌫"),
+            Arrays.asList("⇧", "z", "x", "c", "v", "b", "n", "m", ".", "⏎"),
             labels(english, 2)
         );
         assertEquals(
@@ -161,7 +161,7 @@ public final class KeyboardLayoutTest {
         );
         assertEquals(
             "unshifted home row stays identical",
-            Arrays.asList("ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅗ", "ㅓ", "ㅏ", "ㅣ", "⏎"),
+            Arrays.asList("ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅗ", "ㅓ", "ㅏ", "ㅣ", "⌫"),
             labels(shifted, 1)
         );
     }

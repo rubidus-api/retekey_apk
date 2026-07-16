@@ -39,8 +39,12 @@ public final class ReteKeyboardView extends View {
 
     /** One height step applied by the menu's 높이 −/＋ tiles. */
     private static final float HEIGHT_STEP = 0.1f;
-    /** Half-gap inset around each key, in pixels; the dark background shows through as the gap. */
-    private static final int KEY_GAP = 5;
+    /** Gap (in dp) drawn around each key; also the touch dead zone, so the space between keys
+     * registers no press and a near-boundary tap can't land on the wrong neighbour. */
+    private static final float KEY_GAP_DP = 4.0f;
+
+    /** {@link #KEY_GAP_DP} resolved to pixels for this display; set in the constructor. */
+    private final int keyGapPx;
 
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
     private Page page = Page.LETTERS;
@@ -72,6 +76,8 @@ public final class ReteKeyboardView extends View {
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
         this.sink = Objects.requireNonNull(sink, "sink");
+        this.keyGapPx = Math.round(
+            KEY_GAP_DP * context.getResources().getDisplayMetrics().density);
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
@@ -225,13 +231,13 @@ public final class ReteKeyboardView extends View {
                 int right = layout.columnEdge(startColumn + key.columnSpan(), width);
                 paint.setColor(keyFillColor(key));
                 canvas.drawRect(
-                    left + KEY_GAP, top + KEY_GAP, right - KEY_GAP, bottom - KEY_GAP, paint);
+                    left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx, paint);
                 if (rowIndex == heldRow && keyIndex == heldKey && feedback.visualIntensity() > 0.0f) {
                     // Visual press feedback: a translucent overlay whose opacity tracks the setting.
                     paint.setColor(Color.argb(
                         Math.round(feedback.visualIntensity() * 130.0f), 78, 132, 214));
                     canvas.drawRect(
-                        left + KEY_GAP, top + KEY_GAP, right - KEY_GAP, bottom - KEY_GAP, paint);
+                        left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx, paint);
                 }
                 paint.setColor(key.enabled() || key.isControl()
                     ? Color.rgb(22, 27, 34)
@@ -385,6 +391,11 @@ public final class ReteKeyboardView extends View {
         int rowIndex = rowAt(layout, y);
         int keyIndex = keyIndexAt(layout, rowIndex, x);
         if (rowIndex < 0 || keyIndex < 0) {
+            return;
+        }
+        if (!withinKeyFace(layout, rowIndex, keyIndex, x, y)) {
+            // The touch landed in the gap between keys; ignore it so a near-boundary tap
+            // cannot register as the wrong neighbour.
             return;
         }
         heldRow = rowIndex;
@@ -602,6 +613,25 @@ public final class ReteKeyboardView extends View {
             }
         }
         return keys.size() - 1;
+    }
+
+    /**
+     * Whether {@code (x, y)} falls on the visible face of the key at
+     * {@code (rowIndex, keyIndex)} — the cell inset by {@link #keyGapPx}. Touches in the
+     * surrounding gap return {@code false} so they register no press.
+     */
+    private boolean withinKeyFace(
+            KeyboardLayout layout, int rowIndex, int keyIndex, float x, float y) {
+        int width = getWidth();
+        int height = getHeight();
+        int top = layout.rowEdge(rowIndex, height);
+        int bottom = layout.rowEdge(rowIndex + 1, height);
+        int startColumn = layout.startColumn(rowIndex, keyIndex);
+        SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
+        int left = layout.columnEdge(startColumn, width);
+        int right = layout.columnEdge(startColumn + key.columnSpan(), width);
+        return x >= left + keyGapPx && x <= right - keyGapPx
+            && y >= top + keyGapPx && y <= bottom - keyGapPx;
     }
 
     private void applyControl(ControlKey control) {

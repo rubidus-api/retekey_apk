@@ -21,11 +21,11 @@ public final class SpecialCharsPageTest {
             labels(PAGE, 0)
         );
         assertEquals(
-            Arrays.asList("\\", "|", "/", "[", "]", "{", "}", "<", ">", "⏎"),
+            Arrays.asList("\\", "|", "/", "[", "]", "{", "}", "<", ">", "⌫"),
             labels(PAGE, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "_", ";", ":", "`", "'", "\"", "?", "~", "⌫"),
+            Arrays.asList("⇧", "_", ";", ":", "`", "'", "\"", "?", "~", "⏎"),
             labels(PAGE, 2)
         );
         assertEquals(

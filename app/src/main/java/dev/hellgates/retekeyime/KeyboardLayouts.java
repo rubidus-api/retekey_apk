@@ -114,14 +114,14 @@ public final class KeyboardLayouts {
             letter("a", shifted), letter("s", shifted), letter("d", shifted),
             letter("f", shifted), letter("g", shifted), letter("h", shifted),
             letter("j", shifted), letter("k", shifted), letter("l", shifted),
-            enterKey()
+            backspaceKey()
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(shifted),
             letter("z", shifted), letter("x", shifted), letter("c", shifted),
             letter("v", shifted), letter("b", shifted), letter("n", shifted),
             letter("m", shifted),
-            letterPeriodKey(), backspaceKey()
+            letterPeriodKey(), enterKey()
         ));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(KeyboardLayoutId.EN_QWERTY, shifted, COLUMNS, rows);
@@ -151,7 +151,7 @@ public final class KeyboardLayouts {
             vowel("eo", "ㅓ", 4),
             vowel("a", "ㅏ", 0),
             vowel("i", "ㅣ", 20),
-            enterKey()
+            backspaceKey()
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(shifted),
@@ -162,7 +162,7 @@ public final class KeyboardLayouts {
             vowel("yu", "ㅠ", 17),
             vowel("u", "ㅜ", 13),
             vowel("eu", "ㅡ", 18),
-            letterPeriodKey(), backspaceKey()
+            letterPeriodKey(), enterKey()
         ));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(KeyboardLayoutId.KO_DUBEOLSIK, shifted, COLUMNS, rows);
@@ -181,7 +181,7 @@ public final class KeyboardLayouts {
             text("backslash", "\\"), text("pipe", "|"), text("slash", "/"),
             text("lbracket", "["), text("rbracket", "]"), text("lbrace", "{"),
             text("rbrace", "}"), text("lt", "<"), text("gt", ">"),
-            enterKey()
+            backspaceKey()
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(false),
@@ -191,7 +191,7 @@ public final class KeyboardLayouts {
             text("quote", "\"").withLongPress("÷"),
             text("question", "?").withLongPress("×"),
             text("tilde", "~").withLongPress("+"),
-            backspaceKey()
+            enterKey()
         ));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_CHARS, false, COLUMNS, rows);
@@ -211,14 +211,14 @@ public final class KeyboardLayouts {
                 disabled("brightup", "밝게"), disabled("brightdown", "어둡게"),
                 disabled("volup", "Vol+"), disabled("voldown", "Vol-"),
                 disabled("mute", "Mute"),
-                fnKey(), fnRawKey(3), fnRawKey(4), fnRawKey(5), enterKey()
+                fnKey(), fnRawKey(3), fnRawKey(4), fnRawKey(5), backspaceKey()
             ));
             rows.add(KeyboardLayout.row(
                 shiftKey(false),
                 disabled("prevtrack", "이전곡"), disabled("playpause", "재생"),
                 disabled("nexttrack", "다음곡"),
                 rawKey("search", "검색", RawKey.SEARCH), disabled("back", "뒤로"),
-                fnRawKey(6), fnRawKey(7), fnRawKey(8), backspaceKey()
+                fnRawKey(6), fnRawKey(7), fnRawKey(8), enterKey()
             ));
             rows.add(bottomRow(returnToLettersKey()));
             return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_KEYS, false, COLUMNS, rows);
@@ -234,12 +234,12 @@ public final class KeyboardLayouts {
         rows.add(KeyboardLayout.row(
             disabled("ralt", "RAlt"), disabled("rctrl", "RCtrl"), disabled("rshift", "RShft"),
             rawKey("menu", "Menu", RawKey.MENU), disabled("lang", "Lang"),
-            fnKey(), padCell(mode, 3), padCell(mode, 4), padCell(mode, 5), enterKey()
+            fnKey(), padCell(mode, 3), padCell(mode, 4), padCell(mode, 5), backspaceKey()
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(false), inPageReturnKey(),
             text("plus", "+"), text("minus", "-"), text("equals", "="), text("period", "."),
-            padCell(mode, 6), padCell(mode, 7), padCell(mode, 8), backspaceKey()
+            padCell(mode, 6), padCell(mode, 7), padCell(mode, 8), enterKey()
         ));
         rows.add(bottomRow(returnToLettersKey()));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_KEYS, false, COLUMNS, rows);
