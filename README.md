@@ -6,7 +6,7 @@ MIT-licensed Android Hangul keyboard focused on standard IME behavior, hardware-
 
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)** &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.15** — [retekey-0.1.15.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.15/retekey-0.1.15.apk)
+Current release: **v0.1.16** — [retekey-0.1.16.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.16/retekey-0.1.16.apk)
 
 ## Status
 
@@ -32,7 +32,9 @@ Holding the period opens the special-characters page. Every key commits text:
 
 The `pad` key opens the special-keys page: a right-hand keypad plus special keys.
 The digits and `+ - = .` commit text; Esc, PrtSc, ScrLk, Pause, and Menu send key
-events; 한자/Lang and the right-hand modifiers are muted until their systems land.
+events; the 한자 key converts the reading before the cursor to Hanja (candidate strip
+with 훈음 glosses and paging; 한글↔한자 both ways); Lang and the right-hand modifiers
+are muted until their systems land.
 `Num` turns the keypad into arrows/navigation:
 
 ![Special keys page](assets/keyboard-keys.png)

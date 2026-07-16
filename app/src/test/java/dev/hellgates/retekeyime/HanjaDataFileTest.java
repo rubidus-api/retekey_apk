@@ -1,5 +1,6 @@
 package dev.hellgates.retekeyime;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -34,6 +35,21 @@ public final class HanjaDataFileTest {
         throw new AssertionError("hanja.txt not found from working dir " + Paths.get("").toAbsolutePath());
     }
 
+    private static HunumTable loadShippedHunum() {
+        for (String candidate : new String[]{
+            "src/main/assets/hanja_hunum.txt", "app/src/main/assets/hanja_hunum.txt"}) {
+            Path path = Paths.get(candidate);
+            if (Files.exists(path)) {
+                try {
+                    return HunumTable.parse(Files.readAllLines(path, StandardCharsets.UTF_8));
+                } catch (IOException failure) {
+                    throw new UncheckedIOException(failure);
+                }
+            }
+        }
+        throw new AssertionError("hanja_hunum.txt not found from " + Paths.get("").toAbsolutePath());
+    }
+
     @Test
     public void shippedDataConvertsCommonReadingsAndWords() {
         HanjaTable table = loadShippedTable();
@@ -55,5 +71,21 @@ public final class HanjaDataFileTest {
         assertNotNull(word);
         assertTrue("학교 word wins over 교 alone",
             word.reading.equals("학교") && word.candidates.contains("學校"));
+    }
+
+    @Test
+    public void shippedDataReverseConvertsHanjaToReadings() {
+        HanjaTable table = loadShippedTable();
+        assertTrue("學 → 학", table.readings("學").contains("학"));
+        assertTrue("家 → 가", table.readings("家").contains("가"));
+        assertTrue("學校 → 학교", table.readings("學校").contains("학교"));
+    }
+
+    @Test
+    public void shippedHunumHasCommonGlosses() {
+        HunumTable hunum = loadShippedHunum();
+        assertTrue("many glosses", hunum.size() > 1000);
+        assertEquals("집 가", hunum.gloss("家"));
+        assertEquals("배울 학", hunum.gloss("學"));
     }
 }

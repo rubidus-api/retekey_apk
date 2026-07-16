@@ -3,10 +3,10 @@
 ReteKey includes work derived from the projects below. Their license notices are
 retained here and ship with distributed packages.
 
-## Hanja conversion data (`assets/hanja.txt`)
+## Hanja conversion data (`assets/hanja.txt`, `assets/hanja_hunum.txt`)
 
-ReteKey's Hanja conversion table is the redistributable `hanja.txt` from the
-Jamotong project. Its readings are derived from the Unicode® Unihan Database and
+ReteKey's Hanja conversion table (`hanja.txt`) and 훈음 gloss table
+(`hanja_hunum.txt`) are the redistributable files from the Jamotong project. Its readings are derived from the Unicode® Unihan Database and
 supplemented with a public-domain court name-Hanja list; the file's own header
 carries the full provenance and the required copyright notice.
 
@@ -20,6 +20,10 @@ carries the full provenance and the required copyright notice.
   rutopio/Korean-Name-Hanja-Charset (**MIT**).
 - Word mappings: Jamotong project curation, supplemented with the Korean-word →
   Hanja mappings (not the glosses) from jemdiggity/hanja-wordlist (**MIT**).
+- 훈음 glosses (`hanja_hunum.txt`): original Jamotong curation of traditional
+  representative glosses (a factual, centuries-old body of knowledge, not copied
+  from any dictionary), with rarer entries derived from the Unicode Unihan
+  `kDefinition` field (**Unicode License v3**).
 
 The Unicode® word mark and the Unihan database name are trademarks of Unicode,
 Inc. Use here is nominative, for attribution only.

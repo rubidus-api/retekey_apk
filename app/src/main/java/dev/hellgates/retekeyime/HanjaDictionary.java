@@ -10,12 +10,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Loads the bundled {@code hanja.txt} asset once into a {@link HanjaTable} and caches it for the
- * process. The file is small (~90 KB) so a lazy first-use load is cheap; {@code preload} lets the
- * service warm it on a background thread so the first 한자 press has no parse latency.
+ * Loads the bundled Hanja assets once and caches them for the process: the reading↔Hanja
+ * {@link HanjaTable} ({@code hanja.txt}) and the {@link HunumTable} of glosses
+ * ({@code hanja_hunum.txt}). The files are small (~90 KB each) so a lazy first-use load is cheap;
+ * {@code preload} warms both on a background thread so the first 한자 press has no parse latency.
  */
 public final class HanjaDictionary {
     private static volatile HanjaTable table;
+    private static volatile HunumTable hunum;
 
     private HanjaDictionary() {
     }
@@ -26,7 +28,7 @@ public final class HanjaDictionary {
             synchronized (HanjaDictionary.class) {
                 local = table;
                 if (local == null) {
-                    local = load(context);
+                    local = HanjaTable.parse(readLines(context, "hanja.txt"));
                     table = local;
                 }
             }
@@ -34,23 +36,40 @@ public final class HanjaDictionary {
         return local;
     }
 
-    /** Warms the cache off the calling thread; safe to call more than once. */
-    public static void preload(Context context) {
-        Context app = context.getApplicationContext();
-        new Thread(() -> get(app), "hanja-preload").start();
+    public static HunumTable hunum(Context context) {
+        HunumTable local = hunum;
+        if (local == null) {
+            synchronized (HanjaDictionary.class) {
+                local = hunum;
+                if (local == null) {
+                    local = HunumTable.parse(readLines(context, "hanja_hunum.txt"));
+                    hunum = local;
+                }
+            }
+        }
+        return local;
     }
 
-    private static HanjaTable load(Context context) {
+    /** Warms both caches off the calling thread; safe to call more than once. */
+    public static void preload(Context context) {
+        Context app = context.getApplicationContext();
+        new Thread(() -> {
+            get(app);
+            hunum(app);
+        }, "hanja-preload").start();
+    }
+
+    private static List<String> readLines(Context context, String assetName) {
         List<String> lines = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                context.getAssets().open("hanja.txt"), StandardCharsets.UTF_8))) {
+                context.getAssets().open(assetName), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 lines.add(line);
             }
         } catch (IOException failure) {
-            return HanjaTable.parse(Collections.emptyList());
+            return Collections.emptyList();
         }
-        return HanjaTable.parse(lines);
+        return lines;
     }
 }

@@ -16,16 +16,26 @@ import java.util.Map;
  */
 public final class HanjaTable {
     private final Map<String, List<String>> byReading;
+    private final Map<String, List<String>> byHanja;
     private final int maxKeyLength;
+    private final int maxHanjaLength;
 
-    private HanjaTable(Map<String, List<String>> byReading, int maxKeyLength) {
+    private HanjaTable(
+            Map<String, List<String>> byReading,
+            Map<String, List<String>> byHanja,
+            int maxKeyLength,
+            int maxHanjaLength) {
         this.byReading = byReading;
+        this.byHanja = byHanja;
         this.maxKeyLength = maxKeyLength;
+        this.maxHanjaLength = maxHanjaLength;
     }
 
     public static HanjaTable parse(Iterable<String> lines) {
         Map<String, List<String>> map = new HashMap<>();
+        Map<String, List<String>> reverse = new HashMap<>();
         int maxKeyLength = 1;
+        int maxHanjaLength = 1;
         for (String line : lines) {
             if (line == null) {
                 continue;
@@ -66,13 +76,32 @@ public final class HanjaTable {
                 if (key.length() > maxKeyLength) {
                     maxKeyLength = key.length();
                 }
+                for (String candidate : candidates) {
+                    List<String> readings = reverse.get(candidate);
+                    if (readings == null) {
+                        readings = new ArrayList<>();
+                        reverse.put(candidate, readings);
+                    }
+                    if (!readings.contains(key)) {
+                        readings.add(key);
+                    }
+                    if (candidate.length() > maxHanjaLength) {
+                        maxHanjaLength = candidate.length();
+                    }
+                }
             }
         }
+        Map<String, List<String>> frozenReadings = freeze(map);
+        Map<String, List<String>> frozenHanja = freeze(reverse);
+        return new HanjaTable(frozenReadings, frozenHanja, maxKeyLength, maxHanjaLength);
+    }
+
+    private static Map<String, List<String>> freeze(Map<String, List<String>> source) {
         Map<String, List<String>> frozen = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+        for (Map.Entry<String, List<String>> entry : source.entrySet()) {
             frozen.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
         }
-        return new HanjaTable(frozen, maxKeyLength);
+        return frozen;
     }
 
     /** Candidates for an exact reading (syllable or word); empty when none. */
@@ -107,6 +136,46 @@ public final class HanjaTable {
             }
         }
         return null;
+    }
+
+    /** Readings for a Hanja character or word (한자 → 한글); empty when unknown. */
+    public List<String> readings(String hanja) {
+        List<String> result = hanja == null ? null : byHanja.get(hanja);
+        return result == null ? Collections.emptyList() : result;
+    }
+
+    /**
+     * The longest suffix of {@code before} that is a known Hanja character or word, for
+     * 한자 → 한글 reverse conversion (學校 wins over 校 alone). Returns {@code null} when none match.
+     */
+    public Match longestSuffixReverseMatch(String before, int maxLen) {
+        if (before == null || before.isEmpty()) {
+            return null;
+        }
+        int cap = Math.min(maxLen, Math.min(before.length(), maxHanjaLength));
+        for (int length = cap; length >= 1; length--) {
+            String suffix = before.substring(before.length() - length);
+            List<String> readings = byHanja.get(suffix);
+            if (readings != null && !readings.isEmpty()) {
+                return new Match(suffix, length, readings);
+            }
+        }
+        return null;
+    }
+
+    /** A precomposed Hangul syllable or a conjoining/compatibility jamo. */
+    public static boolean isHangul(int codePoint) {
+        return (codePoint >= 0xAC00 && codePoint <= 0xD7A3)
+            || (codePoint >= 0x1100 && codePoint <= 0x11FF)
+            || (codePoint >= 0x3130 && codePoint <= 0x318F);
+    }
+
+    /** A CJK ideograph in the ranges the conversion table covers. */
+    public static boolean isHanja(int codePoint) {
+        return (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+            || (codePoint >= 0x3400 && codePoint <= 0x4DBF)
+            || (codePoint >= 0xF900 && codePoint <= 0xFAFF)
+            || (codePoint >= 0x20000 && codePoint <= 0x2FA1F);
     }
 
     /** A matched reading: its text, its length in characters, and the Hanja candidates. */

@@ -14,6 +14,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,7 +41,7 @@ public class ReteKeyImeService extends InputMethodService {
     private static final int HANJA_LOOKBEHIND = 8;
     private HanjaCandidatesView candidatesView;
     private String pendingReading;
-    private List<String> pendingCandidates;
+    private List<HanjaCandidatesView.Item> pendingCandidates;
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
     private boolean hanjaCandidatesShown;
@@ -460,6 +461,7 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         HanjaTable dictionary = HanjaDictionary.get(this);
+        // A live selection converts in place, in whichever direction its script implies.
         CharSequence selection = null;
         try {
             selection = ic.getSelectedText(0);
@@ -467,27 +469,89 @@ public class ReteKeyImeService extends InputMethodService {
             // Some editors refuse selection reads; fall through to the cursor path.
         }
         if (selection != null && selection.length() > 0 && selection.length() <= 16) {
-            List<String> candidates = dictionary.candidates(selection.toString());
-            if (!candidates.isEmpty()) {
-                pendingFromSelection = true;
-                pendingDeleteLength = 0;
-                showHanjaCandidates(selection.toString(), candidates);
+            if (convertFromSelection(dictionary, selection.toString())) {
                 return;
             }
-        }
-        // Finish any composing so the syllable is committed text we can read back and replace.
-        finishComposingInEditor();
-        inputProcessor.reset();
-        CharSequence before = ic.getTextBeforeCursor(HANJA_LOOKBEHIND, 0);
-        HanjaTable.Match match = before == null
-            ? null : dictionary.longestSuffixMatch(before.toString(), HANJA_LOOKBEHIND);
-        if (match == null) {
             hideHanjaCandidatesIfShown();
             return;
         }
-        pendingFromSelection = false;
-        pendingDeleteLength = match.length;
-        showHanjaCandidates(match.reading, match.candidates);
+        // Otherwise convert what is before the cursor. Finish any composing first so the syllable is
+        // committed text we can read back and replace.
+        finishComposingInEditor();
+        inputProcessor.reset();
+        CharSequence before = ic.getTextBeforeCursor(HANJA_LOOKBEHIND, 0);
+        if (before == null || before.length() == 0) {
+            hideHanjaCandidatesIfShown();
+            return;
+        }
+        String text = before.toString();
+        int lastCodePoint = text.codePointBefore(text.length());
+        if (HanjaTable.isHangul(lastCodePoint)) {
+            HanjaTable.Match match = dictionary.longestSuffixMatch(text, HANJA_LOOKBEHIND);
+            if (match == null) {
+                hideHanjaCandidatesIfShown();
+                return;
+            }
+            pendingFromSelection = false;
+            pendingDeleteLength = match.length;
+            showHanjaCandidates(match.reading, forwardItems(match.candidates));
+        } else if (HanjaTable.isHanja(lastCodePoint)) {
+            HanjaTable.Match match = dictionary.longestSuffixReverseMatch(text, HANJA_LOOKBEHIND);
+            if (match == null) {
+                hideHanjaCandidatesIfShown();
+                return;
+            }
+            pendingFromSelection = false;
+            pendingDeleteLength = match.length;
+            showHanjaCandidates(match.reading, reverseItems(match.candidates));
+        } else {
+            hideHanjaCandidatesIfShown();
+        }
+    }
+
+    /** Converts a selection: Hangul → Hanja, or Hanja → Hangul. Returns false when nothing matches. */
+    private boolean convertFromSelection(HanjaTable dictionary, String selection) {
+        int lastCodePoint = selection.codePointBefore(selection.length());
+        if (HanjaTable.isHangul(lastCodePoint)) {
+            List<String> candidates = dictionary.candidates(selection);
+            if (candidates.isEmpty()) {
+                return false;
+            }
+            pendingFromSelection = true;
+            pendingDeleteLength = 0;
+            showHanjaCandidates(selection, forwardItems(candidates));
+            return true;
+        }
+        if (HanjaTable.isHanja(lastCodePoint)) {
+            List<String> readings = dictionary.readings(selection);
+            if (readings.isEmpty()) {
+                return false;
+            }
+            pendingFromSelection = true;
+            pendingDeleteLength = 0;
+            showHanjaCandidates(selection, reverseItems(readings));
+            return true;
+        }
+        return false;
+    }
+
+    /** Hanja candidates with their 훈음 gloss (한글 → 한자). */
+    private List<HanjaCandidatesView.Item> forwardItems(List<String> hanja) {
+        HunumTable glosses = HanjaDictionary.hunum(this);
+        List<HanjaCandidatesView.Item> items = new ArrayList<>(hanja.size());
+        for (String candidate : hanja) {
+            items.add(new HanjaCandidatesView.Item(candidate, glosses.gloss(candidate)));
+        }
+        return items;
+    }
+
+    /** Reading candidates for reverse conversion (한자 → 한글); no gloss. */
+    private List<HanjaCandidatesView.Item> reverseItems(List<String> readings) {
+        List<HanjaCandidatesView.Item> items = new ArrayList<>(readings.size());
+        for (String reading : readings) {
+            items.add(new HanjaCandidatesView.Item(reading, null));
+        }
+        return items;
     }
 
     /** Replaces the source reading with the chosen Hanja and hides the strip. */
@@ -508,7 +572,7 @@ public class ReteKeyImeService extends InputMethodService {
         hideHanjaCandidates();
     }
 
-    private void showHanjaCandidates(String reading, List<String> candidates) {
+    private void showHanjaCandidates(String reading, List<HanjaCandidatesView.Item> candidates) {
         pendingReading = reading;
         pendingCandidates = candidates;
         setCandidatesViewShown(true);
