@@ -349,12 +349,6 @@ public final class CheckedEditorExecutorTest {
             plan(4, 1, Collections.singletonList(KeyAction.commitText("x"))),
             ExecutionResult.Reason.STALE_REVISION
         );
-        // Only deletion requires a known selection; committing text no longer does.
-        assertPreflightFailure(
-            ExecutionContext.active(4, 2, EditorBounds.unknown(), RICH),
-            plan(4, 2, Collections.singletonList(KeyAction.deleteBackward())),
-            ExecutionResult.Reason.INVALID_SELECTION
-        );
         assertPreflightFailure(
             ExecutionContext.active(4, 2, CURSOR, EditorCapabilities.unsupported()),
             plan(4, 2, Collections.singletonList(KeyAction.commitText("x"))),
@@ -502,8 +496,10 @@ public final class CheckedEditorExecutorTest {
     }
 
     @Test
-    public void unknownSelectionRejectsDeletionBeforeConnectionResolution() {
-        AtomicInteger resolves = new AtomicInteger();
+    public void deletionWithUnknownSelectionStillDispatches() {
+        // deleteSurroundingText is cursor-relative, so backspace works even when the IME does not
+        // know the selection (terminals reporting -1). It must not be refused.
+        FakeEditorBridge bridge = new FakeEditorBridge();
         TransitionPlan<String> plan = TransitionPlan.of(
             1,
             0,
@@ -516,15 +512,10 @@ public final class CheckedEditorExecutorTest {
         ExecutionResult result = EXECUTOR.execute(
             plan,
             ExecutionContext.active(1, 0, EditorBounds.unknown(), RICH),
-            () -> {
-                resolves.incrementAndGet();
-                return EditorEndpoint.of(1, new FakeEditorBridge());
-            }
+            () -> EditorEndpoint.of(1, bridge)
         );
 
-        Assert.assertEquals(0, resolves.get());
-        Assert.assertEquals(ExecutionResult.Reason.INVALID_SELECTION, result.reason());
-        Assert.assertEquals(EditorBounds.unknown(), result.stateBounds());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
     }
 
     private static void assertPreflightFailure(

@@ -553,7 +553,7 @@ public final class InputSessionControllerTest {
     }
 
     @Test
-    public void unpredictableDeleteBlocksLaterMutationUntilAnyValidFeedback() {
+    public void unpredictableDeleteStillLetsLaterInputThrough() {
         InputSessionController<String> controller = new InputSessionController<>(3);
         EditorBounds cursorTwo = EditorBounds.of(2, 2, -1, -1);
         long generation = controller.start("neutral", cursorTwo, RICH);
@@ -574,26 +574,22 @@ public final class InputSessionControllerTest {
 
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, deleted.outcome());
         Assert.assertEquals(EditorBounds.unknown(), controller.workingBounds());
-        AtomicInteger blockedResolves = new AtomicInteger();
-        ExecutionResult blocked = controller.execute(
+
+        // A later delete is NOT blocked just because the cursor is unknown: backspace must keep
+        // working (deleteSurroundingText is cursor-relative). This is what fixes terminals.
+        ExecutionResult later = controller.execute(
             controller.plan(
-                // Deletion still requires a known selection, so it stays blocked here.
                 DispatchResult.handled(KeyAction.deleteBackward()),
-                "must-not-adopt",
+                "later",
                 EditorBounds.unknown()
             ),
-            () -> {
-                blockedResolves.incrementAndGet();
-                return EditorEndpoint.of(generation, new FakeEditorBridge());
-            }
+            () -> EditorEndpoint.of(generation, new FakeEditorBridge())
         );
-        Assert.assertEquals(ExecutionResult.Reason.INVALID_SELECTION, blocked.reason());
-        Assert.assertEquals(0, blockedResolves.get());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, later.outcome());
+        Assert.assertNotEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
 
-        Assert.assertEquals(
-            SelectionReconcileResult.MATCHED,
-            controller.updateSelection(generation, EditorBounds.of(1, 1, -1, -1))
-        );
+        // A valid selection update re-anchors the cursor.
+        controller.updateSelection(generation, EditorBounds.of(1, 1, -1, -1));
         Assert.assertEquals(EditorBounds.of(1, 1, -1, -1), controller.workingBounds());
         Assert.assertEquals(SynchronizationState.SYNCED, controller.syncState());
     }

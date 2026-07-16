@@ -82,15 +82,10 @@ public final class CheckedEditorExecutor {
         if (!context.capabilities().isSupported()) {
             return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
         }
-        if (requiresSelection(plan.actions())
-            && context.capabilities().deletionMode()
-                == EditorCapabilities.DeletionMode.RICH_TEXT
-            && !context.bounds().hasSelection()) {
-            // Only rich-text deletion needs the cursor position (deleteSurroundingText). A raw-key
-            // editor deletes with a key event, so it must not be blocked when the selection is
-            // unknown — otherwise backspace stops working in terminals.
-            return notDispatched(plan, ExecutionResult.Reason.INVALID_SELECTION);
-        }
+        // Deletion is never refused for an unknown selection: deleteSurroundingTextInCodePoints
+        // deletes relative to the editor's own cursor, so it works whether or not the IME knows
+        // the position. Refusing it here is what made backspace stop working in terminals once
+        // they reported an unknown selection.
         if (context.capabilities().isSensitive()
             && containsAction(plan.actions(), KeyAction.Kind.SET_COMPOSING_TEXT)) {
             return notDispatched(
@@ -161,18 +156,6 @@ public final class CheckedEditorExecutor {
         return false;
     }
 
-    private static boolean requiresSelection(List<KeyAction> actions) {
-        // Only backward deletion needs a known selection: deleteSurroundingText depends on the
-        // cursor position. Inserting or composing text lands at the editor's own cursor regardless
-        // of what the IME knows, so those must not be blocked — otherwise editors that never report
-        // a selection (terminals like Termius, some custom views) can never receive typed text.
-        for (KeyAction action : actions) {
-            if (action.kind() == KeyAction.Kind.DELETE_BACKWARD) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private static ExecutionResult executeRawCompatibility(
         TransitionPlan<?> plan,
