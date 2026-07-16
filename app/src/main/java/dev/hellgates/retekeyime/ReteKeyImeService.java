@@ -359,14 +359,14 @@ public class ReteKeyImeService extends InputMethodService {
         if (!sessionActive) {
             return null;
         }
-        EditorExpectation expectation = EditorBoundsPredictor.expectationAfter(
+        EditorBounds predicted = EditorBoundsPredictor.after(
             sessionController.workingBounds(),
             result.actions()
         );
-        TransitionPlan<ScaffoldSessionState> plan = sessionController.planWithExpectation(
+        TransitionPlan<ScaffoldSessionState> plan = sessionController.plan(
             result,
             ScaffoldSessionState.EMPTY,
-            expectation
+            predicted
         );
         return sessionController.execute(plan, this::currentEndpoint);
     }

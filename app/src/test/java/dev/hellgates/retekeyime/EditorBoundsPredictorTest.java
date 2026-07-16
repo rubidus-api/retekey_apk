@@ -85,16 +85,4 @@ public final class EditorBoundsPredictorTest {
         );
     }
 
-    @Test
-    public void collapsedDeleteExpectationAcceptsOnlyOneCodePointUtf16Deltas() {
-        EditorExpectation expectation = EditorBoundsPredictor.expectationAfter(
-            EditorBounds.of(2, 2, -1, -1),
-            Collections.singletonList(KeyAction.deleteBackward())
-        );
-
-        Assert.assertTrue(expectation.matches(EditorBounds.of(1, 1, -1, -1)));
-        Assert.assertTrue(expectation.matches(EditorBounds.of(0, 0, -1, -1)));
-        Assert.assertFalse(expectation.matches(EditorBounds.of(2, 2, -1, -1)));
-        Assert.assertFalse(expectation.matches(EditorBounds.of(9, 9, -1, -1)));
     }
-}

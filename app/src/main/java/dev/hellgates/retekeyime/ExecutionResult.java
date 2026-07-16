@@ -51,7 +51,7 @@ public final class ExecutionResult {
     private final StateEffect stateEffect;
     private final long generation;
     private final long baseRevision;
-    private final EditorExpectation expectation;
+    private final EditorBounds expectedBounds;
     private final EditorBounds stateBounds;
     private final List<KeyAction.Kind> actionKinds;
     private final int failedActionIndex;
@@ -82,7 +82,7 @@ public final class ExecutionResult {
         this.stateEffect = stateEffect;
         this.generation = plan.generation();
         this.baseRevision = plan.baseRevision();
-        this.expectation = plan.expectation();
+        this.expectedBounds = plan.expectedBounds();
         this.stateBounds = EditorBounds.unknown();
         ArrayList<KeyAction.Kind> kinds = new ArrayList<>();
         for (KeyAction action : plan.actions()) {
@@ -105,7 +105,7 @@ public final class ExecutionResult {
         this.stateEffect = source.stateEffect;
         this.generation = source.generation;
         this.baseRevision = source.baseRevision;
-        this.expectation = source.expectation;
+        this.expectedBounds = source.expectedBounds;
         this.stateBounds = stateBounds;
         this.actionKinds = source.actionKinds;
         this.failedActionIndex = source.failedActionIndex;
@@ -145,8 +145,8 @@ public final class ExecutionResult {
         return baseRevision;
     }
 
-    public EditorExpectation expectation() {
-        return expectation;
+    public EditorBounds expectedBounds() {
+        return expectedBounds;
     }
 
     public EditorBounds stateBounds() {
@@ -198,7 +198,7 @@ public final class ExecutionResult {
             + ", stateEffect=" + stateEffect
             + ", generation=" + generation
             + ", baseRevision=" + baseRevision
-            + ", expectation=" + expectation
+            + ", expectedBounds=" + expectedBounds
             + ", stateBounds=" + stateBounds
             + ", actionKinds=" + actionKinds
             + ", failedActionIndex=" + failedActionIndex

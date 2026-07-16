@@ -4,14 +4,20 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
+/**
+ * A passive cursor cache in the AOSP LatinIME style. It optimistically records where the cursor
+ * should be after each dispatched operation and lets {@link #updateSelection} overwrite that cache
+ * with whatever the editor actually reports. The editor is authoritative: the cache is only a hint,
+ * never a contract the editor must satisfy, so input is never refused and the session never latches
+ * into a dead state. A generation guards against applying a plan built for a previous session.
+ */
 public final class InputSessionController<S> {
-    private static final int DEFAULT_LEDGER_CAPACITY = 32;
+    private static final int DEFAULT_DEFERRED_CAPACITY = 32;
 
-    private final int ledgerCapacity;
+    private final int deferredCapacity;
     private final CheckedEditorExecutor executor;
     private final Deque<DeferredSelection> deferredSelections = new ArrayDeque<>();
 
-    private SelectionExpectationLedger ledger;
     private long generation;
     private long revision;
     private boolean accepting;
@@ -25,16 +31,15 @@ public final class InputSessionController<S> {
     private S currentState;
 
     public InputSessionController() {
-        this(DEFAULT_LEDGER_CAPACITY);
+        this(DEFAULT_DEFERRED_CAPACITY);
     }
 
-    public InputSessionController(int ledgerCapacity) {
-        if (ledgerCapacity < 1 || ledgerCapacity > 64) {
-            throw new IllegalArgumentException("ledgerCapacity must be between 1 and 64");
+    public InputSessionController(int deferredCapacity) {
+        if (deferredCapacity < 1 || deferredCapacity > 64) {
+            throw new IllegalArgumentException("deferredCapacity must be between 1 and 64");
         }
-        this.ledgerCapacity = ledgerCapacity;
+        this.deferredCapacity = deferredCapacity;
         this.executor = new CheckedEditorExecutor();
-        this.ledger = new SelectionExpectationLedger(ledgerCapacity);
     }
 
     public long start(
@@ -51,7 +56,6 @@ public final class InputSessionController<S> {
         this.executing = false;
         this.deferredOverflow = false;
         this.deferredSelections.clear();
-        this.ledger = new SelectionExpectationLedger(ledgerCapacity);
         this.neutralState = Objects.requireNonNull(initialState, "initialState");
         this.currentState = initialState;
         this.confirmedBounds = Objects.requireNonNull(initialBounds, "initialBounds");
@@ -84,23 +88,6 @@ public final class InputSessionController<S> {
         );
     }
 
-    public TransitionPlan<S> planWithExpectation(
-        DispatchResult dispatchResult,
-        S proposedState,
-        EditorExpectation expectation
-    ) {
-        requireStarted();
-        Objects.requireNonNull(dispatchResult, "dispatchResult");
-        return TransitionPlan.withExpectation(
-            generation,
-            revision,
-            dispatchResult.disposition(),
-            proposedState,
-            expectation,
-            dispatchResult.actions()
-        );
-    }
-
     public ExecutionResult execute(
         TransitionPlan<S> plan,
         EditorEndpointProvider endpointProvider
@@ -128,30 +115,7 @@ public final class InputSessionController<S> {
         revision = incrementRevision(revision);
         long ownedGeneration = generation;
         long ownedRevision = revision;
-        boolean boundsWereConfirmed = ledger.pendingCount() == 0
-            && workingBounds.equals(confirmedBounds);
-
-        if (syncState == SynchronizationState.DESYNCHRONIZED) {
-            return localFailure(
-                plan,
-                ExecutionResult.Reason.SESSION_DESYNCHRONIZED,
-                ExecutionResult.StateEffect.KEEP_CURRENT
-            );
-        }
-        // LatinIME model: the cursor cache is a best-effort hint, never a contract the editor must
-        // satisfy. Every operation is fire-and-forget — we optimistically update the cache and let
-        // onUpdateSelection overwrite it — so nothing is ever reserved, awaited, or desynchronized.
-        boolean statelessEditor = true;
-        boolean reserved = false;
-        if (reserved && !ledger.hasCapacity()) {
-            // Too many unconfirmed expectations (an editor that rarely confirms its selection).
-            // Drop the backlog and keep accepting input instead of freezing; the text we committed
-            // is already in the editor, and a later known selection update re-syncs us.
-            ledger.clear();
-        }
-        if (reserved) {
-            ledger.reserve(consumedRevision, plan.expectation());
-        }
+        boolean boundsWereConfirmed = workingBounds.equals(confirmedBounds);
 
         ExecutionResult result;
         executing = true;
@@ -183,14 +147,14 @@ public final class InputSessionController<S> {
             return sessionChangedResult(plan, result);
         }
 
-        applyExecutionResult(plan, consumedRevision, reserved, statelessEditor, result);
+        applyExecutionResult(plan, result);
         if (deferredOverflow) {
-            desynchronize();
+            dropToWaiting();
             deferredSelections.clear();
             deferredOverflow = false;
             return deferredOverflowResult(plan, result);
         }
-        drainDeferredSelections(plan, result);
+        drainDeferredSelections();
         return result;
     }
 
@@ -207,7 +171,7 @@ public final class InputSessionController<S> {
             return SelectionReconcileResult.STOPPED;
         }
         if (executing) {
-            if (deferredSelections.size() >= ledgerCapacity) {
+            if (deferredSelections.size() >= deferredCapacity) {
                 deferredOverflow = true;
                 return SelectionReconcileResult.DEFERRED_OVERFLOW;
             }
@@ -225,7 +189,6 @@ public final class InputSessionController<S> {
         executing = false;
         deferredOverflow = false;
         deferredSelections.clear();
-        ledger.clear();
         syncState = SynchronizationState.STOPPED;
     }
 
@@ -254,8 +217,9 @@ public final class InputSessionController<S> {
         return syncState;
     }
 
+    /** Always zero: the passive cache keeps no pending expectations. Kept for API compatibility. */
     public int pendingExpectationCount() {
-        return ledger.pendingCount();
+        return 0;
     }
 
     public EditorBounds workingBounds() {
@@ -268,68 +232,34 @@ public final class InputSessionController<S> {
             : ExecutionContext.stopped(generation, revision, workingBounds, capabilities);
     }
 
-    private void applyExecutionResult(
-        TransitionPlan<S> plan,
-        long reservedRevision,
-        boolean reserved,
-        boolean statelessEditor,
-        ExecutionResult result
-    ) {
+    private void applyExecutionResult(TransitionPlan<S> plan, ExecutionResult result) {
         switch (result.stateEffect()) {
             case ADOPT_PROPOSED_SYNCED:
                 currentState = plan.proposedState();
-                if (plan.expectation().workingBounds().hasSelection()) {
-                    workingBounds = plan.expectation().workingBounds();
-                }
-                if (reserved) {
-                    ledger.cancel(reservedRevision);
+                if (plan.expectedBounds().hasSelection()) {
+                    workingBounds = plan.expectedBounds();
                 }
                 syncState = stateAfterNoEditorMutation();
                 break;
             case ADOPT_PROPOSED_AWAITING_CONFIRMATION:
+                // Optimistically cache the predicted cursor; the editor's next report is the truth.
                 currentState = plan.proposedState();
-                workingBounds = plan.expectation().workingBounds();
-                if (statelessEditor) {
-                    // An editor with no known selection never confirms, so settle into a clean
-                    // neutral state (WAITING_FOR_BOUNDS) instead of awaiting a confirmation that
-                    // never comes and accumulating until the session desynchronizes.
-                    syncState = stateAfterNoEditorMutation();
-                } else {
-                    syncState = SynchronizationState.AWAITING_CONFIRMATION;
-                }
+                workingBounds = plan.expectedBounds();
+                syncState = stateAfterNoEditorMutation();
                 break;
             case KEEP_CURRENT:
-                if (reserved) {
-                    ledger.cancel(reservedRevision);
-                }
                 break;
             case RESET_DESYNCHRONIZED:
-                desynchronize();
+                // A failed editor call means the cursor is now unknown, not that the session is
+                // dead: drop to waiting and keep accepting input.
+                dropToWaiting();
                 break;
             default:
                 throw new IllegalStateException("unsupported execution state effect");
         }
     }
 
-    private void drainDeferredSelections(
-        TransitionPlan<S> plan,
-        ExecutionResult result
-    ) {
-        if (result.stateEffect()
-            == ExecutionResult.StateEffect.ADOPT_PROPOSED_AWAITING_CONFIRMATION) {
-            int index = 0;
-            int finalMatchIndex = -1;
-            for (DeferredSelection deferred : deferredSelections) {
-                if (deferred.generation == generation
-                    && plan.expectation().matches(deferred.bounds)) {
-                    finalMatchIndex = index;
-                }
-                index++;
-            }
-            for (int discarded = 0; discarded < finalMatchIndex; discarded++) {
-                deferredSelections.removeFirst();
-            }
-        }
+    private void drainDeferredSelections() {
         while (!deferredSelections.isEmpty()) {
             DeferredSelection deferred = deferredSelections.removeFirst();
             reconcileNow(deferred.generation, deferred.bounds);
@@ -343,78 +273,37 @@ public final class InputSessionController<S> {
         if (updateGeneration != generation) {
             return SelectionReconcileResult.STALE_GENERATION;
         }
-        if (syncState == SynchronizationState.DESYNCHRONIZED) {
-            return SelectionReconcileResult.DESYNCHRONIZED;
-        }
         if (syncState == SynchronizationState.UNSUPPORTED) {
             return SelectionReconcileResult.UNSUPPORTED;
         }
+        if (!observedBounds.hasSelection()) {
+            // An unknown selection (routine in terminals and some webviews) is a waiting condition,
+            // never a contradiction: keep the cursor unknown and keep accepting input.
+            workingBounds = EditorBounds.unknown();
+            syncState = SynchronizationState.WAITING_FOR_BOUNDS;
+            return SelectionReconcileResult.WAITING_FOR_BOUNDS;
+        }
         if (syncState == SynchronizationState.WAITING_FOR_BOUNDS) {
-            if (!observedBounds.hasSelection()) {
-                return SelectionReconcileResult.WAITING_FOR_BOUNDS;
-            }
             confirmedBounds = observedBounds;
             workingBounds = observedBounds;
             syncState = SynchronizationState.SYNCED;
             return SelectionReconcileResult.EXTERNAL_MOVEMENT;
         }
-        if (!observedBounds.hasSelection()) {
-            // The editor no longer reports a selection (routine in terminals and some webviews).
-            // Recover to a waiting state instead of permanently desynchronizing, so the keyboard
-            // never freezes; a later known update re-syncs it.
-            ledger.clear();
-            workingBounds = EditorBounds.unknown();
-            syncState = SynchronizationState.WAITING_FOR_BOUNDS;
-            return SelectionReconcileResult.WAITING_FOR_BOUNDS;
-        }
-        if (ledger.pendingCount() > 0) {
-            if (observedBounds.equals(confirmedBounds)) {
-                return SelectionReconcileResult.DUPLICATE_OR_DELAYED;
-            }
-            SelectionReconcileResult result = ledger.reconcile(observedBounds);
-            if (result == SelectionReconcileResult.CONTRADICTION) {
-                // The editor reports a selection none of our expectations predicted. The editor is
-                // authoritative: adopt it and resync rather than freezing the keyboard.
-                ledger.clear();
-                confirmedBounds = observedBounds;
-                workingBounds = observedBounds;
-                syncState = SynchronizationState.SYNCED;
-                return SelectionReconcileResult.EXTERNAL_MOVEMENT;
-            }
-            if (result == SelectionReconcileResult.MATCHED
-                || result == SelectionReconcileResult.COALESCED) {
-                confirmedBounds = observedBounds;
-                if (ledger.pendingCount() == 0) {
-                    workingBounds = observedBounds;
-                }
-                syncState = ledger.pendingCount() == 0
-                    ? SynchronizationState.SYNCED
-                    : SynchronizationState.AWAITING_CONFIRMATION;
-            } else if (result == SelectionReconcileResult.INTERMEDIATE) {
-                syncState = SynchronizationState.AWAITING_CONFIRMATION;
-            }
-            return result;
-        }
-        if (observedBounds.equals(confirmedBounds) || ledger.isKnown(observedBounds)) {
+        if (observedBounds.equals(confirmedBounds)) {
             return SelectionReconcileResult.DUPLICATE_OR_DELAYED;
         }
+        // The editor is authoritative: adopt whatever it reports.
         confirmedBounds = observedBounds;
         workingBounds = observedBounds;
         currentState = neutralState;
-        ledger.clear();
         syncState = SynchronizationState.SYNCED;
         return SelectionReconcileResult.EXTERNAL_MOVEMENT;
     }
 
-    /**
-     * Recovers after an editor surprise (a failed InputConnection call, an overflowed backlog).
-     * This is deliberately NOT a latched failure: the cursor is simply unknown until the editor
-     * reports again, and input keeps flowing. The keyboard must never permanently stop.
-     */
-    private void desynchronize() {
+    /** Drops the cached cursor to unknown and keeps accepting input; never a latched failure. */
+    private void dropToWaiting() {
         currentState = neutralState;
         workingBounds = EditorBounds.unknown();
-        ledger.clear();
         syncState = SynchronizationState.WAITING_FOR_BOUNDS;
     }
 
@@ -425,9 +314,7 @@ public final class InputSessionController<S> {
         if (!workingBounds.hasSelection()) {
             return SynchronizationState.WAITING_FOR_BOUNDS;
         }
-        return ledger.pendingCount() == 0
-            ? SynchronizationState.SYNCED
-            : SynchronizationState.AWAITING_CONFIRMATION;
+        return SynchronizationState.SYNCED;
     }
 
     private ExecutionResult localFailure(
@@ -527,7 +414,6 @@ public final class InputSessionController<S> {
             + ", accepting=" + accepting
             + ", syncState=" + syncState
             + ", confirmedBounds=" + confirmedBounds
-            + ", pendingExpectationCount=" + ledger.pendingCount()
             + '}';
     }
 

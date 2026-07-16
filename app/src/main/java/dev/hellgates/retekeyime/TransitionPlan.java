@@ -9,7 +9,7 @@ public final class TransitionPlan<S> {
     private final long baseRevision;
     private final DispatchResult.Disposition disposition;
     private final S proposedState;
-    private final EditorExpectation expectation;
+    private final EditorBounds expectedBounds;
     private final List<KeyAction> actions;
 
     private TransitionPlan(
@@ -17,7 +17,7 @@ public final class TransitionPlan<S> {
         long baseRevision,
         DispatchResult.Disposition disposition,
         S proposedState,
-        EditorExpectation expectation,
+        EditorBounds expectedBounds,
         List<KeyAction> actions
     ) {
         if (generation < 1) {
@@ -32,8 +32,8 @@ public final class TransitionPlan<S> {
         if (proposedState == null) {
             throw new IllegalArgumentException("proposedState must not be null");
         }
-        if (expectation == null) {
-            throw new IllegalArgumentException("expectation must not be null");
+        if (expectedBounds == null) {
+            throw new IllegalArgumentException("expectedBounds must not be null");
         }
         if (actions == null) {
             throw new IllegalArgumentException("actions must not be null");
@@ -51,7 +51,7 @@ public final class TransitionPlan<S> {
         this.baseRevision = baseRevision;
         this.disposition = disposition;
         this.proposedState = proposedState;
-        this.expectation = expectation;
+        this.expectedBounds = expectedBounds;
         this.actions = Collections.unmodifiableList(copy);
     }
 
@@ -63,36 +63,12 @@ public final class TransitionPlan<S> {
         EditorBounds expectedBounds,
         List<KeyAction> actions
     ) {
-        if (expectedBounds == null) {
-            throw new IllegalArgumentException("expectedBounds must not be null");
-        }
-        EditorExpectation expectation = expectedBounds.hasSelection()
-            ? EditorExpectation.exact(expectedBounds)
-            : EditorExpectation.unconfirmable();
         return new TransitionPlan<>(
             generation,
             baseRevision,
             disposition,
             proposedState,
-            expectation,
-            actions
-        );
-    }
-
-    public static <S> TransitionPlan<S> withExpectation(
-        long generation,
-        long baseRevision,
-        DispatchResult.Disposition disposition,
-        S proposedState,
-        EditorExpectation expectation,
-        List<KeyAction> actions
-    ) {
-        return new TransitionPlan<>(
-            generation,
-            baseRevision,
-            disposition,
-            proposedState,
-            expectation,
+            expectedBounds,
             actions
         );
     }
@@ -113,12 +89,9 @@ public final class TransitionPlan<S> {
         return proposedState;
     }
 
+    /** The cursor the IME optimistically expects after this plan; a hint, never a contract. */
     public EditorBounds expectedBounds() {
-        return expectation.workingBounds();
-    }
-
-    public EditorExpectation expectation() {
-        return expectation;
+        return expectedBounds;
     }
 
     public List<KeyAction> actions() {
@@ -131,7 +104,7 @@ public final class TransitionPlan<S> {
             + "generation=" + generation
             + ", baseRevision=" + baseRevision
             + ", disposition=" + disposition
-            + ", expectation=" + expectation
+            + ", expectedBounds=" + expectedBounds
             + ", actionCount=" + actions.size()
             + '}';
     }

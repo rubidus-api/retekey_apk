@@ -20,49 +20,7 @@ public final class EditorBoundsPredictor {
         return current;
     }
 
-    public static EditorExpectation expectationAfter(
-        EditorBounds initial,
-        List<KeyAction> actions
-    ) {
-        if (initial == null || actions == null || actions.contains(null)) {
-            throw new IllegalArgumentException("prediction arguments must not be null");
-        }
-        java.util.ArrayList<EditorBounds> intermediate = new java.util.ArrayList<>();
-        EditorBounds prefix = initial;
-        for (int index = 0; index + 1 < actions.size(); index++) {
-            prefix = after(prefix, actions.get(index));
-            if (!prefix.hasSelection()) {
-                break;
-            }
-            intermediate.add(prefix);
-        }
-        EditorBounds predicted = after(initial, actions);
-        EditorExpectation finalExpectation;
-        if (predicted.hasSelection()) {
-            finalExpectation = EditorExpectation.exact(predicted);
-        } else if (initial.hasSelection()
-            && actions.size() == 1
-            && actions.get(0).kind() == KeyAction.Kind.DELETE_BACKWARD
-            && !initial.hasComposingRange()
-            && !initial.hasSelectedText()
-            && initial.selectionStart() > 0) {
-            int cursor = initial.selectionStart();
-            EditorBounds oneUnit = EditorBounds.of(cursor - 1, cursor - 1, -1, -1);
-            if (cursor == 1) {
-                finalExpectation = EditorExpectation.exact(oneUnit);
-            } else {
-                finalExpectation = EditorExpectation.oneOf(java.util.Arrays.asList(
-                    oneUnit,
-                    EditorBounds.of(cursor - 2, cursor - 2, -1, -1)
-                ));
-            }
-        } else {
-            finalExpectation = EditorExpectation.unconfirmable();
-        }
-        return EditorExpectation.withIntermediateBounds(finalExpectation, intermediate);
-    }
-
-    static EditorBounds after(EditorBounds current, KeyAction action) {
+static EditorBounds after(EditorBounds current, KeyAction action) {
         if (current == null || action == null) {
             throw new IllegalArgumentException("prediction arguments must not be null");
         }

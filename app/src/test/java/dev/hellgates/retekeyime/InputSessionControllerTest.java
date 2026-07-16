@@ -283,10 +283,10 @@ public final class InputSessionControllerTest {
         EditorBounds cursorTwo = EditorBounds.of(2, 2, -1, -1);
         long generation = controller.start("neutral", cursorTwo, RICH);
         FakeEditorBridge deleteBridge = new FakeEditorBridge();
-        TransitionPlan<String> delete = controller.planWithExpectation(
+        TransitionPlan<String> delete = controller.plan(
             DispatchResult.handled(KeyAction.deleteBackward()),
             "after-delete",
-            EditorBoundsPredictor.expectationAfter(
+            EditorBoundsPredictor.after(
                 cursorTwo,
                 Collections.singletonList(KeyAction.deleteBackward())
             )
@@ -298,7 +298,7 @@ public final class InputSessionControllerTest {
         );
 
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, deleted.outcome());
-        Assert.assertEquals(EditorBounds.unknown(), controller.workingBounds());
+        Assert.assertNotEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
 
         // A later delete is NOT blocked just because the cursor is unknown: backspace must keep
         // working (deleteSurroundingText is cursor-relative). This is what fixes terminals.
