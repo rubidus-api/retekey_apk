@@ -86,19 +86,17 @@ public final class EditorActionPolicyTest {
     }
 
     @Test
-    public void typeNullWithoutActionUsesRawEnterAndSingleLineRichDoesNothing() {
+    public void enterWithoutAnEditorActionSendsARawEnterOnAnyEditor() {
+        // Both a terminal (TYPE_NULL) and a plain single-line rich field with no IME action send a
+        // real Enter key, which every editor understands. Doing nothing left Enter dead.
         Assert.assertEquals(
             Arrays.asList(KeyAction.rawEnter()),
             EditorActionPolicy.enter(EditorProfile.typeNull(false, false, 0, -1)).actions()
         );
-        Assert.assertTrue(EditorActionPolicy.enter(EditorProfile.richText(
-            false,
-            false,
-            false,
-            false,
-            false,
-            0,
-            -1
-        )).actions().isEmpty());
+        Assert.assertEquals(
+            Arrays.asList(KeyAction.rawEnter()),
+            EditorActionPolicy.enter(EditorProfile.richText(
+                false, false, false, false, false, 0, -1)).actions()
+        );
     }
 }

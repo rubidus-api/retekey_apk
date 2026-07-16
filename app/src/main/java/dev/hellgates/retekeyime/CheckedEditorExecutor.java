@@ -62,7 +62,10 @@ public final class CheckedEditorExecutor {
         // A raw-key editor (a terminal like Termius reporting TYPE_NULL) uses key events for
         // deletion and enter, but plain committed text still goes through the ordinary commit path
         // so typed characters actually land.
+        // A raw Enter (KEYCODE_ENTER) and raw keys go out as key events on ANY editor — that is how
+        // Enter reaches a terminal, and how a normal field sees a real Enter press.
         if (isSingleRawKey(plan.actions())
+            || isSingleRawEnter(plan.actions())
             || (rawEditor && !isSingleCommitText(plan.actions()))) {
             return executeRawCompatibility(plan, endpoint);
         }
@@ -97,11 +100,6 @@ public final class CheckedEditorExecutor {
             == EditorCapabilities.DeletionMode.RAW_KEY
             && !isSingleRawCompatibleAction(plan.actions())
             && !isSingleCommitText(plan.actions())) {
-            return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
-        }
-        if (context.capabilities().deletionMode()
-            == EditorCapabilities.DeletionMode.RICH_TEXT
-            && containsRawEnter(plan.actions())) {
             return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
         }
         return null;
@@ -143,8 +141,8 @@ public final class CheckedEditorExecutor {
         return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.RAW_KEY;
     }
 
-    private static boolean containsRawEnter(List<KeyAction> actions) {
-        return containsAction(actions, KeyAction.Kind.RAW_ENTER);
+    private static boolean isSingleRawEnter(List<KeyAction> actions) {
+        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.RAW_ENTER;
     }
 
     private static boolean containsAction(List<KeyAction> actions, KeyAction.Kind kind) {

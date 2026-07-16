@@ -24,10 +24,9 @@ public final class EditorActionPolicy {
         if (profile.isMultiline()) {
             return DispatchResult.handled(KeyAction.commitText("\n"));
         }
-        if (profile.capabilities().deletionMode()
-            == EditorCapabilities.DeletionMode.RAW_KEY) {
-            return DispatchResult.handled(KeyAction.rawEnter());
-        }
-        return DispatchResult.handled();
+        // No editor action and not multiline: send a real Enter key, which every editor understands
+        // (a terminal submits the line, a plain field does its default). Doing nothing left Enter
+        // dead in terminals.
+        return DispatchResult.handled(KeyAction.rawEnter());
     }
 }
