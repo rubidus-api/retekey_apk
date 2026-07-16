@@ -39,6 +39,8 @@ public final class ReteKeyboardView extends View {
 
     /** One height step applied by the menu's 높이 −/＋ tiles. */
     private static final float HEIGHT_STEP = 0.1f;
+    /** Half-gap inset around each key, in pixels; the dark background shows through as the gap. */
+    private static final int KEY_GAP = 5;
 
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
     private Page page = Page.LETTERS;
@@ -209,7 +211,7 @@ public final class ReteKeyboardView extends View {
         int height = getHeight();
         List<List<SoftwareKeySpec>> rows = layout.rows();
 
-        canvas.drawColor(Color.rgb(245, 246, 248));
+        canvas.drawColor(Color.rgb(28, 30, 36));
         paint.setTextAlign(Paint.Align.CENTER);
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
@@ -222,12 +224,14 @@ public final class ReteKeyboardView extends View {
                 int left = layout.columnEdge(startColumn, width);
                 int right = layout.columnEdge(startColumn + key.columnSpan(), width);
                 paint.setColor(keyFillColor(key));
-                canvas.drawRect(left + 2, top + 2, right - 2, bottom - 2, paint);
+                canvas.drawRect(
+                    left + KEY_GAP, top + KEY_GAP, right - KEY_GAP, bottom - KEY_GAP, paint);
                 if (rowIndex == heldRow && keyIndex == heldKey && feedback.visualIntensity() > 0.0f) {
                     // Visual press feedback: a translucent overlay whose opacity tracks the setting.
                     paint.setColor(Color.argb(
                         Math.round(feedback.visualIntensity() * 130.0f), 78, 132, 214));
-                    canvas.drawRect(left + 2, top + 2, right - 2, bottom - 2, paint);
+                    canvas.drawRect(
+                        left + KEY_GAP, top + KEY_GAP, right - KEY_GAP, bottom - KEY_GAP, paint);
                 }
                 paint.setColor(key.enabled() || key.isControl()
                     ? Color.rgb(22, 27, 34)
@@ -449,9 +453,58 @@ public final class ReteKeyboardView extends View {
             return;
         }
         if (held.enabled()) {
+            if (tryArmedEditShortcut(held)) {
+                performClick();
+                return;
+            }
             sink.accept(pressEventWithModifiers(held));
             consumeOneShotShift();
             performClick();
+        }
+    }
+
+    /**
+     * With a soft Ctrl armed, a letter key runs the matching editor command (Ctrl+A/C/V/X/Z/Y)
+     * instead of typing the letter, so those shortcuts work from the on-screen keyboard too.
+     */
+    private boolean tryArmedEditShortcut(SoftwareKeySpec key) {
+        if (!armedModifiers.contains(ControlKey.CTRL)) {
+            return false;
+        }
+        SemanticInput input = key.semanticInput();
+        if (input == null || input.kind() != SemanticInput.Kind.TEXT) {
+            return false;
+        }
+        int contextMenuId = editContextMenuId(input.text());
+        if (contextMenuId == 0) {
+            return false;
+        }
+        runEditCommand(contextMenuId);
+        armedModifiers.remove(ControlKey.CTRL);
+        consumeOneShotShift();
+        invalidate();
+        return true;
+    }
+
+    private static int editContextMenuId(String text) {
+        if (text == null || text.length() != 1) {
+            return 0;
+        }
+        switch (Character.toLowerCase(text.charAt(0))) {
+            case 'a':
+                return android.R.id.selectAll;
+            case 'c':
+                return android.R.id.copy;
+            case 'v':
+                return android.R.id.paste;
+            case 'x':
+                return android.R.id.cut;
+            case 'z':
+                return android.R.id.undo;
+            case 'y':
+                return android.R.id.redo;
+            default:
+                return 0;
         }
     }
 
