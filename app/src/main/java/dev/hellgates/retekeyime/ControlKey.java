@@ -45,6 +45,8 @@ public enum ControlKey {
     SWITCH_IME,
     /** Open the system screen for enabling/disabling installed keyboards, through the host. */
     MANAGE_IME,
+    /** Convert the selected or preceding Hangul reading to Hanja through the host. */
+    HANJA,
     /**
      * Latching modifiers. Their armed state is view-local; it feeds the raw-key action so a
      * subsequent raw key becomes a chord.

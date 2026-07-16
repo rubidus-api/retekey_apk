@@ -227,7 +227,7 @@ public final class KeyboardLayouts {
         rows.add(KeyboardLayout.row(
             rawKey("esc", "Esc", RawKey.ESCAPE), rawKey("prtsc", "PrtSc", RawKey.PRINT_SCREEN),
             rawKey("scrlk", "ScrLk", RawKey.SCROLL_LOCK), rawKey("pause", "Pause", RawKey.BREAK),
-            disabled("hanja", "한자"), numKey(),
+            SoftwareKeySpec.control("touch.key.hanja", "한자", ControlKey.HANJA), numKey(),
             padCell(mode, 0), padCell(mode, 1), padCell(mode, 2),
             rawKey("del", "Del", RawKey.FORWARD_DELETE)
         ));

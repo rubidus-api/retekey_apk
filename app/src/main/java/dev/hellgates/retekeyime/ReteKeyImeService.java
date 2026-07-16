@@ -36,8 +36,14 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean hardwareKoreanMode;
     private List<HardwareKeyBindings.Binding> hanyeongBindings = java.util.Collections.emptyList();
     private List<HardwareKeyBindings.Binding> hanjaBindings = java.util.Collections.emptyList();
-    private boolean hanjaNoticeShown;
     private Toast functionToast;
+    private static final int HANJA_LOOKBEHIND = 8;
+    private HanjaCandidatesView candidatesView;
+    private String pendingReading;
+    private List<String> pendingCandidates;
+    private boolean pendingFromSelection;
+    private int pendingDeleteLength;
+    private boolean hanjaCandidatesShown;
 
     @Override
     public View onCreateInputView() {
@@ -47,8 +53,20 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnInsertDate(this::insertCurrentDate);
         keyboardView.setOnSwitchIme(this::showImePicker);
         keyboardView.setOnManageIme(this::openKeyboardManagement);
+        keyboardView.setOnHanja(this::handleHanja);
         reloadHardwareBindings();
+        HanjaDictionary.preload(this);
         return keyboardView;
+    }
+
+    @Override
+    public View onCreateCandidatesView() {
+        candidatesView = new HanjaCandidatesView(this);
+        candidatesView.setOnPick(this::commitHanja);
+        if (pendingCandidates != null) {
+            candidatesView.show(pendingReading, pendingCandidates);
+        }
+        return candidatesView;
     }
 
     /** Opens ReteKey's settings screen from the menu's 설정 tile, hiding the keyboard behind it. */
@@ -113,6 +131,7 @@ public class ReteKeyImeService extends InputMethodService {
             // A held/repeating bound key: swallow the extra downs so the app sees nothing.
             return true;
         }
+        hideHanjaCandidatesIfShown();
         if (passThroughChord(event)) {
             return super.onKeyDown(keyCode, event);
         }
@@ -221,7 +240,7 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.resetLayerState();
         }
         reloadHardwareBindings();
-        hanjaNoticeShown = false;
+        hideHanjaCandidatesIfShown();
         updateHardwareMapper(currentSubtype());
     }
 
@@ -281,6 +300,7 @@ public class ReteKeyImeService extends InputMethodService {
         // underlined composing text; the composer restarts clean when the view returns.
         finishComposingInEditor();
         inputProcessor.reset();
+        hideHanjaCandidatesIfShown();
     }
 
     @Override
@@ -352,6 +372,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void dispatchSoftwareInput(ProjectKeyEvent event) {
+        hideHanjaCandidatesIfShown();
         // A single misbehaving editor must never crash the IME and make the keyboard vanish.
         try {
             ExecutionResult result = execute(dispatcher.dispatch(event));
@@ -428,13 +449,86 @@ public class ReteKeyImeService extends InputMethodService {
         showFunctionToast(getString(hardwareKoreanMode ? R.string.mode_korean : R.string.mode_english));
     }
 
+    /**
+     * Converts a Hangul reading to Hanja: a live selection is converted whole, otherwise the
+     * reading immediately before the cursor. Candidates are offered in the candidates strip; the
+     * key is a no-op when nothing converts.
+     */
     private void handleHanja() {
-        // Hanja conversion is not built yet; acknowledge the recognised key once per session so the
-        // binding is visibly working without spamming a toast on every press.
-        if (!hanjaNoticeShown) {
-            showFunctionToast(getString(R.string.hanja_pending));
-            hanjaNoticeShown = true;
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) {
+            return;
         }
+        HanjaTable dictionary = HanjaDictionary.get(this);
+        CharSequence selection = null;
+        try {
+            selection = ic.getSelectedText(0);
+        } catch (RuntimeException ignored) {
+            // Some editors refuse selection reads; fall through to the cursor path.
+        }
+        if (selection != null && selection.length() > 0 && selection.length() <= 16) {
+            List<String> candidates = dictionary.candidates(selection.toString());
+            if (!candidates.isEmpty()) {
+                pendingFromSelection = true;
+                pendingDeleteLength = 0;
+                showHanjaCandidates(selection.toString(), candidates);
+                return;
+            }
+        }
+        // Finish any composing so the syllable is committed text we can read back and replace.
+        finishComposingInEditor();
+        inputProcessor.reset();
+        CharSequence before = ic.getTextBeforeCursor(HANJA_LOOKBEHIND, 0);
+        HanjaTable.Match match = before == null
+            ? null : dictionary.longestSuffixMatch(before.toString(), HANJA_LOOKBEHIND);
+        if (match == null) {
+            hideHanjaCandidatesIfShown();
+            return;
+        }
+        pendingFromSelection = false;
+        pendingDeleteLength = match.length;
+        showHanjaCandidates(match.reading, match.candidates);
+    }
+
+    /** Replaces the source reading with the chosen Hanja and hides the strip. */
+    private void commitHanja(String hanja) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null) {
+            try {
+                ic.beginBatchEdit();
+                if (!pendingFromSelection && pendingDeleteLength > 0) {
+                    ic.deleteSurroundingText(pendingDeleteLength, 0);
+                }
+                // With a live selection, commitText replaces it; otherwise it follows the delete.
+                ic.commitText(hanja, 1);
+            } finally {
+                ic.endBatchEdit();
+            }
+        }
+        hideHanjaCandidates();
+    }
+
+    private void showHanjaCandidates(String reading, List<String> candidates) {
+        pendingReading = reading;
+        pendingCandidates = candidates;
+        setCandidatesViewShown(true);
+        if (candidatesView != null) {
+            candidatesView.show(reading, candidates);
+        }
+        hanjaCandidatesShown = true;
+    }
+
+    private void hideHanjaCandidatesIfShown() {
+        if (hanjaCandidatesShown) {
+            hideHanjaCandidates();
+        }
+    }
+
+    private void hideHanjaCandidates() {
+        pendingReading = null;
+        pendingCandidates = null;
+        hanjaCandidatesShown = false;
+        setCandidatesViewShown(false);
     }
 
     private void showFunctionToast(String text) {

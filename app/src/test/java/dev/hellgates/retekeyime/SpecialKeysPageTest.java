@@ -54,8 +54,17 @@ public final class SpecialKeysPageTest {
     }
 
     @Test
+    public void hanjaKeyIsAnEnabledControl() {
+        SoftwareKeySpec hanja = NUMBERS.findById("touch.key.hanja");
+        assertNotNull(hanja);
+        assertTrue("한자 converts the reading", hanja.isControl());
+        assertEquals(ControlKey.HANJA, hanja.control());
+        assertEquals("한자", hanja.label());
+    }
+
+    @Test
     public void koreanAndMediaSpecialKeysStayDisabled() {
-        for (String id : Arrays.asList("touch.key.hanja", "touch.key.lang",
+        for (String id : Arrays.asList("touch.key.lang",
             "touch.key.ralt", "touch.key.rctrl", "touch.key.rshift")) {
             SoftwareKeySpec key = NUMBERS.findById(id);
             assertNotNull(id, key);

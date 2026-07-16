@@ -71,6 +71,8 @@ public final class ReteKeyboardView extends View {
     private Runnable onSwitchIme;
     /** Invoked when the 키보드관리 tile is tapped; the host opens the enable-keyboards screen. */
     private Runnable onManageIme;
+    /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
+    private Runnable onHanja;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
@@ -116,6 +118,11 @@ public final class ReteKeyboardView extends View {
     /** Sets the handler the 키보드관리 tile runs to open the enable-keyboards settings screen. */
     public void setOnManageIme(Runnable handler) {
         this.onManageIme = handler;
+    }
+
+    /** Sets the handler the 한자 key runs to convert the reading before the cursor to Hanja. */
+    public void setOnHanja(Runnable handler) {
+        this.onHanja = handler;
     }
 
     private SharedPreferences prefs() {
@@ -754,6 +761,11 @@ public final class ReteKeyboardView extends View {
             case MANAGE_IME:
                 if (onManageIme != null) {
                     onManageIme.run();
+                }
+                break;
+            case HANJA:
+                if (onHanja != null) {
+                    onHanja.run();
                 }
                 break;
             case CTRL:

@@ -3,6 +3,27 @@
 ReteKey includes work derived from the projects below. Their license notices are
 retained here and ship with distributed packages.
 
+## Hanja conversion data (`assets/hanja.txt`)
+
+ReteKey's Hanja conversion table is the redistributable `hanja.txt` from the
+Jamotong project. Its readings are derived from the Unicode® Unihan Database and
+supplemented with a public-domain court name-Hanja list; the file's own header
+carries the full provenance and the required copyright notice.
+
+- Reading data: **Unicode® Unihan Database** (`kHangul` field). Copyright ©
+  1991–2026 Unicode, Inc., used under the **Unicode License v3**
+  (https://www.unicode.org/license.txt). Modification and redistribution are
+  permitted provided the copyright notice is retained, which the bundled file
+  does in its header.
+- Name-Hanja supplement: Republic of Korea Supreme Court name-Hanja list (public
+  data; a factual list, not subject to copyright), routed via
+  rutopio/Korean-Name-Hanja-Charset (**MIT**).
+- Word mappings: Jamotong project curation, supplemented with the Korean-word →
+  Hanja mappings (not the glosses) from jemdiggity/hanja-wordlist (**MIT**).
+
+The Unicode® word mark and the Unihan database name are trademarks of Unicode,
+Inc. Use here is nominative, for attribution only.
+
 ## Jamotong
 
 ReteKey's Hangul 2-beolsik composition automaton (`HangulComposer` and
