@@ -59,6 +59,34 @@ public final class InputSessionControllerTest {
     }
 
     @Test
+    public void richEditorWithoutBoundsStaysStatelessAndNeverDesynchronizes() {
+        // A terminal may present as a rich-text editor that never reports a selection (Termius with
+        // Korean). Commits while bounds are unknown must also be stateless, or the session
+        // accumulates and stops input after a few characters.
+        InputSessionController<String> controller = new InputSessionController<>(4);
+        long generation = controller.start("neutral", EditorBounds.unknown(), RICH);
+        for (int i = 0; i < 50; i++) {
+            ExecutionResult r = controller.execute(
+                controller.plan(
+                    DispatchResult.handled(KeyAction.commitText("가")),
+                    "s" + i,
+                    EditorBounds.unknown()
+                ),
+                () -> EditorEndpoint.of(generation, new FakeEditorBridge())
+            );
+            Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, r.outcome());
+            Assert.assertEquals(0, controller.pendingExpectationCount());
+        }
+        Assert.assertEquals(SynchronizationState.WAITING_FOR_BOUNDS, controller.syncState());
+        // Once the editor finally reports a selection, the session adopts it (as external movement,
+        // since nothing was pending) and becomes synced — never desynchronized.
+        Assert.assertEquals(
+            SelectionReconcileResult.EXTERNAL_MOVEMENT,
+            controller.updateSelection(generation, ONE));
+        Assert.assertEquals(SynchronizationState.SYNCED, controller.syncState());
+    }
+
+    @Test
     public void rawKeyTerminalCommitsStayStatelessAndNeverDesynchronize() {
         // A terminal (RAW_KEY / TYPE_NULL) never reports a selection; repeated commits must not
         // accumulate pending expectations or drift into AWAITING_CONFIRMATION and desynchronize.
