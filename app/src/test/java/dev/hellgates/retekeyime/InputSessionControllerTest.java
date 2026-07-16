@@ -244,7 +244,7 @@ public final class InputSessionControllerTest {
     }
 
     @Test
-    public void contradictoryFeedbackResetsStateAndNeverReplays() {
+    public void contradictoryFeedbackAdoptsTheEditorAndResyncs() {
         InputSessionController<String> controller = new InputSessionController<>(4);
         long generation = controller.start("neutral", START, RICH);
         FakeEditorBridge bridge = new FakeEditorBridge();
@@ -256,15 +256,17 @@ public final class InputSessionControllerTest {
             EditorBounds.of(9, 9, -1, -1)
         );
 
-        Assert.assertEquals(SelectionReconcileResult.CONTRADICTION, reconcile);
-        Assert.assertEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
-        Assert.assertEquals("neutral", controller.currentState());
+        // The editor is authoritative: adopt its reported selection and resync rather than
+        // desynchronizing (which would freeze the keyboard). No editor call is replayed.
+        Assert.assertEquals(SelectionReconcileResult.EXTERNAL_MOVEMENT, reconcile);
+        Assert.assertEquals(SynchronizationState.SYNCED, controller.syncState());
+        Assert.assertEquals("tentative", controller.currentState());
         Assert.assertEquals(0, controller.pendingExpectationCount());
         Assert.assertEquals(callsBeforeFeedback, bridge.callCount());
     }
 
     @Test
-    public void fullPendingLedgerDesynchronizesBeforeResolvingOrMutating() {
+    public void fullPendingLedgerDropsBacklogAndKeepsAcceptingInput() {
         InputSessionController<String> controller = new InputSessionController<>(1);
         long generation = controller.start("neutral", START, RICH);
         executeSuccess(controller, generation, "one", ONE);
@@ -280,11 +282,12 @@ public final class InputSessionControllerTest {
             return EditorEndpoint.of(generation, new FakeEditorBridge());
         });
 
-        Assert.assertEquals(0, resolves.get());
-        Assert.assertEquals(ExecutionResult.Reason.LEDGER_OVERFLOW, result.reason());
-        Assert.assertEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
-        Assert.assertEquals("neutral", controller.currentState());
-        Assert.assertEquals(2, controller.revision());
+        // The stale backlog is dropped and the new commit still dispatches — never a permanent
+        // freeze when an editor rarely confirms its selection.
+        Assert.assertEquals(1, resolves.get());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+        Assert.assertNotEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
+        Assert.assertEquals("two", controller.currentState());
     }
 
     @Test

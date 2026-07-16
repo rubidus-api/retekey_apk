@@ -148,12 +148,10 @@ public final class InputSessionController<S> {
             || !workingBounds.hasSelection();
         boolean reserved = !plan.actions().isEmpty() && !statelessEditor;
         if (reserved && !ledger.hasCapacity()) {
-            desynchronize();
-            return localFailure(
-                plan,
-                ExecutionResult.Reason.LEDGER_OVERFLOW,
-                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED
-            );
+            // Too many unconfirmed expectations (an editor that rarely confirms its selection).
+            // Drop the backlog and keep accepting input instead of freezing; the text we committed
+            // is already in the editor, and a later known selection update re-syncs us.
+            ledger.clear();
         }
         if (reserved) {
             ledger.reserve(consumedRevision, plan.expectation());
@@ -365,8 +363,13 @@ public final class InputSessionController<S> {
             return SelectionReconcileResult.EXTERNAL_MOVEMENT;
         }
         if (!observedBounds.hasSelection()) {
-            desynchronize();
-            return SelectionReconcileResult.CONTRADICTION;
+            // The editor no longer reports a selection (routine in terminals and some webviews).
+            // Recover to a waiting state instead of permanently desynchronizing, so the keyboard
+            // never freezes; a later known update re-syncs it.
+            ledger.clear();
+            workingBounds = EditorBounds.unknown();
+            syncState = SynchronizationState.WAITING_FOR_BOUNDS;
+            return SelectionReconcileResult.WAITING_FOR_BOUNDS;
         }
         if (ledger.pendingCount() > 0) {
             if (observedBounds.equals(confirmedBounds)) {
@@ -374,8 +377,13 @@ public final class InputSessionController<S> {
             }
             SelectionReconcileResult result = ledger.reconcile(observedBounds);
             if (result == SelectionReconcileResult.CONTRADICTION) {
-                desynchronize();
-                return result;
+                // The editor reports a selection none of our expectations predicted. The editor is
+                // authoritative: adopt it and resync rather than freezing the keyboard.
+                ledger.clear();
+                confirmedBounds = observedBounds;
+                workingBounds = observedBounds;
+                syncState = SynchronizationState.SYNCED;
+                return SelectionReconcileResult.EXTERNAL_MOVEMENT;
             }
             if (result == SelectionReconcileResult.MATCHED
                 || result == SelectionReconcileResult.COALESCED) {
