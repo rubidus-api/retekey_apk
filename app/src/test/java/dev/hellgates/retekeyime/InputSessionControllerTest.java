@@ -87,6 +87,21 @@ public final class InputSessionControllerTest {
     }
 
     @Test
+    public void predictedUpdateIsOurEditWhileaCursorJumpIsExternalMovement() {
+        // The reconcile result tells the service whether an onUpdateSelection confirms our own edit
+        // (cursor landed where we predicted) or the user moved the cursor elsewhere; the latter is
+        // what makes the service re-anchor Hangul composing so text stops landing at the old spot.
+        InputSessionController<String> c = new InputSessionController<>(4);
+        long gen = c.start("neutral", START, RICH);
+        c.execute(
+            c.plan(DispatchResult.handled(KeyAction.commitText("x")), "typed", ONE),
+            () -> EditorEndpoint.of(gen, new FakeEditorBridge()));
+
+        Assert.assertEquals(SelectionReconcileResult.MATCHED, c.updateSelection(gen, ONE));
+        Assert.assertEquals(SelectionReconcileResult.EXTERNAL_MOVEMENT, c.updateSelection(gen, TWO));
+    }
+
+    @Test
     public void commitsCacheOptimisticallyAndUpdatesAlwaysAdoptTheEditor() {
         // LatinIME model: a commit optimistically advances the cached cursor with nothing left
         // pending; onUpdateSelection is authoritative and simply overwrites the cache, tolerating

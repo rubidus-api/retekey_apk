@@ -277,25 +277,38 @@ public class ReteKeyImeService extends InputMethodService {
         if (!sessionActive) {
             return;
         }
-        if (newSelStart < 0 || newSelEnd < 0) {
-            sessionController.updateSelection(
+        try {
+            if (newSelStart < 0 || newSelEnd < 0) {
+                sessionController.updateSelection(
+                    sessionController.generation(),
+                    EditorBounds.unknown()
+                );
+                return;
+            }
+            int composingStart = candidatesStart >= 0
+                && candidatesEnd >= candidatesStart ? candidatesStart : -1;
+            int composingEnd = composingStart >= 0 ? candidatesEnd : -1;
+            SelectionReconcileResult reconcile = sessionController.updateSelection(
                 sessionController.generation(),
-                EditorBounds.unknown()
+                EditorBounds.of(
+                    newSelStart,
+                    newSelEnd,
+                    composingStart,
+                    composingEnd
+                )
             );
-            return;
+            // The user moved the cursor somewhere we did not predict: finalize the current syllable
+            // and restart the composer at the new cursor, so the next keystroke no longer lands at
+            // the old composing position.
+            if (reconcile == SelectionReconcileResult.EXTERNAL_MOVEMENT
+                && inputProcessor.isComposing()) {
+                finishComposingInEditor();
+                inputProcessor.reset();
+            }
+        } catch (RuntimeException ignored) {
+            // A selection update must never crash the IME and make the keyboard disappear.
+            inputProcessor.reset();
         }
-        int composingStart = candidatesStart >= 0
-            && candidatesEnd >= candidatesStart ? candidatesStart : -1;
-        int composingEnd = composingStart >= 0 ? candidatesEnd : -1;
-        sessionController.updateSelection(
-            sessionController.generation(),
-            EditorBounds.of(
-                newSelStart,
-                newSelEnd,
-                composingStart,
-                composingEnd
-            )
-        );
     }
 
     @Override
@@ -321,9 +334,15 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void dispatchSoftwareInput(ProjectKeyEvent event) {
-        ExecutionResult result = execute(dispatcher.dispatch(event));
-        if (result == null || result.isFailure()) {
-            showEditorFailure();
+        // A single misbehaving editor must never crash the IME and make the keyboard vanish.
+        try {
+            ExecutionResult result = execute(dispatcher.dispatch(event));
+            if (result == null || result.isFailure()) {
+                showEditorFailure();
+            }
+        } catch (RuntimeException crash) {
+            dispatcher.reset();
+            inputProcessor.reset();
         }
     }
 
@@ -359,16 +378,22 @@ public class ReteKeyImeService extends InputMethodService {
         if (!sessionActive) {
             return null;
         }
-        EditorBounds predicted = EditorBoundsPredictor.after(
-            sessionController.workingBounds(),
-            result.actions()
-        );
-        TransitionPlan<ScaffoldSessionState> plan = sessionController.plan(
-            result,
-            ScaffoldSessionState.EMPTY,
-            predicted
-        );
-        return sessionController.execute(plan, this::currentEndpoint);
+        try {
+            EditorBounds predicted = EditorBoundsPredictor.after(
+                sessionController.workingBounds(),
+                result.actions()
+            );
+            TransitionPlan<ScaffoldSessionState> plan = sessionController.plan(
+                result,
+                ScaffoldSessionState.EMPTY,
+                predicted
+            );
+            return sessionController.execute(plan, this::currentEndpoint);
+        } catch (RuntimeException crash) {
+            // The keyboard must survive any single bad editor interaction.
+            inputProcessor.reset();
+            return null;
+        }
     }
 
     private EditorEndpoint currentEndpoint() {
