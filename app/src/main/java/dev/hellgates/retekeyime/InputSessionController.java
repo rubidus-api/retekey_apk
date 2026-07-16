@@ -283,22 +283,20 @@ public final class InputSessionController<S> {
             syncState = SynchronizationState.WAITING_FOR_BOUNDS;
             return SelectionReconcileResult.WAITING_FOR_BOUNDS;
         }
-        // Did the editor land where we optimistically predicted? If so this is the confirmation of
-        // our own edit; if not, the user moved the cursor and the caller must re-anchor composing.
-        boolean matchedPrediction = workingBounds.hasSelection()
-            && observedBounds.selectionStart() == workingBounds.selectionStart()
-            && observedBounds.selectionEnd() == workingBounds.selectionEnd();
-        boolean duplicate = observedBounds.equals(confirmedBounds);
-        confirmedBounds = observedBounds;
-        workingBounds = observedBounds;
-        syncState = SynchronizationState.SYNCED;
-        if (duplicate) {
+        if (syncState == SynchronizationState.WAITING_FOR_BOUNDS) {
+            confirmedBounds = observedBounds;
+            workingBounds = observedBounds;
+            syncState = SynchronizationState.SYNCED;
+            return SelectionReconcileResult.EXTERNAL_MOVEMENT;
+        }
+        if (observedBounds.equals(confirmedBounds)) {
             return SelectionReconcileResult.DUPLICATE_OR_DELAYED;
         }
-        if (matchedPrediction) {
-            return SelectionReconcileResult.MATCHED;
-        }
+        // The editor is authoritative: adopt whatever it reports.
+        confirmedBounds = observedBounds;
+        workingBounds = observedBounds;
         currentState = neutralState;
+        syncState = SynchronizationState.SYNCED;
         return SelectionReconcileResult.EXTERNAL_MOVEMENT;
     }
 

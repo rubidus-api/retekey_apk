@@ -288,7 +288,7 @@ public class ReteKeyImeService extends InputMethodService {
             int composingStart = candidatesStart >= 0
                 && candidatesEnd >= candidatesStart ? candidatesStart : -1;
             int composingEnd = composingStart >= 0 ? candidatesEnd : -1;
-            SelectionReconcileResult reconcile = sessionController.updateSelection(
+            sessionController.updateSelection(
                 sessionController.generation(),
                 EditorBounds.of(
                     newSelStart,
@@ -297,14 +297,6 @@ public class ReteKeyImeService extends InputMethodService {
                     composingEnd
                 )
             );
-            // The user moved the cursor somewhere we did not predict: finalize the current syllable
-            // and restart the composer at the new cursor, so the next keystroke no longer lands at
-            // the old composing position.
-            if (reconcile == SelectionReconcileResult.EXTERNAL_MOVEMENT
-                && inputProcessor.isComposing()) {
-                finishComposingInEditor();
-                inputProcessor.reset();
-            }
         } catch (RuntimeException ignored) {
             // A selection update must never crash the IME and make the keyboard disappear.
             inputProcessor.reset();
