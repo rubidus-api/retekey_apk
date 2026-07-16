@@ -489,7 +489,7 @@ public final class InputSessionControllerTest {
     }
 
     @Test
-    public void deferredFeedbackOverflowConservativelyDesynchronizes() {
+    public void deferredFeedbackOverflowRecoversAndKeepsGoing() {
         InputSessionController<String> controller = new InputSessionController<>(1);
         long generation = controller.start("neutral", START, RICH);
         FakeEditorBridge bridge = new FakeEditorBridge();
@@ -513,7 +513,8 @@ public final class InputSessionControllerTest {
             () -> EditorEndpoint.of(generation, bridge)
         );
 
-        Assert.assertEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
+        // Deferred-selection overflow recovers to a waiting state instead of latching dead.
+        Assert.assertNotEquals(SynchronizationState.DESYNCHRONIZED, controller.syncState());
         Assert.assertEquals(ExecutionResult.Outcome.UNCERTAIN, result.outcome());
         Assert.assertEquals(ExecutionResult.Reason.LEDGER_OVERFLOW, result.reason());
         Assert.assertTrue(result.remoteMutationMayHaveOccurred());

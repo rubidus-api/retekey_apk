@@ -410,11 +410,16 @@ public final class InputSessionController<S> {
         return SelectionReconcileResult.EXTERNAL_MOVEMENT;
     }
 
+    /**
+     * Recovers after an editor surprise (a failed InputConnection call, an overflowed backlog).
+     * This is deliberately NOT a latched failure: the cursor is simply unknown until the editor
+     * reports again, and input keeps flowing. The keyboard must never permanently stop.
+     */
     private void desynchronize() {
         currentState = neutralState;
         workingBounds = EditorBounds.unknown();
         ledger.clear();
-        syncState = SynchronizationState.DESYNCHRONIZED;
+        syncState = SynchronizationState.WAITING_FOR_BOUNDS;
     }
 
     private SynchronizationState stateAfterNoEditorMutation() {
