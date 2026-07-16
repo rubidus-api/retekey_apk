@@ -202,12 +202,19 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onCurrentInputMethodSubtypeChanged(InputMethodSubtype newSubtype) {
         super.onCurrentInputMethodSubtypeChanged(newSubtype);
+        // A language switch must not carry a half-formed jamo into the new subtype; finalize and
+        // reset the composer so no stale syllable surfaces on a later, unrelated keystroke.
+        finishComposingInEditor();
+        inputProcessor.reset();
         dispatcher.reset();
         updateHardwareMapper(newSubtype);
     }
 
     @Override
     public void onFinishInput() {
+        // Finalize any half-formed preedit into the editor before tearing down, so leaving a field
+        // mid-syllable doesn't drop the underlined composing text.
+        finishComposingInEditor();
         if (sessionActive) {
             sessionController.stopAccepting();
         }
@@ -216,6 +223,14 @@ public class ReteKeyImeService extends InputMethodService {
             super.onFinishInput();
         } finally {
             finishSession();
+        }
+    }
+
+    /** Commits any active composing region as normal text; a no-op when nothing is composing. */
+    private void finishComposingInEditor() {
+        InputConnection inputConnection = getCurrentInputConnection();
+        if (inputConnection != null) {
+            inputConnection.finishComposingText();
         }
     }
 
@@ -236,8 +251,10 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public void onFinishInputView(boolean finishingInput) {
-        // View-only state will be cleared here when the P3 pointer state machine lands.
-        // Deliberately skip the default composing finish; onFinishInput owns that boundary.
+        // Finalize any preedit when the keyboard is dismissed so a hidden view never strands
+        // underlined composing text; the composer restarts clean when the view returns.
+        finishComposingInEditor();
+        inputProcessor.reset();
     }
 
     @Override
