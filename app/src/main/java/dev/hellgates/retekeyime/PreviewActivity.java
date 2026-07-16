@@ -62,6 +62,11 @@ public final class PreviewActivity extends Activity {
         chooser.setOnClickListener(this::showKeyboardPicker);
         root.addView(chooser);
 
+        Button manage = new Button(this);
+        manage.setText(R.string.preview_manage_keyboards);
+        manage.setOnClickListener(this::manageKeyboards);
+        root.addView(manage);
+
         Button settings = new Button(this);
         settings.setText(R.string.preview_open_settings);
         settings.setOnClickListener(this::openSettings);
@@ -72,6 +77,15 @@ public final class PreviewActivity extends Activity {
 
     private void openSettings(View view) {
         startActivity(new Intent(this, SettingsActivity.class));
+    }
+
+    /** Opens the system screen for enabling/disabling installed keyboards. */
+    private void manageKeyboards(View view) {
+        try {
+            startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS));
+        } catch (RuntimeException ignored) {
+            // No settings screen to open on this device.
+        }
     }
 
     @Override
