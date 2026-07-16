@@ -138,15 +138,11 @@ public final class InputSessionController<S> {
                 ExecutionResult.StateEffect.KEEP_CURRENT
             );
         }
-        // An editor that is not reporting a selection right now — a TYPE_NULL terminal, or any
-        // editor still without known bounds (a terminal like Termius that never reports one) —
-        // cannot confirm an expectation. Its operations are fire-and-forget: they must not reserve
-        // ledger entries that could never be retired, or the session would drift into
-        // AWAITING_CONFIRMATION and then desynchronize, stopping input after a few characters.
-        boolean statelessEditor =
-            capabilities.deletionMode() == EditorCapabilities.DeletionMode.RAW_KEY
-            || !workingBounds.hasSelection();
-        boolean reserved = !plan.actions().isEmpty() && !statelessEditor;
+        // LatinIME model: the cursor cache is a best-effort hint, never a contract the editor must
+        // satisfy. Every operation is fire-and-forget — we optimistically update the cache and let
+        // onUpdateSelection overwrite it — so nothing is ever reserved, awaited, or desynchronized.
+        boolean statelessEditor = true;
+        boolean reserved = false;
         if (reserved && !ledger.hasCapacity()) {
             // Too many unconfirmed expectations (an editor that rarely confirms its selection).
             // Drop the backlog and keep accepting input instead of freezing; the text we committed
