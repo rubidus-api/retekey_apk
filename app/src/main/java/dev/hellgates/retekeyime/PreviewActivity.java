@@ -57,15 +57,17 @@ public final class PreviewActivity extends Activity {
             LinearLayout.LayoutParams.WRAP_CONTENT
         ));
 
-        Button chooser = new Button(this);
-        chooser.setText(R.string.preview_pick_keyboard);
-        chooser.setOnClickListener(this::showKeyboardPicker);
-        root.addView(chooser);
-
+        // Order: system default/added-keyboards settings, then the input-method picker, then
+        // ReteKey's own settings (requested top-to-bottom order 2, 1, 3).
         Button manage = new Button(this);
         manage.setText(R.string.preview_manage_keyboards);
         manage.setOnClickListener(this::manageKeyboards);
         root.addView(manage);
+
+        Button chooser = new Button(this);
+        chooser.setText(R.string.preview_pick_keyboard);
+        chooser.setOnClickListener(this::showKeyboardPicker);
+        root.addView(chooser);
 
         Button settings = new Button(this);
         settings.setText(R.string.preview_open_settings);

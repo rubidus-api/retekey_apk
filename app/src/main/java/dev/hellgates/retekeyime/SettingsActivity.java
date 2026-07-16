@@ -5,14 +5,18 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import dev.hellgates.retekeyime.HardwareKeyBindings.Binding;
+import java.util.List;
 
 /**
  * ReteKey's settings screen. Reachable from the app launcher, from the ☰ menu key on the keyboard,
@@ -31,6 +35,10 @@ public final class SettingsActivity extends Activity {
     private TextView valueLabel;
     private View previewBar;
     private ViewGroup.LayoutParams previewParams;
+    private String capturingKey;
+    private TextView captureStatus;
+    private LinearLayout hanyeongList;
+    private LinearLayout hanjaList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +129,9 @@ public final class SettingsActivity extends Activity {
         addPercentSlider(root, R.string.settings_sound,
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
 
+        addRepeatControls(root);
+        addHardwareControls(root);
+
         Button reset = new Button(this);
         reset.setText(R.string.settings_reset);
         reset.setOnClickListener(this::resetHeight);
@@ -195,6 +206,246 @@ public final class SettingsActivity extends Activity {
         int percent = Math.round(KeyboardHeightScale.DEFAULT_SCALE * 100);
         slider.setProgress(percent);
         applyPercent(percent);
+    }
+
+    // ---- Held-key auto-repeat ----
+
+    private void addRepeatControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_repeat_label));
+        root.addView(sectionHint(R.string.settings_repeat_hint));
+
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText(R.string.settings_repeat_enabled);
+        enabled.setTextColor(Color.rgb(40, 90, 170));
+        enabled.setChecked(prefs().getBoolean(
+            KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED));
+        enabled.setOnCheckedChangeListener((b, checked) ->
+            prefs().edit().putBoolean(KeyRepeatSettings.KEY_ENABLED, checked).apply());
+        root.addView(enabled);
+
+        addMsSlider(root, R.string.settings_repeat_delay, KeyRepeatSettings.KEY_DELAY_MS,
+            KeyRepeatSettings.MIN_DELAY_MS, KeyRepeatSettings.MAX_DELAY_MS,
+            KeyRepeatSettings.DEFAULT_DELAY_MS);
+        addMsSlider(root, R.string.settings_repeat_interval, KeyRepeatSettings.KEY_INTERVAL_MS,
+            KeyRepeatSettings.MIN_INTERVAL_MS, KeyRepeatSettings.MAX_INTERVAL_MS,
+            KeyRepeatSettings.DEFAULT_INTERVAL_MS);
+    }
+
+    /** A titled millisecond slider bound to an int preference clamped to [min, max]. */
+    private void addMsSlider(LinearLayout root, int titleRes, String prefKey,
+            int min, int max, int def) {
+        TextView label = new TextView(this);
+        label.setTextColor(Color.rgb(40, 90, 170));
+        label.setPadding(0, dp(10), 0, 0);
+        root.addView(label);
+
+        SeekBar bar = new SeekBar(this);
+        bar.setMin(min);
+        bar.setMax(max);
+        int start = Math.max(min, Math.min(max, prefs().getInt(prefKey, def)));
+        bar.setProgress(start);
+        bar.setPadding(dp(4), dp(8), dp(4), dp(8));
+        label.setText(getString(titleRes) + "  " + getString(R.string.settings_ms_value, start));
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                prefs().edit().putInt(prefKey, progress).apply();
+                label.setText(getString(titleRes) + "  "
+                    + getString(R.string.settings_ms_value, progress));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar b) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar b) {
+            }
+        });
+        root.addView(bar, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    }
+
+    // ---- Physical-keyboard 한/영 and 한자 shortcuts ----
+
+    private void addHardwareControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_hw_label));
+        root.addView(sectionHint(R.string.settings_hw_hint));
+
+        captureStatus = new TextView(this);
+        captureStatus.setTextColor(Color.rgb(200, 80, 60));
+        captureStatus.setPadding(0, dp(4), 0, dp(4));
+        captureStatus.setVisibility(View.GONE);
+        captureStatus.setOnClickListener(v -> stopCapture());
+        root.addView(captureStatus);
+
+        hanyeongList = addBindingGroup(root, R.string.settings_hw_hanyeong,
+            HardwareKeyBindings.KEY_HANYEONG);
+        hanjaList = addBindingGroup(root, R.string.settings_hw_hanja,
+            HardwareKeyBindings.KEY_HANJA);
+
+        TextView note = new TextView(this);
+        note.setText(R.string.settings_hw_hanja_note);
+        note.setTextColor(Color.rgb(150, 120, 60));
+        note.setPadding(0, dp(6), 0, 0);
+        root.addView(note);
+
+        refreshBindings(HardwareKeyBindings.KEY_HANYEONG);
+        refreshBindings(HardwareKeyBindings.KEY_HANJA);
+    }
+
+    private LinearLayout addBindingGroup(LinearLayout root, int titleRes, String prefKey) {
+        TextView label = new TextView(this);
+        label.setText(titleRes);
+        label.setTextColor(Color.rgb(40, 90, 170));
+        label.setPadding(0, dp(14), 0, 0);
+        root.addView(label);
+
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        root.addView(list);
+
+        Button add = new Button(this);
+        add.setText(R.string.settings_hw_add);
+        add.setOnClickListener(v -> startCapture(prefKey));
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        root.addView(add, addParams);
+        return list;
+    }
+
+    private void refreshBindings(String prefKey) {
+        LinearLayout list = prefKey.equals(HardwareKeyBindings.KEY_HANYEONG)
+            ? hanyeongList : hanjaList;
+        list.removeAllViews();
+        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
+        if (bindings.isEmpty()) {
+            TextView none = new TextView(this);
+            none.setText(R.string.settings_hw_none);
+            none.setTextColor(Color.rgb(150, 150, 150));
+            none.setPadding(0, dp(4), 0, dp(4));
+            list.addView(none);
+            return;
+        }
+        for (Binding binding : bindings) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+
+            TextView name = new TextView(this);
+            name.setText(bindingLabel(binding));
+            name.setTextColor(Color.rgb(22, 27, 34));
+            name.setTextSize(16);
+            row.addView(name, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            Button remove = new Button(this);
+            remove.setText(R.string.settings_hw_remove);
+            remove.setOnClickListener(v -> removeBinding(prefKey, binding));
+            row.addView(remove);
+
+            list.addView(row);
+        }
+    }
+
+    private void startCapture(String prefKey) {
+        capturingKey = prefKey;
+        captureStatus.setText(R.string.settings_hw_capture);
+        captureStatus.setVisibility(View.VISIBLE);
+    }
+
+    private void stopCapture() {
+        capturingKey = null;
+        if (captureStatus != null) {
+            captureStatus.setVisibility(View.GONE);
+        }
+    }
+
+    private void addBinding(String prefKey, Binding binding) {
+        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
+        HardwareKeyBindings.add(bindings, binding);
+        prefs().edit().putString(prefKey, HardwareKeyBindings.format(bindings)).apply();
+        refreshBindings(prefKey);
+    }
+
+    private void removeBinding(String prefKey, Binding binding) {
+        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
+        bindings.remove(binding);
+        prefs().edit().putString(prefKey, HardwareKeyBindings.format(bindings)).apply();
+        refreshBindings(prefKey);
+    }
+
+    private String bindingLabel(Binding binding) {
+        StringBuilder sb = new StringBuilder();
+        if ((binding.mods & HardwareKeyBindings.MOD_CTRL) != 0) {
+            sb.append("Ctrl+");
+        }
+        if ((binding.mods & HardwareKeyBindings.MOD_SHIFT) != 0) {
+            sb.append("Shift+");
+        }
+        if ((binding.mods & HardwareKeyBindings.MOD_ALT) != 0) {
+            sb.append("Alt+");
+        }
+        if ((binding.mods & HardwareKeyBindings.MOD_META) != 0) {
+            sb.append("Meta+");
+        }
+        String name = KeyEvent.keyCodeToString(binding.keyCode);
+        if (name != null && name.startsWith("KEYCODE_")) {
+            name = name.substring("KEYCODE_".length());
+        }
+        sb.append(name);
+        return sb.toString();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (capturingKey != null) {
+            if (KeyEvent.isModifierKey(keyCode)) {
+                // Wait: a plain modifier may be the start of a chord, or a lone-modifier binding
+                // captured on its release.
+                return true;
+            }
+            addBinding(capturingKey, new Binding(modsOf(event), keyCode));
+            stopCapture();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (capturingKey != null && KeyEvent.isModifierKey(keyCode)) {
+            addBinding(capturingKey, new Binding(0, keyCode));
+            stopCapture();
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    private static int modsOf(KeyEvent event) {
+        int meta = event.getMetaState();
+        return HardwareKeyBindings.modsOf(
+            (meta & KeyEvent.META_SHIFT_ON) != 0,
+            (meta & KeyEvent.META_CTRL_ON) != 0,
+            (meta & KeyEvent.META_ALT_ON) != 0,
+            (meta & KeyEvent.META_META_ON) != 0);
+    }
+
+    private TextView sectionHeader(int textRes) {
+        TextView header = new TextView(this);
+        header.setText(textRes);
+        header.setTextSize(20);
+        header.setTextColor(Color.rgb(22, 27, 34));
+        header.setPadding(0, dp(28), 0, 0);
+        return header;
+    }
+
+    private TextView sectionHint(int textRes) {
+        TextView hint = new TextView(this);
+        hint.setText(textRes);
+        hint.setTextColor(Color.rgb(90, 98, 110));
+        hint.setPadding(0, dp(6), 0, dp(8));
+        return hint;
     }
 
     private SharedPreferences prefs() {

@@ -31,6 +31,12 @@ public final class ReteKeyboardView extends View {
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
     private final Runnable onHoldElapsed = this::handleLongPress;
+    private final Runnable onRepeatElapsed = this::handleRepeat;
+    // Held-key auto-repeat (space, enter, backspace, arrows, letters …), configured in settings.
+    private boolean repeatEnabled = KeyRepeatSettings.DEFAULT_ENABLED;
+    private int repeatDelayMs = KeyRepeatSettings.DEFAULT_DELAY_MS;
+    private int repeatIntervalMs = KeyRepeatSettings.DEFAULT_INTERVAL_MS;
+    private boolean repeatFired;
     // Held strongly so the weak listener registration in the preferences survives; it applies
     // settings changes (feedback strengths, height) to a keyboard that is already on screen.
     private final SharedPreferences.OnSharedPreferenceChangeListener prefsListener =
@@ -190,6 +196,12 @@ public final class ReteKeyboardView extends View {
     /** Applies persisted settings (feedback strengths and height) to the on-screen keyboard. */
     private void reloadPreferences() {
         feedback.reload(prefs());
+        repeatEnabled = prefs().getBoolean(
+            KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED);
+        repeatDelayMs = KeyRepeatSettings.clampDelay(prefs().getInt(
+            KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS));
+        repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
+            KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
         float storedScale = KeyboardHeightScale.clamp(
             prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
         if (storedScale != heightScale) {
@@ -409,7 +421,31 @@ public final class ReteKeyboardView extends View {
             || key.hasLongPressControl()
             || (key.isControl() && key.control() == ControlKey.SHIFT)) {
             postDelayed(onHoldElapsed, ViewConfiguration.getLongPressTimeout());
+        } else if (repeatEnabled && repeatsOnHold(key)) {
+            // Ordinary keys with no long press auto-repeat while held.
+            postDelayed(onRepeatElapsed, repeatDelayMs);
         }
+    }
+
+    /** Keys that fire again while held: plain text/edit/raw keys, but not controls or layer keys. */
+    private static boolean repeatsOnHold(SoftwareKeySpec key) {
+        return key.enabled() && !key.isControl()
+            && !key.hasLongPress() && !key.hasLongPressControl();
+    }
+
+    /** Fires the held key once and schedules the next repeat, until the finger lifts. */
+    private void handleRepeat() {
+        if (heldRow < 0 || heldKey < 0 || popup != null) {
+            return;
+        }
+        SoftwareKeySpec key = layout().rows().get(heldRow).get(heldKey);
+        if (!repeatsOnHold(key)) {
+            return;
+        }
+        sink.accept(pressEventWithModifiers(key));
+        repeatFired = true;
+        feedback.playKeyDown();
+        postDelayed(onRepeatElapsed, repeatIntervalMs);
     }
 
     private void trackHold(float x, float y) {
@@ -428,7 +464,9 @@ public final class ReteKeyboardView extends View {
         int rowIndex = heldRow;
         int keyIndex = heldKey;
         boolean consumed = holdConsumed;
+        boolean repeated = repeatFired;
         removeCallbacks(onHoldElapsed);
+        removeCallbacks(onRepeatElapsed);
 
         if (openedPopup != null) {
             int index = openedPopup.indexAt(x, y);
@@ -444,8 +482,9 @@ public final class ReteKeyboardView extends View {
         }
 
         cancelHold();
-        if (consumed) {
-            // A hold (shift lock, or a layer switch) already acted; the tap must not also fire.
+        if (consumed || repeated) {
+            // A hold already acted — shift lock, a layer switch, or auto-repeat — so the release
+            // must not also fire the tap.
             return;
         }
         if (rowIndex < 0 || keyIndex < 0) {
@@ -570,6 +609,8 @@ public final class ReteKeyboardView extends View {
 
     private void cancelHold() {
         removeCallbacks(onHoldElapsed);
+        removeCallbacks(onRepeatElapsed);
+        repeatFired = false;
         heldRow = -1;
         heldKey = -1;
         popup = null;

@@ -1,6 +1,7 @@
 package dev.hellgates.retekeyime;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build;
@@ -13,6 +14,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 
 public class ReteKeyImeService extends InputMethodService {
@@ -28,6 +30,14 @@ public class ReteKeyImeService extends InputMethodService {
     private ReteKeyboardView keyboardView;
     private SoftKeyboardVisibilityPolicy.Mode softKeyboardMode =
         SoftKeyboardVisibilityPolicy.Mode.HIDE_WHEN_HARDWARE;
+    // Whether physical-keyboard letter keys compose Hangul; toggled by a user-bound 한/영 key and
+    // initialised from the current subtype. The 한자 bindings are recognised but conversion is
+    // still pending, so they only surface a one-time notice per input session.
+    private boolean hardwareKoreanMode;
+    private List<HardwareKeyBindings.Binding> hanyeongBindings = java.util.Collections.emptyList();
+    private List<HardwareKeyBindings.Binding> hanjaBindings = java.util.Collections.emptyList();
+    private boolean hanjaNoticeShown;
+    private Toast functionToast;
 
     @Override
     public View onCreateInputView() {
@@ -37,6 +47,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnInsertDate(this::insertCurrentDate);
         keyboardView.setOnSwitchIme(this::showImePicker);
         keyboardView.setOnManageIme(this::openKeyboardManagement);
+        reloadHardwareBindings();
         return keyboardView;
     }
 
@@ -95,6 +106,13 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (event.getRepeatCount() == 0 && handleHardwareFunctionKey(keyCode, event)) {
+            return true;
+        }
+        if (isBoundFunctionKey(keyCode, event)) {
+            // A held/repeating bound key: swallow the extra downs so the app sees nothing.
+            return true;
+        }
         if (passThroughChord(event)) {
             return super.onKeyDown(keyCode, event);
         }
@@ -124,6 +142,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (isBoundFunctionKey(keyCode, event)) {
+            return true;
+        }
         if (passThroughChord(event)) {
             return super.onKeyUp(keyCode, event);
         }
@@ -152,6 +173,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyMultiple(int keyCode, int count, KeyEvent event) {
+        if (isBoundFunctionKey(keyCode, event)) {
+            return true;
+        }
         if (passThroughChord(event)) {
             return super.onKeyMultiple(keyCode, count, event);
         }
@@ -196,6 +220,8 @@ public class ReteKeyImeService extends InputMethodService {
         if (keyboardView != null) {
             keyboardView.resetLayerState();
         }
+        reloadHardwareBindings();
+        hanjaNoticeShown = false;
         updateHardwareMapper(currentSubtype());
     }
 
@@ -343,9 +369,84 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void updateHardwareMapper(InputMethodSubtype subtype) {
-        hardwareMapper = !usesRawKeyCompatibility() && isKoreanSubtype(subtype)
+        hardwareKoreanMode = isKoreanSubtype(subtype);
+        applyHardwareMode();
+    }
+
+    /** Selects the physical-key mapper for the current Hangul mode and editor kind. */
+    private void applyHardwareMode() {
+        hardwareMapper = !usesRawKeyCompatibility() && hardwareKoreanMode
             ? DubeolsikHardwareMapper.INSTANCE
             : HardwareSemanticMapper.none();
+    }
+
+    /** Re-reads the user's physical-key shortcuts for 한/영 and 한자 from preferences. */
+    private void reloadHardwareBindings() {
+        SharedPreferences prefs = getSharedPreferences("retekey_view", MODE_PRIVATE);
+        hanyeongBindings = HardwareKeyBindings.parse(
+            prefs.getString(HardwareKeyBindings.KEY_HANYEONG, ""));
+        hanjaBindings = HardwareKeyBindings.parse(
+            prefs.getString(HardwareKeyBindings.KEY_HANJA, ""));
+    }
+
+    private static int pressedMods(KeyEvent event) {
+        int meta = event.getMetaState();
+        return HardwareKeyBindings.modsOf(
+            (meta & KeyEvent.META_SHIFT_ON) != 0,
+            (meta & KeyEvent.META_CTRL_ON) != 0,
+            (meta & KeyEvent.META_ALT_ON) != 0,
+            (meta & KeyEvent.META_META_ON) != 0);
+    }
+
+    private boolean isBoundFunctionKey(int keyCode, KeyEvent event) {
+        int mods = pressedMods(event);
+        return HardwareKeyBindings.matches(hanyeongBindings, keyCode, mods)
+            || HardwareKeyBindings.matches(hanjaBindings, keyCode, mods);
+    }
+
+    /** Runs the 한/영 or 한자 action for a matching physical key; returns true when it acted. */
+    private boolean handleHardwareFunctionKey(int keyCode, KeyEvent event) {
+        int mods = pressedMods(event);
+        if (HardwareKeyBindings.matches(hanyeongBindings, keyCode, mods)) {
+            toggleHardwareKorean();
+            return true;
+        }
+        if (HardwareKeyBindings.matches(hanjaBindings, keyCode, mods)) {
+            handleHanja();
+            return true;
+        }
+        return false;
+    }
+
+    /** Flips physical-keyboard Hangul composing on/off, finalising any half-formed syllable. */
+    private void toggleHardwareKorean() {
+        finishComposingInEditor();
+        inputProcessor.reset();
+        dispatcher.reset();
+        hardwareKoreanMode = !hardwareKoreanMode;
+        applyHardwareMode();
+        showFunctionToast(getString(hardwareKoreanMode ? R.string.mode_korean : R.string.mode_english));
+    }
+
+    private void handleHanja() {
+        // Hanja conversion is not built yet; acknowledge the recognised key once per session so the
+        // binding is visibly working without spamming a toast on every press.
+        if (!hanjaNoticeShown) {
+            showFunctionToast(getString(R.string.hanja_pending));
+            hanjaNoticeShown = true;
+        }
+    }
+
+    private void showFunctionToast(String text) {
+        try {
+            if (functionToast != null) {
+                functionToast.cancel();
+            }
+            functionToast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
+            functionToast.show();
+        } catch (RuntimeException ignored) {
+            // A toast failure must never affect input.
+        }
     }
 
     @SuppressWarnings("deprecation")

@@ -19,4 +19,25 @@
     <string name="settings_sound">Sound volume</string>
     <string name="settings_visual">Visual highlight</string>
     <string name="settings_percent_value">%1$d%%</string>
+
+    <string name="settings_repeat_label">키 자동 반복</string>
+    <string name="settings_repeat_hint">키를 누르고 있으면 자동으로 반복 입력됩니다(스페이스·엔터·백스페이스·방향키·글자 등).</string>
+    <string name="settings_repeat_enabled">자동 반복 사용</string>
+    <string name="settings_repeat_delay">반복 시작 지연</string>
+    <string name="settings_repeat_interval">반복 간격</string>
+    <string name="settings_ms_value">%1$d ms</string>
+
+    <string name="settings_hw_label">물리 키보드 단축키 (한/영·한자)</string>
+    <string name="settings_hw_hint">블루투스·유선 키보드에서 한/영과 한자에 쓸 물리 키를 등록합니다. 각 기능에 여러 개를 넣을 수 있고, 예로 한/영에 Shift+Space와 오른쪽 Ctrl을 함께 둘 수 있습니다.</string>
+    <string name="settings_hw_hanyeong">한/영 전환 키</string>
+    <string name="settings_hw_hanja">한자 키</string>
+    <string name="settings_hw_add">＋ 키 추가</string>
+    <string name="settings_hw_capture">키를 누르세요… (수정자만 누르면 그 키 자체로 등록, 취소하려면 화면을 두드리세요)</string>
+    <string name="settings_hw_none">등록된 키 없음</string>
+    <string name="settings_hw_remove">✕</string>
+    <string name="settings_hw_hanja_note">한자 변환 기능은 아직 준비 중입니다. 키 등록은 지금 저장되며, 변환은 이후 업데이트에서 동작합니다.</string>
+
+    <string name="mode_korean">한글</string>
+    <string name="mode_english">English</string>
+    <string name="hanja_pending">한자 키 인식됨 — 변환 기능은 준비 중입니다.</string>
 </resources>
