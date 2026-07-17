@@ -62,6 +62,44 @@ public final class HanjaCandidatesView extends LinearLayout {
         render();
     }
 
+    /** Number of candidates shown per page, so callers can label number keys (1..N). */
+    public static int pageSize() {
+        return PAGE_SIZE;
+    }
+
+    /** Picks the candidate at 1-based {@code number} on the current page; false if out of range. */
+    public boolean selectByNumber(int number) {
+        if (number < 1 || number > PAGE_SIZE || listener == null) {
+            return false;
+        }
+        int index = page * PAGE_SIZE + (number - 1);
+        if (index >= items.size()) {
+            return false;
+        }
+        listener.pick(items.get(index).value);
+        return true;
+    }
+
+    /** Advances to the next page; false if already on the last page. */
+    public boolean nextPage() {
+        if (page >= pageCount() - 1) {
+            return false;
+        }
+        page++;
+        render();
+        return true;
+    }
+
+    /** Goes back a page; false if already on the first page. */
+    public boolean prevPage() {
+        if (page <= 0) {
+            return false;
+        }
+        page--;
+        render();
+        return true;
+    }
+
     private int pageCount() {
         return Math.max(1, (items.size() + PAGE_SIZE - 1) / PAGE_SIZE);
     }
@@ -81,7 +119,7 @@ public final class HanjaCandidatesView extends LinearLayout {
                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                 cellParams.setMargins(dp(3), dp(3), dp(3), dp(3));
                 if (index < items.size()) {
-                    row.addView(buildCell(items.get(index)), cellParams);
+                    row.addView(buildCell(items.get(index), r * COLUMNS + c + 1), cellParams);
                     rowHasContent = true;
                 } else {
                     View filler = new View(getContext());
@@ -150,19 +188,29 @@ public final class HanjaCandidatesView extends LinearLayout {
         return button;
     }
 
-    private LinearLayout buildCell(Item item) {
+    private LinearLayout buildCell(Item item, int number) {
         LinearLayout cell = new LinearLayout(getContext());
         cell.setOrientation(VERTICAL);
         cell.setGravity(Gravity.CENTER);
         cell.setBackgroundColor(Color.rgb(40, 44, 52));
         cell.setPadding(dp(6), dp(6), dp(6), dp(6));
 
+        LinearLayout top = new LinearLayout(getContext());
+        top.setOrientation(HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView index = new TextView(getContext());
+        index.setText(String.valueOf(number));
+        index.setTextColor(Color.rgb(120, 170, 235));
+        index.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        index.setPadding(0, 0, dp(5), 0);
+        top.addView(index);
         TextView value = new TextView(getContext());
         value.setText(item.value);
         value.setTextColor(Color.rgb(233, 237, 243));
         value.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
         value.setGravity(Gravity.CENTER);
-        cell.addView(value);
+        top.addView(value);
+        cell.addView(top);
 
         if (item.gloss != null && !item.gloss.isEmpty()) {
             TextView gloss = new TextView(getContext());

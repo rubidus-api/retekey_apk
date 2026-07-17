@@ -132,6 +132,9 @@ public class ReteKeyImeService extends InputMethodService {
             // A held/repeating bound key: swallow the extra downs so the app sees nothing.
             return true;
         }
+        if (hanjaCandidatesShown && handleHanjaSelectionKey(keyCode)) {
+            return true;
+        }
         hideHanjaCandidatesIfShown();
         if (passThroughChord(event)) {
             return super.onKeyDown(keyCode, event);
@@ -593,6 +596,47 @@ public class ReteKeyImeService extends InputMethodService {
         pendingCandidates = null;
         hanjaCandidatesShown = false;
         setCandidatesViewShown(false);
+    }
+
+    /**
+     * While the candidate strip is up, a number key 1–9 picks that candidate, the page keys/arrows
+     * turn the page, and Escape dismisses. Returns true when the key was used for the strip.
+     */
+    private boolean handleHanjaSelectionKey(int keyCode) {
+        if (candidatesView == null) {
+            return false;
+        }
+        int number = digitFromKeyCode(keyCode);
+        if (number >= 1) {
+            candidatesView.selectByNumber(number);
+            return true;
+        }
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+            case KeyEvent.KEYCODE_PAGE_DOWN:
+                candidatesView.nextPage();
+                return true;
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_PAGE_UP:
+                candidatesView.prevPage();
+                return true;
+            case KeyEvent.KEYCODE_ESCAPE:
+                hideHanjaCandidates();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /** Maps a top-row or numpad digit key to 1–9, or -1 when it is not a digit. */
+    private static int digitFromKeyCode(int keyCode) {
+        if (keyCode >= KeyEvent.KEYCODE_1 && keyCode <= KeyEvent.KEYCODE_9) {
+            return keyCode - KeyEvent.KEYCODE_1 + 1;
+        }
+        if (keyCode >= KeyEvent.KEYCODE_NUMPAD_1 && keyCode <= KeyEvent.KEYCODE_NUMPAD_9) {
+            return keyCode - KeyEvent.KEYCODE_NUMPAD_1 + 1;
+        }
+        return -1;
     }
 
     private void showFunctionToast(String text) {
