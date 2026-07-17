@@ -240,7 +240,7 @@ public final class KeyboardLayouts {
             fnKey(), padCell(mode, 3), padCell(mode, 4), padCell(mode, 5), backspaceKey()
         ));
         rows.add(KeyboardLayout.row(
-            shiftKey(false), inPageReturnKey(),
+            shiftKey(false), text("e", "e"),
             text("plus", "+"), text("minus", "-"), text("equals", "="), text("period", "."),
             padCell(mode, 6), padCell(mode, 7), padCell(mode, 8), enterKey()
         ));
@@ -346,9 +346,6 @@ public final class KeyboardLayouts {
     }
 
     /** The in-page return key ("영문자" position); distinct id from the shared bottom-row one. */
-    private static SoftwareKeySpec inPageReturnKey() {
-        return SoftwareKeySpec.control("touch.layer.letters.inpage", "ABC", ControlKey.PREVIOUS_LAYER);
-    }
 
     private static SoftwareKeySpec numKey() {
         return SoftwareKeySpec.control("touch.numpad.numlock", "Num", ControlKey.NUMLOCK);

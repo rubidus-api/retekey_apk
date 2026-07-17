@@ -28,7 +28,7 @@ public final class SpecialKeysPageTest {
             labels(NUMBERS, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "ABC", "+", "-", "=", ".", "1", "2", "3", "⏎"),
+            Arrays.asList("⇧", "e", "+", "-", "=", ".", "1", "2", "3", "⏎"),
             labels(NUMBERS, 2)
         );
     }

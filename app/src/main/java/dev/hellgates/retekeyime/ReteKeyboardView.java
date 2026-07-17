@@ -695,7 +695,11 @@ public final class ReteKeyboardView extends View {
                 shiftLayer.tap();
                 break;
             case LAYOUT_TOGGLE:
-                letterLayoutId = KeyboardLayouts.otherLetters(letterLayoutId);
+                // Only flip EN<->KO when already on the letters page; from another page just return
+                // to letters keeping the language that was last in use.
+                if (page == Page.LETTERS) {
+                    letterLayoutId = KeyboardLayouts.otherLetters(letterLayoutId);
+                }
                 page = Page.LETTERS;
                 shiftLayer.clear();
                 break;
