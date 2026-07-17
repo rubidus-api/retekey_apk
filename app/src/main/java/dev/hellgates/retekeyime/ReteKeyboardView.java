@@ -51,8 +51,6 @@ public final class ReteKeyboardView extends View {
     private static final float KEY_GAP_DP = 4.0f;
     private static final float KEY_RADIUS_DP = 5.0f;
     private static final float KEY_SHADOW_DP = 2.0f;
-    /** The raised-key bottom lip colour, darker than the keyboard background. */
-    private static final int KEY_SHADOW = Color.rgb(12, 14, 18);
 
     /** {@link #KEY_GAP_DP} resolved to pixels for this display; set in the constructor. */
     private final int keyGapPx;
@@ -85,6 +83,8 @@ public final class ReteKeyboardView extends View {
     // The unpressed keyboard is rendered once into this bitmap and reused until the layout changes.
     private Bitmap baseBitmap;
     private String baseSignature;
+    // Colours resolved to the current light/dark (and Material You) theme; refreshed on rebuild.
+    private KeyboardPalette palette;
 
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
@@ -93,6 +93,7 @@ public final class ReteKeyboardView extends View {
         this.keyGapPx = Math.round(KEY_GAP_DP * density);
         this.keyRadiusPx = Math.round(KEY_RADIUS_DP * density);
         this.keyShadowPx = Math.round(KEY_SHADOW_DP * density);
+        this.palette = KeyboardPalette.resolve(context);
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
@@ -273,8 +274,9 @@ public final class ReteKeyboardView extends View {
         int startColumn = layout.startColumn(heldRow, heldKey);
         int left = layout.columnEdge(startColumn, width);
         int right = layout.columnEdge(startColumn + key.columnSpan(), width);
-        paint.setColor(Color.argb(
-            Math.round(feedback.visualIntensity() * 150.0f), 120, 170, 235));
+        int tint = palette.pressTint;
+        paint.setColor(Color.argb(Math.round(feedback.visualIntensity() * 150.0f),
+            Color.red(tint), Color.green(tint), Color.blue(tint)));
         canvas.drawRoundRect(left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx,
             keyRadiusPx, keyRadiusPx, paint);
     }
@@ -290,8 +292,9 @@ public final class ReteKeyboardView extends View {
             baseBitmap.recycle();
         }
         baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        palette = KeyboardPalette.resolve(getContext());
         Canvas cache = new Canvas(baseBitmap);
-        cache.drawColor(Color.rgb(28, 30, 36));
+        cache.drawColor(palette.background);
         paint.setTextAlign(Paint.Align.CENTER);
         KeyboardLayout layout = layout();
         List<List<SoftwareKeySpec>> rows = layout.rows();
@@ -313,7 +316,8 @@ public final class ReteKeyboardView extends View {
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + numpadMode + "|" + shiftLayer.isActive()
-            + "|" + shiftLayer.isLocked() + "|" + armedModifiers;
+            + "|" + shiftLayer.isLocked() + "|" + armedModifiers + "|"
+            + KeyboardPalette.isNight(getContext());
     }
 
     /** Draws one raised, rounded key with its label and long-press hint into the cache canvas. */
@@ -324,24 +328,22 @@ public final class ReteKeyboardView extends View {
         float r = right - keyGapPx;
         float b = bottom - keyGapPx;
         // A darker lip just below the face makes the key look raised.
-        paint.setColor(KEY_SHADOW);
+        paint.setColor(palette.keyShadow);
         canvas.drawRoundRect(l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, keyRadiusPx, paint);
         paint.setColor(keyFillColor(key));
         canvas.drawRoundRect(l, t, r, b, keyRadiusPx, keyRadiusPx, paint);
-        paint.setColor(key.enabled() || key.isControl()
-            ? Color.rgb(22, 27, 34)
-            : Color.rgb(139, 148, 158));
+        paint.setColor(key.enabled() || key.isControl() ? palette.keyText : palette.keyTextMuted);
         fitLabel(key.label(), right - left, bottom - top);
         canvas.drawText(key.label(), (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
         if (key.longPressTexts().size() == 1) {
             // A single long-press character is hinted in small text at the top-right corner.
-            paint.setColor(Color.rgb(120, 130, 145));
+            paint.setColor(palette.hint);
             float hint = (bottom - top) * 0.22f;
             paint.setTextSize(hint);
             canvas.drawText(key.longPressTexts().get(0),
                 right - hint * 0.75f, top + hint * 1.15f, paint);
         } else if (key.hasLongPress() || key.hasLongPressControl()) {
-            paint.setColor(Color.rgb(139, 148, 158));
+            paint.setColor(palette.hint);
             canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
         }
     }
@@ -365,11 +367,10 @@ public final class ReteKeyboardView extends View {
         for (int index = 0; index < popup.candidateCount(); index++) {
             int left = popup.cellLeft(index);
             int right = left + popup.cellWidth();
-            paint.setColor(index == popupIndex
-                ? Color.rgb(159, 190, 233)
-                : Color.rgb(255, 255, 255));
-            canvas.drawRect(left + 2, popup.top() + 2, right - 2, popup.bottom() - 2, paint);
-            paint.setColor(Color.rgb(22, 27, 34));
+            paint.setColor(index == popupIndex ? palette.keyAccent : palette.keyFace);
+            canvas.drawRoundRect(left + 2, popup.top() + 2, right - 2, popup.bottom() - 2,
+                keyRadiusPx, keyRadiusPx, paint);
+            paint.setColor(palette.keyText);
             fitLabel(popup.candidate(index), popup.cellWidth(), cellHeight);
             canvas.drawText(
                 popup.candidate(index),
@@ -803,25 +804,25 @@ public final class ReteKeyboardView extends View {
             ControlKey control = key.control();
             if (control == ControlKey.SHIFT) {
                 if (shiftLayer.isLocked()) {
-                    return Color.rgb(159, 190, 233);
+                    return palette.keyAccent;
                 }
                 if (shiftLayer.isActive()) {
-                    return Color.rgb(196, 214, 240);
+                    return palette.keyAccentSoft;
                 }
             }
             if (control == ControlKey.NUMLOCK && numpadMode == NumpadMode.ARROWS) {
-                return Color.rgb(159, 190, 233);
+                return palette.keyAccent;
             }
             if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
-                return Color.rgb(159, 190, 233);
+                return palette.keyAccent;
             }
             if (armedModifiers.contains(control)) {
-                return Color.rgb(159, 190, 233);
+                return palette.keyAccent;
             }
         }
         if (!key.enabled() && !key.isControl()) {
-            return Color.rgb(233, 236, 240);
+            return palette.keyDisabled;
         }
-        return Color.rgb(221, 225, 231);
+        return palette.keyFace;
     }
 }
