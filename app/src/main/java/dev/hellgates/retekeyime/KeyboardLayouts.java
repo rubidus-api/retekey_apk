@@ -208,16 +208,16 @@ public final class KeyboardLayouts {
                 numKey(), fnRawKey(0), fnRawKey(1), fnRawKey(2), rawKey("f10", "F10", RawKey.F10)
             ));
             rows.add(KeyboardLayout.row(
-                disabled("brightup", "밝게"), disabled("brightdown", "어둡게"),
+                disabled("brightup", "Bright+"), disabled("brightdown", "Bright−"),
                 disabled("volup", "Vol+"), disabled("voldown", "Vol-"),
                 disabled("mute", "Mute"),
                 fnKey(), fnRawKey(3), fnRawKey(4), fnRawKey(5), backspaceKey()
             ));
             rows.add(KeyboardLayout.row(
                 shiftKey(false),
-                disabled("prevtrack", "이전곡"), disabled("playpause", "재생"),
-                disabled("nexttrack", "다음곡"),
-                rawKey("search", "검색", RawKey.SEARCH), disabled("back", "뒤로"),
+                disabled("prevtrack", "Prev"), disabled("playpause", "Play"),
+                disabled("nexttrack", "Next"),
+                rawKey("search", "Search", RawKey.SEARCH), disabled("back", "Back"),
                 fnRawKey(6), fnRawKey(7), fnRawKey(8), enterKey()
             ));
             rows.add(bottomRow(returnToLettersKey()));
@@ -227,7 +227,7 @@ public final class KeyboardLayouts {
         rows.add(KeyboardLayout.row(
             rawKey("esc", "Esc", RawKey.ESCAPE), rawKey("prtsc", "PrtSc", RawKey.PRINT_SCREEN),
             rawKey("scrlk", "ScrLk", RawKey.SCROLL_LOCK), rawKey("pause", "Pause", RawKey.BREAK),
-            SoftwareKeySpec.control("touch.key.hanja", "한자", ControlKey.HANJA), numKey(),
+            SoftwareKeySpec.control("touch.key.hanja", "Hanja", ControlKey.HANJA), numKey(),
             padCell(mode, 0), padCell(mode, 1), padCell(mode, 2),
             // Number mode needs a 0 to type; the arrow/navigation mode keeps forward-delete here.
             mode == NumpadMode.NUMBERS
@@ -270,40 +270,40 @@ public final class KeyboardLayouts {
         // auto-fit to the key width. Row 1: editing and clipboard. Row 2: cursor navigation.
         // Row 3: keyboard adjustment and function placeholders.
         rows.add(KeyboardLayout.row(
-            menuControl("settings", "설정", ControlKey.OPEN_SETTINGS),
-            menuControl("copy", "복사", ControlKey.COPY),
-            menuControl("cut", "잘라내기", ControlKey.CUT),
-            menuControl("paste", "붙여넣기", ControlKey.PASTE),
-            menuControl("selectall", "전체선택", ControlKey.SELECT_ALL),
-            menuControl("undo", "실행취소", ControlKey.UNDO),
-            menuControl("redo", "다시실행", ControlKey.REDO),
-            menuDisabled("emoji", "이모지"),
-            menuDisabled("clipboard", "클립보드"),
-            menuControl("date", "날짜", ControlKey.INSERT_DATE)
+            menuControl("settings", "Settings", ControlKey.OPEN_SETTINGS),
+            menuControl("copy", "Copy", ControlKey.COPY),
+            menuControl("cut", "Cut", ControlKey.CUT),
+            menuControl("paste", "Paste", ControlKey.PASTE),
+            menuControl("selectall", "Select All", ControlKey.SELECT_ALL),
+            menuControl("undo", "Undo", ControlKey.UNDO),
+            menuControl("redo", "Redo", ControlKey.REDO),
+            menuDisabled("emoji", "Emoji"),
+            menuDisabled("clipboard", "Clipboard"),
+            menuControl("date", "Date", ControlKey.INSERT_DATE)
         ));
         rows.add(KeyboardLayout.row(
             menuRaw("cursor.left", "←", RawKey.LEFT),
             menuRaw("cursor.right", "→", RawKey.RIGHT),
             menuRaw("cursor.up", "↑", RawKey.UP),
             menuRaw("cursor.down", "↓", RawKey.DOWN),
-            menuRaw("cursor.home", "처음", RawKey.HOME),
-            menuRaw("cursor.end", "끝", RawKey.END),
+            menuRaw("cursor.home", "Home", RawKey.HOME),
+            menuRaw("cursor.end", "End", RawKey.END),
             menuRaw("cursor.pageup", "PgUp", RawKey.PAGE_UP),
             menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),
             menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE),
             menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
-            menuControl("height.down", "높이 −", ControlKey.HEIGHT_DOWN),
-            menuControl("height.up", "높이 ＋", ControlKey.HEIGHT_UP),
-            menuControl("switchime", "키보드전환", ControlKey.SWITCH_IME),
-            menuControl("manageime", "키보드관리", ControlKey.MANAGE_IME),
-            menuDisabled("onehand.left", "한손 ◀"),
-            menuDisabled("onehand.right", "한손 ▶"),
-            menuDisabled("onehand.full", "전체폭"),
-            menuDisabled("theme", "테마"),
-            menuDisabled("custom1", "커스텀1"),
-            menuDisabled("custom2", "커스텀2")
+            menuControl("height.down", "Height −", ControlKey.HEIGHT_DOWN),
+            menuControl("height.up", "Height ＋", ControlKey.HEIGHT_UP),
+            menuControl("switchime", "Switch KB", ControlKey.SWITCH_IME),
+            menuControl("manageime", "Manage KB", ControlKey.MANAGE_IME),
+            menuDisabled("onehand.left", "1-Hand ◀"),
+            menuDisabled("onehand.right", "1-Hand ▶"),
+            menuDisabled("onehand.full", "Full Width"),
+            menuDisabled("theme", "Theme"),
+            menuDisabled("custom1", "Custom 1"),
+            menuDisabled("custom2", "Custom 2")
         ));
         rows.add(bottomRow(returnToLettersKey()));
         return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);
@@ -329,7 +329,7 @@ public final class KeyboardLayouts {
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            SoftwareKeySpec.control("touch.layout.toggle", "한/영", ControlKey.LAYOUT_TOGGLE),
+            SoftwareKeySpec.control("touch.layout.toggle", "KO/EN", ControlKey.LAYOUT_TOGGLE),
             layerKey,
             SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
             SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER)
@@ -341,12 +341,12 @@ public final class KeyboardLayouts {
     }
 
     private static SoftwareKeySpec returnToLettersKey() {
-        return SoftwareKeySpec.control("touch.layer.letters", "가", ControlKey.PREVIOUS_LAYER);
+        return SoftwareKeySpec.control("touch.layer.letters", "ABC", ControlKey.PREVIOUS_LAYER);
     }
 
     /** The in-page return key ("영문자" position); distinct id from the shared bottom-row one. */
     private static SoftwareKeySpec inPageReturnKey() {
-        return SoftwareKeySpec.control("touch.layer.letters.inpage", "가", ControlKey.PREVIOUS_LAYER);
+        return SoftwareKeySpec.control("touch.layer.letters.inpage", "ABC", ControlKey.PREVIOUS_LAYER);
     }
 
     private static SoftwareKeySpec numKey() {

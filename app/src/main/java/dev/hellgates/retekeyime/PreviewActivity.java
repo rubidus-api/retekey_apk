@@ -2,7 +2,6 @@ package dev.hellgates.retekeyime;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
@@ -15,8 +14,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /**
- * A tiny screen for trying ReteKey and for capturing screenshots. It is not the product's settings
- * surface; it just gives a focusable field so the keyboard shows over a real editor.
+ * A tiny launcher screen for trying ReteKey. It uses the system theme and standard controls — no
+ * hardcoded colors — so it follows the device's light/dark colour scheme, and lays the actions out
+ * as a plain spaced menu of full-width buttons.
  */
 public final class PreviewActivity extends Activity {
     private EditText field;
@@ -31,20 +31,13 @@ public final class PreviewActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(250, 250, 252));
-        int pad = dp(20);
+        int pad = dp(16);
         root.setPadding(pad, pad, pad, pad);
-
-        TextView title = new TextView(this);
-        title.setText(getString(R.string.app_name));
-        title.setTextSize(22);
-        title.setTextColor(Color.rgb(22, 27, 34));
-        root.addView(title);
 
         TextView hint = new TextView(this);
         hint.setText(R.string.preview_hint);
-        hint.setTextColor(Color.rgb(90, 98, 110));
-        hint.setPadding(0, dp(6), 0, dp(16));
+        hint.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        hint.setPadding(0, 0, 0, dp(12));
         root.addView(hint);
 
         field = new EditText(this);
@@ -57,24 +50,26 @@ public final class PreviewActivity extends Activity {
             LinearLayout.LayoutParams.WRAP_CONTENT
         ));
 
-        // Order: system default/added-keyboards settings, then the input-method picker, then
-        // ReteKey's own settings (requested top-to-bottom order 2, 1, 3).
-        Button manage = new Button(this);
-        manage.setText(R.string.preview_manage_keyboards);
-        manage.setOnClickListener(this::manageKeyboards);
-        root.addView(manage);
-
-        Button chooser = new Button(this);
-        chooser.setText(R.string.preview_pick_keyboard);
-        chooser.setOnClickListener(this::showKeyboardPicker);
-        root.addView(chooser);
-
-        Button settings = new Button(this);
-        settings.setText(R.string.preview_open_settings);
-        settings.setOnClickListener(this::openSettings);
-        root.addView(settings);
+        // Menu order 2, 1, 3: manage keyboards, pick keyboard, ReteKey settings.
+        addMenuButton(root, R.string.preview_manage_keyboards, this::manageKeyboards);
+        addMenuButton(root, R.string.preview_pick_keyboard, this::showKeyboardPicker);
+        addMenuButton(root, R.string.preview_open_settings, this::openSettings);
 
         setContentView(root);
+    }
+
+    /** Adds a full-width button with a gap above it, so the actions read as a spaced menu list. */
+    private void addMenuButton(LinearLayout root, int textRes, View.OnClickListener onClick) {
+        Button button = new Button(this);
+        button.setText(textRes);
+        button.setAllCaps(false);
+        button.setOnClickListener(onClick);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.topMargin = dp(12);
+        root.addView(button, params);
     }
 
     private void openSettings(View view) {

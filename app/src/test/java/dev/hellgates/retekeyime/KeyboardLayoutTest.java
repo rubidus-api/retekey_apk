@@ -117,7 +117,7 @@ public final class KeyboardLayoutTest {
             labels(korean, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "space", "한/영", "pad", "Tab", "☰"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "space", "KO/EN", "pad", "Tab", "☰"),
             labels(korean, 3)
         );
     }

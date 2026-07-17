@@ -20,7 +20,7 @@ public final class SpecialKeysPageTest {
     public void theBaseKeypadLayoutMatchesTheSpec() {
         assertEquals(KeyboardLayoutId.SPECIAL_KEYS, NUMBERS.id());
         assertEquals(
-            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "한자", "Num", "7", "8", "9", "0"),
+            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "Hanja", "Num", "7", "8", "9", "0"),
             labels(NUMBERS, 0)
         );
         assertEquals(
@@ -28,7 +28,7 @@ public final class SpecialKeysPageTest {
             labels(NUMBERS, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "가", "+", "-", "=", ".", "1", "2", "3", "⏎"),
+            Arrays.asList("⇧", "ABC", "+", "-", "=", ".", "1", "2", "3", "⏎"),
             labels(NUMBERS, 2)
         );
     }
@@ -57,9 +57,9 @@ public final class SpecialKeysPageTest {
     public void hanjaKeyIsAnEnabledControl() {
         SoftwareKeySpec hanja = NUMBERS.findById("touch.key.hanja");
         assertNotNull(hanja);
-        assertTrue("한자 converts the reading", hanja.isControl());
+        assertTrue("Hanja converts the reading", hanja.isControl());
         assertEquals(ControlKey.HANJA, hanja.control());
-        assertEquals("한자", hanja.label());
+        assertEquals("Hanja", hanja.label());
     }
 
     @Test
@@ -91,11 +91,11 @@ public final class SpecialKeysPageTest {
             labels(FUNCTIONS, 0)
         );
         assertEquals(
-            Arrays.asList("밝게", "어둡게", "Vol+", "Vol-", "Mute", "Fn", "F4", "F5", "F6", "⌫"),
+            Arrays.asList("Bright+", "Bright−", "Vol+", "Vol-", "Mute", "Fn", "F4", "F5", "F6", "⌫"),
             labels(FUNCTIONS, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "이전곡", "재생", "다음곡", "검색", "뒤로", "F1", "F2", "F3", "⏎"),
+            Arrays.asList("⇧", "Prev", "Play", "Next", "Search", "Back", "F1", "F2", "F3", "⏎"),
             labels(FUNCTIONS, 2)
         );
         // F1-F12 send key events; F13-F15 have no Android keycode, so they stay disabled.
