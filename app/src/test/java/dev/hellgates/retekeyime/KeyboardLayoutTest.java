@@ -117,7 +117,7 @@ public final class KeyboardLayoutTest {
             labels(korean, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "space", "KO/EN", "pad", "Tab", "☰"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "KO/EN", "pad", "!#", "☰"),
             labels(korean, 3)
         );
     }
@@ -243,14 +243,14 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
-    public void holdingThePeriodSwitchesToTheSpecialCharsPage() {
+    public void holdingThePeriodInsertsAComma() {
         SoftwareKeySpec period = KeyboardLayouts
             .of(KeyboardLayoutId.KO_DUBEOLSIK, false)
             .findById("touch.text.period");
         assertNotNull(period);
         assertEquals(SemanticInput.text("."), period.semanticInput());
-        assertTrue(period.hasLongPressControl());
-        assertEquals(ControlKey.SPECIAL_CHARS_LAYER, period.longPressControl());
+        assertTrue(period.hasLongPress());
+        assertEquals(java.util.Arrays.asList(","), period.longPressTexts());
     }
 
     @Test

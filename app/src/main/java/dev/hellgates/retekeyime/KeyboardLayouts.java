@@ -20,7 +20,7 @@ import java.util.List;
  */
 public final class KeyboardLayouts {
     public static final int COLUMNS = 10;
-    public static final int SPACE_COLUMN_SPAN = 3;
+    public static final int SPACE_COLUMN_SPAN = 2;
 
     // The keypad occupies columns 6-8; column 9 is the 0 / Enter / Backspace strip.
     private static final String[] DIGIT_CELLS = {"7", "8", "9", "4", "5", "6", "1", "2", "3"};
@@ -326,12 +326,13 @@ public final class KeyboardLayouts {
             SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL),
             SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META),
             SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT),
+            SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
             SoftwareKeySpec.control("touch.layout.toggle", "KO/EN", ControlKey.LAYOUT_TOGGLE),
             layerKey,
-            SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
+            SoftwareKeySpec.control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER),
             SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER)
         );
     }
@@ -373,7 +374,7 @@ public final class KeyboardLayouts {
     private static SoftwareKeySpec letterPeriodKey() {
         return SoftwareKeySpec
             .enabled("touch.text.period", ".", SemanticInput.text("."))
-            .withLongPressControl(ControlKey.SPECIAL_CHARS_LAYER);
+            .withLongPress(",");
     }
 
     private static SoftwareKeySpec text(String id, String label) {

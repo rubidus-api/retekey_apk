@@ -67,7 +67,7 @@ public final class MenuPageTest {
 
     @Test
     public void theBottomRowReturnsToLetters() {
-        SoftwareKeySpec returnKey = menu.rows().get(3).get(5);
+        SoftwareKeySpec returnKey = menu.rows().get(3).get(6);
         assertEquals("ABC", returnKey.label());
         assertEquals(ControlKey.PREVIOUS_LAYER, returnKey.control());
         assertEquals(ControlKey.MENU_LAYER, menu.findById("touch.menu").control());
