@@ -28,6 +28,8 @@ public final class PreviewActivity extends Activity {
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
                 | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         );
+        // Show the app name and version in the title bar so it is visible right on launch.
+        setTitle(getString(R.string.app_name) + "  v" + versionName());
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -99,6 +101,14 @@ public final class PreviewActivity extends Activity {
         InputMethodManager imm = getSystemService(InputMethodManager.class);
         if (imm != null) {
             imm.showInputMethodPicker();
+        }
+    }
+
+    private String versionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (android.content.pm.PackageManager.NameNotFoundException notFound) {
+            return "";
         }
     }
 
