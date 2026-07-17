@@ -2,13 +2,10 @@ package dev.hellgates.retekeyime;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
@@ -22,19 +19,16 @@ import java.util.List;
  * ReteKey's settings screen. Reachable from the app launcher, from the ☰ menu key on the keyboard,
  * and from the system keyboard settings gear (declared as the input method's settingsActivity).
  *
- * <p>Today it hosts the keyboard-height slider; voice and AI entries will join it under RFC-0007.
- * The height is stored in the same {@code retekey_view} preferences the keyboard reads at measure
- * time, so a change here takes effect the next time the keyboard is shown.
+ * <p>It uses only stock controls (text, sliders, a checkbox, buttons) and no hardcoded colors, so
+ * it follows the device's light/dark system theme. Values are stored in the same
+ * {@code retekey_view} preferences the keyboard reads, so changes take effect next time it shows.
  */
 public final class SettingsActivity extends Activity {
     private static final String PREFS = "retekey_view";
     private static final String KEY_HEIGHT_SCALE = "height_scale";
-    private static final int PREVIEW_BASE_DP = 108;
 
     private SeekBar slider;
     private TextView valueLabel;
-    private View previewBar;
-    private ViewGroup.LayoutParams previewParams;
     private String capturingKey;
     private TextView captureStatus;
     private LinearLayout hanyeongList;
@@ -47,25 +41,14 @@ public final class SettingsActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(250, 250, 252));
         int pad = dp(20);
         root.setPadding(pad, pad, pad, pad);
 
-        TextView title = new TextView(this);
-        title.setText(R.string.settings_height_label);
-        title.setTextSize(20);
-        title.setTextColor(Color.rgb(22, 27, 34));
-        root.addView(title);
-
-        TextView hint = new TextView(this);
-        hint.setText(R.string.settings_height_hint);
-        hint.setTextColor(Color.rgb(90, 98, 110));
-        hint.setPadding(0, dp(6), 0, dp(16));
-        root.addView(hint);
+        root.addView(sectionHeader(R.string.settings_height_label));
+        root.addView(sectionHint(R.string.settings_height_hint));
 
         valueLabel = new TextView(this);
-        valueLabel.setTextSize(16);
-        valueLabel.setTextColor(Color.rgb(40, 90, 170));
+        valueLabel.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
         root.addView(valueLabel);
 
         slider = new SeekBar(this);
@@ -75,53 +58,16 @@ public final class SettingsActivity extends Activity {
         slider.setMax(maxPercent);
         slider.setProgress(Math.round(currentScale() * 100));
         slider.setPadding(dp(4), dp(12), dp(4), dp(12));
-        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        slider.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
                 applyPercent(progress);
             }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar bar) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar bar) {
-            }
         });
-        root.addView(slider, new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(slider, matchWidth());
 
-        TextView previewCaption = new TextView(this);
-        previewCaption.setText(R.string.settings_preview);
-        previewCaption.setTextColor(Color.rgb(90, 98, 110));
-        previewCaption.setPadding(0, dp(16), 0, dp(6));
-        root.addView(previewCaption);
-
-        previewBar = new View(this);
-        GradientDrawable fill = new GradientDrawable();
-        fill.setColor(Color.rgb(221, 225, 231));
-        fill.setStroke(dp(1), Color.rgb(180, 188, 198));
-        fill.setCornerRadius(dp(8));
-        previewBar.setBackground(fill);
-        previewParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(PREVIEW_BASE_DP));
-        root.addView(previewBar, previewParams);
-
-        TextView feedbackHeader = new TextView(this);
-        feedbackHeader.setText(R.string.settings_feedback_label);
-        feedbackHeader.setTextSize(20);
-        feedbackHeader.setTextColor(Color.rgb(22, 27, 34));
-        feedbackHeader.setPadding(0, dp(28), 0, 0);
-        root.addView(feedbackHeader);
-
-        TextView feedbackHint = new TextView(this);
-        feedbackHint.setText(R.string.settings_feedback_hint);
-        feedbackHint.setTextColor(Color.rgb(90, 98, 110));
-        feedbackHint.setPadding(0, dp(6), 0, dp(8));
-        root.addView(feedbackHint);
-
+        root.addView(sectionHeader(R.string.settings_feedback_label));
+        root.addView(sectionHint(R.string.settings_feedback_hint));
         addPercentSlider(root, R.string.settings_visual,
             KeyFeedback.KEY_VISUAL, KeyFeedback.DEFAULT_VISUAL);
         addPercentSlider(root, R.string.settings_haptic,
@@ -158,14 +104,11 @@ public final class SettingsActivity extends Activity {
         float scale = KeyboardHeightScale.clamp(percent / 100.0f);
         prefs().edit().putFloat(KEY_HEIGHT_SCALE, scale).apply();
         valueLabel.setText(getString(R.string.settings_height_value, Math.round(scale * 100)));
-        previewParams.height = Math.round(dp(PREVIEW_BASE_DP) * scale);
-        previewBar.setLayoutParams(previewParams);
     }
 
     /** Adds a titled 0–100% slider bound to a 0–1 float preference. */
     private void addPercentSlider(LinearLayout root, int titleRes, String prefKey, float defaultValue) {
         TextView label = new TextView(this);
-        label.setTextColor(Color.rgb(40, 90, 170));
         label.setPadding(0, dp(10), 0, 0);
         root.addView(label);
 
@@ -175,24 +118,15 @@ public final class SettingsActivity extends Activity {
         bar.setProgress(start);
         bar.setPadding(dp(4), dp(8), dp(4), dp(8));
         label.setText(getString(titleRes) + "  " + getString(R.string.settings_percent_value, start));
-        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
                 prefs().edit().putFloat(prefKey, progress / 100.0f).apply();
                 label.setText(getString(titleRes) + "  "
                     + getString(R.string.settings_percent_value, progress));
             }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar b) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar b) {
-            }
         });
-        root.addView(bar, new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(bar, matchWidth());
     }
 
     private static float clampUnit(float value) {
@@ -216,7 +150,6 @@ public final class SettingsActivity extends Activity {
 
         CheckBox enabled = new CheckBox(this);
         enabled.setText(R.string.settings_repeat_enabled);
-        enabled.setTextColor(Color.rgb(40, 90, 170));
         enabled.setChecked(prefs().getBoolean(
             KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED));
         enabled.setOnCheckedChangeListener((b, checked) ->
@@ -235,7 +168,6 @@ public final class SettingsActivity extends Activity {
     private void addMsSlider(LinearLayout root, int titleRes, String prefKey,
             int min, int max, int def) {
         TextView label = new TextView(this);
-        label.setTextColor(Color.rgb(40, 90, 170));
         label.setPadding(0, dp(10), 0, 0);
         root.addView(label);
 
@@ -246,24 +178,15 @@ public final class SettingsActivity extends Activity {
         bar.setProgress(start);
         bar.setPadding(dp(4), dp(8), dp(4), dp(8));
         label.setText(getString(titleRes) + "  " + getString(R.string.settings_ms_value, start));
-        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
                 prefs().edit().putInt(prefKey, progress).apply();
                 label.setText(getString(titleRes) + "  "
                     + getString(R.string.settings_ms_value, progress));
             }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar b) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar b) {
-            }
         });
-        root.addView(bar, new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(bar, matchWidth());
     }
 
     // ---- Physical-keyboard 한/영 and 한자 shortcuts ----
@@ -273,7 +196,6 @@ public final class SettingsActivity extends Activity {
         root.addView(sectionHint(R.string.settings_hw_hint));
 
         captureStatus = new TextView(this);
-        captureStatus.setTextColor(Color.rgb(200, 80, 60));
         captureStatus.setPadding(0, dp(4), 0, dp(4));
         captureStatus.setVisibility(View.GONE);
         captureStatus.setOnClickListener(v -> stopCapture());
@@ -284,11 +206,7 @@ public final class SettingsActivity extends Activity {
         hanjaList = addBindingGroup(root, R.string.settings_hw_hanja,
             HardwareKeyBindings.KEY_HANJA);
 
-        TextView note = new TextView(this);
-        note.setText(R.string.settings_hw_hanja_note);
-        note.setTextColor(Color.rgb(150, 120, 60));
-        note.setPadding(0, dp(6), 0, 0);
-        root.addView(note);
+        root.addView(sectionHint(R.string.settings_hw_hanja_note));
 
         refreshBindings(HardwareKeyBindings.KEY_HANYEONG);
         refreshBindings(HardwareKeyBindings.KEY_HANJA);
@@ -297,7 +215,6 @@ public final class SettingsActivity extends Activity {
     private LinearLayout addBindingGroup(LinearLayout root, int titleRes, String prefKey) {
         TextView label = new TextView(this);
         label.setText(titleRes);
-        label.setTextColor(Color.rgb(40, 90, 170));
         label.setPadding(0, dp(14), 0, 0);
         root.addView(label);
 
@@ -308,9 +225,8 @@ public final class SettingsActivity extends Activity {
         Button add = new Button(this);
         add.setText(R.string.settings_hw_add);
         add.setOnClickListener(v -> startCapture(prefKey));
-        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        root.addView(add, addParams);
+        root.addView(add, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         return list;
     }
 
@@ -322,7 +238,6 @@ public final class SettingsActivity extends Activity {
         if (bindings.isEmpty()) {
             TextView none = new TextView(this);
             none.setText(R.string.settings_hw_none);
-            none.setTextColor(Color.rgb(150, 150, 150));
             none.setPadding(0, dp(4), 0, dp(4));
             list.addView(none);
             return;
@@ -334,8 +249,7 @@ public final class SettingsActivity extends Activity {
 
             TextView name = new TextView(this);
             name.setText(bindingLabel(binding));
-            name.setTextColor(Color.rgb(22, 27, 34));
-            name.setTextSize(16);
+            name.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
             row.addView(name, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -434,18 +348,22 @@ public final class SettingsActivity extends Activity {
     private TextView sectionHeader(int textRes) {
         TextView header = new TextView(this);
         header.setText(textRes);
-        header.setTextSize(20);
-        header.setTextColor(Color.rgb(22, 27, 34));
-        header.setPadding(0, dp(28), 0, 0);
+        header.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Large);
+        header.setPadding(0, dp(28), 0, dp(2));
         return header;
     }
 
     private TextView sectionHint(int textRes) {
         TextView hint = new TextView(this);
         hint.setText(textRes);
-        hint.setTextColor(Color.rgb(90, 98, 110));
-        hint.setPadding(0, dp(6), 0, dp(8));
+        hint.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Small);
+        hint.setPadding(0, dp(4), 0, dp(8));
         return hint;
+    }
+
+    private LinearLayout.LayoutParams matchWidth() {
+        return new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
     }
 
     private SharedPreferences prefs() {
@@ -454,5 +372,17 @@ public final class SettingsActivity extends Activity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    /** A {@link SeekBar.OnSeekBarChangeListener} with empty start/stop callbacks. */
+    private abstract static class SimpleSeekBarListener
+            implements SeekBar.OnSeekBarChangeListener {
+        @Override
+        public void onStartTrackingTouch(SeekBar bar) {
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar bar) {
+        }
     }
 }

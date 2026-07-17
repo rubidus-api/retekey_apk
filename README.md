@@ -6,7 +6,7 @@ MIT-licensed Android Hangul keyboard focused on standard IME behavior, hardware-
 
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)** &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.19** — [retekey-0.1.19.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.19/retekey-0.1.19.apk)
+Current release: **v0.1.20** — [retekey-0.1.20.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.20/retekey-0.1.20.apk)
 
 ## Status
 
