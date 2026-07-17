@@ -229,7 +229,10 @@ public final class KeyboardLayouts {
             rawKey("scrlk", "ScrLk", RawKey.SCROLL_LOCK), rawKey("pause", "Pause", RawKey.BREAK),
             SoftwareKeySpec.control("touch.key.hanja", "한자", ControlKey.HANJA), numKey(),
             padCell(mode, 0), padCell(mode, 1), padCell(mode, 2),
-            rawKey("del", "Del", RawKey.FORWARD_DELETE)
+            // Number mode needs a 0 to type; the arrow/navigation mode keeps forward-delete here.
+            mode == NumpadMode.NUMBERS
+                ? digit("num.0", "0")
+                : rawKey("del", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
             disabled("ralt", "RAlt"), disabled("rctrl", "RCtrl"), disabled("rshift", "RShft"),

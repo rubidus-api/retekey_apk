@@ -510,7 +510,7 @@ public final class ReteKeyboardView extends View {
             return;
         }
         if (held.enabled()) {
-            if (tryArmedEditShortcut(held)) {
+            if (tryArmedModifierChord(held)) {
                 performClick();
                 return;
             }
@@ -524,45 +524,52 @@ public final class ReteKeyboardView extends View {
      * With a soft Ctrl armed, a letter key runs the matching editor command (Ctrl+A/C/V/X/Z/Y)
      * instead of typing the letter, so those shortcuts work from the on-screen keyboard too.
      */
-    private boolean tryArmedEditShortcut(SoftwareKeySpec key) {
-        if (!armedModifiers.contains(ControlKey.CTRL)) {
+    /**
+     * With a soft Ctrl/Alt/Meta armed, a letter key is sent as a real key chord (e.g. Ctrl+B)
+     * instead of typed. Rich editors turn Ctrl+A/C/V/X/Z/Y into select-all/copy/paste/cut/undo/redo
+     * via {@code onKeyShortcut}; terminals receive the control code (Ctrl+B → 0x02). The armed
+     * modifiers are one-shot: consumed after the chord.
+     */
+    private boolean tryArmedModifierChord(SoftwareKeySpec key) {
+        Set<KeyModifier> mods = EnumSet.noneOf(KeyModifier.class);
+        if (armedModifiers.contains(ControlKey.CTRL)) {
+            mods.add(KeyModifier.CTRL);
+        }
+        if (armedModifiers.contains(ControlKey.ALT)) {
+            mods.add(KeyModifier.ALT);
+        }
+        if (armedModifiers.contains(ControlKey.META)) {
+            mods.add(KeyModifier.META);
+        }
+        if (mods.isEmpty()) {
             return false;
         }
         SemanticInput input = key.semanticInput();
         if (input == null || input.kind() != SemanticInput.Kind.TEXT) {
             return false;
         }
-        int contextMenuId = editContextMenuId(input.text());
-        if (contextMenuId == 0) {
+        String text = input.text();
+        if (text == null || text.length() != 1) {
             return false;
         }
-        runEditCommand(contextMenuId);
+        char letter = Character.toUpperCase(text.charAt(0));
+        if (letter < 'A' || letter > 'Z') {
+            return false;
+        }
+        RawKey rawKey;
+        try {
+            rawKey = RawKey.valueOf(String.valueOf(letter));
+        } catch (IllegalArgumentException notALetterKey) {
+            return false;
+        }
+        sink.accept(ProjectKeyEvent.softwareDown(
+            key.stableKeyId(), SemanticInput.rawKey(rawKey, mods)));
         armedModifiers.remove(ControlKey.CTRL);
+        armedModifiers.remove(ControlKey.ALT);
+        armedModifiers.remove(ControlKey.META);
         consumeOneShotShift();
         invalidate();
         return true;
-    }
-
-    private static int editContextMenuId(String text) {
-        if (text == null || text.length() != 1) {
-            return 0;
-        }
-        switch (Character.toLowerCase(text.charAt(0))) {
-            case 'a':
-                return android.R.id.selectAll;
-            case 'c':
-                return android.R.id.copy;
-            case 'v':
-                return android.R.id.paste;
-            case 'x':
-                return android.R.id.cut;
-            case 'z':
-                return android.R.id.undo;
-            case 'y':
-                return android.R.id.redo;
-            default:
-                return 0;
-        }
     }
 
     /** Folds the armed Ctrl/Meta/Alt into a raw key so it forms a chord; other keys are unchanged. */

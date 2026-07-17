@@ -25,5 +25,9 @@ public enum RawKey {
     BREAK,
     MENU,
     SEARCH,
-    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12
+    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+    // Letter keys, for modifier chords such as Ctrl+B in a terminal. They must stay contiguous
+    // and in A..Z order: the bridge maps them to KEYCODE_A..KEYCODE_Z by offset.
+    A, B, C, D, E, F, G, H, I, J, K, L, M,
+    N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 }

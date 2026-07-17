@@ -20,7 +20,7 @@ public final class SpecialKeysPageTest {
     public void theBaseKeypadLayoutMatchesTheSpec() {
         assertEquals(KeyboardLayoutId.SPECIAL_KEYS, NUMBERS.id());
         assertEquals(
-            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "한자", "Num", "7", "8", "9", "Del"),
+            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "한자", "Num", "7", "8", "9", "0"),
             labels(NUMBERS, 0)
         );
         assertEquals(
@@ -44,7 +44,7 @@ public final class SpecialKeysPageTest {
 
     @Test
     public void digitsAndArithmeticCommitText() {
-        for (String label : Arrays.asList("7", "8", "9", "4", "5", "6", "1", "2", "3",
+        for (String label : Arrays.asList("7", "8", "9", "4", "5", "6", "1", "2", "3", "0",
             "+", "-", "=", ".")) {
             SoftwareKeySpec key = findByLabel(NUMBERS, label);
             assertNotNull(label, key);
