@@ -4,19 +4,19 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /**
- * A tiny launcher screen for trying ReteKey. It uses the system theme and standard controls — no
- * hardcoded colors — so it follows the device's light/dark colour scheme, and lays the actions out
- * as a plain spaced menu of full-width buttons.
+ * A tiny launcher screen for trying ReteKey. It uses the system theme and standard views — no
+ * hardcoded colors — so it follows the device's light/dark colour scheme, and presents the actions
+ * as a plain tap-to-select list rather than buttons.
  */
 public final class PreviewActivity extends Activity {
     private EditText field;
@@ -52,26 +52,56 @@ public final class PreviewActivity extends Activity {
             LinearLayout.LayoutParams.WRAP_CONTENT
         ));
 
-        // Menu order 2, 1, 3: manage keyboards, pick keyboard, ReteKey settings.
-        addMenuButton(root, R.string.preview_manage_keyboards, this::manageKeyboards);
-        addMenuButton(root, R.string.preview_pick_keyboard, this::showKeyboardPicker);
-        addMenuButton(root, R.string.preview_open_settings, this::openSettings);
+        // Actions as a tap-to-select list (order 2, 1, 3).
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams listParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        listParams.topMargin = dp(16);
+        root.addView(list, listParams);
+
+        addDivider(list);
+        addListItem(list, R.string.preview_manage_keyboards, this::manageKeyboards);
+        addDivider(list);
+        addListItem(list, R.string.preview_pick_keyboard, this::showKeyboardPicker);
+        addDivider(list);
+        addListItem(list, R.string.preview_open_settings, this::openSettings);
+        addDivider(list);
 
         setContentView(root);
     }
 
-    /** Adds a full-width button with a gap above it, so the actions read as a spaced menu list. */
-    private void addMenuButton(LinearLayout root, int textRes, View.OnClickListener onClick) {
-        Button button = new Button(this);
-        button.setText(textRes);
-        button.setAllCaps(false);
-        button.setOnClickListener(onClick);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.topMargin = dp(12);
-        root.addView(button, params);
+    /** A tap-to-select list row with the platform's selectable-item touch feedback. */
+    private void addListItem(LinearLayout list, int textRes, View.OnClickListener onClick) {
+        TextView row = new TextView(this);
+        row.setText(textRes);
+        row.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setMinHeight(dp(56));
+        int h = dp(12);
+        row.setPadding(dp(4), h, dp(4), h);
+        row.setClickable(true);
+        row.setFocusable(true);
+        TypedValue background = new TypedValue();
+        if (getTheme().resolveAttribute(
+                android.R.attr.selectableItemBackground, background, true)) {
+            row.setBackgroundResource(background.resourceId);
+        }
+        row.setOnClickListener(onClick);
+        list.addView(row, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    }
+
+    /** A 1px list separator using the platform divider drawable, so it tracks the theme. */
+    private void addDivider(LinearLayout list) {
+        View divider = new View(this);
+        TypedValue drawable = new TypedValue();
+        if (getTheme().resolveAttribute(android.R.attr.listDivider, drawable, true)
+                && drawable.resourceId != 0) {
+            divider.setBackgroundResource(drawable.resourceId);
+        }
+        list.addView(divider, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(1))));
     }
 
     private void openSettings(View view) {

@@ -100,10 +100,21 @@ public final class SettingsActivity extends Activity {
             prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
     }
 
+    private static final int KEYBOARD_ROWS = 4;
+
     private void applyPercent(int percent) {
         float scale = KeyboardHeightScale.clamp(percent / 100.0f);
         prefs().edit().putFloat(KEY_HEIGHT_SCALE, scale).apply();
-        valueLabel.setText(getString(R.string.settings_height_value, Math.round(scale * 100)));
+        valueLabel.setText(getString(R.string.settings_height_value, screenPercent(scale)));
+    }
+
+    /** The keyboard's height at {@code scale} as a percentage of the screen height. */
+    private int screenPercent(float scale) {
+        float density = getResources().getDisplayMetrics().density;
+        int keyboardPx = KeyboardHeightScale.heightForScale(
+            scale, KeyboardHeightScale.baseHeightPx(KEYBOARD_ROWS, density));
+        int screenPx = getResources().getDisplayMetrics().heightPixels;
+        return screenPx > 0 ? Math.round(keyboardPx * 100.0f / screenPx) : 0;
     }
 
     /** Adds a titled 0–100% slider bound to a 0–1 float preference. */

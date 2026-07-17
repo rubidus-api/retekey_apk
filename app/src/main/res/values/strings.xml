@@ -10,7 +10,7 @@
     <string name="settings_title">ReteKey settings</string>
     <string name="settings_height_label">Keyboard height</string>
     <string name="settings_height_hint">Slide to adjust the keyboard\'s vertical height. You can also drag two fingers up or down on the keyboard.</string>
-    <string name="settings_height_value">Height: %1$d%%</string>
+    <string name="settings_height_value">Keyboard height: %1$d%% of the screen</string>
     <string name="settings_preview">Preview</string>
     <string name="settings_reset">Default</string>
     <string name="settings_feedback_label">Key-press feedback</string>

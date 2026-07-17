@@ -3,6 +3,7 @@ package dev.hellgates.retekeyime;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -48,9 +49,15 @@ public final class ReteKeyboardView extends View {
     /** Gap (in dp) drawn around each key; also the touch dead zone, so the space between keys
      * registers no press and a near-boundary tap can't land on the wrong neighbour. */
     private static final float KEY_GAP_DP = 4.0f;
+    private static final float KEY_RADIUS_DP = 5.0f;
+    private static final float KEY_SHADOW_DP = 2.0f;
+    /** The raised-key bottom lip colour, darker than the keyboard background. */
+    private static final int KEY_SHADOW = Color.rgb(12, 14, 18);
 
     /** {@link #KEY_GAP_DP} resolved to pixels for this display; set in the constructor. */
     private final int keyGapPx;
+    private final int keyRadiusPx;
+    private final int keyShadowPx;
 
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
     private Page page = Page.LETTERS;
@@ -75,17 +82,17 @@ public final class ReteKeyboardView extends View {
     private Runnable onHanja;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
-    // Two-finger vertical drag resizes the keyboard; these track the gesture in progress.
-    private boolean resizing;
-    private float resizeStartMidY;
-    private int resizeStartHeight;
-    private int resizeBaseHeight;
+    // The unpressed keyboard is rendered once into this bitmap and reused until the layout changes.
+    private Bitmap baseBitmap;
+    private String baseSignature;
 
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
         this.sink = Objects.requireNonNull(sink, "sink");
-        this.keyGapPx = Math.round(
-            KEY_GAP_DP * context.getResources().getDisplayMetrics().density);
+        float density = context.getResources().getDisplayMetrics().density;
+        this.keyGapPx = Math.round(KEY_GAP_DP * density);
+        this.keyRadiusPx = Math.round(KEY_RADIUS_DP * density);
+        this.keyShadowPx = Math.round(KEY_SHADOW_DP * density);
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
@@ -197,6 +204,10 @@ public final class ReteKeyboardView extends View {
     @Override
     protected void onDetachedFromWindow() {
         prefs().unregisterOnSharedPreferenceChangeListener(prefsListener);
+        if (baseBitmap != null) {
+            baseBitmap.recycle();
+            baseBitmap = null;
+        }
         super.onDetachedFromWindow();
     }
 
@@ -230,15 +241,60 @@ public final class ReteKeyboardView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        KeyboardLayout layout = layout();
         int width = getWidth();
         int height = getHeight();
-        List<List<SoftwareKeySpec>> rows = layout.rows();
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        // The unpressed keyboard (raised keys and labels) is cached to a bitmap and only rebuilt
+        // when the layout, highlight state, or size changes; a key press just tints one key.
+        ensureBaseBitmap(width, height);
+        canvas.drawBitmap(baseBitmap, 0.0f, 0.0f, null);
+        drawPressFeedback(canvas, width, height);
+        drawPopup(canvas);
+    }
 
-        canvas.drawColor(Color.rgb(28, 30, 36));
+    /** Tints the held key for a colour-change press feedback (respecting the intensity setting). */
+    private void drawPressFeedback(Canvas canvas, int width, int height) {
+        if (heldRow < 0 || heldKey < 0 || feedback.visualIntensity() <= 0.0f) {
+            return;
+        }
+        KeyboardLayout layout = layout();
+        if (heldRow >= layout.rows().size()) {
+            return;
+        }
+        List<SoftwareKeySpec> row = layout.rows().get(heldRow);
+        if (heldKey >= row.size()) {
+            return;
+        }
+        SoftwareKeySpec key = row.get(heldKey);
+        int top = layout.rowEdge(heldRow, height);
+        int bottom = layout.rowEdge(heldRow + 1, height);
+        int startColumn = layout.startColumn(heldRow, heldKey);
+        int left = layout.columnEdge(startColumn, width);
+        int right = layout.columnEdge(startColumn + key.columnSpan(), width);
+        paint.setColor(Color.argb(
+            Math.round(feedback.visualIntensity() * 150.0f), 120, 170, 235));
+        canvas.drawRoundRect(left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx,
+            keyRadiusPx, keyRadiusPx, paint);
+    }
+
+    /** Rebuilds the cached keyboard bitmap when the layout, highlight state, or size changes. */
+    private void ensureBaseBitmap(int width, int height) {
+        String signature = layoutSignature();
+        if (baseBitmap != null && signature.equals(baseSignature)
+            && baseBitmap.getWidth() == width && baseBitmap.getHeight() == height) {
+            return;
+        }
+        if (baseBitmap != null) {
+            baseBitmap.recycle();
+        }
+        baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas cache = new Canvas(baseBitmap);
+        cache.drawColor(Color.rgb(28, 30, 36));
         paint.setTextAlign(Paint.Align.CENTER);
-
+        KeyboardLayout layout = layout();
+        List<List<SoftwareKeySpec>> rows = layout.rows();
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             List<SoftwareKeySpec> keys = rows.get(rowIndex);
             int top = layout.rowEdge(rowIndex, height);
@@ -248,45 +304,46 @@ public final class ReteKeyboardView extends View {
                 int startColumn = layout.startColumn(rowIndex, keyIndex);
                 int left = layout.columnEdge(startColumn, width);
                 int right = layout.columnEdge(startColumn + key.columnSpan(), width);
-                paint.setColor(keyFillColor(key));
-                canvas.drawRect(
-                    left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx, paint);
-                if (rowIndex == heldRow && keyIndex == heldKey && feedback.visualIntensity() > 0.0f) {
-                    // Visual press feedback: a translucent overlay whose opacity tracks the setting.
-                    paint.setColor(Color.argb(
-                        Math.round(feedback.visualIntensity() * 130.0f), 78, 132, 214));
-                    canvas.drawRect(
-                        left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx, paint);
-                }
-                paint.setColor(key.enabled() || key.isControl()
-                    ? Color.rgb(22, 27, 34)
-                    : Color.rgb(139, 148, 158));
-                fitLabel(key.label(), right - left, bottom - top);
-                canvas.drawText(
-                    key.label(),
-                    (left + right) * 0.5f,
-                    top + (bottom - top) * 0.62f,
-                    paint
-                );
-                if (key.longPressTexts().size() == 1) {
-                    // A single long-press character is hinted in small text at the top-right corner.
-                    paint.setColor(Color.rgb(120, 130, 145));
-                    float hint = (bottom - top) * 0.22f;
-                    paint.setTextSize(hint);
-                    canvas.drawText(
-                        key.longPressTexts().get(0),
-                        right - hint * 0.75f,
-                        top + hint * 1.15f,
-                        paint
-                    );
-                } else if (key.hasLongPress() || key.hasLongPressControl()) {
-                    paint.setColor(Color.rgb(139, 148, 158));
-                    canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
-                }
+                drawKey(cache, key, left, top, right, bottom);
             }
         }
+        baseSignature = signature;
+    }
 
-        drawPopup(canvas);
+    /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
+    private String layoutSignature() {
+        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + shiftLayer.isActive()
+            + "|" + shiftLayer.isLocked() + "|" + armedModifiers;
+    }
+
+    /** Draws one raised, rounded key with its label and long-press hint into the cache canvas. */
+    private void drawKey(Canvas canvas, SoftwareKeySpec key,
+            int left, int top, int right, int bottom) {
+        float l = left + keyGapPx;
+        float t = top + keyGapPx;
+        float r = right - keyGapPx;
+        float b = bottom - keyGapPx;
+        // A darker lip just below the face makes the key look raised.
+        paint.setColor(KEY_SHADOW);
+        canvas.drawRoundRect(l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, keyRadiusPx, paint);
+        paint.setColor(keyFillColor(key));
+        canvas.drawRoundRect(l, t, r, b, keyRadiusPx, keyRadiusPx, paint);
+        paint.setColor(key.enabled() || key.isControl()
+            ? Color.rgb(22, 27, 34)
+            : Color.rgb(139, 148, 158));
+        fitLabel(key.label(), right - left, bottom - top);
+        canvas.drawText(key.label(), (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
+        if (key.longPressTexts().size() == 1) {
+            // A single long-press character is hinted in small text at the top-right corner.
+            paint.setColor(Color.rgb(120, 130, 145));
+            float hint = (bottom - top) * 0.22f;
+            paint.setTextSize(hint);
+            canvas.drawText(key.longPressTexts().get(0),
+                right - hint * 0.75f, top + hint * 1.15f, paint);
+        } else if (key.hasLongPress() || key.hasLongPressControl()) {
+            paint.setColor(Color.rgb(139, 148, 158));
+            canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
+        }
     }
 
     /** Sizes {@link #paint} so {@code label} fits a cell of the given size, tracking cell size. */
@@ -329,73 +386,20 @@ public final class ReteKeyboardView extends View {
             case MotionEvent.ACTION_DOWN:
                 beginHold(event.getX(), event.getY());
                 return true;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                if (event.getPointerCount() >= 2) {
-                    beginResize(event);
-                }
-                return true;
             case MotionEvent.ACTION_MOVE:
-                if (resizing) {
-                    trackResize(event);
-                } else {
-                    trackHold(event.getX(), event.getY());
-                }
-                return true;
-            case MotionEvent.ACTION_POINTER_UP:
-                // Dropping back below two fingers ends the resize; commit the new height.
-                if (resizing && event.getPointerCount() <= 2) {
-                    endResize();
-                }
+                trackHold(event.getX(), event.getY());
                 return true;
             case MotionEvent.ACTION_UP:
-                if (resizing) {
-                    endResize();
-                } else {
-                    releaseHold(event.getX(), event.getY());
-                    invalidate();
-                }
+                releaseHold(event.getX(), event.getY());
+                invalidate();
                 return true;
             case MotionEvent.ACTION_CANCEL:
-                if (resizing) {
-                    endResize();
-                } else {
-                    cancelHold();
-                    invalidate();
-                }
+                cancelHold();
+                invalidate();
                 return true;
             default:
                 return true;
         }
-    }
-
-    private void beginResize(MotionEvent event) {
-        // A second finger means the user is resizing, not typing: drop any pending key press.
-        cancelHold();
-        resizing = true;
-        resizeStartMidY = midY(event);
-        resizeStartHeight = getHeight();
-        resizeBaseHeight = baseHeightPx();
-    }
-
-    private void trackResize(MotionEvent event) {
-        if (event.getPointerCount() < 2) {
-            return;
-        }
-        // Dragging the two fingers up (mid-point Y decreasing) grows the bottom-anchored keyboard.
-        float delta = resizeStartMidY - midY(event);
-        int target = Math.round(resizeStartHeight + delta);
-        setKeyboardHeightScale(
-            KeyboardHeightScale.scaleForHeight(target, resizeBaseHeight), false);
-    }
-
-    private void endResize() {
-        resizing = false;
-        // Persist whatever scale the drag settled on.
-        setKeyboardHeightScale(heightScale, true);
-    }
-
-    private static float midY(MotionEvent event) {
-        return (event.getY(0) + event.getY(1)) * 0.5f;
     }
 
     @Override
