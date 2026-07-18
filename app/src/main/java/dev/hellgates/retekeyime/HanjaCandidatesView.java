@@ -1,7 +1,6 @@
 package dev.hellgates.retekeyime;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -43,11 +42,13 @@ public final class HanjaCandidatesView extends LinearLayout {
     private String reading = "";
     private List<Item> items = new ArrayList<>();
     private int page;
+    private KeyboardPalette palette;
 
     public HanjaCandidatesView(Context context) {
         super(context);
         setOrientation(VERTICAL);
-        setBackgroundColor(Color.rgb(28, 30, 36));
+        palette = KeyboardPalette.resolve(context);
+        setBackgroundColor(palette.background);
     }
 
     public void setOnPick(OnPick listener) {
@@ -59,6 +60,8 @@ public final class HanjaCandidatesView extends LinearLayout {
         this.reading = reading == null ? "" : reading;
         this.items = items == null ? new ArrayList<>() : items;
         this.page = 0;
+        palette = KeyboardPalette.resolve(getContext());
+        setBackgroundColor(palette.background);
         render();
     }
 
@@ -139,7 +142,7 @@ public final class HanjaCandidatesView extends LinearLayout {
 
         TextView label = new TextView(getContext());
         label.setText(reading + " ▸");
-        label.setTextColor(Color.rgb(150, 160, 172));
+        label.setTextColor(palette.keyTextMuted);
         label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         label.setPadding(dp(12), dp(6), dp(8), dp(6));
         header.addView(label, new LinearLayout.LayoutParams(
@@ -157,7 +160,7 @@ public final class HanjaCandidatesView extends LinearLayout {
 
             TextView pageLabel = new TextView(getContext());
             pageLabel.setText((page + 1) + "/" + pageCount());
-            pageLabel.setTextColor(Color.rgb(180, 188, 198));
+            pageLabel.setTextColor(palette.keyTextMuted);
             pageLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
             pageLabel.setPadding(dp(6), 0, dp(6), 0);
             header.addView(pageLabel);
@@ -178,8 +181,8 @@ public final class HanjaCandidatesView extends LinearLayout {
         Button button = new Button(getContext());
         button.setText(glyph);
         button.setAllCaps(false);
-        button.setTextColor(enabled ? Color.rgb(233, 237, 243) : Color.rgb(90, 96, 104));
-        button.setBackgroundColor(Color.rgb(40, 44, 52));
+        button.setTextColor(enabled ? palette.keyText : palette.keyTextMuted);
+        button.setBackgroundColor(palette.keyFace);
         button.setMinWidth(dp(44));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -192,7 +195,7 @@ public final class HanjaCandidatesView extends LinearLayout {
         LinearLayout cell = new LinearLayout(getContext());
         cell.setOrientation(VERTICAL);
         cell.setGravity(Gravity.CENTER);
-        cell.setBackgroundColor(Color.rgb(40, 44, 52));
+        cell.setBackgroundColor(palette.keyFace);
         cell.setPadding(dp(6), dp(6), dp(6), dp(6));
 
         LinearLayout top = new LinearLayout(getContext());
@@ -200,13 +203,13 @@ public final class HanjaCandidatesView extends LinearLayout {
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView index = new TextView(getContext());
         index.setText(String.valueOf(number));
-        index.setTextColor(Color.rgb(120, 170, 235));
+        index.setTextColor(palette.keyAccent);
         index.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         index.setPadding(0, 0, dp(5), 0);
         top.addView(index);
         TextView value = new TextView(getContext());
         value.setText(item.value);
-        value.setTextColor(Color.rgb(233, 237, 243));
+        value.setTextColor(palette.keyText);
         value.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
         value.setGravity(Gravity.CENTER);
         top.addView(value);
@@ -215,7 +218,7 @@ public final class HanjaCandidatesView extends LinearLayout {
         if (item.gloss != null && !item.gloss.isEmpty()) {
             TextView gloss = new TextView(getContext());
             gloss.setText(item.gloss);
-            gloss.setTextColor(Color.rgb(150, 160, 172));
+            gloss.setTextColor(palette.keyTextMuted);
             gloss.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
             gloss.setGravity(Gravity.CENTER);
             gloss.setMaxLines(1);
