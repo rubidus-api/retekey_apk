@@ -44,9 +44,10 @@ F13-F15 (no Android keycode), the media keys, and Back stay muted:
 
 ![Special keys, Fn page](assets/keyboard-keys-fn.png)
 
-Drag two fingers up or down on the keyboard to resize its height; the setting is
-remembered. Each key's label scales to fit its cell, so it stays readable at any
-height.
+Adjust the keyboard height from the settings screen; the setting is remembered.
+Each key's label scales to fit its cell, so it stays readable at any height. Keys
+and the candidate strip follow the system light/dark theme (and the Material You
+palette on Android 12+).
 
 > These images are rendered from the actual layout data. A live screenshot from
 > the emulator lane is not shown because that host is headless with no KVM and no
