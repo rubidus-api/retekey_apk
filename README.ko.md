@@ -26,8 +26,8 @@
 **[⬇ 최신 APK 내려받기](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.28** —
-[retekey-0.1.28.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.28/retekey-0.1.28.apk)
+현재 릴리즈: **v0.1.29** —
+[retekey-0.1.29.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.29/retekey-0.1.29.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -158,18 +158,24 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 
 [English](docs/android-ime-manual.md) · **[한국어](docs/android-ime-manual.ko.md)**
 
-ReteKey를 만들며 겪은 실패를 바탕으로 정리한 안드로이드 입력기 구현 실무 지침이다. API 레퍼런스가
-아니라, 플랫폼 문서가 설명해 주지 않는 것들과 이 프로젝트에서 각 결정을 강제한 실패를 기록한 문서다.
+안드로이드 입력기를 만들기 위한 매뉴얼이다. IME가 어떤 구조인지, 그대로 베껴 쓸 수 있는 최소 동작
+예제, 읽어 볼 가치가 있는 레퍼런스 구현, 그리고 어려운 부분들을 각각 이 프로젝트에서 그것을 빚어낸
+실패와 함께 다룬다.
 
 다루는 내용:
 
+- **IME의 구조** — 서비스, `method.xml`, 입력 뷰와 후보 뷰, 시스템이 IME를 찾고 활성화·선택하는 과정,
+  터치에서 에디터까지의 데이터 흐름;
+- **최소 동작 IME** — 붙여넣어 바로 돌릴 수 있는 매니페스트·`method.xml`·서비스와, 이후 키워 나가는 순서;
+- **레퍼런스 구현과 받는 곳** — AOSP LatinIME와 `SoftKeyboard` 예제, clone 명령과 각각에서 읽을 부분;
 - `InputMethodService` 생명주기와 **실측한 teardown 순서** — 문서가 암시하는 깔끔한 순서가 아니다;
 - `InputConnection` 계약, 그리고 삽입과 상대 삭제가 커서 위치를 알 필요가 없는 이유;
 - **에디터가 권위자다** — 여기서 따라 나오는 수동적 커서 캐시와, 키보드가 자기 장부 때문에 입력을
   거부해선 안 되는 이유;
 - 에디터 종류: 터미널(`TYPE_NULL`, 선택영역 `-1`)과 거기서 깨지는 것들;
 - 조합 중인 글자, 물리 키보드와 수정자 조합, 후보 뷰;
-- 커스텀 키보드를 싸게 그리는 법과 시스템·Material You 팔레트에 맞추는 법;
+- 커스텀 키보드를 싸게 그리는 법, 시스템·Material You 팔레트에 맞추는 법, 그리고 실행 중인 키보드에
+  설정을 즉시 반영하는 법;
 - 헤드리스 에뮬레이터가 IME에 대해 증명할 수 있는 것과 없는 것;
 - **상세한 안티패턴 장** — 이 프로젝트의 실제 실패 10건을 "만든 것 / 벌어진 일 / 해결 / 규칙" 형식과
   틀린 예 → 옳은 예 코드로 정리;

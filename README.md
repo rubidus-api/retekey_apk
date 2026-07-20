@@ -27,8 +27,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.28** —
-[retekey-0.1.28.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.28/retekey-0.1.28.apk)
+Current release: **v0.1.29** —
+[retekey-0.1.29.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.29/retekey-0.1.29.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -167,12 +167,18 @@ variant is simply unsigned.
 
 **[English](docs/android-ime-manual.md)** · [한국어](docs/android-ime-manual.ko.md)
 
-A practical guide to building an Android input method, written from the mistakes made while
-building ReteKey. It is not an API reference: it records what the platform documentation does not
-explain, and the failures that forced each decision in this project.
+A manual for building an Android input method: how an IME is put together, a minimal working one
+you can copy, the reference implementations worth reading, and then the parts that are hard — each
+with the failure from this project that shaped it.
 
 It covers:
 
+- **how an IME is structured** — the service, `method.xml`, input and candidates views, how the
+  system finds/enables/selects it, and the data flow from a touch to the editor;
+- **a minimal working IME** — manifest, `method.xml`, and a service you can paste and run, plus the
+  order in which to grow it;
+- **reference implementations and where to get them** — AOSP LatinIME and the `SoftKeyboard`
+  sample, with clone commands and what to read in each;
 - the `InputMethodService` lifecycle, including the **real measured teardown order**, which is not
   the tidy one the documentation implies;
 - the `InputConnection` contract, and why insertion and relative deletion never need to know the
@@ -181,7 +187,8 @@ It covers:
   keyboard must never refuse input over its own bookkeeping;
 - editor kinds: terminals (`TYPE_NULL`, selection `-1`) and everything that breaks in them;
 - composing text, hardware keyboards and modifier chords, and the candidates view;
-- drawing a custom keyboard cheaply, and theming it to the system and Material You palettes;
+- drawing a custom keyboard cheaply, theming it to the system and Material You palettes, and
+  keeping settings live on a running keyboard;
 - what a headless emulator can and cannot prove about an IME;
 - **a detailed anti-pattern chapter** — ten real failures from this project, each with what was
   built, what went wrong, the fix, and the resulting rule, with wrong-versus-right code;
