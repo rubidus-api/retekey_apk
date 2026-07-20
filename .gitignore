@@ -7,8 +7,10 @@
 /*
 !/.gitignore
 !/README.md
+!/README.ko.md
 !/LICENSE
 !/THIRD_PARTY_NOTICES.md
+!/docs
 !/build.gradle
 !/settings.gradle
 !/gradle.properties
@@ -21,6 +23,10 @@
 # gradle/: wrapper only
 /gradle/*
 !/gradle/wrapper
+
+# docs/: the public manuals only (Markdown)
+/docs/*
+!/docs/*.md
 
 # app/: build script, R8 rules, main sources, and JVM unit tests only
 /app/*

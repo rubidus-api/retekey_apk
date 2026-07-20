@@ -1,126 +1,176 @@
 # ReteKey IME
 
-MIT-licensed Android Hangul keyboard focused on standard IME behavior, hardware-key friendliness, and efficient Korean input.
+**English** · [한국어](README.ko.md)
+
+An MIT-licensed Android Hangul keyboard focused on standard IME behaviour, hardware-keyboard
+friendliness, and efficient Korean input. Written in plain Java with no third-party runtime
+dependencies — the release APK is about 230 KB.
+
+> This English README is the canonical version. The Korean translation follows it.
+
+## Table of contents
+
+- [Download](#download)
+- [Features](#features)
+- [Layout](#layout)
+- [Hanja conversion](#hanja-conversion)
+- [Physical keyboards](#physical-keyboards)
+- [Settings](#settings)
+- [Theming](#theming)
+- [Architecture](#architecture)
+- [Build](#build)
+- [Documentation](#documentation)
+- [License](#license)
 
 ## Download
 
-**[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)** &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
+**[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+&nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.27** — [retekey-0.1.27.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.27/retekey-0.1.27.apk)
+Current release: **v0.1.28** —
+[retekey-0.1.28.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.28/retekey-0.1.28.apk)
 
-## Status
+After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
+method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
 
-P1A source-neutral input and P1B checked editor/session reliability are complete.
-T012-core is verified on a real Android lane (API 33 emulator): start, view,
-restart without finish, and teardown behave as specified against the actual
-framework callback stream. The stateful Hangul composer (P2) is next; the full
-API matrix and the Galaxy Note20 gate remain open.
+## Features
 
-The touch layout is one orthogonal ten-column grid with equal keys, a
-three-column space bar, and no staggered rows. It has four pages: English
-QWERTY, Korean 2-beolsik, special characters, and special keys.
+- **Korean and English** on one orthogonal ten-column grid; a key keeps its position across the
+  language switch.
+- **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
+  migration, and reversible backspace (닭 → 달 → 다).
+- **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection.
+- **Physical keyboard support**: user-assignable KO/EN and Hanja keys, modifier chords, and
+  2-beolsik mapping for Bluetooth or wired keyboards.
+- **Held-key auto-repeat** with a configurable start delay and interval.
+- **Raised, rounded keys** with press feedback (visual, haptic, sound), each independently
+  adjustable.
+- **Follows the system theme** — light/dark, and the Material You palette on Android 12+.
 
 ## Layout
+
+The touch layout is one orthogonal ten-column grid with equal keys and no staggered rows. The
+bottom row is shared by every page: `Ctrl · Meta · Alt · Tab · space · KO/EN · pad · !# · ☰`.
 
 Korean 2-beolsik:
 
 ![Korean 2-beolsik layout](assets/keyboard-korean.png)
 
-Holding the period opens the special-characters page. Every key commits text:
+The `!#` key opens the special-characters page, where every key commits its symbol. Holding the
+period inserts a comma:
 
 ![Special characters page](assets/keyboard-chars.png)
 
-The `pad` key opens the special-keys page: a right-hand keypad plus special keys.
-The digits and `+ - = .` commit text; Esc, PrtSc, ScrLk, Pause, and Menu send key
-events; the 한자 key converts the reading before the cursor to Hanja (candidate strip
-with 훈음 glosses and paging; 한글↔한자 both ways); Lang and the right-hand modifiers
-are muted until their systems land.
-`Num` turns the keypad into arrows/navigation:
+The `pad` key opens the special-keys page: a right-hand keypad plus special keys. The digits and
+`+ - = .` commit text; `Esc`, `PrtSc`, `ScrLk`, `Pause`, and `Menu` send key events. `Num` turns the
+keypad into arrows and navigation, where the top-right key becomes forward-delete:
 
 ![Special keys page](assets/keyboard-keys.png)
 
-`Fn` swaps the whole page to the function and media keys. F1-F12 send key events;
-F13-F15 (no Android keycode), the media keys, and Back stay muted:
+`Fn` swaps the whole page to the function and media keys. F1–F12 send key events; F13–F15 (which
+have no Android key code), the media keys, and Back stay muted:
 
 ![Special keys, Fn page](assets/keyboard-keys-fn.png)
 
-Adjust the keyboard height from the settings screen; the setting is remembered.
-Each key's label scales to fit its cell, so it stays readable at any height. Keys
-and the candidate strip follow the system light/dark theme (and the Material You
-palette on Android 12+).
+The `☰` key opens a menu page with editing commands (copy, cut, paste, undo, redo, select all),
+cursor navigation, date insertion, keyboard height, and shortcuts to the system keyboard settings.
 
-> These images are rendered from the actual layout data. A live screenshot from
-> the emulator lane is not shown because that host is headless with no KVM and no
-> window, so `screencap` returns a blank framebuffer; capture on a real device or
-> a GUI emulator for device screenshots. `PreviewActivity` (the app's launcher
-> screen) provides a text field for trying the keyboard on such a device.
+> These images are rendered from the actual layout data. A live screenshot is not shown because the
+> build host is headless with no KVM and no window, so `screencap` returns a blank framebuffer;
+> capture on a real device or a GUI emulator instead.
 
-## Stack
+## Hanja conversion
 
-- Java/JDK 17 LTS
+Pressing the 한자 key — the one on the special-keys page, or a physical key you assigned — converts
+Korean to Hanja:
+
+- With a **selection**, the whole selection is converted.
+- With **no selection**, the reading immediately before the cursor is converted, preferring the
+  longest match, so `학교` becomes `學校` rather than converting `교` alone.
+- Pressing it on **Hanja** converts back to its reading, including whole Hanja words.
+
+Candidates appear in a strip with their 훈음 gloss (家 → 집 가) in a paged grid. Tap a candidate, or
+press its number key **1**–**9**; `←`/`→` and `PageUp`/`PageDown` turn the page and `Esc` dismisses.
+
+The dictionary is bundled (about 1,100 readings plus common words). See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for its provenance and licences.
+
+## Physical keyboards
+
+With a Bluetooth or wired keyboard, letter keys are mapped to 2-beolsik jamo while Korean mode is
+on. In settings you can assign **several physical keys per function**:
+
+- **KO/EN toggle** — for example `Shift+Space` *and* `Right Ctrl`.
+- **Hanja** — for example `F9` *and* `Right Alt`.
+
+A binding may be a lone key or a modifier chord; a modifier pressed on its own registers as itself.
+Modifier chords the IME does not claim are passed through, so application shortcuts keep working,
+and a soft `Ctrl` plus a letter sends a real chord — terminals receive the control code, editors
+run select-all/copy/paste/undo.
+
+## Settings
+
+The settings screen uses stock controls only and follows the system theme:
+
+- **Keyboard height**, shown as the percentage of the screen the keyboard occupies.
+- **Key-press feedback** — visual, vibration, and sound strengths, each 0–100%.
+- **Key auto-repeat** — on/off, start delay, and repeat interval.
+- **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.
+
+## Theming
+
+The keyboard resolves its colours from the device theme rather than hardcoding them:
+
+- The system light/dark mode is honoured (`Configuration.UI_MODE_NIGHT_MASK`).
+- Colours are assigned by Material role — background as surface, keys as an elevated surface,
+  labels as on-surface, active keys as primary, and the press effect as a primary state layer.
+- On Android 12+ the user's **Material You** palette is used, so the keyboard matches their theme;
+  older versions fall back to a tuned light/dark palette.
+
+The keys, the long-press popup, and the Hanja candidate strip all share one palette.
+
+## Architecture
+
+The app uses Android's standard `InputMethodService` entry point. The input core is deliberately
+Android-free so it can be unit-tested on the JVM: event normalisation, semantic jamo, the 2-beolsik
+hardware mapping, dispatch disposition, immutable transition plans, checked editor execution,
+Unicode-safe deletion, the Hanja tables, and the key-repeat and shortcut settings.
+
+Cursor state follows the AOSP LatinIME model: a passive cache that the editor's own
+`onUpdateSelection` always overrides, tolerating unknown (`-1`) selections. The keyboard never
+refuses input because its idea of the cursor disagrees with the editor's.
+
+The keyboard is drawn on a canvas. The unpressed keyboard is rendered once into a cached bitmap and
+reused until the layout, highlight state, size, or theme changes; a key press only tints one key, so
+the raised styling costs nothing per frame.
+
+- Java / JDK 17 LTS
 - Android SDK 36 (`minSdk 29`, `targetSdk 36`)
-- Android Gradle Plugin 9.2.1
-- Gradle Wrapper 9.4.1
-
-The app uses Android's standard `InputMethodService` entry point. Event
-normalization, semantic jamo, 2-beolsik hardware mapping, dispatch disposition,
-matched key-up tracking, immutable transition plans, checked editor execution,
-Unicode-safe deletion, and bounded selection reconciliation are plain Java and
-JVM-tested. The current stateless compatibility-jamo fallback keeps scaffold
-input visible; the stateful Hangul composer remains planned.
-
-## Documentation
-
-Design RFCs, the verification catalog, decisions, and the changelog are kept in a
-private companion repository and are not part of this public surface.
-
+- Android Gradle Plugin 9.2.1, Gradle wrapper 9.4.1
+- R8 minification; no third-party runtime libraries
 
 ## Build
 
-Local builds require JDK 17 and Android SDK platform 36/Build Tools 36.0.0.
-Use the checked-in wrapper rather than a system Gradle:
+Local builds require JDK 17 and Android SDK platform 36 with Build Tools 36.0.0. Use the checked-in
+wrapper rather than a system Gradle:
 
 ```sh
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-Compile the Android lifecycle harness without changing device state:
+A signed release build additionally needs a local `keystore.properties`; without it the release
+variant is simply unsigned.
 
-```sh
-./gradlew :testhost:assembleDebug :app:assembleInstrumentationAndroidTest
-```
+## Documentation
 
-Run it only on an authorized, unlocked test device. The runner preserves and
-restores the previously selected/enabled IME state and never prints its id.
-The host also needs `adb`, `sha256sum`, `base64`, and util-linux `flock`:
+- [Android IME implementation manual](docs/android-ime-manual.md) — the lifecycle, the
+  `InputConnection` contract, hardware keys, candidate views, drawing, theming, and the pitfalls
+  behind the design decisions above.
 
-```sh
-scripts/run-ime-instrumentation.sh connected
-scripts/run-ime-instrumentation.sh matrix
-```
+Design RFCs, the verification catalog, decisions, and the changelog live in a private companion
+repository and are not part of this public surface.
 
-On a host with no device and no KVM, the emulator lane boots its own guest under
-plain TCG emulation and runs the same case on it:
+## License
 
-```sh
-scripts/emulator-lane.sh run
-```
-
-See `docs/manual/emulator-lane.md` for why it pins an API 33 AOSP ATD x86_64
-image and what the lane does and does not prove.
-
-The private matrix file is declarative, not a shell script: use exactly one
-plain `KEY=value` line for each key named by `--help`; blank lines and full-line
-`#` comments are allowed. Unknown, duplicate, executable, or malformed content
-is rejected without printing its values.
-
-The workspace build target is arch-dev through ignored private configuration:
-
-```sh
-scripts/build-arch-dev.sh --check-config
-scripts/setup-arch-dev-android-sdk.sh install
-scripts/sync-arch-dev.sh sync
-scripts/build-arch-dev.sh build
-```
-
-Do not put private remote hosts, paths, ports, user names, key names, or credentials in tracked files.
+MIT — see [LICENSE](LICENSE). Bundled third-party data and ported code are credited in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
