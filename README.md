@@ -163,9 +163,33 @@ variant is simply unsigned.
 
 ## Documentation
 
-- [Android IME implementation manual](docs/android-ime-manual.md) — the lifecycle, the
-  `InputConnection` contract, hardware keys, candidate views, drawing, theming, and the pitfalls
-  behind the design decisions above.
+### Android IME implementation manual
+
+**[English](docs/android-ime-manual.md)** · [한국어](docs/android-ime-manual.ko.md)
+
+A practical guide to building an Android input method, written from the mistakes made while
+building ReteKey. It is not an API reference: it records what the platform documentation does not
+explain, and the failures that forced each decision in this project.
+
+It covers:
+
+- the `InputMethodService` lifecycle, including the **real measured teardown order**, which is not
+  the tidy one the documentation implies;
+- the `InputConnection` contract, and why insertion and relative deletion never need to know the
+  cursor position;
+- **the editor is authoritative** — the passive cursor cache that follows from it, and why a
+  keyboard must never refuse input over its own bookkeeping;
+- editor kinds: terminals (`TYPE_NULL`, selection `-1`) and everything that breaks in them;
+- composing text, hardware keyboards and modifier chords, and the candidates view;
+- drawing a custom keyboard cheaply, and theming it to the system and Material You palettes;
+- what a headless emulator can and cannot prove about an IME;
+- **a detailed anti-pattern chapter** — ten real failures from this project, each with what was
+  built, what went wrong, the fix, and the resulting rule, with wrong-versus-right code;
+- a pre-release checklist.
+
+The English version is canonical and the Korean version is its translation; the two link to each
+other. It is a **living document**, updated whenever ReteKey's IME implementation changes, so it
+describes working code rather than intentions.
 
 Design RFCs, the verification catalog, decisions, and the changelog live in a private companion
 repository and are not part of this public surface.
