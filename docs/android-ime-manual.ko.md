@@ -247,6 +247,12 @@ public class MyImeService extends InputMethodService {
 
 무언가를 발명하기 전에 이것들을 읽을 것. 앞의 둘은 이 프로젝트가 실제로 기댄 것이다.
 
+> **베끼기 전에 라이선스부터.** AOSP는 LatinIME도 `SoftKeyboard` 예제도 **Apache-2.0**이지 MIT가
+> 아니다. 읽고 아이디어를 다시 구현하는 데는 의무가 붙지 않으며, 이 프로젝트가 하는 일이 딱 그것이다.
+> 파일을 붙여 넣는 순간 달라진다. Apache 헤더를 그대로 두어야 하고, 라이선스 전문을 앱과 함께
+> 배포해야 하며, 고친 파일에는 변경 표시를 남겨야 하고, README에서 "앱 전체가 내 라이선스"라고 더는
+> 말할 수 없다. [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) 참고.
+
 **AOSP LatinIME** — Google 키보드 계열이자 안드로이드에서 가장 완성도 높은 공개 IME이며,
 [§6](#6-에디터가-권위자다)의 커서 모델이 여기서 왔다.
 

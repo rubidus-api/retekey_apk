@@ -3,6 +3,40 @@
 ReteKey includes work derived from the projects below. Their license notices are
 retained here and ship with distributed packages.
 
+## AOSP LatinIME and the `SoftKeyboard` sample — reference only, no code
+
+ReteKey contains **no** Android Open Source Project code. AOSP, including
+`packages/inputmethods/LatinIME` and the `development/samples/SoftKeyboard`
+sample, is licensed under the **Apache License 2.0**, not MIT.
+
+LatinIME is used here only as a **behavioural reference**: it is read, and its
+design is described in `docs/android-ime-manual.md`. One design idea is followed
+— the passive cursor cache that the editor's `onUpdateSelection` always
+overrides, noted in `InputSessionController` — but the implementation is
+original. Reading source and re-implementing an idea is not a derivative work,
+so no Apache-2.0 obligation attaches to anything ReteKey ships today, and the
+project stays MIT throughout.
+
+If AOSP code is ever copied in, that changes. Apache-2.0 and MIT are compatible
+in the sense that Apache-2.0 code may be included in an MIT-licensed project,
+but the Apache terms travel with those files and **cannot be relicensed as
+MIT**. Taking any AOSP source would require all of the following, in the same
+change as the code:
+
+1. keep the Apache-2.0 header on every copied file, unmodified;
+2. ship the full Apache-2.0 licence text (as `LICENSE-APACHE-2.0`) and, if the
+   upstream tree carries a `NOTICE` file, that file's relevant contents;
+3. mark modified files as changed (Apache-2.0 §4(b));
+4. record the copy here — project, revision, files, and what was changed;
+5. state in `README.md` that the project is MIT **except** for the listed
+   Apache-2.0 components, so users are not told the whole APK is MIT when it is
+   not.
+
+Apache-2.0 also grants a patent licence that terminates on patent litigation
+(§3), and forbids using the upstream project's trademarks (§6). Neither affects
+ordinary use; both are reasons the copied files must keep their own header
+rather than being folded into ReteKey's licence.
+
 ## Hanja conversion data (`assets/hanja.txt`, `assets/hanja_hunum.txt`)
 
 ReteKey's Hanja conversion table (`hanja.txt`) and 훈음 gloss table

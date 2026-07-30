@@ -248,6 +248,13 @@ text, hardware keys, not breaking terminals, and not crashing.
 
 Read these before inventing anything. The first two are the ones this project actually leaned on.
 
+> **Licence, before you copy anything.** AOSP — LatinIME and the `SoftKeyboard` sample alike — is
+> **Apache-2.0**, not MIT. Reading it and re-implementing an idea carries no obligation, which is
+> all this project does. Pasting a file in does: the Apache header stays, the licence text ships
+> with your app, modified files are marked as changed, and your README can no longer claim the
+> whole app is under your own licence. See
+> [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
 **AOSP LatinIME** — the Google Keyboard lineage, the most complete open IME for Android, and the
 source of the cursor model in [§6](#6-the-editor-is-authoritative).
 

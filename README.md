@@ -11,6 +11,7 @@ dependencies — the release APK is about 230 KB.
 ## Table of contents
 
 - [Download](#download)
+- [Android version support](#android-version-support)
 - [Features](#features)
 - [Layout](#layout)
 - [Hanja conversion](#hanja-conversion)
@@ -32,6 +33,34 @@ Current release: **v0.1.29** —
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
+
+## Android version support
+
+**Android 10 (API 29) through Android 16 (API 36).**
+
+| | Version | Note |
+|---|---|---|
+| Minimum | **Android 10** — API 29 | `minSdk 29`. Android 9 and older cannot install the APK. |
+| Target | **Android 16** — API 36 | `targetSdk 36`, `compileSdk 36`. |
+| Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test. |
+| Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device. |
+
+The whole 10–16 range is supported and compiled against one API surface: every platform call the
+app makes exists on API 29, and the three that do not are guarded by an explicit version check.
+The rows marked *verified* are the versions an actual test run has covered; the others are
+supported by construction and have not yet been exercised on a device.
+
+What changes with the OS version:
+
+- **Android 12 (API 31) and newer** — the keyboard takes its colours from the user's **Material You**
+  palette, and press vibration goes through `VibratorManager`. Android 10 and 11 use a hand-tuned
+  light/dark palette and the legacy vibrator instead. Everything else is identical.
+- **Android 10–12 (API 29–32)** — deletion falls back to UTF-16 code units, or to a raw key event,
+  because code-point deletion is not dependable on those releases. A syllable or an emoji still
+  disappears in one press; only the mechanism differs.
+
+No feature is withheld on any supported version. Hanja conversion, the 2-beolsik composer, physical
+keyboard mapping, auto-repeat, and the settings screen behave the same across the whole range.
 
 ## Features
 
