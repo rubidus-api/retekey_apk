@@ -32,8 +32,8 @@ public class ReteKeyImeService extends InputMethodService {
     private SoftKeyboardVisibilityPolicy.Mode softKeyboardMode =
         SoftKeyboardVisibilityPolicy.Mode.HIDE_WHEN_HARDWARE;
     // Whether physical-keyboard letter keys compose Hangul; toggled by a user-bound 한/영 key and
-    // initialised from the current subtype. The 한자 bindings are recognised but conversion is
-    // still pending, so they only surface a one-time notice per input session.
+    // initialised from the current subtype. A bound 한자 key runs the same conversion as the
+    // on-screen one.
     private boolean hardwareKoreanMode;
     private List<HardwareKeyBindings.Binding> hanyeongBindings = java.util.Collections.emptyList();
     private List<HardwareKeyBindings.Binding> hanjaBindings = java.util.Collections.emptyList();
@@ -45,6 +45,8 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
     private boolean hanjaCandidatesShown;
+    // Set when the strip forced the IME window open because the on-screen keyboard was suppressed.
+    private boolean candidatesWindowForced;
 
     @Override
     public View onCreateInputView() {
@@ -55,6 +57,9 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnSwitchIme(this::showImePicker);
         keyboardView.setOnManageIme(this::openKeyboardManagement);
         keyboardView.setOnHanja(this::handleHanja);
+        // The view can be created for the first time while the strip is already claiming the
+        // window, and it must come up collapsed rather than as a full keyboard nobody asked for.
+        keyboardView.setCollapsed(candidatesWindowForced);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
         return keyboardView;
@@ -358,9 +363,38 @@ public class ReteKeyImeService extends InputMethodService {
         return false;
     }
 
+    /**
+     * Reports the candidate strip as real window content when the on-screen keyboard is hidden.
+     *
+     * <p>The platform's default measures the IME from the top of the input frame, and falls back to
+     * the full decor height when that frame is gone — which is exactly the hardware-keyboard case.
+     * The window then declares zero height, the window manager treats the IME as invisible, and the
+     * Hanja strip is drawn onto a surface the user never sees: the 한자 key looks dead.
+     */
+    @Override
+    public void onComputeInsets(Insets outInsets) {
+        super.onComputeInsets(outInsets);
+        if (!hanjaCandidatesShown || candidatesView == null) {
+            return;
+        }
+        if (candidatesView.getVisibility() != View.VISIBLE || candidatesView.getHeight() <= 0) {
+            return;
+        }
+        int[] location = new int[2];
+        candidatesView.getLocationInWindow(location);
+        int stripTop = location[1];
+        outInsets.contentTopInsets = Math.min(outInsets.contentTopInsets, stripTop);
+        outInsets.visibleTopInsets = Math.min(outInsets.visibleTopInsets, stripTop);
+    }
+
     @Override
     public boolean onEvaluateInputViewShown() {
         super.onEvaluateInputViewShown();
+        if (candidatesWindowForced) {
+            // The window that carries the candidate strip only exists while the input view is
+            // claimed. The keyboard itself is collapsed to zero height, so nothing else shows.
+            return true;
+        }
         // Hide the on-screen keyboard when a hardware keyboard is usable; input still passes
         // through the service. The mode will be user-configurable once settings land (RFC-0007).
         return SoftKeyboardVisibilityPolicy.shouldShow(
@@ -583,6 +617,21 @@ public class ReteKeyImeService extends InputMethodService {
             candidatesView.show(reading, candidates);
         }
         hanjaCandidatesShown = true;
+        // With a hardware keyboard the on-screen keyboard is suppressed and the IME window is never
+        // displayed, so a "visible" candidates frame lands on a surface nobody sees and the 한자 key
+        // looks dead. Ask for the window explicitly, and remember that we owe it back.
+        if (CandidatesWindowPolicy.mustForceWindow(isShowInputRequested())) {
+            // The platform only displays the IME window while the input view is shown, so with a
+            // hardware keyboard the strip would be drawn onto a surface nobody sees. Claim the
+            // input view for the duration and collapse the keyboard, leaving the strip alone on
+            // screen; hideHanjaCandidates() gives both back.
+            candidatesWindowForced = true;
+            if (keyboardView != null) {
+                keyboardView.setCollapsed(true);
+            }
+            updateInputViewShown();
+            requestShowSelf(0);
+        }
     }
 
     private void hideHanjaCandidatesIfShown() {
@@ -596,6 +645,16 @@ public class ReteKeyImeService extends InputMethodService {
         pendingCandidates = null;
         hanjaCandidatesShown = false;
         setCandidatesViewShown(false);
+        // A window opened only to carry the strip must go away with it, or the empty keyboard
+        // frame stays on screen after the conversion.
+        if (CandidatesWindowPolicy.mustReleaseWindow(candidatesWindowForced)) {
+            candidatesWindowForced = false;
+            if (keyboardView != null) {
+                keyboardView.setCollapsed(false);
+            }
+            updateInputViewShown();
+            requestHideSelf(0);
+        }
     }
 
     /**

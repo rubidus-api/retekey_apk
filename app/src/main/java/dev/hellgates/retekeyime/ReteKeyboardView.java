@@ -79,6 +79,7 @@ public final class ReteKeyboardView extends View {
     /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
     private Runnable onHanja;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
+    private boolean collapsed;
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // The unpressed keyboard is rendered once into this bitmap and reused until the layout changes.
     private Bitmap baseBitmap;
@@ -162,9 +163,26 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
+    /**
+     * Collapses the keyboard to nothing without hiding the IME window, so the Hanja candidate strip
+     * can be on screen on its own while a hardware keyboard is doing the typing.
+     */
+    public void setCollapsed(boolean collapsed) {
+        if (this.collapsed == collapsed) {
+            return;
+        }
+        this.collapsed = collapsed;
+        requestLayout();
+        invalidate();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
+        if (collapsed) {
+            setMeasuredDimension(width, 0);
+            return;
+        }
         int desired = KeyboardHeightScale.heightForScale(heightScale, baseHeightPx());
         int height;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {
