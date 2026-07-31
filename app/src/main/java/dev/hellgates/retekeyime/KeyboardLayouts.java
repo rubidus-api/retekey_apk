@@ -42,14 +42,19 @@ public final class KeyboardLayouts {
     };
 
     /**
-     * The hold alternates for the letter pages: one run of twenty-six, laid over the letter keys in
-     * reading order. A letter page carries exactly twenty-six letters, so the run covers them all
-     * whatever shape its rows take — QWERTY's 10/9/7 puts the digits along the top and the
-     * punctuation along the bottom, and Dvorak's 7/10/9 divides the same run differently. Keys that
-     * are not letters — Shift, backspace, Enter, the period with its comma — are stepped over, so
-     * they keep repeating or keep the alternate they already have.
+     * The hold alternates for the letter pages, in three groups: the digits, the shifted number
+     * row, and the punctuation. Their sizes are 10/9/7, which is exactly QWERTY's row shape — and
+     * exactly Dvorak's 7/10/9 read in a different order, so the same three groups serve both
+     * without any of them being split or padded.
      */
-    private static final String HOLD_RUN = "1234567890!@#$%^&*;_-:='\"?";
+    private static final String HOLD_DIGITS = "1234567890";
+    private static final String HOLD_SYMBOLS = "!@#$%^&*;";
+    private static final String HOLD_MARKS = "_-:='\"?";
+
+    /** Ten letters, then nine, then seven: 2-beolsik and QWERTY. */
+    private static final String[] HOLDS_10_9_7 = {HOLD_DIGITS, HOLD_SYMBOLS, HOLD_MARKS};
+    /** Seven, ten, nine: Dvorak, carrying the same three groups rotated to fit its rows. */
+    private static final String[] HOLDS_7_10_9 = {HOLD_MARKS, HOLD_DIGITS, HOLD_SYMBOLS};
 
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
@@ -221,7 +226,7 @@ public final class KeyboardLayouts {
             letter("m", shifted),
             letterPeriodKey(), enterKey()
         ));
-        return letterPage(KeyboardLayoutId.EN_QWERTY, shifted, rows);
+        return letterPage(KeyboardLayoutId.EN_QWERTY, shifted, rows, HOLDS_10_9_7);
     }
 
     /**
@@ -248,16 +253,17 @@ public final class KeyboardLayouts {
             letter("x", shifted), letter("b", shifted), letter("m", shifted),
             letter("w", shifted), letter("v", shifted), letter("z", shifted)
         ));
-        return letterPage(KeyboardLayoutId.EN_DVORAK, shifted, rows);
+        return letterPage(KeyboardLayoutId.EN_DVORAK, shifted, rows, HOLDS_7_10_9);
     }
 
-    /** Adds the fixed bottom row and the hold run to a page's three letter rows. */
+    /** Adds the hold groups and the fixed bottom row to a page's three letter rows. */
     private static KeyboardLayout letterPage(
         KeyboardLayoutId id,
         boolean shifted,
-        List<List<SoftwareKeySpec>> letterRows
+        List<List<SoftwareKeySpec>> letterRows,
+        String[] groups
     ) {
-        List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHoldRun(letterRows));
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHolds(letterRows, groups));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }
@@ -299,7 +305,7 @@ public final class KeyboardLayouts {
             vowel("eu", "ㅡ", 18),
             letterPeriodKey(), enterKey()
         ));
-        return letterPage(KeyboardLayoutId.KO_DUBEOLSIK, shifted, rows);
+        return letterPage(KeyboardLayoutId.KO_DUBEOLSIK, shifted, rows, HOLDS_10_9_7);
     }
 
     // ---- Page 3: special characters ----
@@ -506,18 +512,22 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec.enabled("touch.edit.backspace", "⌫", SemanticInput.deleteBackward());
     }
 
-    /** Lays {@link #HOLD_RUN} over the letter keys of the given rows, in reading order. */
-    private static List<List<SoftwareKeySpec>> withHoldRun(List<List<SoftwareKeySpec>> rows) {
+    /** Gives each row its own group of alternates, laid over that row's letter keys in order. */
+    private static List<List<SoftwareKeySpec>> withHolds(
+        List<List<SoftwareKeySpec>> rows,
+        String[] groups
+    ) {
         List<List<SoftwareKeySpec>> held = new ArrayList<>(rows.size());
-        int next = 0;
-        for (List<SoftwareKeySpec> row : rows) {
-            List<SoftwareKeySpec> updated = new ArrayList<>(row);
+        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+            List<SoftwareKeySpec> updated = new ArrayList<>(rows.get(rowIndex));
+            String group = rowIndex < groups.length ? groups[rowIndex] : "";
+            int next = 0;
             for (int i = 0; i < updated.size(); i++) {
                 SoftwareKeySpec key = updated.get(i);
-                if (!takesHold(key) || next >= HOLD_RUN.length()) {
+                if (!takesHold(key) || next >= group.length()) {
                     continue;
                 }
-                updated.set(i, key.withLongPress(String.valueOf(HOLD_RUN.charAt(next++))));
+                updated.set(i, key.withLongPress(String.valueOf(group.charAt(next++))));
             }
             held.add(updated);
         }

@@ -65,16 +65,17 @@ public final class LetterHoldsTest {
     }
 
     @Test
-    public void theHoldRunFlowsAcrossWhateverShapeTheRowsTake() {
+    public void dvorakCarriesTheSameThreeGroupsRotatedToItsRows() {
         KeyboardLayout dvorak = KeyboardLayouts.of(KeyboardLayoutId.EN_DVORAK, false);
 
-        // Seven letters on the top row take 1-7, so the home row picks up at 8.
-        assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6", "7"), holds(dvorak, 0, 3, 7));
-        assertEquals(Arrays.asList("8", "9", "0", "!", "@", "#", "$", "%", "^", "&"),
+        // QWERTY's groups are 10/9/7 and Dvorak's rows are 7/10/9, so rows 1-2-3 become 3-1-2 and
+        // no group is split or padded.
+        assertEquals(Arrays.asList("_", "-", ":", "=", "'", "\"", "?"), holds(dvorak, 0, 3, 7));
+        assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
             holds(dvorak, 1, 0, 10));
-        assertEquals(Arrays.asList("*", ";", "_", "-", ":", "=", "'", "\"", "?"),
+        assertEquals(Arrays.asList("!", "@", "#", "$", "%", "^", "&", "*", ";"),
             holds(dvorak, 2, 1, 9));
-        // The period keeps its comma rather than being swept into the run.
+        // The period keeps its comma rather than being swept into a group.
         assertEquals(Arrays.asList(","), dvorak.rows().get(0).get(2).longPressTexts());
     }
 

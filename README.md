@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.35** —
-[retekey-0.1.35.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.35/retekey-0.1.35.apk)
+Current release: **v0.1.36** —
+[retekey-0.1.36.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.36/retekey-0.1.36.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -103,11 +103,11 @@ Five letter layouts share that grid:
 The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each
 one as it arrives. Holding it runs the Hanja conversion.
 
-Holding a letter key types a character instead of repeating it. The alternates are one run —
-`1234567890!@#$%^&*;_-:='"?`, twenty-six of them for twenty-six letters — laid over the letter keys
-in reading order, so 2-beolsik and QWERTY get the digits along the top and the punctuation along the
-bottom, and Dvorak's different rows divide the same run differently. Space, enter, backspace and the
-arrows have no alternate and keep repeating when held.
+Holding a letter key types a character instead of repeating it. The alternates come in three groups
+— `1234567890`, `!@#$%^&*;` and `_-:='"?` — one to a row. Their sizes are 10/9/7, which is QWERTY's
+row shape and Dvorak's 7/10/9 read in a different order, so Dvorak carries the same three groups
+rotated to fit: rows 1-2-3 become 3-1-2, and no group is split or padded. Space, enter, backspace
+and the arrows have no alternate and keep repeating when held.
 
 A physical keyboard is not affected by any of this: it keeps its own layout, and the on-screen
 choice only changes what the on-screen keys do.
