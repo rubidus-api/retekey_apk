@@ -28,8 +28,8 @@
 **[⬇ 최신 APK 내려받기](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.36** —
-[retekey-0.1.36.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.36/retekey-0.1.36.apk)
+현재 릴리즈: **v0.1.37** —
+[retekey-0.1.37.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.37/retekey-0.1.37.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -81,7 +81,9 @@ OS 버전에 따라 달라지는 동작:
 ## 자판 배열
 
 터치 자판은 크기가 같은 키로 이루어진 직교 10열 격자이며, 행이 어긋나 있지 않다. 하단 행은 모든
-페이지와 모든 자판에서 동일하게 고정된다: `Ctrl · Meta · Alt · Tab · space · 🌐 · pad · !# · ☰`.
+페이지에서 동일하게 고정된다: `Ctrl · Meta · Alt · Tab · space · ☰ · pad · !# · 🌐`. 12키 자판 둘은
+같은 뼈대를 다른 모양으로 쓴다 — 수정자가 맨 왼쪽 열을, ☰ 와 pad 가 둘째 열을 차지하고, 한글 키는 모두
+2칸이며, 오른쪽 열이 백스페이스·스페이스·마침표와 엔터를 맡고 `!#` 와 🌐 가 맨 아랫줄을 닫는다.
 
 이 격자를 다섯 가지 글자 자판이 공유한다.
 

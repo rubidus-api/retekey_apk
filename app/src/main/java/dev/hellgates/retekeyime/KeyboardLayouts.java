@@ -1,6 +1,7 @@
 package dev.hellgates.retekeyime;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -125,81 +126,133 @@ public final class KeyboardLayouts {
             : KeyboardLayoutId.EN_QWERTY;
     }
 
-    // ---- Phone letter pages: the 12-key modes, on the same grid and the same bottom row ----
+    // ---- Phone letter pages: the 12-key modes ----
 
     private static SoftwareKeySpec phoneKey(String id, String label, int span) {
         return SoftwareKeySpec.enabled(id, label, SemanticInput.text(label)).withColumnSpan(span);
     }
 
-    private static SoftwareKeySpec cheonjiinKey(CheonjiinInterpreter.Key key, String label,
-            int span) {
+    private static SoftwareKeySpec cheonjiinKey(CheonjiinInterpreter.Key key, String label) {
         return phoneKey(
-            "touch.cheonjiin." + key.name().toLowerCase(java.util.Locale.ROOT), label, span);
+            "touch.cheonjiin." + key.name().toLowerCase(java.util.Locale.ROOT), label, 2);
     }
 
-    private static SoftwareKeySpec naratgeulKey(NaratgeulInterpreter.Key key, String label) {
+    private static SoftwareKeySpec naratgeulKey(NaratgeulInterpreter.Key key, String label,
+            int span) {
         return phoneKey(
-            "touch.naratgeul." + key.name().toLowerCase(java.util.Locale.ROOT), label, 2);
+            "touch.naratgeul." + key.name().toLowerCase(java.util.Locale.ROOT), label, span);
+    }
+
+    /** The modifier that owns this row's leftmost cell. */
+    private static SoftwareKeySpec phoneModifier(int row) {
+        switch (row) {
+            case 0:
+                return SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL);
+            case 1:
+                return SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META);
+            case 2:
+                return SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT);
+            default:
+                return SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB);
+        }
+    }
+
+    /** An empty cell: the column a 12-key page does not need, left blank rather than padded out. */
+    private static SoftwareKeySpec phoneGap(String id, int span) {
+        return SoftwareKeySpec.disabled("touch.phone.gap." + id, " ").withColumnSpan(span);
+    }
+
+    /** The menu and pad keys, which ride the second column rather than the bottom row. */
+    private static SoftwareKeySpec phoneMenuKey() {
+        return SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER);
+    }
+
+    private static SoftwareKeySpec phonePadKey() {
+        return SoftwareKeySpec.control("touch.layer.pad", "pad", ControlKey.SPECIAL_KEYS_LAYER);
+    }
+
+    /** The two page keys that close a 12-key page's bottom row, one column each. */
+    private static List<SoftwareKeySpec> phoneBottomPageKeys() {
+        return Arrays.asList(
+            SoftwareKeySpec.control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER),
+            SoftwareKeySpec
+                .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
+                .withLongPressControl(ControlKey.HANJA)
+        );
+    }
+
+    private static SoftwareKeySpec phoneSpaceKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.space", "space", SemanticInput.text(" "))
+            .withColumnSpan(2);
+    }
+
+    /** Puts one 12-key row together: the modifier, the row's own cells, and nothing else. */
+    private static List<SoftwareKeySpec> phoneRow(int row, SoftwareKeySpec... cells) {
+        List<SoftwareKeySpec> keys = new ArrayList<>();
+        keys.add(phoneModifier(row));
+        keys.addAll(Arrays.asList(cells));
+        return keys;
     }
 
     /**
-     * 천지인: the three vowel elements across the top with ㅇㅁ beside them, then the grouped
-     * consonants. The utility column carries backspace, the period and the editor action, and the
-     * bottom row is the shared one every page has.
+     * 천지인: the vowel elements across the top, the grouped consonants below, and ㅇㅁ on the
+     * bottom letter row. Ten Hangul keys leave the second column empty throughout.
      */
     private static KeyboardLayout cheonjiin() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(KeyboardLayout.row(
-            cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", 2),
-            cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", 2),
-            cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", 2),
-            cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", 2),
-            backspaceKey().withColumnSpan(2)
-        ));
-        rows.add(KeyboardLayout.row(
-            cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", 3),
-            cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", 3),
-            cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", 3),
-            letterPeriodKey()
-        ));
-        rows.add(KeyboardLayout.row(
-            cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", 3),
-            cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", 3),
-            cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", 3),
-            enterKey()
-        ));
-        rows.add(bottomRow(padKey()));
+        rows.add(phoneRow(0, phoneMenuKey(),
+            cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ"),
+            backspaceKey().withColumnSpan(2)));
+        rows.add(phoneRow(1, phonePadKey(),
+            cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ"),
+            phoneSpaceKey()));
+        rows.add(phoneRow(2, phoneGap("r2", 1),
+            cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ"),
+            letterPeriodKey(),
+            enterKey()));
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
+            cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ"),
+            phoneGap("r3b", 4));
+        bottom.addAll(phoneBottomPageKeys());
+        rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);
     }
 
     /**
-     * 나랏글: the consonant block on the left, the vowels beside it, and the stroke and doubling
-     * keys in the column before the utility one. Five equal keys to a row.
+     * 나랏글: the consonant block and the vowels beside it, with ㅡ and the two transformation keys
+     * on the bottom letter row. Twelve Hangul keys need the second column, so ㅡ takes it there.
      */
     private static KeyboardLayout naratgeul() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(KeyboardLayout.row(
-            naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ"),
-            naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ"),
-            naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ"),
-            naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ"),
-            backspaceKey().withColumnSpan(2)
-        ));
-        rows.add(KeyboardLayout.row(
-            naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ"),
-            naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ"),
-            naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ"),
-            naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획"),
-            letterPeriodKey().withColumnSpan(2)
-        ));
-        rows.add(KeyboardLayout.row(
-            naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ"),
-            naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ"),
-            naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ"),
-            naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍"),
-            enterKey().withColumnSpan(2)
-        ));
-        rows.add(bottomRow(padKey()));
+        rows.add(phoneRow(0, phoneMenuKey(),
+            naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2),
+            backspaceKey().withColumnSpan(2)));
+        rows.add(phoneRow(1, phonePadKey(),
+            naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2),
+            phoneSpaceKey()));
+        rows.add(phoneRow(2, phoneGap("r2", 1),
+            naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2),
+            letterPeriodKey(),
+            enterKey()));
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
+            naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2));
+        bottom.addAll(phoneBottomPageKeys());
+        rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);
     }
 
@@ -472,12 +525,12 @@ public final class KeyboardLayouts {
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            SoftwareKeySpec
-                .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
-                .withLongPressControl(ControlKey.HANJA),
+            SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER),
             layerKey,
             SoftwareKeySpec.control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER),
-            SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER)
+            SoftwareKeySpec
+                .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
+                .withLongPressControl(ControlKey.HANJA)
         );
     }
 

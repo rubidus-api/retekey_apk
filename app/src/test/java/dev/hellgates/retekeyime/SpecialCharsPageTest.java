@@ -29,7 +29,7 @@ public final class SpecialCharsPageTest {
             labels(PAGE, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "\uD83C\uDF10", "pad", "!#", "☰"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "☰", "pad", "!#", "\uD83C\uDF10"),
             labels(PAGE, 3)
         );
     }
