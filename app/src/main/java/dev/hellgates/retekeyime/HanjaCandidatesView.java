@@ -14,8 +14,9 @@ import java.util.List;
 /**
  * The Hanja candidate panel shown in the IME candidates area. It pages through candidates in a
  * grid, shows each candidate's 훈음 (gloss) when known, and serves both directions: 한글 → 한자
- * (value = Hanja, gloss = meaning) and 한자 → 한글 (value = reading, no gloss). It renders in the
- * candidates area, so it appears with the soft keyboard and with a hardware keyboard alike.
+ * (value = Hanja, gloss = meaning) and 한자 → 한글 (value = reading, no gloss). It is the content of
+ * {@link HanjaCandidatesWindow}, a window of its own, so it appears the same way for the on-screen
+ * keyboard, an external keyboard, and the floating keyboard.
  */
 public final class HanjaCandidatesView extends LinearLayout {
     /** Notified with the chosen text (a Hanja, or a Hangul reading) when a candidate is tapped. */

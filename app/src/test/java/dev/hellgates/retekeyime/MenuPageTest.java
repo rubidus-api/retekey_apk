@@ -57,12 +57,20 @@ public final class MenuPageTest {
     public void thePlaceholderTilesStayDisabled() {
         for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
             "touch.menu.custom1", "touch.menu.custom2", "touch.menu.theme",
-            "touch.menu.onehand.left", "touch.menu.onehand.right", "touch.menu.onehand.full")) {
+            "touch.menu.onehand.left", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);
             assertFalse(id + " stays disabled", key.enabled());
             assertFalse(id + " is not a control yet", key.isControl());
         }
+    }
+
+    @Test
+    public void theFloatingTileTogglesTheHalfScreenKeyboard() {
+        SoftwareKeySpec floating = menu.findById("touch.menu.floating");
+        assertNotNull(floating);
+        assertTrue(floating.isControl());
+        assertEquals(ControlKey.FLOATING_TOGGLE, floating.control());
     }
 
     @Test

@@ -78,6 +78,7 @@ public final class ReteKeyboardView extends View {
     private Runnable onManageIme;
     /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
     private Runnable onHanja;
+    private Runnable onFloatingToggle;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private boolean collapsed;
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
@@ -132,6 +133,10 @@ public final class ReteKeyboardView extends View {
     /** Sets the handler the 한자 key runs to convert the reading before the cursor to Hanja. */
     public void setOnHanja(Runnable handler) {
         this.onHanja = handler;
+    }
+
+    public void setOnFloatingToggle(Runnable handler) {
+        this.onFloatingToggle = handler;
     }
 
     private SharedPreferences prefs() {
@@ -800,6 +805,11 @@ public final class ReteKeyboardView extends View {
             case HANJA:
                 if (onHanja != null) {
                     onHanja.run();
+                }
+                break;
+            case FLOATING_TOGGLE:
+                if (onFloatingToggle != null) {
+                    onFloatingToggle.run();
                 }
                 break;
             case CTRL:

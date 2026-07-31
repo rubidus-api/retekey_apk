@@ -39,17 +39,19 @@ public class ReteKeyImeService extends InputMethodService {
     private List<HardwareKeyBindings.Binding> hanjaBindings = java.util.Collections.emptyList();
     private Toast functionToast;
     private static final int HANJA_LOOKBEHIND = 8;
-    private HanjaCandidatesView candidatesView;
+    private HanjaCandidatesWindow hanjaWindow;
     private String pendingReading;
     private List<HanjaCandidatesView.Item> pendingCandidates;
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
     private boolean hanjaCandidatesShown;
-    // Set when the strip forced the IME window open because the on-screen keyboard was suppressed.
-    private boolean candidatesWindowForced;
+    private boolean floatingMode;
+    private FloatingKeyboardBounds floatingBounds;
+    private FloatingKeyboardFrame floatingFrame;
 
     @Override
     public View onCreateInputView() {
+        floatingMode = FloatingKeyboardSettings.isEnabled(viewPrefs());
         keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
         keyboardView.setOnOpenSettings(this::openSettings);
         keyboardView.setOnEditCommand(this::performEditCommand);
@@ -57,22 +59,50 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnSwitchIme(this::showImePicker);
         keyboardView.setOnManageIme(this::openKeyboardManagement);
         keyboardView.setOnHanja(this::handleHanja);
-        // The view can be created for the first time while the strip is already claiming the
-        // window, and it must come up collapsed rather than as a full keyboard nobody asked for.
-        keyboardView.setCollapsed(candidatesWindowForced);
+        keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
-        return keyboardView;
+        if (!floatingMode) {
+            floatingFrame = null;
+            return keyboardView;
+        }
+        if (floatingBounds == null) {
+            floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
+        }
+        floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
+        floatingFrame.setOnClose(this::leaveFloatingMode);
+        floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
+        if (floatingBounds != null) {
+            floatingFrame.setBounds(floatingBounds);
+        }
+        return floatingFrame;
     }
 
-    @Override
-    public View onCreateCandidatesView() {
-        candidatesView = new HanjaCandidatesView(this);
-        candidatesView.setOnPick(this::commitHanja);
-        if (pendingCandidates != null) {
-            candidatesView.show(pendingReading, pendingCandidates);
-        }
-        return candidatesView;
+    private SharedPreferences viewPrefs() {
+        return getSharedPreferences("retekey_view", MODE_PRIVATE);
+    }
+
+    /** Flips the floating half-screen keyboard on or off and rebuilds the input view in place. */
+    private void toggleFloatingMode() {
+        setFloatingMode(!floatingMode);
+    }
+
+    /** The floating panel's ✕ key: back to the ordinary docked keyboard. */
+    private void leaveFloatingMode() {
+        setFloatingMode(false);
+    }
+
+    private void setFloatingMode(boolean enabled) {
+        FloatingKeyboardSettings.setEnabled(viewPrefs(), enabled);
+        // Rebuilding is the whole switch: onCreateInputView re-reads the mode and returns either
+        // the bare keyboard or the floating frame around it.
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    private void onFloatingBoundsChanged(FloatingKeyboardBounds bounds) {
+        floatingBounds = bounds;
+        FloatingKeyboardSettings.store(viewPrefs(), bounds);
     }
 
     /** Opens ReteKey's settings screen from the menu's 설정 tile, hiding the keyboard behind it. */
@@ -363,38 +393,15 @@ public class ReteKeyImeService extends InputMethodService {
         return false;
     }
 
-    /**
-     * Reports the candidate strip as real window content when the on-screen keyboard is hidden.
-     *
-     * <p>The platform's default measures the IME from the top of the input frame, and falls back to
-     * the full decor height when that frame is gone — which is exactly the hardware-keyboard case.
-     * The window then declares zero height, the window manager treats the IME as invisible, and the
-     * Hanja strip is drawn onto a surface the user never sees: the 한자 key looks dead.
-     */
     @Override
     public void onComputeInsets(Insets outInsets) {
         super.onComputeInsets(outInsets);
-        if (!hanjaCandidatesShown || candidatesView == null) {
-            return;
-        }
-        if (candidatesView.getVisibility() != View.VISIBLE || candidatesView.getHeight() <= 0) {
-            return;
-        }
-        int[] location = new int[2];
-        candidatesView.getLocationInWindow(location);
-        int stripTop = location[1];
-        outInsets.contentTopInsets = Math.min(outInsets.contentTopInsets, stripTop);
-        outInsets.visibleTopInsets = Math.min(outInsets.visibleTopInsets, stripTop);
+        applyFloatingInsets(outInsets);
     }
 
     @Override
     public boolean onEvaluateInputViewShown() {
         super.onEvaluateInputViewShown();
-        if (candidatesWindowForced) {
-            // The window that carries the candidate strip only exists while the input view is
-            // claimed. The keyboard itself is collapsed to zero height, so nothing else shows.
-            return true;
-        }
         // Hide the on-screen keyboard when a hardware keyboard is usable; input still passes
         // through the service. The mode will be user-configurable once settings land (RFC-0007).
         return SoftKeyboardVisibilityPolicy.shouldShow(
@@ -616,26 +623,57 @@ public class ReteKeyImeService extends InputMethodService {
     private void showHanjaCandidates(String reading, List<HanjaCandidatesView.Item> candidates) {
         pendingReading = reading;
         pendingCandidates = candidates;
-        setCandidatesViewShown(true);
-        if (candidatesView != null) {
-            candidatesView.show(reading, candidates);
+        if (hanjaWindow == null) {
+            hanjaWindow = new HanjaCandidatesWindow(this, this::commitHanja);
         }
+        hanjaWindow.show(anchorView(), reading, candidates, keyboardTopOnScreen());
         hanjaCandidatesShown = true;
-        // With a hardware keyboard the on-screen keyboard is suppressed and the IME window is never
-        // displayed, so a "visible" candidates frame lands on a surface nobody sees and the 한자 key
-        // looks dead. Ask for the window explicitly, and remember that we owe it back.
-        if (CandidatesWindowPolicy.mustForceWindow(isShowInputRequested())) {
-            // The platform only displays the IME window while the input view is shown, so with a
-            // hardware keyboard the strip would be drawn onto a surface nobody sees. Claim the
-            // input view for the duration and collapse the keyboard, leaving the strip alone on
-            // screen; hideHanjaCandidates() gives both back.
-            candidatesWindowForced = true;
-            if (keyboardView != null) {
-                keyboardView.setCollapsed(true);
-            }
-            updateInputViewShown();
-            requestShowSelf(0);
+    }
+
+    /** Any attached view of this IME; the candidate window only needs its window token. */
+    private View anchorView() {
+        return floatingFrame != null ? floatingFrame : keyboardView;
+    }
+
+    /**
+     * The screen Y the candidate window should sit above: the top of whatever keyboard is on
+     * screen, or 0 when none is, which puts the panel near the bottom of the screen instead. With
+     * an external keyboard there is nothing on screen to sit above.
+     */
+    private int keyboardTopOnScreen() {
+        if (floatingMode && floatingFrame != null) {
+            int[] location = new int[2];
+            floatingFrame.getLocationOnScreen(location);
+            return location[1] + floatingFrame.panelBounds().top;
         }
+        if (keyboardView == null || keyboardView.getHeight() <= 0 || !keyboardView.isShown()) {
+            return 0;
+        }
+        int[] location = new int[2];
+        keyboardView.getLocationOnScreen(location);
+        return location[1];
+    }
+
+    /**
+     * In floating mode the IME window covers the screen but only the panel may take touches, and
+     * the app underneath must not be resized for it. Returns false when the mode is off.
+     */
+    private boolean applyFloatingInsets(Insets outInsets) {
+        if (!floatingMode || floatingFrame == null) {
+            return false;
+        }
+        android.graphics.Rect panel = floatingFrame.panelBounds();
+        if (panel.isEmpty()) {
+            return false;
+        }
+        outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
+        outInsets.touchableRegion.set(panel);
+        // The editor keeps its full height: a floating keyboard covers the app rather than
+        // pushing it, which is the point of being able to move it out of the way.
+        int windowBottom = floatingFrame.getHeight();
+        outInsets.contentTopInsets = windowBottom;
+        outInsets.visibleTopInsets = windowBottom;
+        return true;
     }
 
     private void hideHanjaCandidatesIfShown() {
@@ -648,16 +686,8 @@ public class ReteKeyImeService extends InputMethodService {
         pendingReading = null;
         pendingCandidates = null;
         hanjaCandidatesShown = false;
-        setCandidatesViewShown(false);
-        // A window opened only to carry the strip must go away with it, or the empty keyboard
-        // frame stays on screen after the conversion.
-        if (CandidatesWindowPolicy.mustReleaseWindow(candidatesWindowForced)) {
-            candidatesWindowForced = false;
-            if (keyboardView != null) {
-                keyboardView.setCollapsed(false);
-            }
-            updateInputViewShown();
-            requestHideSelf(0);
+        if (hanjaWindow != null) {
+            hanjaWindow.hide();
         }
     }
 
@@ -666,22 +696,22 @@ public class ReteKeyImeService extends InputMethodService {
      * turn the page, and Escape dismisses. Returns true when the key was used for the strip.
      */
     private boolean handleHanjaSelectionKey(int keyCode) {
-        if (candidatesView == null) {
+        if (hanjaWindow == null) {
             return false;
         }
         int number = digitFromKeyCode(keyCode);
         if (number >= 1) {
-            candidatesView.selectByNumber(number);
+            hanjaWindow.selectByNumber(number);
             return true;
         }
         switch (keyCode) {
             case KeyEvent.KEYCODE_DPAD_RIGHT:
             case KeyEvent.KEYCODE_PAGE_DOWN:
-                candidatesView.nextPage();
+                hanjaWindow.nextPage();
                 return true;
             case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_PAGE_UP:
-                candidatesView.prevPage();
+                hanjaWindow.prevPage();
                 return true;
             case KeyEvent.KEYCODE_ESCAPE:
                 hideHanjaCandidates();

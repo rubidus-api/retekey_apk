@@ -47,6 +47,8 @@ public enum ControlKey {
     MANAGE_IME,
     /** Convert the selected or preceding Hangul reading to Hanja through the host. */
     HANJA,
+    /** Turn the floating half-screen keyboard on or off through the host. */
+    FLOATING_TOGGLE,
     /**
      * Latching modifiers. Their armed state is view-local; it feeds the raw-key action so a
      * subsequent raw key becomes a chord.
