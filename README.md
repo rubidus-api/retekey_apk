@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.32** —
-[retekey-0.1.32.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.32/retekey-0.1.32.apk)
+Current release: **v0.1.33** —
+[retekey-0.1.33.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.33/retekey-0.1.33.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -154,9 +154,11 @@ Korean to Hanja:
   longest match, so `학교` becomes `學校` rather than converting `교` alone.
 - Pressing it on **Hanja** converts back to its reading, including whole Hanja words.
 
-Candidates appear in a window of their own with their 훈음 gloss (家 → 집 가) in a paged grid. It is
-not part of the keyboard, so it appears the same way for the on-screen keyboard, an external
-keyboard with no keyboard on screen at all, and the floating panel. Tap a candidate, or
+Candidates appear in a window of their own, spanning the keyboard's full width, in a paged grid of
+nine. Each 훈음 gloss sits beside its character (家 집 가) and wraps onto a second line when the
+column is narrow. The window is not part of the keyboard, so it appears the same way for the
+on-screen keyboard, an external keyboard with no keyboard on screen at all, and the floating panel;
+it keeps one size while it is up, so a short last page does not resize it. Tap a candidate, or
 press its number key **1**–**9**; `←`/`→` and `PageUp`/`PageDown` turn the page and `Esc` dismisses.
 
 The dictionary is bundled (about 1,100 readings plus common words). See

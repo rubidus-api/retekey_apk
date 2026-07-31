@@ -22,8 +22,6 @@ import java.util.List;
  * pick a candidate.
  */
 public final class HanjaCandidatesWindow {
-    private static final int MAX_WIDTH_DP = 340;
-    private static final int SIDE_MARGIN_DP = 8;
     private static final int GAP_DP = 6;
     private static final int WRAP_CONTENT = ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -31,12 +29,14 @@ public final class HanjaCandidatesWindow {
     private final PopupWindow popup;
     private final HanjaCandidatesView view;
     private int panelHeight;
+    private int panelWidth;
 
     public HanjaCandidatesWindow(Context context, HanjaCandidatesView.OnPick onPick) {
         this.context = context;
         this.view = new HanjaCandidatesView(context);
         this.view.setOnPick(onPick);
-        this.popup = new PopupWindow(view, width(context), WRAP_CONTENT);
+        this.popup = new PopupWindow(
+            view, context.getResources().getDisplayMetrics().widthPixels, WRAP_CONTENT);
         // Never focusable: the service must keep receiving key events while the panel is up.
         popup.setFocusable(false);
         popup.setTouchable(true);
@@ -53,15 +53,16 @@ public final class HanjaCandidatesWindow {
      * @param anchor any attached view; only its window token is used
      */
     public void show(View anchor, String reading, List<HanjaCandidatesView.Item> items,
-                     int keyboardTop) {
+                     int keyboardLeft, int keyboardWidth, int keyboardTop) {
         if (anchor == null || anchor.getWindowToken() == null) {
             return;
         }
         view.show(reading, items);
-        int width = width(context);
         int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
-        int x = Math.max(dp(context, SIDE_MARGIN_DP), (screenWidth - width) / 2);
+        // The panel spans the keyboard it belongs to, edge to edge, so the glosses have room.
+        int width = keyboardWidth > 0 ? Math.min(keyboardWidth, screenWidth) : screenWidth;
+        int x = Math.max(0, Math.min(keyboardLeft, screenWidth - width));
         int bottom = keyboardTop > 0 && keyboardTop <= screenHeight
             ? keyboardTop - dp(context, GAP_DP)
             : screenHeight - dp(context, 48);
@@ -74,6 +75,7 @@ public final class HanjaCandidatesWindow {
         // candidates then leaves empty space instead of resizing the window under the user's
         // finger — and cannot be re-measured into something the size of the screen.
         panelHeight = Math.min(view.getMeasuredHeight(), screenHeight);
+        panelWidth = width;
         int y = Math.max(0, bottom - panelHeight);
         if (popup.isShowing()) {
             popup.update(x, y, width, panelHeight);
@@ -119,13 +121,8 @@ public final class HanjaCandidatesWindow {
     /** Holds the window to the size it was shown at, whatever the new page's content needs. */
     private void keepSize() {
         if (popup.isShowing() && panelHeight > 0) {
-            popup.update(width(context), panelHeight);
+            popup.update(panelWidth, panelHeight);
         }
-    }
-
-    private static int width(Context context) {
-        int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
-        return Math.min(dp(context, MAX_WIDTH_DP), screenWidth - 2 * dp(context, SIDE_MARGIN_DP));
     }
 
     private static int dp(Context context, int value) {

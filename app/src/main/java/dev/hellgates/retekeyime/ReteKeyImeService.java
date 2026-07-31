@@ -661,7 +661,8 @@ public class ReteKeyImeService extends InputMethodService {
         if (hanjaWindow == null) {
             hanjaWindow = new HanjaCandidatesWindow(this, this::commitHanja);
         }
-        hanjaWindow.show(anchor, pendingReading, pendingCandidates, keyboardTopOnScreen());
+        int[] frame = keyboardFrameOnScreen();
+        hanjaWindow.show(anchor, pendingReading, pendingCandidates, frame[0], frame[1], frame[2]);
         return true;
     }
 
@@ -693,22 +694,26 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /**
-     * The screen Y the candidate window should sit above: the top of whatever keyboard is on
-     * screen, or 0 when none is, which puts the panel near the bottom of the screen instead. With
-     * an external keyboard there is nothing on screen to sit above.
+     * Where on screen the keyboard is, as {@code {left, width, top}}, so the candidate window can
+     * span it and sit above it. A top of 0 means nothing is on screen to sit above — an external
+     * keyboard is doing the typing — and the panel falls back to the foot of the screen at full
+     * width.
      */
-    private int keyboardTopOnScreen() {
+    private int[] keyboardFrameOnScreen() {
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int[] location = new int[2];
         if (floatingMode && floatingFrame != null) {
-            int[] location = new int[2];
             floatingFrame.getLocationOnScreen(location);
-            return location[1] + floatingFrame.panelBounds().top;
+            android.graphics.Rect panel = floatingFrame.panelBounds();
+            return new int[] {
+                location[0] + panel.left, panel.width(), location[1] + panel.top
+            };
         }
         if (keyboardView == null || keyboardView.getHeight() <= 0 || !keyboardView.isShown()) {
-            return 0;
+            return new int[] {0, screenWidth, 0};
         }
-        int[] location = new int[2];
         keyboardView.getLocationOnScreen(location);
-        return location[1];
+        return new int[] {location[0], keyboardView.getWidth(), location[1]};
     }
 
     /**

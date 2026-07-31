@@ -194,37 +194,37 @@ public final class HanjaCandidatesView extends LinearLayout {
 
     private LinearLayout buildCell(Item item, int number) {
         LinearLayout cell = new LinearLayout(getContext());
-        cell.setOrientation(VERTICAL);
-        cell.setGravity(Gravity.CENTER);
+        cell.setOrientation(HORIZONTAL);
+        cell.setGravity(Gravity.CENTER_VERTICAL);
         cell.setBackgroundColor(palette.keyFace);
-        cell.setPadding(dp(6), dp(6), dp(6), dp(6));
+        cell.setPadding(dp(6), dp(5), dp(6), dp(5));
 
-        LinearLayout top = new LinearLayout(getContext());
-        top.setOrientation(HORIZONTAL);
-        top.setGravity(Gravity.CENTER_VERTICAL);
         TextView index = new TextView(getContext());
         index.setText(String.valueOf(number));
         index.setTextColor(palette.keyAccent);
         index.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        index.setPadding(0, 0, dp(5), 0);
-        top.addView(index);
+        index.setPadding(0, 0, dp(4), 0);
+        cell.addView(index);
+
         TextView value = new TextView(getContext());
         value.setText(item.value);
         value.setTextColor(palette.keyText);
         value.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-        value.setGravity(Gravity.CENTER);
-        top.addView(value);
-        cell.addView(top);
+        cell.addView(value);
 
         if (item.gloss != null && !item.gloss.isEmpty()) {
+            // The gloss reads alongside the character, not under it, and takes whatever width is
+            // left; when that is not enough it wraps onto a second line rather than being cut.
             TextView gloss = new TextView(getContext());
             gloss.setText(item.gloss);
             gloss.setTextColor(palette.keyTextMuted);
             gloss.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-            gloss.setGravity(Gravity.CENTER);
-            gloss.setMaxLines(1);
+            gloss.setMaxLines(2);
             gloss.setEllipsize(TextUtils.TruncateAt.END);
-            cell.addView(gloss);
+            LinearLayout.LayoutParams glossParams = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            glossParams.leftMargin = dp(4);
+            cell.addView(gloss, glossParams);
         }
 
         final String chosen = item.value;
