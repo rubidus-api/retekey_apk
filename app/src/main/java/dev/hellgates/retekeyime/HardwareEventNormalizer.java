@@ -16,8 +16,9 @@ public final class HardwareEventNormalizer {
         String preservedText = decoded.text.isEmpty() && raw.action() == InputAction.MULTIPLE
             ? raw.characters()
             : decoded.text;
+        // A repeat carries meaning: the platform delivers a held physical key as further DOWN
+        // events with a rising repeat count, and each is a real keystroke.
         boolean eligible = raw.action() == InputAction.DOWN &&
-            raw.repeatCount() == 0 &&
             !raw.canceled() &&
             !raw.ctrl() &&
             !raw.alt() &&

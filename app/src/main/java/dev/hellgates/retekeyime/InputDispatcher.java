@@ -9,6 +9,9 @@ public final class InputDispatcher {
 
     private final StatelessInputProcessor processor;
     private final Set<PressedKey> consumedHardwareKeys = new LinkedHashSet<>();
+    // Mirrors the user's auto-repeat switch. Physical repeats are timed by the platform, so only
+    // the on/off part of the setting can apply to them.
+    private boolean hardwareRepeatEnabled = KeyRepeatSettings.DEFAULT_ENABLED;
 
     public InputDispatcher() {
         this(new ScaffoldInputProcessor());
@@ -34,6 +37,11 @@ public final class InputDispatcher {
 
     public void reset() {
         consumedHardwareKeys.clear();
+    }
+
+    /** Turns held-physical-key repeat on or off, following the user's auto-repeat setting. */
+    public void setHardwareRepeatEnabled(boolean enabled) {
+        this.hardwareRepeatEnabled = enabled;
     }
 
     public void releaseForDelegation(ProjectKeyEvent event) {
@@ -69,9 +77,17 @@ public final class InputDispatcher {
                 : DispatchResult.delegate();
         }
         if (event.repeatCount() != 0) {
-            return consumedHardwareKeys.contains(key)
-                ? DispatchResult.handled()
-                : DispatchResult.delegate();
+            if (!consumedHardwareKeys.contains(key)) {
+                return DispatchResult.delegate();
+            }
+            if (!hardwareRepeatEnabled) {
+                return DispatchResult.handled();
+            }
+            // The platform delivers a held physical key as further DOWN events with a rising repeat
+            // count. Each one has to produce input again, exactly like the first press, or holding
+            // a key on a Bluetooth keyboard types a single character and then goes silent.
+            DispatchResult repeat = dispatchSemantic(event);
+            return repeat.isHandled() ? repeat : DispatchResult.handled();
         }
 
         consumedHardwareKeys.remove(key);

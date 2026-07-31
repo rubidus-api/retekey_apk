@@ -45,6 +45,7 @@ public final class HardwareEventNormalizerTest {
         Assert.assertEquals(0x12345678, event.rawMetaState());
         Assert.assertEquals(2, event.repeatCount());
         Assert.assertTrue(event.canceled());
+        // Cancelled, and carrying every modifier, so still no semantic input despite being a DOWN.
         Assert.assertFalse(event.hasSemanticInput());
     }
 
@@ -146,8 +147,7 @@ public final class HardwareEventNormalizerTest {
     }
 
     @Test
-    public void upRepeatAndCanceledEventsCarryNoSemanticInput() {
-        assertNoSemantic(rawDown('a').repeatCount(1).build());
+    public void upAndCanceledEventsCarryNoSemanticInput() {
         assertNoSemantic(rawDown('a').canceled(true).build());
         assertNoSemantic(RawHardwareKeyEvent.builder(InputAction.UP, 29)
             .unicodeValue('a')
@@ -179,5 +179,15 @@ public final class HardwareEventNormalizerTest {
 
     private static void assertNoSemantic(RawHardwareKeyEvent raw) {
         Assert.assertFalse(HardwareEventNormalizer.normalize(raw).hasSemanticInput());
+    }
+
+    @Test
+    public void aHeldKeyRepeatStillCarriesItsSemanticInput() {
+        ProjectKeyEvent repeat = HardwareEventNormalizer.normalize(
+            rawDown('a').repeatCount(3).build()
+        );
+
+        Assert.assertEquals(3, repeat.repeatCount());
+        Assert.assertEquals(SemanticInput.text("a"), repeat.semanticInput());
     }
 }

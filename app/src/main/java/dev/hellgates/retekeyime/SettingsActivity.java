@@ -44,6 +44,14 @@ public final class SettingsActivity extends Activity {
         int pad = dp(20);
         root.setPadding(pad, pad, pad, pad);
 
+        // The screen is reachable from the launcher, the keyboard's menu, and the system keyboard
+        // settings, and the hardware Back key is not always at hand — a tablet with an external
+        // keyboard and gesture navigation has no visible one. Put the way out on the screen.
+        root.addView(backButton(), matchWidth());
+        if (getActionBar() != null) {
+            getActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
         root.addView(sectionHeader(R.string.settings_height_label));
         root.addView(sectionHint(R.string.settings_height_hint));
 
@@ -93,6 +101,38 @@ public final class SettingsActivity extends Activity {
         scroller.addView(root);
         setContentView(scroller);
         applyPercent(slider.getProgress());
+    }
+
+    /** Returns to the app's main screen, whichever entry point opened these settings. */
+    private Button backButton() {
+        Button back = new Button(this);
+        back.setText(R.string.settings_back);
+        back.setAllCaps(false);
+        back.setOnClickListener(view -> goToMainScreen());
+        return back;
+    }
+
+    private void goToMainScreen() {
+        android.content.Intent intent = new android.content.Intent(this, PreviewActivity.class);
+        // Reuse the existing main screen when it is already in the task instead of stacking a
+        // second copy behind this one.
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+            | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        try {
+            startActivity(intent);
+        } catch (RuntimeException ignored) {
+            // Nothing to fall back to; finishing still leaves the settings screen.
+        }
+        finish();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            goToMainScreen();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private float currentScale() {

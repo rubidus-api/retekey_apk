@@ -30,15 +30,35 @@ public final class HardwareKeyLifecycleTest {
     }
 
     @Test
-    public void trackedRepeatIsConsumedWithoutOutputAndUntrackedRepeatDelegates() {
+    public void trackedRepeatTypesAgainAndUntrackedRepeatDelegates() {
         InputDispatcher dispatcher = new InputDispatcher();
 
         Assert.assertEquals(
             DispatchResult.handled(KeyAction.commitText("a")),
             dispatcher.dispatch(textDown(7, 29))
         );
-        Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(repeatDown(7, 29)));
+        // A held key must keep producing input, not fall silent after the first press.
+        Assert.assertEquals(
+            DispatchResult.handled(KeyAction.commitText("a")),
+            dispatcher.dispatch(repeatDown(7, 29))
+        );
+        Assert.assertEquals(
+            DispatchResult.handled(KeyAction.commitText("a")),
+            dispatcher.dispatch(repeatDown(7, 29))
+        );
         Assert.assertEquals(DispatchResult.delegate(), dispatcher.dispatch(repeatDown(7, 30)));
+        Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(keyUp(7, 29, false)));
+    }
+
+    @Test
+    public void repeatIsSwallowedWithoutOutputWhenAutoRepeatIsOff() {
+        InputDispatcher dispatcher = new InputDispatcher();
+        dispatcher.setHardwareRepeatEnabled(false);
+
+        dispatcher.dispatch(textDown(7, 29));
+
+        // Still consumed, so the editor never sees the raw repeat and types a duplicate itself.
+        Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(repeatDown(7, 29)));
         Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(keyUp(7, 29, false)));
     }
 

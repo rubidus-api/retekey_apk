@@ -446,6 +446,10 @@ public class ReteKeyImeService extends InputMethodService {
             prefs.getString(HardwareKeyBindings.KEY_HANYEONG, ""));
         hanjaBindings = HardwareKeyBindings.parse(
             prefs.getString(HardwareKeyBindings.KEY_HANJA, ""));
+        // A physical key held down repeats on the platform's own clock; only the user's on/off
+        // choice can carry over from the soft keyboard's auto-repeat setting.
+        dispatcher.setHardwareRepeatEnabled(
+            prefs.getBoolean(KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED));
     }
 
     private static int pressedMods(KeyEvent event) {
