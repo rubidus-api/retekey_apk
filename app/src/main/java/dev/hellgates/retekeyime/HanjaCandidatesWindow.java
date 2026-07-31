@@ -30,6 +30,7 @@ public final class HanjaCandidatesWindow {
     private final Context context;
     private final PopupWindow popup;
     private final HanjaCandidatesView view;
+    private int panelHeight;
 
     public HanjaCandidatesWindow(Context context, HanjaCandidatesView.OnPick onPick) {
         this.context = context;
@@ -69,12 +70,17 @@ public final class HanjaCandidatesWindow {
             View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(screenHeight, View.MeasureSpec.AT_MOST)
         );
-        int y = Math.max(0, bottom - view.getMeasuredHeight());
+        // The window keeps the height its first page needed. A later page with fewer than nine
+        // candidates then leaves empty space instead of resizing the window under the user's
+        // finger — and cannot be re-measured into something the size of the screen.
+        panelHeight = Math.min(view.getMeasuredHeight(), screenHeight);
+        int y = Math.max(0, bottom - panelHeight);
         if (popup.isShowing()) {
-            popup.update(x, y, width, view.getMeasuredHeight());
+            popup.update(x, y, width, panelHeight);
             return;
         }
         popup.setWidth(width);
+        popup.setHeight(panelHeight);
         try {
             popup.showAtLocation(anchor, Gravity.NO_GRAVITY, x, y);
         } catch (RuntimeException ignored) {
@@ -99,11 +105,22 @@ public final class HanjaCandidatesWindow {
     }
 
     public boolean nextPage() {
-        return view.nextPage();
+        boolean turned = view.nextPage();
+        keepSize();
+        return turned;
     }
 
     public boolean prevPage() {
-        return view.prevPage();
+        boolean turned = view.prevPage();
+        keepSize();
+        return turned;
+    }
+
+    /** Holds the window to the size it was shown at, whatever the new page's content needs. */
+    private void keepSize() {
+        if (popup.isShowing() && panelHeight > 0) {
+            popup.update(width(context), panelHeight);
+        }
     }
 
     private static int width(Context context) {

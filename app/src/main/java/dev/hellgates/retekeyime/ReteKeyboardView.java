@@ -78,11 +78,13 @@ public final class ReteKeyboardView extends View {
     private Runnable onHanja;
     private Runnable onFloatingToggle;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
-    private static final long FLASH_MS = 90;
-    private static final float FLASH_MAX_ALPHA = 70.0f;
+    private static final long FLASH_MS = 180;
+    private static final float FLASH_MAX_ALPHA = 150.0f;
     private boolean flashing;
+    private String flashLabel;
     private final Runnable onFlashElapsed = () -> {
         flashing = false;
+        flashLabel = null;
         invalidate();
     };
     private boolean collapsed;
@@ -274,14 +276,40 @@ public final class ReteKeyboardView extends View {
      * only on the one key under the finger. Follows the visual-feedback strength setting, so
      * turning that to zero turns the blink off with it.
      */
-    private void flashKeyboard() {
+    private void flashKeyboard(SoftwareKeySpec key, String typed) {
         if (feedback.visualIntensity() <= 0.0f) {
             return;
         }
         removeCallbacks(onFlashElapsed);
         flashing = true;
+        flashLabel = echoLabel(key, typed);
         invalidate();
         postDelayed(onFlashElapsed, FLASH_MS);
+    }
+
+    /**
+     * What the echo box should show, or {@code null} for keys that type nothing to echo — the
+     * layer switches, the modifiers, backspace, enter. Their own label would say nothing useful
+     * blown up to the size of a syllable.
+     */
+    static String echoLabel(SoftwareKeySpec key, String typed) {
+        if (typed != null) {
+            return typed;
+        }
+        if (key == null || key.isControl() || !key.enabled()) {
+            return null;
+        }
+        SemanticInput input = key.semanticInput();
+        if (input == null) {
+            return null;
+        }
+        switch (input.kind()) {
+            case TEXT:
+            case JAMO:
+                return key.label();
+            default:
+                return null;
+        }
     }
 
     @Override
@@ -298,9 +326,13 @@ public final class ReteKeyboardView extends View {
         canvas.drawBitmap(baseBitmap, 0.0f, 0.0f, null);
         drawPressFeedback(canvas, width, height);
         drawFlash(canvas, width, height);
+        drawEchoBox(canvas, width, height);
     }
 
-    /** The keystroke blink: one translucent wash over the whole keyboard. */
+    /**
+     * The keystroke blink: the gaps between the keys light up, and the keys themselves do not, so
+     * the grid flashes as a lattice around what you are reading rather than washing over it.
+     */
     private void drawFlash(Canvas canvas, int width, int height) {
         if (!flashing) {
             return;
@@ -309,7 +341,57 @@ public final class ReteKeyboardView extends View {
         paint.setColor(Color.argb(
             Math.round(feedback.visualIntensity() * FLASH_MAX_ALPHA),
             Color.red(tint), Color.green(tint), Color.blue(tint)));
+        KeyboardLayout layout = layout();
+        List<List<SoftwareKeySpec>> rows = layout.rows();
+        int saved = canvas.save();
+        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+            List<SoftwareKeySpec> keys = rows.get(rowIndex);
+            int top = layout.rowEdge(rowIndex, height);
+            int bottom = layout.rowEdge(rowIndex + 1, height);
+            for (int keyIndex = 0; keyIndex < keys.size(); keyIndex++) {
+                SoftwareKeySpec key = keys.get(keyIndex);
+                int startColumn = layout.startColumn(rowIndex, keyIndex);
+                int left = layout.columnEdge(startColumn, width);
+                int right = layout.columnEdge(startColumn + key.columnSpan(), width);
+                // Cut each key face out of the wash; what is left is exactly the gaps.
+                canvas.clipOutRect(
+                    left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx);
+            }
+        }
         canvas.drawRect(0.0f, 0.0f, width, height, paint);
+        canvas.restoreToCount(saved);
+    }
+
+    /**
+     * Shows the character that was just typed, large and in a box over the keyboard, for as long as
+     * the blink lasts. A finger covers the key it pressed; this puts the result somewhere it can
+     * actually be read.
+     */
+    private void drawEchoBox(Canvas canvas, int width, int height) {
+        if (!flashing || flashLabel == null) {
+            return;
+        }
+        float boxHeight = Math.min(height * 0.38f, dp(72));
+        float textSize = boxHeight * 0.62f;
+        paint.setTextSize(textSize);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float boxWidth = Math.max(boxHeight, paint.measureText(flashLabel) + dp(28));
+        float centerX = width * 0.5f;
+        // Along the top edge, away from the rows the hand is usually over.
+        float top = dp(6);
+        float left = centerX - boxWidth * 0.5f;
+        float radius = dp(10);
+
+        paint.setColor(palette.keyAccent);
+        canvas.drawRoundRect(left, top, left + boxWidth, top + boxHeight, radius, radius, paint);
+        paint.setColor(palette.background);
+        canvas.drawText(
+            flashLabel, centerX, top + boxHeight * 0.5f - (paint.descent() + paint.ascent()) / 2.0f,
+            paint);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     /** Tints the held key for a colour-change press feedback (respecting the intensity setting). */
@@ -458,7 +540,6 @@ public final class ReteKeyboardView extends View {
         heldKey = keyIndex;
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
-        flashKeyboard();
         invalidate();
         SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
         // Shift, and any key with a long press, react to a hold.
@@ -490,7 +571,7 @@ public final class ReteKeyboardView extends View {
         sink.accept(pressEventWithModifiers(key));
         repeatFired = true;
         feedback.playKeyDown();
-        flashKeyboard();
+        flashKeyboard(key, null);
         postDelayed(onRepeatElapsed, repeatIntervalMs);
     }
 
@@ -520,16 +601,19 @@ public final class ReteKeyboardView extends View {
         }
         if (held.isControl()) {
             applyControl(held.control());
+            flashKeyboard(held, null);
             performClick();
             return;
         }
         if (held.enabled()) {
             if (tryArmedModifierChord(held)) {
+                flashKeyboard(held, null);
                 performClick();
                 return;
             }
             sink.accept(pressEventWithModifiers(held));
             consumeOneShotShift();
+            flashKeyboard(held, null);
             performClick();
         }
     }
@@ -636,7 +720,7 @@ public final class ReteKeyboardView extends View {
             sink.accept(key.longPressEvent(0));
             consumeOneShotShift();
             feedback.playKeyDown();
-        flashKeyboard();
+            flashKeyboard(key, key.longPressTexts().get(0));
             holdConsumed = true;
             performClick();
         }

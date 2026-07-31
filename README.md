@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.31** —
-[retekey-0.1.31.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.31/retekey-0.1.31.apk)
+Current release: **v0.1.32** —
+[retekey-0.1.32.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.32/retekey-0.1.32.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -77,10 +77,11 @@ keyboard mapping, auto-repeat, and the settings screen behave the same across th
   2-beolsik mapping for Bluetooth or wired keyboards.
 - **Held-key auto-repeat** for space, enter, backspace and the arrows, with a configurable start
   delay and interval.
-- **Raised, rounded keys** with press feedback — the pressed key tints and the whole keyboard
-  blinks, plus haptics and sound, each independently adjustable.
+- **Raised, rounded keys** with press feedback — the pressed key tints, the gaps between the keys
+  blink, and the character you just typed appears large in a box above them, plus haptics and
+  sound, each independently adjustable.
 - **Hold a key to type its alternate** straight away: no popup, no drag. The letter pages hold
-  `1234567890` on the top row, `!@#$%^&*` on the middle one, and `_-:='"?` on the bottom one.
+  `1234567890` on the top row, `!@#$%^&*;` on the middle one, and `_-:='"?` on the bottom one.
 - **Follows the system theme** — light/dark, and the Material You palette on Android 12+.
 
 ## Layout
@@ -89,8 +90,8 @@ The touch layout is one orthogonal ten-column grid with equal keys and no stagge
 bottom row is shared by every page: `Ctrl · Meta · Alt · Tab · space · KO/EN · pad · !# · ☰`.
 
 Holding a letter key types a character instead of repeating it, and the three rows carry a keyboard
-of their own — digits `1`–`0` across the top, `!@#$%^&*` across the middle, and `_ - : = ' " ?`
-across the bottom. Korean and English share them, so a hold stays where your finger learned it.
+of their own — digits `1`–`0` across the top, `! @ # $ % ^ & * ;` across the middle, and
+`_ - : = ' " ?` across the bottom. Korean and English share them, so a hold stays where your finger learned it.
 Space, enter, backspace and the arrows have no alternate and keep repeating when held.
 
 Korean 2-beolsik:

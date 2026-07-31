@@ -28,9 +28,10 @@ public final class LetterHoldsTest {
 
     @Test
     public void theMiddleRowHoldsTheShiftedNumberRow() {
-        List<String> symbols = Arrays.asList("!", "@", "#", "$", "%", "^", "&", "*");
-        assertEquals(symbols, holds(EN, 1, 0, 8));
-        assertEquals(symbols, holds(KO, 1, 0, 8));
+        // Nine letters, nine alternates: the key before backspace carries the semicolon.
+        List<String> symbols = Arrays.asList("!", "@", "#", "$", "%", "^", "&", "*", ";");
+        assertEquals(symbols, holds(EN, 1, 0, 9));
+        assertEquals(symbols, holds(KO, 1, 0, 9));
     }
 
     @Test
@@ -47,9 +48,6 @@ public final class LetterHoldsTest {
         assertTrue(EN.rows().get(1).get(9).longPressTexts().isEmpty());
         assertTrue(EN.rows().get(2).get(9).longPressTexts().isEmpty());
         assertEquals(Arrays.asList(","), EN.rows().get(2).get(8).longPressTexts());
-        // The middle row has nine letters and eight symbols, so its last letter has no alternate.
-        assertTrue(EN.rows().get(1).get(8).longPressTexts().isEmpty());
-        assertTrue(KO.rows().get(1).get(8).longPressTexts().isEmpty());
     }
 
     @Test

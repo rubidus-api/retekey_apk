@@ -45,7 +45,7 @@ public final class KeyboardLayouts {
     // key keeps its alternate across the language switch, exactly as it keeps its letter.
     private static final String[] ROW1_HOLDS =
         {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
-    private static final String[] ROW2_HOLDS = {"!", "@", "#", "$", "%", "^", "&", "*"};
+    private static final String[] ROW2_HOLDS = {"!", "@", "#", "$", "%", "^", "&", "*", ";"};
     private static final String[] ROW3_HOLDS = {"_", "-", ":", "=", "'", "\"", "?"};
 
     private static final KeyboardLayout EN_BASE = english(false);
