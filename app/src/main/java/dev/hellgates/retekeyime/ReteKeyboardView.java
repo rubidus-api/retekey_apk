@@ -62,8 +62,6 @@ public final class ReteKeyboardView extends View {
     private NumpadMode numpadMode = NumpadMode.NUMBERS;
     private int heldRow = -1;
     private int heldKey = -1;
-    private LongPressPopup popup;
-    private int popupIndex = -1;
     private boolean holdConsumed;
 
     /** Invoked when the 설정 tile is tapped; the host service opens the settings screen. */
@@ -80,6 +78,13 @@ public final class ReteKeyboardView extends View {
     private Runnable onHanja;
     private Runnable onFloatingToggle;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
+    private static final long FLASH_MS = 90;
+    private static final float FLASH_MAX_ALPHA = 70.0f;
+    private boolean flashing;
+    private final Runnable onFlashElapsed = () -> {
+        flashing = false;
+        invalidate();
+    };
     private boolean collapsed;
     private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
     // The unpressed keyboard is rendered once into this bitmap and reused until the layout changes.
@@ -264,6 +269,21 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
+    /**
+     * Flashes the whole keyboard for a moment so a keystroke is visible at the panel level, not
+     * only on the one key under the finger. Follows the visual-feedback strength setting, so
+     * turning that to zero turns the blink off with it.
+     */
+    private void flashKeyboard() {
+        if (feedback.visualIntensity() <= 0.0f) {
+            return;
+        }
+        removeCallbacks(onFlashElapsed);
+        flashing = true;
+        invalidate();
+        postDelayed(onFlashElapsed, FLASH_MS);
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -277,7 +297,19 @@ public final class ReteKeyboardView extends View {
         ensureBaseBitmap(width, height);
         canvas.drawBitmap(baseBitmap, 0.0f, 0.0f, null);
         drawPressFeedback(canvas, width, height);
-        drawPopup(canvas);
+        drawFlash(canvas, width, height);
+    }
+
+    /** The keystroke blink: one translucent wash over the whole keyboard. */
+    private void drawFlash(Canvas canvas, int width, int height) {
+        if (!flashing) {
+            return;
+        }
+        int tint = palette.keyAccent;
+        paint.setColor(Color.argb(
+            Math.round(feedback.visualIntensity() * FLASH_MAX_ALPHA),
+            Color.red(tint), Color.green(tint), Color.blue(tint)));
+        canvas.drawRect(0.0f, 0.0f, width, height, paint);
     }
 
     /** Tints the held key for a colour-change press feedback (respecting the intensity setting). */
@@ -384,36 +416,11 @@ public final class ReteKeyboardView extends View {
         paint.setTextSize(size);
     }
 
-    private void drawPopup(Canvas canvas) {
-        if (popup == null) {
-            return;
-        }
-        int cellHeight = popup.bottom() - popup.top();
-        for (int index = 0; index < popup.candidateCount(); index++) {
-            int left = popup.cellLeft(index);
-            int right = left + popup.cellWidth();
-            paint.setColor(index == popupIndex ? palette.keyAccent : palette.keyFace);
-            canvas.drawRoundRect(left + 2, popup.top() + 2, right - 2, popup.bottom() - 2,
-                keyRadiusPx, keyRadiusPx, paint);
-            paint.setColor(palette.keyText);
-            fitLabel(popup.candidate(index), popup.cellWidth(), cellHeight);
-            canvas.drawText(
-                popup.candidate(index),
-                (left + right) * 0.5f,
-                popup.top() + (popup.bottom() - popup.top()) * 0.62f,
-                paint
-            );
-        }
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 beginHold(event.getX(), event.getY());
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                trackHold(event.getX(), event.getY());
                 return true;
             case MotionEvent.ACTION_UP:
                 releaseHold(event.getX(), event.getY());
@@ -451,6 +458,7 @@ public final class ReteKeyboardView extends View {
         heldKey = keyIndex;
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
+        flashKeyboard();
         invalidate();
         SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
         // Shift, and any key with a long press, react to a hold.
@@ -472,7 +480,7 @@ public final class ReteKeyboardView extends View {
 
     /** Fires the held key once and schedules the next repeat, until the finger lifts. */
     private void handleRepeat() {
-        if (heldRow < 0 || heldKey < 0 || popup != null) {
+        if (heldRow < 0 || heldKey < 0) {
             return;
         }
         SoftwareKeySpec key = layout().rows().get(heldRow).get(heldKey);
@@ -482,41 +490,17 @@ public final class ReteKeyboardView extends View {
         sink.accept(pressEventWithModifiers(key));
         repeatFired = true;
         feedback.playKeyDown();
+        flashKeyboard();
         postDelayed(onRepeatElapsed, repeatIntervalMs);
     }
 
-    private void trackHold(float x, float y) {
-        if (popup == null) {
-            return;
-        }
-        int index = popup.indexAt(x, y);
-        if (index != popupIndex) {
-            popupIndex = index;
-            invalidate();
-        }
-    }
-
     private void releaseHold(float x, float y) {
-        LongPressPopup openedPopup = popup;
         int rowIndex = heldRow;
         int keyIndex = heldKey;
         boolean consumed = holdConsumed;
         boolean repeated = repeatFired;
         removeCallbacks(onHoldElapsed);
         removeCallbacks(onRepeatElapsed);
-
-        if (openedPopup != null) {
-            int index = openedPopup.indexAt(x, y);
-            // Releasing outside the popup cancels the choice rather than committing the base key.
-            if (index >= 0) {
-                sink.accept(openedPopup.key().longPressEvent(index));
-                consumeOneShotShift();
-                performClick();
-            }
-            cancelHold();
-            invalidate();
-            return;
-        }
 
         cancelHold();
         if (consumed || repeated) {
@@ -646,9 +630,16 @@ public final class ReteKeyboardView extends View {
             holdConsumed = true;
             return;
         }
-        popup = LongPressPopup.open(layout(), heldRow, heldKey, getWidth(), getHeight());
-        popupIndex = -1;
-        invalidate();
+        if (key.hasLongPress()) {
+            // Holding a key types its alternate straight away. There is no popup to aim at and
+            // nothing to drag to: the finger is already where it needs to be.
+            sink.accept(key.longPressEvent(0));
+            consumeOneShotShift();
+            feedback.playKeyDown();
+        flashKeyboard();
+            holdConsumed = true;
+            performClick();
+        }
     }
 
     private void cancelHold() {
@@ -657,8 +648,6 @@ public final class ReteKeyboardView extends View {
         repeatFired = false;
         heldRow = -1;
         heldKey = -1;
-        popup = null;
-        popupIndex = -1;
         holdConsumed = false;
     }
 

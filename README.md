@@ -76,8 +76,9 @@ keyboard mapping, auto-repeat, and the settings screen behave the same across th
 - **Physical keyboard support**: user-assignable KO/EN and Hanja keys, modifier chords, and
   2-beolsik mapping for Bluetooth or wired keyboards.
 - **Held-key auto-repeat** with a configurable start delay and interval.
-- **Raised, rounded keys** with press feedback (visual, haptic, sound), each independently
-  adjustable.
+- **Raised, rounded keys** with press feedback — the pressed key tints and the whole keyboard
+  blinks, plus haptics and sound, each independently adjustable.
+- **Hold a key to type its alternate** straight away: no popup, no drag.
 - **Follows the system theme** — light/dark, and the Material You palette on Android 12+.
 
 ## Layout
@@ -89,8 +90,9 @@ Korean 2-beolsik:
 
 ![Korean 2-beolsik layout](assets/keyboard-korean.png)
 
-The `!#` key opens the special-characters page, where every key commits its symbol. Holding the
-period inserts a comma:
+The `!#` key opens the special-characters page, where every key commits its symbol. Holding a key
+types its alternate immediately — there is no popup to aim at and nothing to drag to. Holding the
+period types a comma, and holding `_` types `-`, the pair a physical keyboard puts on one key:
 
 ![Special characters page](assets/keyboard-chars.png)
 

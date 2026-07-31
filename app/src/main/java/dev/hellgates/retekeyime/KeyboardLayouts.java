@@ -185,8 +185,10 @@ public final class KeyboardLayouts {
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(false),
-            text("underscore", "_"), text("semicolon", ";"), text("colon", ":"),
-            text("backtick", "`").withLongPress("-"),
+            // Minus lives on the underscore's hold, where a physical keyboard puts it too.
+            text("underscore", "_").withLongPress("-"),
+            text("semicolon", ";"), text("colon", ":"),
+            text("backtick", "`"),
             text("apostrophe", "'").withLongPress("="),
             text("quote", "\"").withLongPress("÷"),
             text("question", "?").withLongPress("×"),

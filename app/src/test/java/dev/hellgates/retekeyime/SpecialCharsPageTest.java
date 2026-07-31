@@ -35,6 +35,29 @@ public final class SpecialCharsPageTest {
     }
 
     @Test
+    public void minusIsTheUnderscoresHold() {
+        // The pair a physical keyboard puts on one key stays on one key here too.
+        SoftwareKeySpec underscore = PAGE.findById("touch.sym.underscore");
+        assertNotNull(underscore);
+        assertEquals(Arrays.asList("-"), underscore.longPressTexts());
+        assertTrue("backtick no longer carries minus",
+            PAGE.findById("touch.sym.backtick").longPressTexts().isEmpty());
+    }
+
+    @Test
+    public void everyHoldOffersExactlyOneAlternate() {
+        // Holding types the alternate straight away, so a second entry would be unreachable.
+        for (List<SoftwareKeySpec> row : PAGE.rows()) {
+            for (SoftwareKeySpec key : row) {
+                if (key.hasLongPress()) {
+                    assertEquals(
+                        key.label() + " offers one alternate", 1, key.longPressTexts().size());
+                }
+            }
+        }
+    }
+
+    @Test
     public void everySymbolCommitsItsOwnCharacter() {
         for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
             for (SoftwareKeySpec key : PAGE.rows().get(rowIndex)) {
