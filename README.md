@@ -14,6 +14,7 @@ dependencies — the release APK is about 230 KB.
 - [Android version support](#android-version-support)
 - [Features](#features)
 - [Layout](#layout)
+- [Floating keyboard](#floating-keyboard)
 - [Hanja conversion](#hanja-conversion)
 - [Physical keyboards](#physical-keyboards)
 - [Settings](#settings)
@@ -68,7 +69,10 @@ keyboard mapping, auto-repeat, and the settings screen behave the same across th
   language switch.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
-- **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection.
+- **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
+  a window of its own that appears whichever keyboard you are using.
+- **Floating keyboard** for a tablet in landscape: a translucent panel confined to one half of the
+  screen, draggable, resizable, and mirrored to the other half with one key.
 - **Physical keyboard support**: user-assignable KO/EN and Hanja keys, modifier chords, and
   2-beolsik mapping for Bluetooth or wired keyboards.
 - **Held-key auto-repeat** with a configurable start delay and interval.
@@ -108,6 +112,28 @@ cursor navigation, date insertion, keyboard height, and shortcuts to the system 
 > build host is headless with no KVM and no window, so `screencap` returns a blank framebuffer;
 > capture on a real device or a GUI emulator instead.
 
+## Floating keyboard
+
+The ☰ menu's **Floating** tile turns the keyboard into a translucent panel that floats over the
+app instead of docking to the bottom edge — the shape a tablet in landscape wants, where a
+full-width keyboard is both too wide to type on and too tall to see past.
+
+The panel is confined to one half of the screen and can never be wider than that half, so the other
+half stays yours. Its title bar carries, left to right:
+
+| Key | Does |
+|---|---|
+| ☰ | drag to move the panel, anywhere within its half |
+| ‹ / › | send the panel to the other half, mirrored about the centre line |
+| ✕ | leave floating mode and go back to the ordinary keyboard |
+| ⇲ | drag to resize the panel |
+
+Dragging stops at the centre line: crossing over is the arrow key's job, and it reflects the panel
+rather than dropping it somewhere new, so a panel hugging the left edge comes back hugging the
+right one. Everything outside the panel still belongs to the app — the keyboard takes no touches
+there and the app is not resized to make room for it. The mode and the panel's placement are
+remembered, and a rotation rescales the panel instead of stranding it off-screen.
+
 ## Hanja conversion
 
 Pressing the 한자 key — the one on the special-keys page, or a physical key you assigned — converts
@@ -118,7 +144,9 @@ Korean to Hanja:
   longest match, so `학교` becomes `學校` rather than converting `교` alone.
 - Pressing it on **Hanja** converts back to its reading, including whole Hanja words.
 
-Candidates appear in a strip with their 훈음 gloss (家 → 집 가) in a paged grid. Tap a candidate, or
+Candidates appear in a window of their own with their 훈음 gloss (家 → 집 가) in a paged grid. It is
+not part of the keyboard, so it appears the same way for the on-screen keyboard, an external
+keyboard with no keyboard on screen at all, and the floating panel. Tap a candidate, or
 press its number key **1**–**9**; `←`/`→` and `PageUp`/`PageDown` turn the page and `Esc` dismisses.
 
 The dictionary is bundled (about 1,100 readings plus common words). See
@@ -146,6 +174,8 @@ The settings screen uses stock controls only and follows the system theme:
 - **Key auto-repeat** — on/off, start delay, and repeat interval.
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.
 
+A **Back to main screen** button at the top returns to the app's main screen at any time.
+
 ## Theming
 
 The keyboard resolves its colours from the device theme rather than hardcoding them:
@@ -156,7 +186,8 @@ The keyboard resolves its colours from the device theme rather than hardcoding t
 - On Android 12+ the user's **Material You** palette is used, so the keyboard matches their theme;
   older versions fall back to a tuned light/dark palette.
 
-The keys, the long-press popup, and the Hanja candidate strip all share one palette.
+The keys, the long-press popup, the Hanja candidate window, and the floating panel all share
+one palette.
 
 ## Architecture
 
