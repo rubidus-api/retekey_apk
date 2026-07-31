@@ -149,7 +149,9 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     }
 
     private void layoutBarCells() {
-        int cell = dp(CELL_WIDTH_DP);
+        // Four cells share the bar. On a narrow panel they must shrink rather than overlap, or the
+        // cross-over key and the close key answer the same touch.
+        int cell = Math.max(1, Math.min(dp(CELL_WIDTH_DP), bounds.width() / 4));
         int barBottom = bounds.top() + barHeightPx();
         moveCell.set(bounds.left(), bounds.top(), bounds.left() + cell, barBottom);
         crossCell.set(moveCell.right, bounds.top(), moveCell.right + cell, barBottom);

@@ -185,7 +185,9 @@ public final class ReteKeyboardView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         if (collapsed) {
-            setMeasuredDimension(width, 0);
+            // One pixel, not zero: the IME window has to exist for the Hanja candidate window to
+            // have something to attach to, and a zero-height window is not laid out at all.
+            setMeasuredDimension(width, 1);
             return;
         }
         int desired = KeyboardHeightScale.heightForScale(heightScale, baseHeightPx());

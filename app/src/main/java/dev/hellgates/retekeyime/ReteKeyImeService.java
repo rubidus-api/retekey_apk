@@ -45,6 +45,12 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
     private boolean hanjaCandidatesShown;
+    // Set when the candidate window had to bring the IME window into existence because no
+    // on-screen keyboard was up — the external-keyboard case.
+    private boolean candidatesWindowForced;
+    private int candidateWindowAttempts;
+    private final android.os.Handler mainHandler =
+        new android.os.Handler(android.os.Looper.getMainLooper());
     private boolean floatingMode;
     private FloatingKeyboardBounds floatingBounds;
     private FloatingKeyboardFrame floatingFrame;
@@ -60,6 +66,9 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnManageIme(this::openKeyboardManagement);
         keyboardView.setOnHanja(this::handleHanja);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
+        // The view can be created for the first time solely to host the candidate window; it must
+        // come up collapsed rather than as a keyboard nobody asked for.
+        keyboardView.setCollapsed(!floatingMode && candidatesWindowForced);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
         if (!floatingMode) {
@@ -402,6 +411,10 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public boolean onEvaluateInputViewShown() {
         super.onEvaluateInputViewShown();
+        if (candidatesWindowForced) {
+            // The one-pixel input view is what gives the candidate window a window to live on.
+            return true;
+        }
         // Hide the on-screen keyboard when a hardware keyboard is usable; input still passes
         // through the service. The mode will be user-configurable once settings land (RFC-0007).
         return SoftKeyboardVisibilityPolicy.shouldShow(
@@ -623,11 +636,55 @@ public class ReteKeyImeService extends InputMethodService {
     private void showHanjaCandidates(String reading, List<HanjaCandidatesView.Item> candidates) {
         pendingReading = reading;
         pendingCandidates = candidates;
+        hanjaCandidatesShown = true;
+        if (showCandidateWindow()) {
+            return;
+        }
+        // Nothing of this IME is on screen — an external keyboard is doing the typing — so there is
+        // no window to attach a popup to. Bring one up, one pixel tall, and try again once it is.
+        candidatesWindowForced = true;
+        if (keyboardView != null) {
+            keyboardView.setCollapsed(true);
+        }
+        updateInputViewShown();
+        requestShowSelf(0);
+        candidateWindowAttempts = 0;
+        retryCandidateWindow();
+    }
+
+    /** Shows the candidate window if this IME already has a window to attach it to. */
+    private boolean showCandidateWindow() {
+        View anchor = anchorView();
+        if (anchor == null || anchor.getWindowToken() == null) {
+            return false;
+        }
         if (hanjaWindow == null) {
             hanjaWindow = new HanjaCandidatesWindow(this, this::commitHanja);
         }
-        hanjaWindow.show(anchorView(), reading, candidates, keyboardTopOnScreen());
-        hanjaCandidatesShown = true;
+        hanjaWindow.show(anchor, pendingReading, pendingCandidates, keyboardTopOnScreen());
+        return true;
+    }
+
+    private static final int CANDIDATE_WINDOW_ATTEMPTS = 20;
+    private static final long CANDIDATE_WINDOW_RETRY_MS = 50;
+
+    /** Waits for the just-requested window to be attached, then shows the candidates on it. */
+    private void retryCandidateWindow() {
+        mainHandler.postDelayed(() -> {
+            if (!hanjaCandidatesShown) {
+                return;
+            }
+            if (showCandidateWindow()) {
+                return;
+            }
+            if (++candidateWindowAttempts < CANDIDATE_WINDOW_ATTEMPTS) {
+                retryCandidateWindow();
+            } else {
+                // The window never arrived; do not leave a claim standing for a panel that is not
+                // going to appear.
+                hideHanjaCandidates();
+            }
+        }, CANDIDATE_WINDOW_RETRY_MS);
     }
 
     /** Any attached view of this IME; the candidate window only needs its window token. */
@@ -688,6 +745,15 @@ public class ReteKeyImeService extends InputMethodService {
         hanjaCandidatesShown = false;
         if (hanjaWindow != null) {
             hanjaWindow.hide();
+        }
+        if (candidatesWindowForced) {
+            // A window brought up only to carry the candidates goes away with them.
+            candidatesWindowForced = false;
+            if (keyboardView != null) {
+                keyboardView.setCollapsed(false);
+            }
+            updateInputViewShown();
+            requestHideSelf(0);
         }
     }
 
