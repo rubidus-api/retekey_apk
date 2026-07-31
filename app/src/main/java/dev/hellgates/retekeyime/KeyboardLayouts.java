@@ -41,14 +41,15 @@ public final class KeyboardLayouts {
         RawKey.F1, RawKey.F2, RawKey.F3
     };
 
-    // Hold alternates for the letter pages, applied positionally and shared by both languages so a
-    // key keeps its alternate across the language switch, exactly as it keeps its letter.
-    private static final String[] ROW1_HOLDS =
-        {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
-    private static final String[] ROW2_HOLDS = {"!", "@", "#", "$", "%", "^", "&", "*", ";"};
-    private static final String[] ROW3_HOLDS = {"_", "-", ":", "=", "'", "\"", "?"};
-
-    private static final String[] ROW3_HOLDS_SHORT = {"_", "-", ":", "=", "'", "\""};
+    /**
+     * The hold alternates for the letter pages: one run of twenty-six, laid over the letter keys in
+     * reading order. A letter page carries exactly twenty-six letters, so the run covers them all
+     * whatever shape its rows take — QWERTY's 10/9/7 puts the digits along the top and the
+     * punctuation along the bottom, and Dvorak's 7/10/9 divides the same run differently. Keys that
+     * are not letters — Shift, backspace, Enter, the period with its comma — are stepped over, so
+     * they keep repeating or keep the alternate they already have.
+     */
+    private static final String HOLD_RUN = "1234567890!@#$%^&*;_-:='\"?";
 
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
@@ -117,38 +118,6 @@ public final class KeyboardLayouts {
         return id == KeyboardLayoutId.EN_QWERTY
             ? KeyboardLayoutId.KO_DUBEOLSIK
             : KeyboardLayoutId.EN_QWERTY;
-    }
-
-    /**
-     * Dvorak on the same ten-column grid.
-     *
-     * <p>The grid has thirty cells and the page needs twenty-six letters plus Shift, backspace,
-     * Enter and the period, which is exactly thirty — but not in Dvorak's own shape, whose rows are
-     * 7/10/9. The home row, the whole point of the layout, is kept exactly; the three letters that
-     * cannot fit the bottom row (w, v, z) sit at the end of the top row instead of being dropped.
-     */
-    private static KeyboardLayout dvorak(boolean shifted) {
-        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(withHolds(KeyboardLayout.row(
-            letter("p", shifted), letter("y", shifted), letter("f", shifted),
-            letter("g", shifted), letter("c", shifted), letter("r", shifted),
-            letter("l", shifted), letter("w", shifted), letter("v", shifted),
-            letter("z", shifted)
-        ), 0, ROW1_HOLDS));
-        rows.add(withHolds(KeyboardLayout.row(
-            letter("a", shifted), letter("o", shifted), letter("e", shifted),
-            letter("u", shifted), letter("i", shifted), letter("d", shifted),
-            letter("h", shifted), letter("t", shifted), letter("n", shifted),
-            letter("s", shifted)
-        ), 0, ROW2_HOLDS));
-        rows.add(withHolds(KeyboardLayout.row(
-            shiftKey(shifted),
-            letter("q", shifted), letter("j", shifted), letter("k", shifted),
-            letter("x", shifted), letter("b", shifted), letter("m", shifted),
-            letterPeriodKey(), enterKey(), backspaceKey()
-        ), 1, ROW3_HOLDS_SHORT));
-        rows.add(bottomRow(padKey()));
-        return KeyboardLayout.of(KeyboardLayoutId.EN_DVORAK, shifted, COLUMNS, rows);
     }
 
     // ---- Phone letter pages: the 12-key modes, on the same grid and the same bottom row ----
@@ -232,33 +201,70 @@ public final class KeyboardLayouts {
     // ---- Letter pages ----
 
     private static KeyboardLayout english(boolean shifted) {
-        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(withHolds(KeyboardLayout.row(
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
             letter("q", shifted), letter("w", shifted), letter("e", shifted),
             letter("r", shifted), letter("t", shifted), letter("y", shifted),
             letter("u", shifted), letter("i", shifted), letter("o", shifted),
             letter("p", shifted)
-        ), 0, ROW1_HOLDS));
-        rows.add(withHolds(KeyboardLayout.row(
+        ));
+        rows.add(KeyboardLayout.row(
             letter("a", shifted), letter("s", shifted), letter("d", shifted),
             letter("f", shifted), letter("g", shifted), letter("h", shifted),
             letter("j", shifted), letter("k", shifted), letter("l", shifted),
             backspaceKey()
-        ), 0, ROW2_HOLDS));
-        rows.add(withHolds(KeyboardLayout.row(
+        ));
+        rows.add(KeyboardLayout.row(
             shiftKey(shifted),
             letter("z", shifted), letter("x", shifted), letter("c", shifted),
             letter("v", shifted), letter("b", shifted), letter("n", shifted),
             letter("m", shifted),
             letterPeriodKey(), enterKey()
-        ), 1, ROW3_HOLDS));
+        ));
+        return letterPage(KeyboardLayoutId.EN_QWERTY, shifted, rows);
+    }
+
+    /**
+     * Dvorak in its own 7/10/9 shape. The three cells the top row does not need for letters carry
+     * Enter, backspace and the period, on the left where they are out of the way of the letters.
+     */
+    private static KeyboardLayout dvorak(boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
+            enterKey(), backspaceKey(), letterPeriodKey(),
+            letter("p", shifted), letter("y", shifted), letter("f", shifted),
+            letter("g", shifted), letter("c", shifted), letter("r", shifted),
+            letter("l", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            letter("a", shifted), letter("o", shifted), letter("e", shifted),
+            letter("u", shifted), letter("i", shifted), letter("d", shifted),
+            letter("h", shifted), letter("t", shifted), letter("n", shifted),
+            letter("s", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            shiftKey(shifted),
+            letter("q", shifted), letter("j", shifted), letter("k", shifted),
+            letter("x", shifted), letter("b", shifted), letter("m", shifted),
+            letter("w", shifted), letter("v", shifted), letter("z", shifted)
+        ));
+        return letterPage(KeyboardLayoutId.EN_DVORAK, shifted, rows);
+    }
+
+    /** Adds the fixed bottom row and the hold run to a page's three letter rows. */
+    private static KeyboardLayout letterPage(
+        KeyboardLayoutId id,
+        boolean shifted,
+        List<List<SoftwareKeySpec>> letterRows
+    ) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHoldRun(letterRows));
         rows.add(bottomRow(padKey()));
-        return KeyboardLayout.of(KeyboardLayoutId.EN_QWERTY, shifted, COLUMNS, rows);
+        return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }
 
     private static KeyboardLayout korean(boolean shifted) {
-        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(withHolds(KeyboardLayout.row(
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
             consonant("bieup", shifted ? "ㅃ" : "ㅂ", shifted ? 8 : 7),
             consonant("jieut", shifted ? "ㅉ" : "ㅈ", shifted ? 13 : 12),
             consonant("digeut", shifted ? "ㄸ" : "ㄷ", shifted ? 4 : 3),
@@ -269,8 +275,8 @@ public final class KeyboardLayouts {
             vowel("ya", "ㅑ", 2),
             vowel("ae", shifted ? "ㅒ" : "ㅐ", shifted ? 3 : 1),
             vowel("e", shifted ? "ㅖ" : "ㅔ", shifted ? 7 : 5)
-        ), 0, ROW1_HOLDS));
-        rows.add(withHolds(KeyboardLayout.row(
+        ));
+        rows.add(KeyboardLayout.row(
             consonant("mieum", "ㅁ", 6),
             consonant("nieun", "ㄴ", 2),
             consonant("ieung", "ㅇ", 11),
@@ -281,8 +287,8 @@ public final class KeyboardLayouts {
             vowel("a", "ㅏ", 0),
             vowel("i", "ㅣ", 20),
             backspaceKey()
-        ), 0, ROW2_HOLDS));
-        rows.add(withHolds(KeyboardLayout.row(
+        ));
+        rows.add(KeyboardLayout.row(
             shiftKey(shifted),
             consonant("kieuk", "ㅋ", 15),
             consonant("tieut", "ㅌ", 16),
@@ -292,9 +298,8 @@ public final class KeyboardLayouts {
             vowel("u", "ㅜ", 13),
             vowel("eu", "ㅡ", 18),
             letterPeriodKey(), enterKey()
-        ), 1, ROW3_HOLDS));
-        rows.add(bottomRow(padKey()));
-        return KeyboardLayout.of(KeyboardLayoutId.KO_DUBEOLSIK, shifted, COLUMNS, rows);
+        ));
+        return letterPage(KeyboardLayoutId.KO_DUBEOLSIK, shifted, rows);
     }
 
     // ---- Page 3: special characters ----
@@ -501,21 +506,34 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec.enabled("touch.edit.backspace", "⌫", SemanticInput.deleteBackward());
     }
 
-    /**
-     * Gives {@code holds} to consecutive keys starting at {@code from}. Keys past the end of the
-     * list keep no alternate, which is deliberate: the row is defined by its letters, and a hold
-     * that has no character to type is better than shifting the others out of position.
-     */
-    private static List<SoftwareKeySpec> withHolds(
-        List<SoftwareKeySpec> row,
-        int from,
-        String[] holds
-    ) {
-        List<SoftwareKeySpec> held = new ArrayList<>(row);
-        for (int i = 0; i < holds.length && from + i < held.size(); i++) {
-            held.set(from + i, held.get(from + i).withLongPress(holds[i]));
+    /** Lays {@link #HOLD_RUN} over the letter keys of the given rows, in reading order. */
+    private static List<List<SoftwareKeySpec>> withHoldRun(List<List<SoftwareKeySpec>> rows) {
+        List<List<SoftwareKeySpec>> held = new ArrayList<>(rows.size());
+        int next = 0;
+        for (List<SoftwareKeySpec> row : rows) {
+            List<SoftwareKeySpec> updated = new ArrayList<>(row);
+            for (int i = 0; i < updated.size(); i++) {
+                SoftwareKeySpec key = updated.get(i);
+                if (!takesHold(key) || next >= HOLD_RUN.length()) {
+                    continue;
+                }
+                updated.set(i, key.withLongPress(String.valueOf(HOLD_RUN.charAt(next++))));
+            }
+            held.add(updated);
         }
         return held;
+    }
+
+    /** A key takes an alternate when it types a letter and does not already carry one. */
+    private static boolean takesHold(SoftwareKeySpec key) {
+        if (key.isControl() || !key.enabled() || key.hasLongPress() || key.hasLongPressControl()) {
+            return false;
+        }
+        SemanticInput input = key.semanticInput();
+        if (input == null) {
+            return false;
+        }
+        return input.kind() == SemanticInput.Kind.TEXT || input.kind() == SemanticInput.Kind.JAMO;
     }
 
     private static SoftwareKeySpec letterPeriodKey() {

@@ -51,6 +51,42 @@ public final class LetterHoldsTest {
     }
 
     @Test
+    public void dvorakKeepsItsOwnSevenTenNineShape() {
+        KeyboardLayout dvorak = KeyboardLayouts.of(KeyboardLayoutId.EN_DVORAK, false);
+
+        // The three cells the top row does not need for letters carry Enter, backspace and the
+        // period, on the left, so Dvorak's own rows survive intact behind them.
+        assertEquals(Arrays.asList("⏎", "⌫", ".", "p", "y", "f", "g", "c", "r", "l"),
+            labels(dvorak, 0));
+        assertEquals(Arrays.asList("a", "o", "e", "u", "i", "d", "h", "t", "n", "s"),
+            labels(dvorak, 1));
+        assertEquals(Arrays.asList("⇧", "q", "j", "k", "x", "b", "m", "w", "v", "z"),
+            labels(dvorak, 2));
+    }
+
+    @Test
+    public void theHoldRunFlowsAcrossWhateverShapeTheRowsTake() {
+        KeyboardLayout dvorak = KeyboardLayouts.of(KeyboardLayoutId.EN_DVORAK, false);
+
+        // Seven letters on the top row take 1-7, so the home row picks up at 8.
+        assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6", "7"), holds(dvorak, 0, 3, 7));
+        assertEquals(Arrays.asList("8", "9", "0", "!", "@", "#", "$", "%", "^", "&"),
+            holds(dvorak, 1, 0, 10));
+        assertEquals(Arrays.asList("*", ";", "_", "-", ":", "=", "'", "\"", "?"),
+            holds(dvorak, 2, 1, 9));
+        // The period keeps its comma rather than being swept into the run.
+        assertEquals(Arrays.asList(","), dvorak.rows().get(0).get(2).longPressTexts());
+    }
+
+    private static List<String> labels(KeyboardLayout layout, int row) {
+        List<String> found = new ArrayList<>();
+        for (SoftwareKeySpec key : layout.rows().get(row)) {
+            found.add(key.label());
+        }
+        return found;
+    }
+
+    @Test
     public void shiftedLayoutsCarryTheSameAlternates() {
         KeyboardLayout shiftedEn = KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, true);
         KeyboardLayout shiftedKo = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, true);

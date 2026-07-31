@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.34** —
-[retekey-0.1.34.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.34/retekey-0.1.34.apk)
+Current release: **v0.1.35** —
+[retekey-0.1.35.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.35/retekey-0.1.35.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -96,17 +96,21 @@ Five letter layouts share that grid:
 |---|---|
 | **두벌식** | the standard Korean full keyboard |
 | **QWERTY** | English |
-| **Dvorak** | English; the home row is exact, and w, v, z sit at the end of the top row because the grid's thirty cells cannot hold Dvorak's own 7/10/9 rows plus Shift, backspace, Enter and the period |
+| **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
 | **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels, and each consonant key cycles its group (ㄱ → ㅋ → ㄲ) |
 | **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ) |
 
 The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each
 one as it arrives. Holding it runs the Hanja conversion.
 
-Holding a letter key types a character instead of repeating it, and the three rows carry a keyboard
-of their own — digits `1`–`0` across the top, `! @ # $ % ^ & * ;` across the middle, and
-`_ - : = ' " ?` across the bottom. Korean and English share them, so a hold stays where your finger learned it.
-Space, enter, backspace and the arrows have no alternate and keep repeating when held.
+Holding a letter key types a character instead of repeating it. The alternates are one run —
+`1234567890!@#$%^&*;_-:='"?`, twenty-six of them for twenty-six letters — laid over the letter keys
+in reading order, so 2-beolsik and QWERTY get the digits along the top and the punctuation along the
+bottom, and Dvorak's different rows divide the same run differently. Space, enter, backspace and the
+arrows have no alternate and keep repeating when held.
+
+A physical keyboard is not affected by any of this: it keeps its own layout, and the on-screen
+choice only changes what the on-screen keys do.
 
 Korean 2-beolsik:
 
