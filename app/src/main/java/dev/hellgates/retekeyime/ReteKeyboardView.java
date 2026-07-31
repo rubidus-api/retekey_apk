@@ -25,6 +25,7 @@ public final class ReteKeyboardView extends View {
 
     private static final String PREFS = "retekey_view";
     private static final String KEY_HEIGHT_SCALE = "height_scale";
+    private static final String KEY_LAST_LETTERS = "last_letter_layout";
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
@@ -77,6 +78,7 @@ public final class ReteKeyboardView extends View {
     /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
     private Runnable onHanja;
     private Runnable onFloatingToggle;
+    private java.util.function.Consumer<KeyboardLayoutId> onLayoutChanged;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private static final long FLASH_MS = 180;
     private static final float FLASH_MAX_ALPHA = 150.0f;
@@ -110,6 +112,7 @@ public final class ReteKeyboardView extends View {
             prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
         feedback = new KeyFeedback(context);
         feedback.reload(prefs());
+        letterLayoutId = restoreLetterLayout();
     }
 
     /** Sets the handler the 설정 tile runs to open settings; the service owns the launch. */
@@ -144,6 +147,40 @@ public final class ReteKeyboardView extends View {
 
     public void setOnFloatingToggle(Runnable handler) {
         this.onFloatingToggle = handler;
+    }
+
+    /** Told which letter layout the globe key moved to, so the host can name it on screen. */
+    public void setOnLayoutChanged(java.util.function.Consumer<KeyboardLayoutId> handler) {
+        this.onLayoutChanged = handler;
+    }
+
+    /** The layouts the globe key walks, as the user ordered them in settings. */
+    private java.util.List<KeyboardLayoutId> letterOrder() {
+        return LetterLayouts.parse(prefs().getString(LetterLayouts.KEY_ORDER, null));
+    }
+
+    /** Re-reads the layout order and lands on a layout that is still enabled. */
+    public void reloadLetterLayouts() {
+        java.util.List<KeyboardLayoutId> order = letterOrder();
+        if (!order.contains(letterLayoutId)) {
+            letterLayoutId = LetterLayouts.firstOf(order);
+        }
+        requestLayout();
+        invalidate();
+    }
+
+    /** The layout the globe key was last left on, when it is still one the user enabled. */
+    private KeyboardLayoutId restoreLetterLayout() {
+        java.util.List<KeyboardLayoutId> order = letterOrder();
+        String stored = prefs().getString(KEY_LAST_LETTERS, null);
+        if (stored != null) {
+            for (KeyboardLayoutId id : order) {
+                if (id.name().equals(stored)) {
+                    return id;
+                }
+            }
+        }
+        return LetterLayouts.firstOf(order);
     }
 
     private SharedPreferences prefs() {
@@ -798,10 +835,14 @@ public final class ReteKeyboardView extends View {
                 shiftLayer.tap();
                 break;
             case LAYOUT_TOGGLE:
-                // Only flip EN<->KO when already on the letters page; from another page just return
-                // to letters keeping the language that was last in use.
+                // The globe walks the layouts the user enabled, in their order. From another page
+                // it just returns to letters, keeping the layout that was last in use.
                 if (page == Page.LETTERS) {
-                    letterLayoutId = KeyboardLayouts.otherLetters(letterLayoutId);
+                    letterLayoutId = LetterLayouts.next(letterOrder(), letterLayoutId);
+                    prefs().edit().putString(KEY_LAST_LETTERS, letterLayoutId.name()).apply();
+                    if (onLayoutChanged != null) {
+                        onLayoutChanged.accept(letterLayoutId);
+                    }
                 }
                 page = Page.LETTERS;
                 shiftLayer.clear();

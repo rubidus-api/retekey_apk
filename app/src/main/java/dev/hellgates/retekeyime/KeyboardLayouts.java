@@ -48,10 +48,14 @@ public final class KeyboardLayouts {
     private static final String[] ROW2_HOLDS = {"!", "@", "#", "$", "%", "^", "&", "*", ";"};
     private static final String[] ROW3_HOLDS = {"_", "-", ":", "=", "'", "\"", "?"};
 
+    private static final String[] ROW3_HOLDS_SHORT = {"_", "-", ":", "=", "'", "\""};
+
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
     private static final KeyboardLayout KO_BASE = korean(false);
     private static final KeyboardLayout KO_SHIFTED = korean(true);
+    private static final KeyboardLayout DVORAK_BASE = dvorak(false);
+    private static final KeyboardLayout DVORAK_SHIFTED = dvorak(true);
     private static final KeyboardLayout CHARS = buildSpecialChars();
     private static final KeyboardLayout KEYS_NUMBERS = buildSpecialKeys(NumpadMode.NUMBERS);
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
@@ -68,6 +72,8 @@ public final class KeyboardLayouts {
         switch (id) {
             case EN_QWERTY:
                 return shifted ? EN_SHIFTED : EN_BASE;
+            case EN_DVORAK:
+                return shifted ? DVORAK_SHIFTED : DVORAK_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case SPECIAL_CHARS:
@@ -105,6 +111,38 @@ public final class KeyboardLayouts {
         return id == KeyboardLayoutId.EN_QWERTY
             ? KeyboardLayoutId.KO_DUBEOLSIK
             : KeyboardLayoutId.EN_QWERTY;
+    }
+
+    /**
+     * Dvorak on the same ten-column grid.
+     *
+     * <p>The grid has thirty cells and the page needs twenty-six letters plus Shift, backspace,
+     * Enter and the period, which is exactly thirty — but not in Dvorak's own shape, whose rows are
+     * 7/10/9. The home row, the whole point of the layout, is kept exactly; the three letters that
+     * cannot fit the bottom row (w, v, z) sit at the end of the top row instead of being dropped.
+     */
+    private static KeyboardLayout dvorak(boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        rows.add(withHolds(KeyboardLayout.row(
+            letter("p", shifted), letter("y", shifted), letter("f", shifted),
+            letter("g", shifted), letter("c", shifted), letter("r", shifted),
+            letter("l", shifted), letter("w", shifted), letter("v", shifted),
+            letter("z", shifted)
+        ), 0, ROW1_HOLDS));
+        rows.add(withHolds(KeyboardLayout.row(
+            letter("a", shifted), letter("o", shifted), letter("e", shifted),
+            letter("u", shifted), letter("i", shifted), letter("d", shifted),
+            letter("h", shifted), letter("t", shifted), letter("n", shifted),
+            letter("s", shifted)
+        ), 0, ROW2_HOLDS));
+        rows.add(withHolds(KeyboardLayout.row(
+            shiftKey(shifted),
+            letter("q", shifted), letter("j", shifted), letter("k", shifted),
+            letter("x", shifted), letter("b", shifted), letter("m", shifted),
+            letterPeriodKey(), enterKey(), backspaceKey()
+        ), 1, ROW3_HOLDS_SHORT));
+        rows.add(bottomRow(padKey()));
+        return KeyboardLayout.of(KeyboardLayoutId.EN_DVORAK, shifted, COLUMNS, rows);
     }
 
     // ---- Letter pages ----
@@ -279,16 +317,16 @@ public final class KeyboardLayouts {
         // auto-fit to the key width. Row 1: editing and clipboard. Row 2: cursor navigation.
         // Row 3: keyboard adjustment and function placeholders.
         rows.add(KeyboardLayout.row(
-            menuControl("settings", "Settings", ControlKey.OPEN_SETTINGS),
-            menuControl("copy", "Copy", ControlKey.COPY),
-            menuControl("cut", "Cut", ControlKey.CUT),
-            menuControl("paste", "Paste", ControlKey.PASTE),
-            menuControl("selectall", "Select All", ControlKey.SELECT_ALL),
-            menuControl("undo", "Undo", ControlKey.UNDO),
-            menuControl("redo", "Redo", ControlKey.REDO),
-            menuDisabled("emoji", "Emoji"),
-            menuDisabled("clipboard", "Clipboard"),
-            menuControl("date", "Date", ControlKey.INSERT_DATE)
+            menuControl("settings", "⚙", ControlKey.OPEN_SETTINGS),
+            menuControl("copy", "⧉", ControlKey.COPY),
+            menuControl("cut", "✂", ControlKey.CUT),
+            menuControl("paste", "📋", ControlKey.PASTE),
+            menuControl("selectall", "⬚A", ControlKey.SELECT_ALL),
+            menuControl("undo", "↶", ControlKey.UNDO),
+            menuControl("redo", "↷", ControlKey.REDO),
+            menuDisabled("emoji", "☺"),
+            menuDisabled("clipboard", "🗒"),
+            menuControl("date", "📅", ControlKey.INSERT_DATE)
         ));
         rows.add(KeyboardLayout.row(
             menuRaw("cursor.left", "←", RawKey.LEFT),
@@ -303,16 +341,16 @@ public final class KeyboardLayouts {
             menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
-            menuControl("height.down", "Height −", ControlKey.HEIGHT_DOWN),
-            menuControl("height.up", "Height ＋", ControlKey.HEIGHT_UP),
-            menuControl("switchime", "Switch KB", ControlKey.SWITCH_IME),
-            menuControl("manageime", "Manage KB", ControlKey.MANAGE_IME),
-            menuControl("floating", "Floating", ControlKey.FLOATING_TOGGLE),
-            menuDisabled("onehand.left", "1-Hand ◀"),
-            menuDisabled("onehand.full", "Full Width"),
-            menuDisabled("theme", "Theme"),
-            menuDisabled("custom1", "Custom 1"),
-            menuDisabled("custom2", "Custom 2")
+            menuControl("height.down", "size−", ControlKey.HEIGHT_DOWN),
+            menuControl("height.up", "size+", ControlKey.HEIGHT_UP),
+            menuControl("switchime", "⌨↔", ControlKey.SWITCH_IME),
+            menuControl("manageime", "⌨⚙", ControlKey.MANAGE_IME),
+            menuControl("floating", "❐", ControlKey.FLOATING_TOGGLE),
+            menuDisabled("onehand.left", "◀|"),
+            menuDisabled("onehand.full", "|↔|"),
+            menuDisabled("theme", "◐"),
+            menuDisabled("custom1", "★1"),
+            menuDisabled("custom2", "★2")
         ));
         rows.add(bottomRow(returnToLettersKey()));
         return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);
@@ -339,7 +377,9 @@ public final class KeyboardLayouts {
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            SoftwareKeySpec.control("touch.layout.toggle", "KO/EN", ControlKey.LAYOUT_TOGGLE),
+            SoftwareKeySpec
+                .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
+                .withLongPressControl(ControlKey.HANJA),
             layerKey,
             SoftwareKeySpec.control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER),
             SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER)

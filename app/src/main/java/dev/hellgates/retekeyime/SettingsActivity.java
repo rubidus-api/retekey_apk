@@ -13,6 +13,7 @@ import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import dev.hellgates.retekeyime.HardwareKeyBindings.Binding;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,6 +34,7 @@ public final class SettingsActivity extends Activity {
     private TextView captureStatus;
     private LinearLayout hanyeongList;
     private LinearLayout hanjaList;
+    private LinearLayout layoutList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +85,7 @@ public final class SettingsActivity extends Activity {
         addPercentSlider(root, R.string.settings_sound,
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
 
+        addLayoutControls(root);
         addRepeatControls(root);
         addHardwareControls(root);
 
@@ -133,6 +136,93 @@ public final class SettingsActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Which letter layouts the globe key visits, and in what order. Each row can be turned on or
+     * off and moved up or down; the order shown is the order the globe key walks.
+     */
+    private void addLayoutControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_layouts_label));
+        root.addView(sectionHint(R.string.settings_layouts_hint));
+        layoutList = new LinearLayout(this);
+        layoutList.setOrientation(LinearLayout.VERTICAL);
+        root.addView(layoutList, matchWidth());
+        refreshLayoutList();
+    }
+
+    private void refreshLayoutList() {
+        layoutList.removeAllViews();
+        List<KeyboardLayoutId> order = orderedLayouts();
+        for (KeyboardLayoutId id : order) {
+            layoutList.addView(layoutRow(id, order, true), matchWidth());
+        }
+        for (KeyboardLayoutId id : LetterLayouts.ALL) {
+            if (!order.contains(id)) {
+                layoutList.addView(layoutRow(id, order, false), matchWidth());
+            }
+        }
+    }
+
+    private LinearLayout layoutRow(KeyboardLayoutId id, List<KeyboardLayoutId> order, boolean on) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText(LetterLayouts.displayName(id));
+        enabled.setChecked(on);
+        enabled.setOnClickListener(view -> toggleLayout(id));
+        row.addView(enabled, new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        if (on) {
+            row.addView(moveButton("▲", id, -1, order.indexOf(id) > 0));
+            row.addView(moveButton("▼", id, 1, order.indexOf(id) < order.size() - 1));
+        }
+        return row;
+    }
+
+    private Button moveButton(String glyph, KeyboardLayoutId id, int delta, boolean usable) {
+        Button button = new Button(this);
+        button.setText(glyph);
+        button.setEnabled(usable);
+        button.setOnClickListener(view -> moveLayout(id, delta));
+        return button;
+    }
+
+    private void toggleLayout(KeyboardLayoutId id) {
+        List<KeyboardLayoutId> order = new ArrayList<>(orderedLayouts());
+        if (order.contains(id)) {
+            // The globe key must always have somewhere to go, so the last one stays on.
+            if (order.size() > 1) {
+                order.remove(id);
+            }
+        } else {
+            order.add(id);
+        }
+        storeLayouts(order);
+    }
+
+    private void moveLayout(KeyboardLayoutId id, int delta) {
+        List<KeyboardLayoutId> order = new ArrayList<>(orderedLayouts());
+        int from = order.indexOf(id);
+        int to = from + delta;
+        if (from < 0 || to < 0 || to >= order.size()) {
+            return;
+        }
+        order.remove(from);
+        order.add(to, id);
+        storeLayouts(order);
+    }
+
+    private void storeLayouts(List<KeyboardLayoutId> order) {
+        prefs().edit().putString(LetterLayouts.KEY_ORDER, LetterLayouts.format(order)).apply();
+        refreshLayoutList();
+    }
+
+    private List<KeyboardLayoutId> orderedLayouts() {
+        return LetterLayouts.parse(prefs().getString(LetterLayouts.KEY_ORDER, null));
     }
 
     private float currentScale() {

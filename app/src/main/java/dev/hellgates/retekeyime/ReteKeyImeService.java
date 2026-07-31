@@ -66,6 +66,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnManageIme(this::openKeyboardManagement);
         keyboardView.setOnHanja(this::handleHanja);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
+        keyboardView.setOnLayoutChanged(this::announceLayout);
         // The view can be created for the first time solely to host the candidate window; it must
         // come up collapsed rather than as a keyboard nobody asked for.
         keyboardView.setCollapsed(!floatingMode && candidatesWindowForced);
@@ -85,6 +86,11 @@ public class ReteKeyImeService extends InputMethodService {
             floatingFrame.setBounds(floatingBounds);
         }
         return floatingFrame;
+    }
+
+    /** Names the layout the globe key just moved to, so a five-way cycle is not a guessing game. */
+    private void announceLayout(KeyboardLayoutId id) {
+        showFunctionToast(LetterLayouts.displayName(id));
     }
 
     private SharedPreferences viewPrefs() {
@@ -288,6 +294,10 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.resetLayerState();
         }
         reloadHardwareBindings();
+        if (keyboardView != null) {
+            // Settings may have turned the current layout off while the keyboard was away.
+            keyboardView.reloadLetterLayouts();
+        }
         hideHanjaCandidatesIfShown();
         updateHardwareMapper(currentSubtype());
     }
