@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.29** —
-[retekey-0.1.29.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.29/retekey-0.1.29.apk)
+Current release: **v0.1.30** —
+[retekey-0.1.30.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.30/retekey-0.1.30.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
