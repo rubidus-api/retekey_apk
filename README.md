@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.33** —
-[retekey-0.1.33.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.33/retekey-0.1.33.apk)
+Current release: **v0.1.34** —
+[retekey-0.1.34.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.34/retekey-0.1.34.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -65,8 +65,8 @@ keyboard mapping, auto-repeat, and the settings screen behave the same across th
 
 ## Features
 
-- **Korean and English** on one orthogonal ten-column grid; a key keeps its position across the
-  language switch.
+- **Five layouts** — 2-beolsik, QWERTY, Dvorak, and the 12-key 천지인 and 나랏글 phone modes. A 🌐
+  key walks the ones you enabled, in the order you set; holding it converts Hanja.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
@@ -87,7 +87,21 @@ keyboard mapping, auto-repeat, and the settings screen behave the same across th
 ## Layout
 
 The touch layout is one orthogonal ten-column grid with equal keys and no staggered rows. The
-bottom row is shared by every page: `Ctrl · Meta · Alt · Tab · space · KO/EN · pad · !# · ☰`.
+bottom row is the same on every page and in every layout:
+`Ctrl · Meta · Alt · Tab · space · 🌐 · pad · !# · ☰`.
+
+Five letter layouts share that grid:
+
+| Layout | Shape |
+|---|---|
+| **두벌식** | the standard Korean full keyboard |
+| **QWERTY** | English |
+| **Dvorak** | English; the home row is exact, and w, v, z sit at the end of the top row because the grid's thirty cells cannot hold Dvorak's own 7/10/9 rows plus Shift, backspace, Enter and the period |
+| **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels, and each consonant key cycles its group (ㄱ → ㅋ → ㄲ) |
+| **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ) |
+
+The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each
+one as it arrives. Holding it runs the Hanja conversion.
 
 Holding a letter key types a character instead of repeating it, and the three rows carry a keyboard
 of their own — digits `1`–`0` across the top, `! @ # $ % ^ & * ;` across the middle, and

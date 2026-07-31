@@ -292,6 +292,7 @@ public class ReteKeyImeService extends InputMethodService {
         sessionActive = true;
         if (keyboardView != null) {
             keyboardView.resetLayerState();
+            keyboardView.resetPhoneInterpreters();
         }
         reloadHardwareBindings();
         if (keyboardView != null) {

@@ -79,6 +79,8 @@ public final class ReteKeyboardView extends View {
     private Runnable onHanja;
     private Runnable onFloatingToggle;
     private java.util.function.Consumer<KeyboardLayoutId> onLayoutChanged;
+    private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
+    private final NaratgeulInterpreter naratgeul = new NaratgeulInterpreter();
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private static final long FLASH_MS = 180;
     private static final float FLASH_MAX_ALPHA = 150.0f;
@@ -605,7 +607,9 @@ public final class ReteKeyboardView extends View {
         if (!repeatsOnHold(key)) {
             return;
         }
-        sink.accept(pressEventWithModifiers(key));
+        if (!emitPhoneKey(key)) {
+            sink.accept(pressEventWithModifiers(key));
+        }
         repeatFired = true;
         feedback.playKeyDown();
         flashKeyboard(key, null);
@@ -648,7 +652,9 @@ public final class ReteKeyboardView extends View {
                 performClick();
                 return;
             }
-            sink.accept(pressEventWithModifiers(held));
+            if (!emitPhoneKey(held)) {
+                sink.accept(pressEventWithModifiers(held));
+            }
             consumeOneShotShift();
             flashKeyboard(held, null);
             performClick();
@@ -772,6 +778,38 @@ public final class ReteKeyboardView extends View {
         holdConsumed = false;
     }
 
+    /**
+     * Sends a 12-key press through its interpreter, which answers with the edits it means — a jamo,
+     * or a backspace and the jamo that replaces it. Returns false for every other key, which the
+     * caller then emits itself.
+     */
+    private boolean emitPhoneKey(SoftwareKeySpec key) {
+        String id = key.stableKeyId();
+        if (id.startsWith("touch.cheonjiin.")) {
+            emit(key, cheonjiin.press(CheonjiinInterpreter.Key.valueOf(
+                id.substring("touch.cheonjiin.".length()).toUpperCase(java.util.Locale.ROOT))));
+            return true;
+        }
+        if (id.startsWith("touch.naratgeul.")) {
+            emit(key, naratgeul.press(NaratgeulInterpreter.Key.valueOf(
+                id.substring("touch.naratgeul.".length()).toUpperCase(java.util.Locale.ROOT))));
+            return true;
+        }
+        return false;
+    }
+
+    private void emit(SoftwareKeySpec key, java.util.List<SemanticInput> inputs) {
+        for (SemanticInput input : inputs) {
+            sink.accept(ProjectKeyEvent.softwareDown(key.stableKeyId(), input));
+        }
+    }
+
+    /** A 12-key run ends when the layout or page changes, or the editor does. */
+    public void resetPhoneInterpreters() {
+        cheonjiin.reset();
+        naratgeul.reset();
+    }
+
     private void consumeOneShotShift() {
         if (shiftLayer.consumeOneShot()) {
             invalidate();
@@ -839,6 +877,7 @@ public final class ReteKeyboardView extends View {
                 // it just returns to letters, keeping the layout that was last in use.
                 if (page == Page.LETTERS) {
                     letterLayoutId = LetterLayouts.next(letterOrder(), letterLayoutId);
+                    resetPhoneInterpreters();
                     prefs().edit().putString(KEY_LAST_LETTERS, letterLayoutId.name()).apply();
                     if (onLayoutChanged != null) {
                         onLayoutChanged.accept(letterLayoutId);

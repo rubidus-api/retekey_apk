@@ -56,6 +56,8 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout KO_SHIFTED = korean(true);
     private static final KeyboardLayout DVORAK_BASE = dvorak(false);
     private static final KeyboardLayout DVORAK_SHIFTED = dvorak(true);
+    private static final KeyboardLayout CHEONJIIN = cheonjiin();
+    private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout CHARS = buildSpecialChars();
     private static final KeyboardLayout KEYS_NUMBERS = buildSpecialKeys(NumpadMode.NUMBERS);
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
@@ -76,6 +78,10 @@ public final class KeyboardLayouts {
                 return shifted ? DVORAK_SHIFTED : DVORAK_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
+            case KO_CHEONJIIN:
+                return CHEONJIIN;
+            case KO_NARATGEUL:
+                return NARATGEUL;
             case SPECIAL_CHARS:
                 return CHARS;
             default:
@@ -143,6 +149,84 @@ public final class KeyboardLayouts {
         ), 1, ROW3_HOLDS_SHORT));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(KeyboardLayoutId.EN_DVORAK, shifted, COLUMNS, rows);
+    }
+
+    // ---- Phone letter pages: the 12-key modes, on the same grid and the same bottom row ----
+
+    private static SoftwareKeySpec phoneKey(String id, String label, int span) {
+        return SoftwareKeySpec.enabled(id, label, SemanticInput.text(label)).withColumnSpan(span);
+    }
+
+    private static SoftwareKeySpec cheonjiinKey(CheonjiinInterpreter.Key key, String label,
+            int span) {
+        return phoneKey(
+            "touch.cheonjiin." + key.name().toLowerCase(java.util.Locale.ROOT), label, span);
+    }
+
+    private static SoftwareKeySpec naratgeulKey(NaratgeulInterpreter.Key key, String label) {
+        return phoneKey(
+            "touch.naratgeul." + key.name().toLowerCase(java.util.Locale.ROOT), label, 2);
+    }
+
+    /**
+     * 천지인: the three vowel elements across the top with ㅇㅁ beside them, then the grouped
+     * consonants. The utility column carries backspace, the period and the editor action, and the
+     * bottom row is the shared one every page has.
+     */
+    private static KeyboardLayout cheonjiin() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        rows.add(KeyboardLayout.row(
+            cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", 2),
+            cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", 2),
+            cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", 2),
+            cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", 2),
+            backspaceKey().withColumnSpan(2)
+        ));
+        rows.add(KeyboardLayout.row(
+            cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", 3),
+            cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", 3),
+            cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", 3),
+            letterPeriodKey()
+        ));
+        rows.add(KeyboardLayout.row(
+            cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", 3),
+            cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", 3),
+            cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", 3),
+            enterKey()
+        ));
+        rows.add(bottomRow(padKey()));
+        return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);
+    }
+
+    /**
+     * 나랏글: the consonant block on the left, the vowels beside it, and the stroke and doubling
+     * keys in the column before the utility one. Five equal keys to a row.
+     */
+    private static KeyboardLayout naratgeul() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        rows.add(KeyboardLayout.row(
+            naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ"),
+            naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ"),
+            naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ"),
+            naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ"),
+            backspaceKey().withColumnSpan(2)
+        ));
+        rows.add(KeyboardLayout.row(
+            naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ"),
+            naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ"),
+            naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ"),
+            naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획"),
+            letterPeriodKey().withColumnSpan(2)
+        ));
+        rows.add(KeyboardLayout.row(
+            naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ"),
+            naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ"),
+            naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ"),
+            naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍"),
+            enterKey().withColumnSpan(2)
+        ));
+        rows.add(bottomRow(padKey()));
+        return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);
     }
 
     // ---- Letter pages ----
