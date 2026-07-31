@@ -41,6 +41,13 @@ public final class KeyboardLayouts {
         RawKey.F1, RawKey.F2, RawKey.F3
     };
 
+    // Hold alternates for the letter pages, applied positionally and shared by both languages so a
+    // key keeps its alternate across the language switch, exactly as it keeps its letter.
+    private static final String[] ROW1_HOLDS =
+        {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
+    private static final String[] ROW2_HOLDS = {"!", "@", "#", "$", "%", "^", "&", "*"};
+    private static final String[] ROW3_HOLDS = {"_", "-", ":", "=", "'", "\"", "?"};
+
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
     private static final KeyboardLayout KO_BASE = korean(false);
@@ -104,32 +111,32 @@ public final class KeyboardLayouts {
 
     private static KeyboardLayout english(boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(KeyboardLayout.row(
+        rows.add(withHolds(KeyboardLayout.row(
             letter("q", shifted), letter("w", shifted), letter("e", shifted),
             letter("r", shifted), letter("t", shifted), letter("y", shifted),
             letter("u", shifted), letter("i", shifted), letter("o", shifted),
             letter("p", shifted)
-        ));
-        rows.add(KeyboardLayout.row(
+        ), 0, ROW1_HOLDS));
+        rows.add(withHolds(KeyboardLayout.row(
             letter("a", shifted), letter("s", shifted), letter("d", shifted),
             letter("f", shifted), letter("g", shifted), letter("h", shifted),
             letter("j", shifted), letter("k", shifted), letter("l", shifted),
             backspaceKey()
-        ));
-        rows.add(KeyboardLayout.row(
+        ), 0, ROW2_HOLDS));
+        rows.add(withHolds(KeyboardLayout.row(
             shiftKey(shifted),
             letter("z", shifted), letter("x", shifted), letter("c", shifted),
             letter("v", shifted), letter("b", shifted), letter("n", shifted),
             letter("m", shifted),
             letterPeriodKey(), enterKey()
-        ));
+        ), 1, ROW3_HOLDS));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(KeyboardLayoutId.EN_QWERTY, shifted, COLUMNS, rows);
     }
 
     private static KeyboardLayout korean(boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(KeyboardLayout.row(
+        rows.add(withHolds(KeyboardLayout.row(
             consonant("bieup", shifted ? "ㅃ" : "ㅂ", shifted ? 8 : 7),
             consonant("jieut", shifted ? "ㅉ" : "ㅈ", shifted ? 13 : 12),
             consonant("digeut", shifted ? "ㄸ" : "ㄷ", shifted ? 4 : 3),
@@ -140,8 +147,8 @@ public final class KeyboardLayouts {
             vowel("ya", "ㅑ", 2),
             vowel("ae", shifted ? "ㅒ" : "ㅐ", shifted ? 3 : 1),
             vowel("e", shifted ? "ㅖ" : "ㅔ", shifted ? 7 : 5)
-        ));
-        rows.add(KeyboardLayout.row(
+        ), 0, ROW1_HOLDS));
+        rows.add(withHolds(KeyboardLayout.row(
             consonant("mieum", "ㅁ", 6),
             consonant("nieun", "ㄴ", 2),
             consonant("ieung", "ㅇ", 11),
@@ -152,8 +159,8 @@ public final class KeyboardLayouts {
             vowel("a", "ㅏ", 0),
             vowel("i", "ㅣ", 20),
             backspaceKey()
-        ));
-        rows.add(KeyboardLayout.row(
+        ), 0, ROW2_HOLDS));
+        rows.add(withHolds(KeyboardLayout.row(
             shiftKey(shifted),
             consonant("kieuk", "ㅋ", 15),
             consonant("tieut", "ㅌ", 16),
@@ -163,7 +170,7 @@ public final class KeyboardLayouts {
             vowel("u", "ㅜ", 13),
             vowel("eu", "ㅡ", 18),
             letterPeriodKey(), enterKey()
-        ));
+        ), 1, ROW3_HOLDS));
         rows.add(bottomRow(padKey()));
         return KeyboardLayout.of(KeyboardLayoutId.KO_DUBEOLSIK, shifted, COLUMNS, rows);
     }
@@ -368,6 +375,23 @@ public final class KeyboardLayouts {
 
     private static SoftwareKeySpec backspaceKey() {
         return SoftwareKeySpec.enabled("touch.edit.backspace", "⌫", SemanticInput.deleteBackward());
+    }
+
+    /**
+     * Gives {@code holds} to consecutive keys starting at {@code from}. Keys past the end of the
+     * list keep no alternate, which is deliberate: the row is defined by its letters, and a hold
+     * that has no character to type is better than shifting the others out of position.
+     */
+    private static List<SoftwareKeySpec> withHolds(
+        List<SoftwareKeySpec> row,
+        int from,
+        String[] holds
+    ) {
+        List<SoftwareKeySpec> held = new ArrayList<>(row);
+        for (int i = 0; i < holds.length && from + i < held.size(); i++) {
+            held.set(from + i, held.get(from + i).withLongPress(holds[i]));
+        }
+        return held;
     }
 
     private static SoftwareKeySpec letterPeriodKey() {

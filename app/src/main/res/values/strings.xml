@@ -22,7 +22,7 @@
     <string name="settings_percent_value">%1$d%%</string>
 
     <string name="settings_repeat_label">Key auto-repeat</string>
-    <string name="settings_repeat_hint">Holding a key repeats it (space, enter, backspace, arrow keys, letters, and so on).</string>
+    <string name="settings_repeat_hint">Holding a key repeats it — space, enter, backspace, and the arrow keys. Keys that hold an alternate character type that instead.</string>
     <string name="settings_repeat_enabled">Enable auto-repeat</string>
     <string name="settings_repeat_delay">Repeat start delay</string>
     <string name="settings_repeat_interval">Repeat interval</string>
