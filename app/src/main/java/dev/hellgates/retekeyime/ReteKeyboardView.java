@@ -37,6 +37,8 @@ public final class ReteKeyboardView extends View {
      */
     private final class Touch {
         final int pointerId;
+        final float downX;
+        final float downY;
         // The grid this finger's indexes were taken from. Another finger can switch the page
         // mid-press, and row/key would then point into a different keyboard.
         final String grid;
@@ -48,8 +50,10 @@ public final class ReteKeyboardView extends View {
         final Runnable onHold = () -> handleLongPress(this);
         final Runnable onRepeat = () -> handleRepeat(this);
 
-        Touch(int pointerId, int row, int key, String grid) {
+        Touch(int pointerId, int row, int key, String grid, float downX, float downY) {
             this.pointerId = pointerId;
+            this.downX = downX;
+            this.downY = downY;
             this.row = row;
             this.key = key;
             this.grid = grid;
@@ -69,6 +73,19 @@ public final class ReteKeyboardView extends View {
 
     /** One height step applied by the menu's 높이 −/＋ tiles. */
     private static final float HEIGHT_STEP = 0.1f;
+    /**
+     * How far a finger must go for a drag to be a drag. Kept small so the letter arrives at once —
+     * that is the whole reason to drag rather than tap twice — but above the touch slop so an
+     * ordinary press cannot become one by accident.
+     */
+    private static final float FLICK_DP = 14.0f;
+    /**
+     * How long a 12-key run waits before the next press of the same key starts a new letter rather
+     * than cycling. A phone does the same, and it is what lets 삶 be followed by ㅇ — the key that
+     * typed the ㅁ before it.
+     */
+    private static final int MULTI_TAP_TIMEOUT_MS = 800;
+
     /** Gap (in dp) drawn around each key. Drawing only: the touch target is the whole cell, so
      * the space between keys still belongs to a key. See TouchTargeting. */
     private static final float KEY_GAP_DP = 4.0f;
@@ -79,6 +96,7 @@ public final class ReteKeyboardView extends View {
     private final int keyGapPx;
     /** How far a finger may wander before it is judged to have left its key. */
     private final int touchSlopPx;
+    private final int flickDistancePx;
     private final int keyRadiusPx;
     private final int keyShadowPx;
 
@@ -102,6 +120,8 @@ public final class ReteKeyboardView extends View {
     private Fn.Consumer<KeyboardLayoutId> onLayoutChanged;
     private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
     private final NaratgeulInterpreter naratgeul = new NaratgeulInterpreter();
+    /** Ends the 12-key multi-tap grouping after a pause, without ending the syllable. */
+    private final Runnable endMultiTap = () -> cheonjiin.endMultiTap();
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private static final long FLASH_MS = 180;
     private static final float FLASH_MAX_ALPHA = 150.0f;
@@ -126,6 +146,7 @@ public final class ReteKeyboardView extends View {
         float density = context.getResources().getDisplayMetrics().density;
         this.keyGapPx = Math.round(KEY_GAP_DP * density);
         this.touchSlopPx = ViewConfiguration.get(context).getScaledTouchSlop();
+        this.flickDistancePx = Math.max(touchSlopPx, Math.round(FLICK_DP * density));
         this.keyRadiusPx = Math.round(KEY_RADIUS_DP * density);
         this.keyShadowPx = Math.round(KEY_SHADOW_DP * density);
         this.palette = KeyboardPalette.resolve(context);
@@ -583,7 +604,7 @@ public final class ReteKeyboardView extends View {
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
-                endTouch(event.getPointerId(index));
+                endTouch(event.getPointerId(index), event.getX(index), event.getY(index));
                 return true;
             case MotionEvent.ACTION_MOVE:
                 moveTouches(event);
@@ -613,7 +634,7 @@ public final class ReteKeyboardView extends View {
         // Every pixel of the keyboard belongs to a key. The gap drawn around each face is a gap in
         // the picture only: a touch target with dead space between the keys throws away roughly a
         // third of the area, and every tap that lands there is a keystroke the user has to repeat.
-        Touch touch = new Touch(pointerId, rowIndex, keyIndex, gridSignature());
+        Touch touch = new Touch(pointerId, rowIndex, keyIndex, gridSignature(), x, y);
         touches.put(pointerId, touch);
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
@@ -652,6 +673,9 @@ public final class ReteKeyboardView extends View {
             }
             float x = event.getX(pointer);
             float y = event.getY(pointer);
+            if (tryFlick(layout, touch, x, y)) {
+                continue;
+            }
             if (!escapedKey(layout, touch, x, y)) {
                 continue;
             }
@@ -668,6 +692,35 @@ public final class ReteKeyboardView extends View {
             invalidate();
             armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
         }
+    }
+
+    /**
+     * A drag off a 12-key key types that key's dragged letter at once. Such a key never hands its
+     * finger to the neighbour, because on those pages leaving the key is itself the input.
+     */
+    private boolean tryFlick(KeyboardLayout layout, Touch touch, float x, float y) {
+        SoftwareKeySpec key = layout.rows().get(touch.row).get(touch.key);
+        if (!key.stableKeyId().startsWith("touch.cheonjiin.")) {
+            return false;
+        }
+        CheonjiinInterpreter.Flick direction =
+            FlickDirection.of(x - touch.downX, y - touch.downY, flickDistancePx);
+        if (direction == null) {
+            return false;
+        }
+        removeCallbacks(touch.onHold);
+        removeCallbacks(touch.onRepeat);
+        // The press is spent: the release must not type the key's tap letter as well.
+        touch.holdConsumed = true;
+        CheonjiinInterpreter.Key phoneKey = CheonjiinInterpreter.Key.valueOf(
+            key.stableKeyId().substring("touch.cheonjiin.".length())
+                .toUpperCase(java.util.Locale.ROOT));
+        emit(key, cheonjiin.flick(phoneKey, direction));
+        restartMultiTapTimeout();
+        feedback.playKeyDown();
+        flashKeyboard(key, null);
+        invalidate();
+        return true;
     }
 
     /** Whether a finger has left its key's cell by more than a touch slop. */
@@ -712,7 +765,7 @@ public final class ReteKeyboardView extends View {
     }
 
     /** Ends this finger's key: it types unless a hold already acted for it. */
-    private void endTouch(int pointerId) {
+    private void endTouch(int pointerId, float x, float y) {
         Touch touch = touches.get(pointerId);
         if (touch == null) {
             return;
@@ -726,6 +779,10 @@ public final class ReteKeyboardView extends View {
         }
         if (!touch.grid.equals(gridSignature())) {
             // Another finger switched the page while this one was down; its key is gone.
+            return;
+        }
+        if (tryFlick(layout(), touch, x, y)) {
+            // A drag too quick to have reported a move on the way is still a drag.
             return;
         }
         // The finger types the key it is on, which moves are what decide. Where it happens to lift
@@ -891,6 +948,7 @@ public final class ReteKeyboardView extends View {
         if (id.startsWith("touch.cheonjiin.")) {
             emit(key, cheonjiin.press(CheonjiinInterpreter.Key.valueOf(
                 id.substring("touch.cheonjiin.".length()).toUpperCase(java.util.Locale.ROOT))));
+            restartMultiTapTimeout();
             return true;
         }
         if (id.startsWith("touch.naratgeul.")) {
@@ -910,8 +968,14 @@ public final class ReteKeyboardView extends View {
         }
     }
 
+    private void restartMultiTapTimeout() {
+        removeCallbacks(endMultiTap);
+        postDelayed(endMultiTap, MULTI_TAP_TIMEOUT_MS);
+    }
+
     /** A 12-key run ends when the layout or page changes, or the editor does. */
     public void resetPhoneInterpreters() {
+        removeCallbacks(endMultiTap);
         cheonjiin.reset();
         naratgeul.reset();
     }

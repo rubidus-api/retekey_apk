@@ -88,10 +88,74 @@ public final class CheonjiinInterpreter {
         VOWELS.put("uddii", 15);    // ㅞ
     }
 
+    /**
+     * The element run each vowel is spelled with, so a drag can put the run exactly where the taps
+     * would have left it. That is what lets a dragged vowel go on combining: drag ㅗ and the run is
+     * "du", so a following ㅣ still spells ㅚ.
+     */
+    private static final Map<Integer, String> VOWEL_RUNS = new HashMap<>();
+
+    static {
+        for (Map.Entry<String, Integer> entry : VOWELS.entrySet()) {
+            String existing = VOWEL_RUNS.get(entry.getValue());
+            // The shortest spelling wins, so the run left behind is the one taps would have built.
+            if (existing == null || entry.getKey().length() < existing.length()) {
+                VOWEL_RUNS.put(entry.getValue(), entry.getKey());
+            }
+        }
+    }
+
+    /** A drag off a key, in the direction the finger went. */
+    public enum Flick {
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
+    }
+
+    /**
+     * What a drag off each vowel key spells. The direction points at the letter: ㅓ leans left and
+     * ㅏ leans right, ㅗ is up and ㅜ is down, and the compounds follow the vowel they are built
+     * from — ㅔ from ㅓ, ㅐ from ㅏ, ㅚ from ㅗ, ㅟ from ㅜ.
+     */
+    private static final Map<String, Integer> VOWEL_FLICKS = new HashMap<>();
+
+    static {
+        flick(Key.DOT, Flick.LEFT, 4);      // ㅓ
+        flick(Key.DOT, Flick.RIGHT, 0);     // ㅏ
+        flick(Key.DOT, Flick.UP, 8);        // ㅗ
+        flick(Key.DOT, Flick.DOWN, 13);     // ㅜ
+        flick(Key.I, Flick.LEFT, 5);        // ㅔ
+        flick(Key.I, Flick.RIGHT, 1);       // ㅐ
+        flick(Key.I, Flick.UP, 3);          // ㅒ
+        flick(Key.I, Flick.DOWN, 7);        // ㅖ
+        flick(Key.EU, Flick.LEFT, 14);      // ㅝ
+        flick(Key.EU, Flick.RIGHT, 9);      // ㅘ
+        flick(Key.EU, Flick.UP, 11);        // ㅚ
+        flick(Key.EU, Flick.DOWN, 16);      // ㅟ
+    }
+
+    private static void flick(Key key, Flick direction, int vowel) {
+        VOWEL_FLICKS.put(key.name() + ":" + direction.name(), vowel);
+    }
+
     private Key consonantKey;
     private int consonantTap;
     private String vowelRun = "";
     private boolean vowelOnScreen;
+
+    /**
+     * Ends the multi-tap grouping without ending the syllable: the next press of the same key
+     * types that key's first letter instead of cycling to its next one. This is what a pause does
+     * on a phone — it is how 삶 can be followed by ㅇ, which is the same key as the ㅁ before it.
+     *
+     * <p>The vowel run is deliberately left alone. Vowel elements are spelled with different keys
+     * and belong to the syllable, not to a burst of taps, so a slow ㅣ ㆍ must still be ㅏ.
+     */
+    public void endMultiTap() {
+        consonantKey = null;
+        consonantTap = 0;
+    }
 
     /** Forgets the run in progress; the next press starts a fresh jamo. */
     public void reset() {
@@ -111,6 +175,67 @@ public final class CheonjiinInterpreter {
             throw new IllegalArgumentException("key must not be null");
         }
         return isVowelKey(key) ? pressVowel(key) : pressConsonant(key);
+    }
+
+    /**
+     * A drag off a key, which types its letter at once — no waiting for a tap count, and no long
+     * press. On a consonant it reaches the letters that would otherwise take two or three taps:
+     * right for the aspirate (ㄱ → ㅋ), left for the tense one (ㄱ → ㄲ). On a vowel it types the
+     * whole vowel the direction points at, and leaves the element run where the taps would have,
+     * so the result still combines with whatever is typed next.
+     */
+    public List<SemanticInput> flick(Key key, Flick direction) {
+        if (key == null || direction == null) {
+            throw new IllegalArgumentException("key and direction must not be null");
+        }
+        if (isVowelKey(key)) {
+            Integer vowel = VOWEL_FLICKS.get(key.name() + ":" + direction.name());
+            return vowel == null ? Collections.emptyList() : flickVowel(vowel);
+        }
+        if (direction == Flick.UP || direction == Flick.DOWN) {
+            // A consonant has nothing above or below it; treat the drag as the tap it nearly was.
+            return press(key);
+        }
+        int[] group = CONSONANTS.get(key);
+        int target = direction == Flick.RIGHT
+            ? group[Math.min(1, group.length - 1)]
+            : group[group.length - 1];
+        vowelRun = "";
+        vowelOnScreen = false;
+        consonantKey = key;
+        consonantTap = indexOf(group, target);
+        return addOf(SemanticInput.jamo(SemanticJamo.contextualConsonant(target)));
+    }
+
+    private static int indexOf(int[] group, int value) {
+        for (int i = 0; i < group.length; i++) {
+            if (group[i] == value) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Types a dragged vowel. When it can join the vowel already on screen it does — dragging ㅗ and
+     * then ㅏ spells ㅘ, exactly as the taps behind them would — and otherwise it starts a vowel of
+     * its own.
+     */
+    private List<SemanticInput> flickVowel(int vowel) {
+        String run = VOWEL_RUNS.get(vowel);
+        Integer combined = vowelOnScreen ? VOWELS.get(vowelRun + run) : null;
+        List<SemanticInput> edits;
+        if (combined != null) {
+            edits = replaceVowel(VOWELS.get(vowelRun), combined);
+            vowelRun = vowelRun + run;
+        } else {
+            edits = addOf(SemanticInput.jamo(SemanticJamo.vowel(vowel)));
+            vowelRun = run;
+        }
+        vowelOnScreen = true;
+        consonantKey = null;
+        consonantTap = 0;
+        return edits;
     }
 
     private static boolean isVowelKey(Key key) {

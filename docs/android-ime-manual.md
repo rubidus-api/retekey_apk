@@ -1282,6 +1282,34 @@ different values in the vocabulary rather than the same one, because the automat
 the user's backspace does not. Test this where the syllables are, not where the jamo are: the jamo
 tables were right the whole time.
 
+### 15.18 A gesture that only exists while the finger is moving
+
+**What happened.** A drag off a key was recognised in `ACTION_MOVE`: once the finger passed the
+threshold, the dragged letter went in. It worked under a thumb and failed under `adb shell input
+swipe` at short durations — the injected stroke arrived as a down and an up with no move in
+between, so the keyboard typed the key's tap letter instead. The same gap exists for a real finger
+whenever the system coalesces a fast stroke.
+
+**The fix.** Judge the gesture in both places. The move handler still fires it the instant the
+finger crosses the line, which is the whole point of dragging rather than tapping twice; the
+release checks the same thing again for a stroke that reported nothing on the way:
+
+```java
+if (tryFlick(layout(), touch, x, y)) {
+    // A drag too quick to have reported a move on the way is still a drag.
+    return;
+}
+```
+
+`tryFlick` marks the press consumed, so the two paths cannot both type.
+
+**Rule.** A gesture defined only by intermediate events is a gesture the system is allowed to drop.
+Decide it from the start and end points, and treat the intermediate events as an optimisation that
+makes it feel immediate — not as the definition. And note the measurement that made this visible:
+two chained `input tap` calls on an emulator took **ten seconds**, so anything with a timeout
+shorter than that cannot be exercised from a shell at all. Know which of your behaviours the test
+harness is too slow to reach, and say so rather than reporting them as verified.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

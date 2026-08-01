@@ -194,7 +194,7 @@ public final class KeyboardLayouts {
     /** Ends the syllable being composed and starts the next one, without typing anything. */
     private static SoftwareKeySpec commitKey() {
         return SoftwareKeySpec
-            .enabled("touch.phone.commit", "▷", SemanticInput.flush())
+            .enabled("touch.phone.commit", "다음", SemanticInput.flush())
             .withColumnSpan(2);
     }
 

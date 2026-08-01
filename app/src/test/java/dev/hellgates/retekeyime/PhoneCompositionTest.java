@@ -2,6 +2,7 @@ package dev.hellgates.retekeyime;
 
 import static org.junit.Assert.assertEquals;
 
+import dev.hellgates.retekeyime.CheonjiinInterpreter.Flick;
 import dev.hellgates.retekeyime.CheonjiinInterpreter.Key;
 import java.util.Collections;
 import java.util.List;
@@ -204,6 +205,94 @@ public final class PhoneCompositionTest {
             new Key[] {Key.IEUNG, Key.EU, Key.NIEUN}));
     }
 
+    /**
+     * 천지인 플러스 borrows a gesture: a drag off a key types at once what tapping it two or three
+     * times would reach. Right is the aspirate, left the tense one.
+     */
+    @Test
+    public void cheonjiinDragsAConsonantToItsOtherLetters() {
+        assertEquals("카", cheonjiinDragging(drag(Key.GIYEOK, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
+        assertEquals("까", cheonjiinDragging(drag(Key.GIYEOK, Flick.LEFT), tap(Key.I), tap(Key.DOT)));
+        assertEquals("타", cheonjiinDragging(drag(Key.DIGEUT, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
+        assertEquals("짜", cheonjiinDragging(drag(Key.JIEUT, Flick.LEFT), tap(Key.I), tap(Key.DOT)));
+        // A pair with no tense letter answers with its second one either way.
+        assertEquals("라", cheonjiinDragging(drag(Key.NIEUN, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
+        assertEquals("마", cheonjiinDragging(drag(Key.IEUNG, Flick.LEFT), tap(Key.I), tap(Key.DOT)));
+    }
+
+    /** And off a vowel key it types the vowel the direction points at. */
+    @Test
+    public void cheonjiinDragsAVowelInTheDirectionItLeans() {
+        assertEquals("거", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.DOT, Flick.LEFT)));
+        assertEquals("가", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.DOT, Flick.RIGHT)));
+        assertEquals("고", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.DOT, Flick.UP)));
+        assertEquals("구", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.DOT, Flick.DOWN)));
+        assertEquals("게", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.I, Flick.LEFT)));
+        assertEquals("개", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.I, Flick.RIGHT)));
+        assertEquals("걔", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.I, Flick.UP)));
+        assertEquals("계", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.I, Flick.DOWN)));
+        assertEquals("궈", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.EU, Flick.LEFT)));
+        assertEquals("과", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.EU, Flick.RIGHT)));
+        assertEquals("괴", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.EU, Flick.UP)));
+        assertEquals("귀", cheonjiinDragging(tap(Key.GIYEOK), drag(Key.EU, Flick.DOWN)));
+    }
+
+    /**
+     * A dragged vowel leaves the element run exactly where the taps behind it would have, so it
+     * goes on combining — with a tap, with another drag, and in either order.
+     */
+    @Test
+    public void aDraggedVowelStillCombines() {
+        assertEquals("괴", cheonjiinDragging(
+            tap(Key.GIYEOK), drag(Key.DOT, Flick.UP), tap(Key.I)));
+        assertEquals("과", cheonjiinDragging(
+            tap(Key.GIYEOK), drag(Key.DOT, Flick.UP), drag(Key.DOT, Flick.RIGHT)));
+        assertEquals("개", cheonjiinDragging(
+            tap(Key.GIYEOK), drag(Key.DOT, Flick.RIGHT), tap(Key.I)));
+        assertEquals("과", cheonjiinDragging(
+            tap(Key.GIYEOK), tap(Key.DOT), tap(Key.EU), drag(Key.DOT, Flick.RIGHT)));
+        assertEquals("괘", cheonjiinDragging(
+            tap(Key.GIYEOK), drag(Key.EU, Flick.RIGHT), tap(Key.I)));
+        // And a final consonant still closes the syllable after one.
+        assertEquals("관", cheonjiinDragging(
+            tap(Key.GIYEOK), drag(Key.EU, Flick.RIGHT), tap(Key.NIEUN)));
+        assertEquals("많", cheonjiinDragging(
+            drag(Key.IEUNG, Flick.RIGHT), tap(Key.I), tap(Key.DOT),
+            tap(Key.NIEUN), tap(Key.SIOT), tap(Key.SIOT)));
+    }
+
+    /**
+     * The pause. Two letters of one key in a row are a cycle while the taps keep coming, and two
+     * separate letters once the run has ended — which is what a phone's multi-tap timeout does,
+     * and what lets 삶 be followed by ㅇ without the 다음 key.
+     */
+    @Test
+    public void aPauseEndsTheMultiTapRunWithoutEndingTheSyllable() {
+        CheonjiinInterpreter interpreter = new CheonjiinInterpreter();
+        FakeEditor editor = new FakeEditor();
+        for (Key key : new Key[] {
+            Key.SIOT, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.IEUNG, Key.IEUNG}) {
+            editor.apply(interpreter.press(key));
+        }
+        interpreter.endMultiTap();                       // the finger rests
+        for (Key key : new Key[] {Key.IEUNG, Key.EU, Key.NIEUN}) {
+            editor.apply(interpreter.press(key));
+        }
+        assertEquals("삶은", editor.text());
+    }
+
+    /** But a pause must not break a vowel: its elements are different keys, and belong to the syllable. */
+    @Test
+    public void aPauseLeavesAVowelBeingSpelledAlone() {
+        CheonjiinInterpreter interpreter = new CheonjiinInterpreter();
+        FakeEditor editor = new FakeEditor();
+        editor.apply(interpreter.press(Key.SIOT));
+        editor.apply(interpreter.press(Key.I));
+        interpreter.endMultiTap();                       // a slow ㅣ ㆍ is still ㅏ
+        editor.apply(interpreter.press(Key.DOT));
+        assertEquals("사", editor.text());
+    }
+
     private interface N {
         NaratgeulInterpreter.Key GIYEOK = NaratgeulInterpreter.Key.GIYEOK;
         NaratgeulInterpreter.Key NIEUN = NaratgeulInterpreter.Key.NIEUN;
@@ -251,6 +340,36 @@ public final class PhoneCompositionTest {
         editor.apply(Collections.singletonList(SemanticInput.flush()));
         for (Key key : second) {
             editor.apply(interpreter.press(key));
+        }
+        return editor.text();
+    }
+
+    /** A tap or a drag, so one list can spell a word with both. */
+    private static final class Gesture {
+        final Key key;
+        final Flick flick;
+
+        Gesture(Key key, Flick flick) {
+            this.key = key;
+            this.flick = flick;
+        }
+    }
+
+    private static Gesture tap(Key key) {
+        return new Gesture(key, null);
+    }
+
+    private static Gesture drag(Key key, Flick flick) {
+        return new Gesture(key, flick);
+    }
+
+    private static String cheonjiinDragging(Gesture... gestures) {
+        CheonjiinInterpreter interpreter = new CheonjiinInterpreter();
+        FakeEditor editor = new FakeEditor();
+        for (Gesture gesture : gestures) {
+            editor.apply(gesture.flick == null
+                ? interpreter.press(gesture.key)
+                : interpreter.flick(gesture.key, gesture.flick));
         }
         return editor.text();
     }
