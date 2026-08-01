@@ -471,31 +471,19 @@ public final class KeyboardLayouts {
 
     private static KeyboardLayout buildMenu() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        // Ten one-column keys per row, the same size as every other page's keys; long labels
-        // auto-fit to the key width. Row 1: editing and clipboard. Row 2: cursor navigation.
-        // Row 3: keyboard adjustment and function placeholders.
+        // The right half is the editing hand: the arrows in a cross with select-all at their
+        // centre, copy/cut/paste down the near edge, the jump keys around them, and settings in
+        // the corner where a thumb reaches without looking.
         rows.add(KeyboardLayout.row(
-            menuControl("settings", "⚙", ControlKey.OPEN_SETTINGS),
-            menuControl("copy", "⧉", ControlKey.COPY),
-            menuControl("cut", "✂", ControlKey.CUT),
-            menuControl("paste", "📋", ControlKey.PASTE),
-            menuControl("selectall", "⬚A", ControlKey.SELECT_ALL),
             menuControl("undo", "↶", ControlKey.UNDO),
             menuControl("redo", "↷", ControlKey.REDO),
+            menuControl("date", "📅", ControlKey.INSERT_DATE),
             menuDisabled("emoji", "☺"),
             menuDisabled("clipboard", "🗒"),
-            menuControl("date", "📅", ControlKey.INSERT_DATE)
-        ));
-        rows.add(KeyboardLayout.row(
-            menuRaw("cursor.left", "←", RawKey.LEFT),
-            menuRaw("cursor.right", "→", RawKey.RIGHT),
-            menuRaw("cursor.up", "↑", RawKey.UP),
-            menuRaw("cursor.down", "↓", RawKey.DOWN),
+            menuControl("copy", "⧉", ControlKey.COPY),
             menuRaw("cursor.home", "Home", RawKey.HOME),
-            menuRaw("cursor.end", "End", RawKey.END),
+            menuRaw("cursor.up", "↑", RawKey.UP),
             menuRaw("cursor.pageup", "PgUp", RawKey.PAGE_UP),
-            menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),
-            menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE),
             menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
@@ -504,11 +492,23 @@ public final class KeyboardLayouts {
             menuControl("switchime", "⌨↔", ControlKey.SWITCH_IME),
             menuControl("manageime", "⌨⚙", ControlKey.MANAGE_IME),
             menuControl("floating", "❐", ControlKey.FLOATING_TOGGLE),
+            menuControl("cut", "✂", ControlKey.CUT),
+            menuRaw("cursor.left", "←", RawKey.LEFT),
+            menuControl("selectall", "⬚A", ControlKey.SELECT_ALL),
+            menuRaw("cursor.right", "→", RawKey.RIGHT),
+            menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE)
+        ));
+        rows.add(KeyboardLayout.row(
             menuDisabled("onehand.left", "◀|"),
             menuDisabled("onehand.full", "|↔|"),
             menuDisabled("theme", "◐"),
             menuDisabled("custom1", "★1"),
-            menuDisabled("custom2", "★2")
+            menuDisabled("custom2", "★2"),
+            menuControl("paste", "📋", ControlKey.PASTE),
+            menuRaw("cursor.end", "End", RawKey.END),
+            menuRaw("cursor.down", "↓", RawKey.DOWN),
+            menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),
+            menuControl("settings", "⚙", ControlKey.OPEN_SETTINGS)
         ));
         rows.add(bottomRow(returnToLettersKey()));
         return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);

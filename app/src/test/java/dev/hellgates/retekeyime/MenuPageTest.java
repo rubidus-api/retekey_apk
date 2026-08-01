@@ -10,47 +10,59 @@ import java.util.List;
 import org.junit.Test;
 
 public final class MenuPageTest {
-    private final KeyboardLayout menu = KeyboardLayouts.menu();
+    private static final KeyboardLayout menu = KeyboardLayouts.menu();
 
     @Test
-    public void hasFourRowsOfTenEqualColumns() {
-        assertEquals(10, menu.columns());
-        assertEquals(4, menu.rows().size());
-        // Every menu key is one column wide, the same size as other pages' keys.
+    public void theEditingKeysAreAllOnTheRight() {
+        // Columns 5-9 are the editing hand: copy/cut/paste, the arrows, the jump keys, settings.
         for (int row = 0; row < 3; row++) {
-            List<SoftwareKeySpec> keys = menu.rows().get(row);
-            assertEquals("row " + row + " has ten keys", 10, keys.size());
-            for (SoftwareKeySpec key : keys) {
-                assertEquals("menu keys are one column wide", 1, key.columnSpan());
+            for (int column = 5; column < 10; column++) {
+                SoftwareKeySpec key = menu.rows().get(row).get(column);
+                assertTrue(key.label() + " is usable", key.enabled() || key.isControl());
             }
         }
+        assertEquals(ControlKey.COPY, menu.rows().get(0).get(5).control());
+        assertEquals(ControlKey.CUT, menu.rows().get(1).get(5).control());
+        assertEquals(ControlKey.PASTE, menu.rows().get(2).get(5).control());
     }
 
     @Test
-    public void theEditingTilesAreWiredToTheirControls() {
-        assertEquals(ControlKey.OPEN_SETTINGS, menu.findById("touch.menu.settings").control());
-        assertEquals(ControlKey.COPY, menu.findById("touch.menu.copy").control());
-        assertEquals(ControlKey.CUT, menu.findById("touch.menu.cut").control());
-        assertEquals(ControlKey.PASTE, menu.findById("touch.menu.paste").control());
-        assertEquals(ControlKey.SELECT_ALL, menu.findById("touch.menu.selectall").control());
-        assertEquals(ControlKey.UNDO, menu.findById("touch.menu.undo").control());
-        assertEquals(ControlKey.REDO, menu.findById("touch.menu.redo").control());
-        assertEquals(ControlKey.INSERT_DATE, menu.findById("touch.menu.date").control());
-        assertEquals(ControlKey.HEIGHT_DOWN, menu.findById("touch.menu.height.down").control());
-        assertEquals(ControlKey.HEIGHT_UP, menu.findById("touch.menu.height.up").control());
-        assertEquals(ControlKey.SWITCH_IME, menu.findById("touch.menu.switchime").control());
-        assertEquals(ControlKey.MANAGE_IME, menu.findById("touch.menu.manageime").control());
+    public void theArrowsFormACrossAroundSelectAll() {
+        assertEquals(RawKey.UP, menu.rows().get(0).get(7).semanticInput().rawKey());
+        assertEquals(RawKey.LEFT, menu.rows().get(1).get(6).semanticInput().rawKey());
+        assertEquals(ControlKey.SELECT_ALL, menu.rows().get(1).get(7).control());
+        assertEquals(RawKey.RIGHT, menu.rows().get(1).get(8).semanticInput().rawKey());
+        assertEquals(RawKey.DOWN, menu.rows().get(2).get(7).semanticInput().rawKey());
     }
 
     @Test
-    public void theCursorTilesSendRawKeys() {
-        SoftwareKeySpec left = menu.findById("touch.menu.cursor.left");
-        assertTrue("cursor keys are enabled", left.enabled());
-        assertEquals(SemanticInput.Kind.RAW_KEY, left.semanticInput().kind());
-        assertEquals(RawKey.LEFT, left.semanticInput().rawKey());
-        assertEquals(RawKey.END, menu.findById("touch.menu.cursor.end").semanticInput().rawKey());
-        assertEquals(RawKey.PAGE_UP,
-            menu.findById("touch.menu.cursor.pageup").semanticInput().rawKey());
+    public void theJumpKeysSitBesideTheArrows() {
+        assertEquals(RawKey.HOME, menu.rows().get(0).get(6).semanticInput().rawKey());
+        assertEquals(RawKey.PAGE_UP, menu.rows().get(0).get(8).semanticInput().rawKey());
+        assertEquals(RawKey.INSERT, menu.rows().get(0).get(9).semanticInput().rawKey());
+        assertEquals(RawKey.FORWARD_DELETE, menu.rows().get(1).get(9).semanticInput().rawKey());
+        assertEquals(RawKey.END, menu.rows().get(2).get(6).semanticInput().rawKey());
+        assertEquals(RawKey.PAGE_DOWN, menu.rows().get(2).get(8).semanticInput().rawKey());
+    }
+
+    @Test
+    public void settingsIsInTheBottomRightCorner() {
+        List<SoftwareKeySpec> lastLetterRow = menu.rows().get(2);
+        SoftwareKeySpec corner = lastLetterRow.get(lastLetterRow.size() - 1);
+
+        assertEquals(ControlKey.OPEN_SETTINGS, corner.control());
+    }
+
+    @Test
+    public void theLeftHalfKeepsTheKeyboardAndHistoryCommands() {
+        assertEquals(ControlKey.UNDO, menu.rows().get(0).get(0).control());
+        assertEquals(ControlKey.REDO, menu.rows().get(0).get(1).control());
+        assertEquals(ControlKey.INSERT_DATE, menu.rows().get(0).get(2).control());
+        assertEquals(ControlKey.HEIGHT_DOWN, menu.rows().get(1).get(0).control());
+        assertEquals(ControlKey.HEIGHT_UP, menu.rows().get(1).get(1).control());
+        assertEquals(ControlKey.SWITCH_IME, menu.rows().get(1).get(2).control());
+        assertEquals(ControlKey.MANAGE_IME, menu.rows().get(1).get(3).control());
+        assertEquals(ControlKey.FLOATING_TOGGLE, menu.rows().get(1).get(4).control());
     }
 
     @Test
@@ -66,11 +78,14 @@ public final class MenuPageTest {
     }
 
     @Test
-    public void theFloatingTileTogglesTheHalfScreenKeyboard() {
-        SoftwareKeySpec floating = menu.findById("touch.menu.floating");
-        assertNotNull(floating);
-        assertTrue(floating.isControl());
-        assertEquals(ControlKey.FLOATING_TOGGLE, floating.control());
+    public void everyCellIsFilled() {
+        for (List<SoftwareKeySpec> row : menu.rows()) {
+            int span = 0;
+            for (SoftwareKeySpec key : row) {
+                span += key.columnSpan();
+            }
+            assertEquals(KeyboardLayouts.COLUMNS, span);
+        }
     }
 
     @Test

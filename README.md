@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 5+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.43** —
-[retekey-0.1.43.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.43/retekey-0.1.43.apk)
+Current release: **v0.1.44** —
+[retekey-0.1.44.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.44/retekey-0.1.44.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -78,6 +78,23 @@ one.
 
 Android 12 (API 31) and newer still take the Material You palette on both builds; below it, both
 fall back to the tuned light/dark palette.
+
+### The legacy build, on Android 4.4
+
+These are screencaps from a KitKat emulator running the legacy APK — not renders, and not the
+modern build with an older label on it.
+
+| | |
+|---|---|
+| ![Korean 2-beolsik on Android 4.4](assets/legacy-korean.png) | ![Hanja candidates on Android 4.4](assets/legacy-hanja.png) |
+| 2-beolsik with its hold alternates, on a 2013 platform | the Hanja window: full keyboard width, 훈음 beside each character, six pages |
+| ![The menu page on Android 4.4](assets/legacy-menu.png) | ![Settings on Android 4.4](assets/legacy-settings.png) |
+| the ☰ page: editing and cursor keys on the right, settings in the corner | settings, reached from that corner key |
+
+The labels read as words rather than glyphs here, and that is the legacy build doing its job: a
+screenshot of an earlier attempt showed the menu key as an *empty cell*, because Android 4.4 has no
+font for ☰. Below the version where those glyphs became dependable, the keys say `Menu`, `Copy`,
+`Bksp`, `Lang` instead of drawing nothing.
 
 ### What has actually been run
 
@@ -165,8 +182,10 @@ have no Android key code), the media keys, and Back stay muted:
 
 ![Special keys, Fn page](assets/keyboard-keys-fn.png)
 
-The `☰` key opens a menu page with editing commands (copy, cut, paste, undo, redo, select all),
-cursor navigation, date insertion, keyboard height, and shortcuts to the system keyboard settings.
+The `☰` key opens a menu page whose right half is the editing hand: copy, cut and paste down its
+near edge, the arrows in a cross with select-all at their centre, Home/End/PgUp/PgDn/Ins/Del around
+them, and settings in the bottom-right corner. The left half holds undo/redo, date insertion,
+keyboard height, the floating toggle, and shortcuts to the system keyboard settings.
 
 > These images are rendered from the actual layout data. A live screenshot is not shown because the
 > build host is headless with no KVM and no window, so `screencap` returns a blank framebuffer;

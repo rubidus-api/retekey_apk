@@ -30,8 +30,8 @@
 **[⬇ 안드로이드 5 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.43** —
-[retekey-0.1.43.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.43/retekey-0.1.43.apk)
+현재 릴리즈: **v0.1.44** —
+[retekey-0.1.44.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.44/retekey-0.1.44.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -74,6 +74,22 @@
 
 안드로이드 12(API 31) 이상은 두 빌드 모두 Material You 팔레트를 쓰고, 그 아래는 둘 다 다듬어 둔
 라이트/다크 팔레트로 물러난다.
+
+### 안드로이드 4.4 에서의 legacy 빌드
+
+아래는 KitKat 에뮬레이터에서 legacy APK 를 돌려 찍은 실제 화면이다. 렌더한 그림도 아니고, modern
+빌드에 이름만 바꿔 붙인 것도 아니다.
+
+| | |
+|---|---|
+| ![안드로이드 4.4 의 2벌식](assets/legacy-korean.png) | ![안드로이드 4.4 의 한자 후보](assets/legacy-hanja.png) |
+| 2013년 플랫폼 위의 2벌식과 홀드 문자 | 한자 창 — 키보드 폭 전체, 훈음이 글자 오른쪽에, 여섯 페이지 |
+| ![안드로이드 4.4 의 메뉴 자판](assets/legacy-menu.png) | ![안드로이드 4.4 의 설정](assets/legacy-settings.png) |
+| ☰ 페이지 — 편집·커서 키가 오른쪽, 설정은 구석에 | 그 구석 키로 연 설정 화면 |
+
+라벨이 기호 대신 낱말로 보이는데, 그것이 legacy 빌드가 제 일을 하는 모습이다. 앞선 시도의
+스크린샷에서는 메뉴 키가 **빈 칸**으로 나왔다. 안드로이드 4.4 에는 ☰ 글꼴이 없기 때문이다. 그 기호들이
+믿을 만해지는 버전 아래에서는 아무것도 그리지 않는 대신 `Menu`, `Copy`, `Bksp`, `Lang` 이라고 쓴다.
 
 ### 실제로 돌려 본 것
 
@@ -154,8 +170,10 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 
 ![특수키 자판, Fn 페이지](assets/keyboard-keys-fn.png)
 
-`☰` 키는 메뉴 페이지를 연다. 편집 명령(복사·잘라내기·붙여넣기·실행취소·다시실행·전체선택), 커서 이동,
-날짜 입력, 키보드 높이, 시스템 키보드 설정 바로가기가 있다.
+`☰` 키는 메뉴 페이지를 연다. 오른쪽 절반이 편집하는 손이다 — 안쪽 끝에 복사·잘라내기·붙여넣기,
+가운데에 전체선택을 두고 화살표가 십자로, 그 둘레에 Home/End/PgUp/PgDn/Ins/Del, 그리고 오른쪽 아래
+구석에 설정. 왼쪽 절반에는 실행취소·다시실행, 날짜 입력, 키보드 높이, 플로팅 전환, 시스템 키보드 설정
+바로가기가 있다.
 
 > 위 이미지는 실제 자판 데이터로 렌더한 것이다. 빌드 호스트가 KVM도 창도 없는 헤드리스 환경이라
 > `screencap`이 빈 프레임버퍼를 돌려주기 때문에 실제 스크린샷은 싣지 않았다. 실기기나 GUI 에뮬레이터에서

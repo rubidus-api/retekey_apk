@@ -500,6 +500,11 @@ public final class ReteKeyboardView extends View {
             + KeyboardPalette.isNight(getContext());
     }
 
+    /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
+    private String labelOf(SoftwareKeySpec key) {
+        return LegacyGlyphs.label(key.label(), android.os.Build.VERSION.SDK_INT);
+    }
+
     /** Draws one raised, rounded key with its label and long-press hint into the cache canvas. */
     private void drawKey(Canvas canvas, SoftwareKeySpec key,
             int left, int top, int right, int bottom) {
@@ -513,8 +518,9 @@ public final class ReteKeyboardView extends View {
         paint.setColor(keyFillColor(key));
         Compat.drawRoundRect(canvas, l, t, r, b, keyRadiusPx, paint);
         paint.setColor(key.enabled() || key.isControl() ? palette.keyText : palette.keyTextMuted);
-        fitLabel(key.label(), right - left, bottom - top);
-        canvas.drawText(key.label(), (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
+        String label = labelOf(key);
+        fitLabel(label, right - left, bottom - top);
+        canvas.drawText(label, (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
         if (key.longPressTexts().size() == 1) {
             // A single long-press character is hinted in small text at the top-right corner.
             paint.setColor(palette.hint);

@@ -182,10 +182,11 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         text.setColor(palette.keyText);
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(dp(15));
-        drawGlyph(canvas, moveCell, "☰");
-        drawGlyph(canvas, crossCell, bounds.isLeft() ? "›" : "‹");
-        drawGlyph(canvas, closeCell, "✕");
-        drawGlyph(canvas, resizeCell, "⇲");
+        int sdk = android.os.Build.VERSION.SDK_INT;
+        drawGlyph(canvas, moveCell, LegacyGlyphs.label("☰", sdk));
+        drawGlyph(canvas, crossCell, LegacyGlyphs.label(bounds.isLeft() ? "›" : "‹", sdk));
+        drawGlyph(canvas, closeCell, LegacyGlyphs.label("✕", sdk));
+        drawGlyph(canvas, resizeCell, LegacyGlyphs.label("⇲", sdk));
     }
 
     private void drawGlyph(Canvas canvas, Rect cell, String glyph) {
