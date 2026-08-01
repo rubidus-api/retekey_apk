@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 5+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.44** —
-[retekey-0.1.44.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.44/retekey-0.1.44.apk)
+Current release: **v0.1.45** —
+[retekey-0.1.45.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.45/retekey-0.1.45.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -78,6 +78,18 @@ one.
 
 Android 12 (API 31) and newer still take the Material You palette on both builds; below it, both
 fall back to the tuned light/dark palette.
+
+### On a device
+
+Screencaps from emulators running the release builds — the modern one on Android 10, the legacy one
+on Android 4.4.
+
+| | |
+|---|---|
+| ![2-beolsik on Android 10](assets/modern-keyboard.png) | ![Hanja candidates on Android 10](assets/modern-hanja.png) |
+| 2-beolsik: raised keys, each with its hold alternate in the corner | the Hanja window: keyboard-wide, 훈음 beside each character, nine to a page |
+| ![The menu page on Android 10](assets/modern-menu.png) | ![The floating keyboard on Android 10](assets/modern-floating.png) |
+| the ☰ page: editing and cursor keys on the right, settings in the corner | the floating keyboard, translucent and confined to its half of the screen |
 
 ### The legacy build, on Android 4.4
 
@@ -187,9 +199,8 @@ near edge, the arrows in a cross with select-all at their centre, Home/End/PgUp/
 them, and settings in the bottom-right corner. The left half holds undo/redo, date insertion,
 keyboard height, the floating toggle, and shortcuts to the system keyboard settings.
 
-> These images are rendered from the actual layout data. A live screenshot is not shown because the
-> build host is headless with no KVM and no window, so `screencap` returns a blank framebuffer;
-> capture on a real device or a GUI emulator instead.
+> The four images above are rendered from the actual layout data, so each page is shown whole. For
+> photographs of the thing running, see below.
 
 ## Floating keyboard
 

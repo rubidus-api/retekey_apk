@@ -30,8 +30,8 @@
 **[⬇ 안드로이드 5 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.44** —
-[retekey-0.1.44.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.44/retekey-0.1.44.apk)
+현재 릴리즈: **v0.1.45** —
+[retekey-0.1.45.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.45/retekey-0.1.45.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -74,6 +74,17 @@
 
 안드로이드 12(API 31) 이상은 두 빌드 모두 Material You 팔레트를 쓰고, 그 아래는 둘 다 다듬어 둔
 라이트/다크 팔레트로 물러난다.
+
+### 기기에서
+
+릴리즈 빌드를 에뮬레이터에서 돌려 찍은 화면이다. modern 은 안드로이드 10, legacy 는 안드로이드 4.4.
+
+| | |
+|---|---|
+| ![안드로이드 10 의 2벌식](assets/modern-keyboard.png) | ![안드로이드 10 의 한자 후보](assets/modern-hanja.png) |
+| 2벌식 — 입체 키와 모서리의 홀드 문자 | 한자 창 — 키보드 폭, 훈음이 글자 오른쪽에, 한 페이지 아홉 개 |
+| ![안드로이드 10 의 메뉴 자판](assets/modern-menu.png) | ![안드로이드 10 의 플로팅 키보드](assets/modern-floating.png) |
+| ☰ 페이지 — 편집·커서 키가 오른쪽, 설정은 구석에 | 플로팅 키보드 — 반투명하게 자기 절반 안에 |
 
 ### 안드로이드 4.4 에서의 legacy 빌드
 
@@ -175,9 +186,8 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 구석에 설정. 왼쪽 절반에는 실행취소·다시실행, 날짜 입력, 키보드 높이, 플로팅 전환, 시스템 키보드 설정
 바로가기가 있다.
 
-> 위 이미지는 실제 자판 데이터로 렌더한 것이다. 빌드 호스트가 KVM도 창도 없는 헤드리스 환경이라
-> `screencap`이 빈 프레임버퍼를 돌려주기 때문에 실제 스크린샷은 싣지 않았다. 실기기나 GUI 에뮬레이터에서
-> 촬영할 것.
+> 위 네 이미지는 실제 자판 데이터로 렌더한 것이라 각 페이지를 통째로 보여 준다. 실제로 돌아가는
+> 모습은 아래에 있다.
 
 ## 플로팅 키보드
 
