@@ -192,14 +192,14 @@ public final class CheonjiinInterpreter {
             Integer vowel = VOWEL_FLICKS.get(key.name() + ":" + direction.name());
             return vowel == null ? Collections.emptyList() : flickVowel(vowel);
         }
-        if (direction == Flick.UP || direction == Flick.DOWN) {
-            // A consonant has nothing above or below it; treat the drag as the tap it nearly was.
-            return press(key);
-        }
         int[] group = CONSONANTS.get(key);
-        int target = direction == Flick.RIGHT
-            ? group[Math.min(1, group.length - 1)]
-            : group[group.length - 1];
+        int slot = consonantSlot(direction);
+        if (slot < 0 || slot >= group.length) {
+            // Down is the key's digit, which is the view's to type, and a group with no tense
+            // letter has nothing above it. Either way this drag types no jamo.
+            return Collections.emptyList();
+        }
+        int target = group[slot];
         vowelRun = "";
         vowelOnScreen = false;
         consonantKey = key;
@@ -221,15 +221,39 @@ public final class CheonjiinInterpreter {
             return vowel == null ? null : HangulTables.jungJamo(vowel);
         }
         int[] group = CONSONANTS.get(key);
-        if (group == null) {
+        int slot = consonantSlot(direction);
+        if (group == null || slot < 0 || slot >= group.length) {
             return null;
         }
-        if (direction == Flick.UP || direction == Flick.DOWN) {
-            return HangulTables.choJamo(group[0]);
+        return HangulTables.choJamo(group[slot]);
+    }
+
+    /**
+     * Which letter of a consonant group each way points at: left is the plain one the key already
+     * types, right the aspirate beside it, up the tense one. Down is not a letter at all — it is
+     * the digit the key holds, so it answers -1 and the caller types that instead.
+     */
+    private static int consonantSlot(Flick direction) {
+        switch (direction) {
+            case LEFT:
+                return 0;
+            case RIGHT:
+                return 1;
+            case UP:
+                return 2;
+            default:
+                return -1;
         }
-        return HangulTables.choJamo(direction == Flick.RIGHT
-            ? group[Math.min(1, group.length - 1)]
-            : group[group.length - 1]);
+    }
+
+    /** Whether dragging this way off this key means the digit it holds rather than a letter. */
+    public static boolean flickTypesHeldCharacter(Key key, Flick direction) {
+        return key != null && direction == Flick.DOWN && !isVowelKey(key);
+    }
+
+    /** Whether {@code key} is one of the three vowel elements. */
+    public static boolean isVowelElement(Key key) {
+        return isVowelKey(key);
     }
 
     private static int indexOf(int[] group, int value) {

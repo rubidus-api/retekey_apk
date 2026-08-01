@@ -549,18 +549,27 @@ public final class ReteKeyboardView extends View {
                 key.hasLongPress() ? key.longPressTexts().get(0) : null,
                 touch.guideDirection == null);
             drawGuideCell(canvas, centreX - step, centreY, box,
-                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.LEFT),
+                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.LEFT),
                 touch.guideDirection == CheonjiinInterpreter.Flick.LEFT);
             drawGuideCell(canvas, centreX + step, centreY, box,
-                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.RIGHT),
+                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.RIGHT),
                 touch.guideDirection == CheonjiinInterpreter.Flick.RIGHT);
             drawGuideCell(canvas, centreX, centreY - step, box,
-                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.UP),
+                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.UP),
                 touch.guideDirection == CheonjiinInterpreter.Flick.UP);
             drawGuideCell(canvas, centreX, centreY + step, box,
-                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.DOWN),
+                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.DOWN),
                 touch.guideDirection == CheonjiinInterpreter.Flick.DOWN);
         }
+    }
+
+    /** What the guide should show for one way off a key, or null when that way means nothing. */
+    private static String guideLabel(SoftwareKeySpec key, CheonjiinInterpreter.Key phoneKey,
+            CheonjiinInterpreter.Flick direction) {
+        if (CheonjiinInterpreter.flickTypesHeldCharacter(phoneKey, direction)) {
+            return key.hasLongPress() ? key.longPressTexts().get(0) : null;
+        }
+        return CheonjiinInterpreter.flickLabel(phoneKey, direction);
     }
 
     private void drawGuideCell(
@@ -801,14 +810,12 @@ public final class ReteKeyboardView extends View {
         CheonjiinInterpreter.Key phoneKey = CheonjiinInterpreter.Key.valueOf(
             key.stableKeyId().substring("touch.cheonjiin.".length())
                 .toUpperCase(java.util.Locale.ROOT));
-        emit(key, cheonjiin.flick(phoneKey, direction));
-        restartMultiTapTimeout();
-        feedback.playKeyDown();
+        typeFlick(key, phoneKey, direction);
         // Show the same guide with the chosen way lit, so a drag says what it did and which way
-        // it went — the letter alone leaves the gesture unexplained.
+        // it went — the letter alone leaves the gesture unexplained. An empty cell still consumes
+        // the press: a drag that points at nothing types nothing, rather than the key's own letter.
         touch.guideOpen = true;
         touch.guideDirection = direction;
-        flashKeyboard(key, CheonjiinInterpreter.flickLabel(phoneKey, direction));
         invalidate();
         return true;
     }
@@ -821,6 +828,29 @@ public final class ReteKeyboardView extends View {
         }
         return CheonjiinInterpreter.Key.valueOf(
             id.substring("touch.cheonjiin.".length()).toUpperCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * Types what dragging {@code direction} off this 천지인 key means, and says whether it meant
+     * anything. Down on a consonant is the digit the key holds; up on a group with no tense letter
+     * is nothing at all, which is why the guide leaves that cell empty.
+     */
+    private boolean typeFlick(SoftwareKeySpec key, CheonjiinInterpreter.Key phoneKey,
+            CheonjiinInterpreter.Flick direction) {
+        if (CheonjiinInterpreter.flickTypesHeldCharacter(phoneKey, direction)) {
+            typeLongPress(key);
+            return true;
+        }
+        String label = CheonjiinInterpreter.flickLabel(phoneKey, direction);
+        if (label == null) {
+            return false;
+        }
+        emit(key, cheonjiin.flick(phoneKey, direction));
+        restartMultiTapTimeout();
+        feedback.playKeyDown();
+        flashKeyboard(key, label);
+        performClick();
+        return true;
     }
 
     /** Types a key's held alternate — the digit on a 천지인 key, whatever it is elsewhere. */
@@ -902,11 +932,7 @@ public final class ReteKeyboardView extends View {
             if (aimed == null) {
                 typeLongPress(held);
             } else {
-                emit(held, cheonjiin.flick(phoneKeyOf(held), aimed));
-                restartMultiTapTimeout();
-                feedback.playKeyDown();
-                flashKeyboard(held, CheonjiinInterpreter.flickLabel(phoneKeyOf(held), aimed));
-                performClick();
+                typeFlick(held, phoneKeyOf(held), aimed);
             }
             return;
         }

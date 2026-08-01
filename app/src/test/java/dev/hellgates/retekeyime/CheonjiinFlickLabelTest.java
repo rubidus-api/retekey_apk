@@ -1,7 +1,9 @@
 package dev.hellgates.retekeyime;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import dev.hellgates.retekeyime.CheonjiinInterpreter.Flick;
 import dev.hellgates.retekeyime.CheonjiinInterpreter.Key;
@@ -26,19 +28,44 @@ public final class CheonjiinFlickLabelTest {
     }
 
     @Test
-    public void theConsonantKeysPromiseTheirOtherLetters() {
+    public void theConsonantKeysPromiseTheirGroupInOrder() {
+        // Left the plain one, right the aspirate, up the tense one.
+        assertEquals("ㄱ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.LEFT));
         assertEquals("ㅋ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.RIGHT));
-        assertEquals("ㄲ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.LEFT));
+        assertEquals("ㄲ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.UP));
+        assertEquals("ㄷ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.LEFT));
         assertEquals("ㅌ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.RIGHT));
-        assertEquals("ㅉ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.LEFT));
-        assertEquals("ㄹ", CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.RIGHT));
-        assertEquals("ㅁ", CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.LEFT));
+        assertEquals("ㄸ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.UP));
+        assertEquals("ㅅ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.LEFT));
+        assertEquals("ㅎ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.RIGHT));
+        assertEquals("ㅆ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.UP));
+        assertEquals("ㅈ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.LEFT));
+        assertEquals("ㅊ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.RIGHT));
+        assertEquals("ㅉ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.UP));
     }
 
     @Test
-    public void aConsonantHasNothingAboveOrBelowSoItPromisesItsOwnLetter() {
-        assertEquals("ㄱ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.UP));
-        assertEquals("ㄱ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.DOWN));
+    public void aGroupWithNoTenseLetterHasNothingAboveIt() {
+        assertEquals("ㄴ", CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.LEFT));
+        assertEquals("ㄹ", CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.RIGHT));
+        assertNull(CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.UP));
+        assertEquals("ㅇ", CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.LEFT));
+        assertEquals("ㅁ", CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.RIGHT));
+        assertNull(CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.UP));
+    }
+
+    /** Down off a consonant is not a letter: it is the digit the key holds, typed by the view. */
+    @Test
+    public void downOffAConsonantIsTheDigitItHolds() {
+        for (Key key : new Key[] {Key.GIYEOK, Key.NIEUN, Key.DIGEUT, Key.BIEUP, Key.SIOT,
+            Key.JIEUT, Key.IEUNG}) {
+            assertNull(CheonjiinInterpreter.flickLabel(key, Flick.DOWN));
+            assertTrue(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.DOWN));
+        }
+        // A vowel key's downward drag is a vowel, not a digit.
+        for (Key key : new Key[] {Key.I, Key.DOT, Key.EU}) {
+            assertFalse(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.DOWN));
+        }
     }
 
     @Test
@@ -64,8 +91,11 @@ public final class CheonjiinFlickLabelTest {
                             : HangulTables.choJamo(jamo.index()));
                     }
                 }
+                // An empty promise must be an empty delivery: the ways that show no cell —
+                // down off a consonant, up off a group with no tense letter — type no jamo.
+                String promised = CheonjiinInterpreter.flickLabel(key, direction);
                 assertEquals(key + " " + direction,
-                    CheonjiinInterpreter.flickLabel(key, direction), typed.toString());
+                    promised == null ? "" : promised, typed.toString());
             }
         }
     }
