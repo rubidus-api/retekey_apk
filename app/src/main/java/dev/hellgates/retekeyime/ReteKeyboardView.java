@@ -37,17 +37,22 @@ public final class ReteKeyboardView extends View {
      */
     private final class Touch {
         final int pointerId;
-        final int row;
-        final int key;
+        // The grid this finger's indexes were taken from. Another finger can switch the page
+        // mid-press, and row/key would then point into a different keyboard.
+        final String grid;
+        // Not final: a finger that slides a slop clear of its key takes the key it slid onto.
+        int row;
+        int key;
         boolean holdConsumed;
         boolean repeatFired;
         final Runnable onHold = () -> handleLongPress(this);
         final Runnable onRepeat = () -> handleRepeat(this);
 
-        Touch(int pointerId, int row, int key) {
+        Touch(int pointerId, int row, int key, String grid) {
             this.pointerId = pointerId;
             this.row = row;
             this.key = key;
+            this.grid = grid;
         }
     }
 
@@ -72,6 +77,8 @@ public final class ReteKeyboardView extends View {
 
     /** {@link #KEY_GAP_DP} resolved to pixels for this display; set in the constructor. */
     private final int keyGapPx;
+    /** How far a finger may wander before it is judged to have left its key. */
+    private final int touchSlopPx;
     private final int keyRadiusPx;
     private final int keyShadowPx;
 
@@ -118,6 +125,7 @@ public final class ReteKeyboardView extends View {
         this.sink = Objects.requireNonNull(sink, "sink");
         float density = context.getResources().getDisplayMetrics().density;
         this.keyGapPx = Math.round(KEY_GAP_DP * density);
+        this.touchSlopPx = ViewConfiguration.get(context).getScaledTouchSlop();
         this.keyRadiusPx = Math.round(KEY_RADIUS_DP * density);
         this.keyShadowPx = Math.round(KEY_SHADOW_DP * density);
         this.palette = KeyboardPalette.resolve(context);
@@ -575,7 +583,10 @@ public final class ReteKeyboardView extends View {
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
-                endTouch(event.getPointerId(index), event.getX(index), event.getY(index));
+                endTouch(event.getPointerId(index));
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                moveTouches(event);
                 return true;
             case MotionEvent.ACTION_CANCEL:
                 cancelAllTouches();
@@ -599,17 +610,19 @@ public final class ReteKeyboardView extends View {
         if (rowIndex < 0 || keyIndex < 0) {
             return;
         }
-        if (!withinKeyFace(layout, rowIndex, keyIndex, x, y)) {
-            // The touch landed in the gap between keys; ignore it so a near-boundary tap
-            // cannot register as the wrong neighbour.
-            return;
-        }
-        Touch touch = new Touch(pointerId, rowIndex, keyIndex);
+        // Every pixel of the keyboard belongs to a key. The gap drawn around each face is a gap in
+        // the picture only: a touch target with dead space between the keys throws away roughly a
+        // third of the area, and every tap that lands there is a keystroke the user has to repeat.
+        Touch touch = new Touch(pointerId, rowIndex, keyIndex, gridSignature());
         touches.put(pointerId, touch);
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
         invalidate();
-        SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
+        armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+    }
+
+    /** A finger's hold and repeat timers, armed for whichever key it is on now. */
+    private void armTimers(Touch touch, SoftwareKeySpec key) {
         // Shift, and any key with a long press, react to a hold.
         if (key.hasLongPress()
             || key.hasLongPressControl()
@@ -619,6 +632,59 @@ public final class ReteKeyboardView extends View {
             // Ordinary keys with no long press auto-repeat while held.
             postDelayed(touch.onRepeat, repeatDelayMs);
         }
+    }
+
+    /**
+     * A finger has moved. It keeps the key it started on until it is a touch slop clear of that
+     * key's cell, and then takes the key it moved onto. A press therefore survives the roll of a
+     * fingertip — which is most of what "the key didn't register" turns out to be — while a finger
+     * that genuinely slides to the next key types that one.
+     */
+    private void moveTouches(MotionEvent event) {
+        KeyboardLayout layout = layout();
+        String grid = gridSignature();
+        for (int pointer = 0; pointer < event.getPointerCount(); pointer++) {
+            Touch touch = touches.get(event.getPointerId(pointer));
+            if (touch == null || touch.holdConsumed || touch.repeatFired
+                || !touch.grid.equals(grid)) {
+                // Nothing to retarget, or a hold has already acted, or the page changed under it.
+                continue;
+            }
+            float x = event.getX(pointer);
+            float y = event.getY(pointer);
+            if (!escapedKey(layout, touch, x, y)) {
+                continue;
+            }
+            int rowIndex = rowAt(layout, y);
+            int keyIndex = keyIndexAt(layout, rowIndex, x);
+            if (rowIndex < 0 || keyIndex < 0
+                || (rowIndex == touch.row && keyIndex == touch.key)) {
+                continue;
+            }
+            removeCallbacks(touch.onHold);
+            removeCallbacks(touch.onRepeat);
+            touch.row = rowIndex;
+            touch.key = keyIndex;
+            invalidate();
+            armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+        }
+    }
+
+    /** Whether a finger has left its key's cell by more than a touch slop. */
+    private boolean escapedKey(KeyboardLayout layout, Touch touch, float x, float y) {
+        SoftwareKeySpec key = layout.rows().get(touch.row).get(touch.key);
+        int startColumn = layout.startColumn(touch.row, touch.key);
+        return TouchTargeting.escaped(x, y,
+            layout.columnEdge(startColumn, getWidth()),
+            layout.rowEdge(touch.row, getHeight()),
+            layout.columnEdge(startColumn + key.columnSpan(), getWidth()),
+            layout.rowEdge(touch.row + 1, getHeight()),
+            touchSlopPx);
+    }
+
+    /** What the grid of cells depends on: the same keys in the same places means the same value. */
+    private String gridSignature() {
+        return page + "|" + letterLayoutId + "|" + numpadMode;
     }
 
     /** Keys that fire again while held: plain text/edit/raw keys, but not controls or layer keys. */
@@ -646,7 +712,7 @@ public final class ReteKeyboardView extends View {
     }
 
     /** Ends this finger's key: it types unless a hold already acted for it. */
-    private void endTouch(int pointerId, float x, float y) {
+    private void endTouch(int pointerId) {
         Touch touch = touches.get(pointerId);
         if (touch == null) {
             return;
@@ -658,13 +724,14 @@ public final class ReteKeyboardView extends View {
             // the release must not also fire the tap.
             return;
         }
-        KeyboardLayout layout = layout();
-        // A tap counts for the key it started on, so a small slide inside one key still types it.
-        SoftwareKeySpec key = layout.keyAt(x, y, getWidth(), getHeight());
-        SoftwareKeySpec held = layout.rows().get(touch.row).get(touch.key);
-        if (key != held) {
+        if (!touch.grid.equals(gridSignature())) {
+            // Another finger switched the page while this one was down; its key is gone.
             return;
         }
+        // The finger types the key it is on, which moves are what decide. Where it happens to lift
+        // is not a second chance to disagree: a release re-tested against the layout drops the
+        // keystroke whenever the fingertip drifted a pixel, and the drift is what people notice.
+        SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
         if (held.isControl()) {
             applyControl(held.control());
             flashKeyboard(held, null);
@@ -887,24 +954,6 @@ public final class ReteKeyboardView extends View {
         return keys.size() - 1;
     }
 
-    /**
-     * Whether {@code (x, y)} falls on the visible face of the key at
-     * {@code (rowIndex, keyIndex)} — the cell inset by {@link #keyGapPx}. Touches in the
-     * surrounding gap return {@code false} so they register no press.
-     */
-    private boolean withinKeyFace(
-            KeyboardLayout layout, int rowIndex, int keyIndex, float x, float y) {
-        int width = getWidth();
-        int height = getHeight();
-        int top = layout.rowEdge(rowIndex, height);
-        int bottom = layout.rowEdge(rowIndex + 1, height);
-        int startColumn = layout.startColumn(rowIndex, keyIndex);
-        SoftwareKeySpec key = layout.rows().get(rowIndex).get(keyIndex);
-        int left = layout.columnEdge(startColumn, width);
-        int right = layout.columnEdge(startColumn + key.columnSpan(), width);
-        return x >= left + keyGapPx && x <= right - keyGapPx
-            && y >= top + keyGapPx && y <= bottom - keyGapPx;
-    }
 
     private void applyControl(ControlKey control) {
         switch (control) {

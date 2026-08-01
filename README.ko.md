@@ -30,8 +30,8 @@
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.48** —
-[retekey-0.1.48.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.48/retekey-0.1.48.apk)
+현재 릴리즈: **v0.1.49** —
+[retekey-0.1.49.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.49/retekey-0.1.49.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.

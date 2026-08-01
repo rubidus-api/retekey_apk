@@ -29,6 +29,45 @@ public final class KeyboardLayoutTest {
         KeyboardLayouts.specialKeys(NumpadMode.FUNCTIONS)
     );
 
+    /**
+     * Every pixel of the keyboard answers to some key. The view once ignored a 4dp band around
+     * each face so a near-boundary tap could not hit the wrong neighbour; what it actually did was
+     * make about a third of the keyboard's area type nothing at all.
+     */
+    @Test
+    public void everyPixelBelongsToAKey() {
+        for (KeyboardLayout layout : ALL) {
+            for (int y = 0; y < HEIGHT; y += 3) {
+                for (int x = 0; x < WIDTH; x += 3) {
+                    assertNotNull(x + "," + y, layout.keyAt(x, y, WIDTH, HEIGHT));
+                }
+            }
+        }
+    }
+
+    /** And the key it answers with is the one drawn there: hit testing and drawing share edges. */
+    @Test
+    public void everyCellHitTestsBackToItsOwnKey() {
+        for (KeyboardLayout layout : ALL) {
+            for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
+                List<SoftwareKeySpec> row = layout.rows().get(rowIndex);
+                int top = layout.rowEdge(rowIndex, HEIGHT);
+                int bottom = layout.rowEdge(rowIndex + 1, HEIGHT);
+                for (int keyIndex = 0; keyIndex < row.size(); keyIndex++) {
+                    int startColumn = layout.startColumn(rowIndex, keyIndex);
+                    int left = layout.columnEdge(startColumn, WIDTH);
+                    int right = layout.columnEdge(
+                        startColumn + row.get(keyIndex).columnSpan(), WIDTH);
+                    // The corners of the cell, inclusive of the gap the drawing leaves around it.
+                    assertSame(layout.rows().get(rowIndex).get(keyIndex),
+                        layout.keyAt(left, top, WIDTH, HEIGHT));
+                    assertSame(layout.rows().get(rowIndex).get(keyIndex),
+                        layout.keyAt(right - 1, bottom - 1, WIDTH, HEIGHT));
+                }
+            }
+        }
+    }
+
     @Test
     public void everyRowSpansTheSameColumnCount() {
         for (KeyboardLayout layout : ALL) {

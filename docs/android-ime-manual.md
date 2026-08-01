@@ -1097,6 +1097,39 @@ reads them back when a lookup touches them again.
 When you generate the shipped form, test that it answers exactly what the old form answered — on
 every entry, in every direction. That comparison is what caught a candidate ordering difference here.
 
+### 15.16 A touch target with holes in it
+
+**What happened.** Each key is drawn inset by a 4dp gap, and the hit test used the same inset:
+a touch that landed in the gap registered nothing, so that "a near-boundary tap cannot land on the
+wrong neighbour". On a 240dpi phone the gap is 6px and a cell is 48x70px, so the dead band between
+two keys is 12px of every 48 across and 12 of every 70 down - **about a third of the keyboard's
+area typed nothing at all**. It never looks like a bug. It looks like the keyboard is unresponsive,
+and the user presses harder.
+
+Two smaller holes went with it. A release was hit-tested again and dropped unless it landed on the
+same key it started on, so the roll of a fingertip cancelled the keystroke; and moves were not
+listened to at all, so the finger's key could never follow it.
+
+**The fix.** Every pixel belongs to a key - the gap is in the picture, not in the target. A finger
+keeps the key it started on until it is a whole touch slop *clear* of that key's cell, and then
+takes the key it moved onto:
+
+```java
+public static boolean escaped(
+        float x, float y, int left, int top, int right, int bottom, int slop) {
+    return x < left - slop || x > right + slop || y < top - slop || y > bottom + slop;
+}
+```
+
+Release then types whatever key the finger is on. Where it lifts is not a second chance to
+disagree.
+
+**Rule.** A visual gap is not a touch gap. Never subtract from a hit box to prevent a wrong key -
+you trade a rare wrong letter for a common missing one, and the missing one is what people feel.
+Prefer hysteresis (a slop the finger must exceed) over a dead zone (an area that answers nothing),
+and let the target tile the surface with no space left over. A unit test can assert exactly that:
+sample every few pixels of every layout and require a key at each one.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).
