@@ -29,42 +29,42 @@ public final class CheonjiinFlickLabelTest {
 
     @Test
     public void theConsonantKeysPromiseTheirGroupInOrder() {
-        // Left the plain one, right the aspirate, up the tense one.
+        // Left the plain one, right the aspirate, down the tense one.
         assertEquals("ㄱ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.LEFT));
         assertEquals("ㅋ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.RIGHT));
-        assertEquals("ㄲ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.UP));
+        assertEquals("ㄲ", CheonjiinInterpreter.flickLabel(Key.GIYEOK, Flick.DOWN));
         assertEquals("ㄷ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.LEFT));
         assertEquals("ㅌ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.RIGHT));
-        assertEquals("ㄸ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.UP));
+        assertEquals("ㄸ", CheonjiinInterpreter.flickLabel(Key.DIGEUT, Flick.DOWN));
         assertEquals("ㅅ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.LEFT));
         assertEquals("ㅎ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.RIGHT));
-        assertEquals("ㅆ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.UP));
+        assertEquals("ㅆ", CheonjiinInterpreter.flickLabel(Key.SIOT, Flick.DOWN));
         assertEquals("ㅈ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.LEFT));
         assertEquals("ㅊ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.RIGHT));
-        assertEquals("ㅉ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.UP));
+        assertEquals("ㅉ", CheonjiinInterpreter.flickLabel(Key.JIEUT, Flick.DOWN));
     }
 
     @Test
-    public void aGroupWithNoTenseLetterHasNothingAboveIt() {
+    public void aGroupWithNoTenseLetterHasNothingBelowIt() {
         assertEquals("ㄴ", CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.LEFT));
         assertEquals("ㄹ", CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.RIGHT));
-        assertNull(CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.UP));
+        assertNull(CheonjiinInterpreter.flickLabel(Key.NIEUN, Flick.DOWN));
         assertEquals("ㅇ", CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.LEFT));
         assertEquals("ㅁ", CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.RIGHT));
-        assertNull(CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.UP));
+        assertNull(CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.DOWN));
     }
 
-    /** Down off a consonant is not a letter: it is the digit the key holds, typed by the view. */
+    /** Up off a consonant is not a letter: it is the digit the key holds, typed by the view. */
     @Test
-    public void downOffAConsonantIsTheDigitItHolds() {
+    public void upOffAConsonantIsTheDigitItHolds() {
         for (Key key : new Key[] {Key.GIYEOK, Key.NIEUN, Key.DIGEUT, Key.BIEUP, Key.SIOT,
             Key.JIEUT, Key.IEUNG}) {
-            assertNull(CheonjiinInterpreter.flickLabel(key, Flick.DOWN));
-            assertTrue(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.DOWN));
+            assertNull(CheonjiinInterpreter.flickLabel(key, Flick.UP));
+            assertTrue(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.UP));
         }
-        // A vowel key's downward drag is a vowel, not a digit.
+        // A vowel key's upward drag is a vowel, not a digit.
         for (Key key : new Key[] {Key.I, Key.DOT, Key.EU}) {
-            assertFalse(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.DOWN));
+            assertFalse(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.UP));
         }
     }
 

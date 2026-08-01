@@ -211,27 +211,27 @@ public final class PhoneCompositionTest {
      */
     @Test
     public void cheonjiinDragsAConsonantThroughItsGroup() {
-        // Left the plain letter, right the aspirate, up the tense one.
+        // Left the plain letter, right the aspirate, down the tense one.
         assertEquals("가", cheonjiinDragging(drag(Key.GIYEOK, Flick.LEFT), tap(Key.I), tap(Key.DOT)));
         assertEquals("카", cheonjiinDragging(drag(Key.GIYEOK, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
-        assertEquals("까", cheonjiinDragging(drag(Key.GIYEOK, Flick.UP), tap(Key.I), tap(Key.DOT)));
+        assertEquals("까", cheonjiinDragging(drag(Key.GIYEOK, Flick.DOWN), tap(Key.I), tap(Key.DOT)));
         assertEquals("타", cheonjiinDragging(drag(Key.DIGEUT, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
-        assertEquals("짜", cheonjiinDragging(drag(Key.JIEUT, Flick.UP), tap(Key.I), tap(Key.DOT)));
+        assertEquals("짜", cheonjiinDragging(drag(Key.JIEUT, Flick.DOWN), tap(Key.I), tap(Key.DOT)));
         assertEquals("라", cheonjiinDragging(drag(Key.NIEUN, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
         assertEquals("마", cheonjiinDragging(drag(Key.IEUNG, Flick.RIGHT), tap(Key.I), tap(Key.DOT)));
     }
 
-    /** A group with no tense letter types nothing upwards, rather than something else. */
+    /** A group with no tense letter types nothing downwards, rather than something else. */
     @Test
-    public void cheonjiinDragsUpToNothingWhenThereIsNoTenseLetter() {
+    public void cheonjiinDragsDownToNothingWhenThereIsNoTenseLetter() {
         assertEquals("아", cheonjiinDragging(
-            drag(Key.NIEUN, Flick.UP), tap(Key.IEUNG), tap(Key.I), tap(Key.DOT)));
+            drag(Key.NIEUN, Flick.DOWN), tap(Key.IEUNG), tap(Key.I), tap(Key.DOT)));
     }
 
-    /** And downwards is the key's digit, which no automaton types — so it types no jamo. */
+    /** And upwards is the key's digit, which no automaton types — so it types no jamo. */
     @Test
-    public void cheonjiinDragsDownToNoJamoAtAll() {
-        assertEquals("", cheonjiinDragging(drag(Key.GIYEOK, Flick.DOWN)));
+    public void cheonjiinDragsUpToNoJamoAtAll() {
+        assertEquals("", cheonjiinDragging(drag(Key.GIYEOK, Flick.UP)));
     }
 
     /** And off a vowel key it types the vowel the direction points at. */
