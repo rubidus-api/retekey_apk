@@ -4,7 +4,7 @@
 
 An MIT-licensed Android Hangul keyboard focused on standard IME behaviour, hardware-keyboard
 friendliness, and efficient Korean input. Written in plain Java with no third-party runtime
-dependencies — the release APK is about 230 KB.
+dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 
 > This English README is the canonical version. The Korean translation follows it.
 
@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.40** —
-[retekey-0.1.40.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.40/retekey-0.1.40.apk)
+Current release: **v0.1.41** —
+[retekey-0.1.41.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.41/retekey-0.1.41.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -183,8 +183,10 @@ on-screen keyboard, an external keyboard with no keyboard on screen at all, and 
 it keeps one size while it is up, so a short last page does not resize it. Tap a candidate, or
 press its number key **1**–**9**; `←`/`→` and `PageUp`/`PageDown` turn the page and `Esc` dismisses.
 
-The dictionary is bundled (about 1,100 readings plus common words). See
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for its provenance and licences.
+The dictionary is bundled and searched where it lies: the tables are sorted files, memory-mapped
+out of the APK and bisected per lookup, so they cost the Java heap nothing and the kernel is free to
+drop their pages under memory pressure. Parsing the same data into hash maps used to cost about
+2.6 MB of heap. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for provenance and licences.
 
 ## Physical keyboards
 

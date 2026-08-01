@@ -1,34 +1,41 @@
 package dev.hellgates.retekeyime;
 
 import android.content.Context;
-import java.io.BufferedReader;
+import android.content.res.AssetFileDescriptor;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
- * Loads the bundled Hanja assets once and caches them for the process: the reading↔Hanja
- * {@link HanjaTable} ({@code hanja.txt}) and the {@link HunumTable} of glosses
- * ({@code hanja_hunum.txt}). The files are small (~90 KB each) so a lazy first-use load is cheap;
- * {@code preload} warms both on a background thread so the first 한자 press has no parse latency.
+ * Opens the bundled Hanja indexes once and keeps them for the process.
+ *
+ * <p>The files are memory-mapped straight out of the APK, which is why they are stored there
+ * uncompressed: mapping costs no Java heap and no copy, the pages are file-backed and clean, and
+ * the kernel is free to drop them when memory is short and fetch them again on the next lookup.
+ * Parsing the same data into hash maps cost about 3.5 MB of heap for 190 KB of text.
+ *
+ * <p>A failure to open them leaves an empty table rather than a broken keyboard: 한자 conversion
+ * simply finds nothing.
  */
 public final class HanjaDictionary {
-    private static volatile HanjaTable table;
-    private static volatile HunumTable hunum;
+    private static final String FORWARD = "hanja_fwd.idx";
+    private static final String REVERSE = "hanja_rev.idx";
+    private static final String GLOSSES = "hanja_hunum.idx";
+
+    private static volatile MappedHanjaTable table;
 
     private HanjaDictionary() {
     }
 
-    public static HanjaTable get(Context context) {
-        HanjaTable local = table;
+    public static MappedHanjaTable get(Context context) {
+        MappedHanjaTable local = table;
         if (local == null) {
             synchronized (HanjaDictionary.class) {
                 local = table;
                 if (local == null) {
-                    local = HanjaTable.parse(readLines(context, "hanja.txt"));
+                    local = new MappedHanjaTable(
+                        open(context, FORWARD), open(context, REVERSE), open(context, GLOSSES));
                     table = local;
                 }
             }
@@ -36,40 +43,28 @@ public final class HanjaDictionary {
         return local;
     }
 
-    public static HunumTable hunum(Context context) {
-        HunumTable local = hunum;
-        if (local == null) {
-            synchronized (HanjaDictionary.class) {
-                local = hunum;
-                if (local == null) {
-                    local = HunumTable.parse(readLines(context, "hanja_hunum.txt"));
-                    hunum = local;
-                }
-            }
-        }
-        return local;
-    }
-
-    /** Warms both caches off the calling thread; safe to call more than once. */
+    /**
+     * Warms the mapping off the calling thread. Mapping is cheap, but the first lookup still faults
+     * pages in, and doing that on the thread a keystroke arrives on is how a keyboard stutters.
+     */
     public static void preload(Context context) {
         Context app = context.getApplicationContext();
-        new Thread(() -> {
-            get(app);
-            hunum(app);
-        }, "hanja-preload").start();
+        new Thread(() -> get(app), "hanja-preload").start();
     }
 
-    private static List<String> readLines(Context context, String assetName) {
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                context.getAssets().open(assetName), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-        } catch (IOException failure) {
-            return Collections.emptyList();
+    private static SortedIndex open(Context context, String assetName) {
+        try (AssetFileDescriptor descriptor = context.getAssets().openFd(assetName);
+             FileInputStream stream = descriptor.createInputStream()) {
+            FileChannel channel = stream.getChannel();
+            ByteBuffer mapped = channel.map(
+                FileChannel.MapMode.READ_ONLY,
+                descriptor.getStartOffset(),
+                descriptor.getLength());
+            return SortedIndex.over(mapped);
+        } catch (IOException | RuntimeException unavailable) {
+            // openFd throws when the asset is stored compressed, which would be a build mistake;
+            // either way the keyboard keeps working without Hanja rather than failing to start.
+            return SortedIndex.empty();
         }
-        return lines;
     }
 }

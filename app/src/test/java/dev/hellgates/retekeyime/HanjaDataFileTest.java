@@ -21,7 +21,7 @@ import org.junit.Test;
 public final class HanjaDataFileTest {
     private static HanjaTable loadShippedTable() {
         for (String candidate : new String[]{
-            "src/main/assets/hanja.txt", "app/src/main/assets/hanja.txt"}) {
+            "src/test/resources/hanja/hanja.txt", "app/src/test/resources/hanja/hanja.txt"}) {
             Path path = Paths.get(candidate);
             if (Files.exists(path)) {
                 try {
@@ -37,7 +37,7 @@ public final class HanjaDataFileTest {
 
     private static HunumTable loadShippedHunum() {
         for (String candidate : new String[]{
-            "src/main/assets/hanja_hunum.txt", "app/src/main/assets/hanja_hunum.txt"}) {
+            "src/test/resources/hanja/hanja_hunum.txt", "app/src/test/resources/hanja/hanja_hunum.txt"}) {
             Path path = Paths.get(candidate);
             if (Files.exists(path)) {
                 try {

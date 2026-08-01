@@ -3,7 +3,7 @@
 [English](README.md) · **한국어**
 
 표준 IME 동작, 물리 키보드 친화성, 효율적인 한글 입력에 집중한 MIT 라이선스 안드로이드 한글 키보드.
-서드파티 런타임 의존성 없는 순수 자바로 작성했으며, 릴리즈 APK는 약 230 KB다.
+서드파티 런타임 의존성 없는 순수 자바로 작성했으며, 릴리즈 APK는 약 460 KB로 대부분이 한자 표다.
 
 > 기준 문서는 [영어판 README](README.md)이며, 이 문서는 그 번역본이다.
 
@@ -28,8 +28,8 @@
 **[⬇ 최신 APK 내려받기](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.40** —
-[retekey-0.1.40.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.40/retekey-0.1.40.apk)
+현재 릴리즈: **v0.1.41** —
+[retekey-0.1.41.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.41/retekey-0.1.41.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -170,7 +170,9 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 마지막 짧은 페이지에서 창이 흔들리지 않는다. 후보를 탭하거나 숫자키 **1**–**9**로
 고를 수 있고, `←`/`→`와 `PageUp`/`PageDown`으로 페이지를 넘기며 `Esc`로 닫는다.
 
-사전은 앱에 포함되어 있다(약 1,100개 읽기와 상용 단어). 출처와 라이선스는
+사전은 앱에 포함되어 있으며 메모리로 올리지 않고 있는 자리에서 찾는다. 정렬된 파일을 APK에서 그대로
+메모리 매핑해 조회마다 이진 탐색하므로 자바 힙을 쓰지 않고, 메모리가 부족하면 커널이 해당 페이지를
+버릴 수 있다. 같은 데이터를 해시맵으로 풀면 약 2.6 MB의 힙을 썼다. 출처와 라이선스는
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 참고.
 
 ## 물리 키보드

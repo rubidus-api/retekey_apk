@@ -541,7 +541,7 @@ public class ReteKeyImeService extends InputMethodService {
         if (ic == null) {
             return;
         }
-        HanjaTable dictionary = HanjaDictionary.get(this);
+        MappedHanjaTable dictionary = HanjaDictionary.get(this);
         // A live selection converts in place, in whichever direction its script implies.
         CharSequence selection = null;
         try {
@@ -591,7 +591,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /** Converts a selection: Hangul → Hanja, or Hanja → Hangul. Returns false when nothing matches. */
-    private boolean convertFromSelection(HanjaTable dictionary, String selection) {
+    private boolean convertFromSelection(MappedHanjaTable dictionary, String selection) {
         int lastCodePoint = selection.codePointBefore(selection.length());
         if (HanjaTable.isHangul(lastCodePoint)) {
             List<String> candidates = dictionary.candidates(selection);
@@ -618,10 +618,10 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Hanja candidates with their 훈음 gloss (한글 → 한자). */
     private List<HanjaCandidatesView.Item> forwardItems(List<String> hanja) {
-        HunumTable glosses = HanjaDictionary.hunum(this);
+        MappedHanjaTable dictionary = HanjaDictionary.get(this);
         List<HanjaCandidatesView.Item> items = new ArrayList<>(hanja.size());
         for (String candidate : hanja) {
-            items.add(new HanjaCandidatesView.Item(candidate, glosses.gloss(candidate)));
+            items.add(new HanjaCandidatesView.Item(candidate, dictionary.gloss(candidate)));
         }
         return items;
     }

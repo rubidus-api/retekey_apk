@@ -18,9 +18,15 @@ android {
         applicationId = "dev.hellgates.retekeyime"
         minSdk = 28
         targetSdk = 36
-        versionCode = 41
-        versionName = "0.1.40"
+        versionCode = 42
+        versionName = "0.1.41"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    androidResources {
+        // The Hanja indexes are memory-mapped out of the APK at runtime, which only works if they
+        // are stored there uncompressed. It costs APK size and saves megabytes of heap.
+        noCompress += ["idx"]
     }
 
     compileOptions {

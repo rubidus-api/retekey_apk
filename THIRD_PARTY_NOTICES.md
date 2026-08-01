@@ -37,10 +37,14 @@ Apache-2.0 also grants a patent licence that terminates on patent litigation
 ordinary use; both are reasons the copied files must keep their own header
 rather than being folded into ReteKey's licence.
 
-## Hanja conversion data (`assets/hanja.txt`, `assets/hanja_hunum.txt`)
+## Hanja conversion data (`app/src/main/assets/hanja_*.idx`)
 
-ReteKey's Hanja conversion table (`hanja.txt`) and 훈음 gloss table
-(`hanja_hunum.txt`) are the redistributable files from the Jamotong project. Its readings are derived from the Unicode® Unihan Database and
+ReteKey's Hanja conversion table and 훈음 gloss table are the redistributable
+files from the Jamotong project. What ships is a sorted index of them, searched
+on disk rather than parsed into memory; it carries the same header and notice.
+The curated sources are kept at `app/src/test/resources/hanja/`, and
+`HanjaIndexBuildTest` asserts that the shipped indexes are exactly what those
+sources imply. Its readings are derived from the Unicode® Unihan Database and
 supplemented with a public-domain court name-Hanja list; the file's own header
 carries the full provenance and the required copyright notice.
 
