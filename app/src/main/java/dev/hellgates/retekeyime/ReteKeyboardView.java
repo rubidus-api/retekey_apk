@@ -795,6 +795,9 @@ public final class ReteKeyboardView extends View {
                 id.substring("touch.naratgeul.".length()).toUpperCase(java.util.Locale.ROOT))));
             return true;
         }
+        // Anything else — space, the period, the commit key — ends the run, so the next tap on a
+        // consonant key types its first letter instead of continuing the one before.
+        resetPhoneInterpreters();
         return false;
     }
 

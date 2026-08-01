@@ -181,6 +181,13 @@ public final class KeyboardLayouts {
         );
     }
 
+    /** Ends the syllable being composed and starts the next one, without typing anything. */
+    private static SoftwareKeySpec commitKey() {
+        return SoftwareKeySpec
+            .enabled("touch.phone.commit", "▷", SemanticInput.flush())
+            .withColumnSpan(2);
+    }
+
     private static SoftwareKeySpec phoneSpaceKey() {
         return SoftwareKeySpec
             .enabled("touch.text.space", "space", SemanticInput.text(" "))
@@ -217,9 +224,12 @@ public final class KeyboardLayouts {
             cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ"),
             letterPeriodKey(),
             enterKey()));
+        // ㅇㅁ sits under ㅅㅎ; to its right the key that ends the syllable being composed and
+        // moves on, so two same-key letters can follow each other without a space between them.
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
+            phoneGap("r3b", 2),
             cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ"),
-            phoneGap("r3b", 4));
+            commitKey());
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);

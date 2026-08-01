@@ -11,7 +11,8 @@ import java.util.Map;
  * The 나랏글 12-key mode: a six-key consonant block, three vowel keys, and two transformation keys
  * that act on what was just typed rather than typing anything themselves.
  *
- * <p>획추가 adds a stroke — ㄱ becomes ㅋ, ㄴ becomes ㄷ then ㅌ, ㅅ becomes ㅎ — and 쌍자음 doubles
+ * <p>획추가 adds a stroke — ㄱ becomes ㅋ, ㄴ becomes ㄷ then ㅌ, ㅅ becomes ㅈ then ㅊ, ㅇ becomes
+ * ㅎ, and ㄹ has no stroke of its own — and 쌍자음 doubles
  * a consonant that can be doubled. Vowels are spelled the same way a pen would: ㅏ and ㅣ and ㅗ and
  * ㅡ combine into the compound vowels, so ㅏ then ㅣ is ㅐ and ㅗ then ㅏ is ㅘ.
  *
@@ -44,20 +45,21 @@ public final class NaratgeulInterpreter {
     private static final Map<Integer, Integer> TWIN = new HashMap<>();
 
     static {
+        // Each block key walks the letters its own strokes build, and returns to its start.
         STROKE.put(0, 15);      // ㄱ → ㅋ
         STROKE.put(15, 0);      // ㅋ → ㄱ
         STROKE.put(2, 3);       // ㄴ → ㄷ
         STROKE.put(3, 16);      // ㄷ → ㅌ
         STROKE.put(16, 2);      // ㅌ → ㄴ
-        STROKE.put(5, 2);       // ㄹ → ㄴ, so the block's two nasal chains meet
         STROKE.put(6, 7);       // ㅁ → ㅂ
         STROKE.put(7, 17);      // ㅂ → ㅍ
         STROKE.put(17, 6);      // ㅍ → ㅁ
-        STROKE.put(9, 18);      // ㅅ → ㅎ
-        STROKE.put(18, 9);      // ㅎ → ㅅ
-        STROKE.put(11, 12);     // ㅇ → ㅈ
+        STROKE.put(9, 12);      // ㅅ → ㅈ
         STROKE.put(12, 14);     // ㅈ → ㅊ
-        STROKE.put(14, 11);     // ㅊ → ㅇ
+        STROKE.put(14, 9);      // ㅊ → ㅅ
+        STROKE.put(11, 18);     // ㅇ → ㅎ
+        STROKE.put(18, 11);     // ㅎ → ㅇ
+        // ㄹ has no stroke of its own; the key answers nothing rather than inventing a letter.
 
         TWIN.put(0, 1);         // ㄱ ㄲ
         TWIN.put(1, 0);
@@ -152,9 +154,10 @@ public final class NaratgeulInterpreter {
     private List<SemanticInput> pressVowel(Key key) {
         Integer combined = lastVowel < 0 ? null : COMBINE.get(lastVowel + ":" + key.name());
         if (combined != null) {
+            int previous = lastVowel;
             lastVowel = combined;
             lastConsonant = -1;
-            return replaceWith(SemanticInput.jamo(SemanticJamo.vowel(combined)));
+            return replaceVowel(previous, combined);
         }
         int vowel = VOWELS.get(key);
         lastVowel = vowel;
@@ -184,5 +187,19 @@ public final class NaratgeulInterpreter {
 
     private static List<SemanticInput> replaceWith(SemanticInput input) {
         return new ArrayList<>(Arrays.asList(SemanticInput.deleteBackward(), input));
+    }
+
+    /**
+     * Swaps the vowel on screen for another. A compound one takes two deletes, because the composer
+     * decomposes it to the simple vowel it grew from before removing anything.
+     */
+    private static List<SemanticInput> replaceVowel(int current, int replacement) {
+        List<SemanticInput> edits = new ArrayList<>(3);
+        edits.add(SemanticInput.deleteBackward());
+        if (HangulTables.isCompoundMedial(current)) {
+            edits.add(SemanticInput.deleteBackward());
+        }
+        edits.add(SemanticInput.jamo(SemanticJamo.vowel(replacement)));
+        return edits;
     }
 }

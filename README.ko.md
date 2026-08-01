@@ -28,8 +28,8 @@
 **[⬇ 최신 APK 내려받기](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.37** —
-[retekey-0.1.37.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.37/retekey-0.1.37.apk)
+현재 릴리즈: **v0.1.38** —
+[retekey-0.1.38.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.38/retekey-0.1.38.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -92,7 +92,7 @@ OS 버전에 따라 달라지는 동작:
 | **두벌식** | 표준 한글 전체 자판 |
 | **QWERTY** | 영문 |
 | **드보락** | 영문. 본래의 7/10/9 배치 그대로이며, 맨 윗줄에서 글자가 쓰지 않는 세 칸을 왼쪽에 모아 엔터·백스페이스·마침표를 둔다 |
-| **천지인** | 12키. ㅣ ㆍ ㅡ 로 모음을 만들고, 자음 키는 누를 때마다 묶음 안을 돈다(ㄱ → ㅋ → ㄲ) |
+| **천지인** | 12키. ㅣ ㆍ ㅡ 로 모음을 만들고, 자음 키는 누를 때마다 묶음 안을 돈다(ㄱ → ㅋ → ㄲ). ▷ 는 조합 중인 글자를 끝내 다음 글자가 새로 시작하게 한다 |
 | **나랏글** | 12키. 자음 블록에 획(ㄴ → ㄷ → ㅌ)과 쌍(ㅅ → ㅆ) |
 
 🌐 키는 설정에서 켜 둔 자판을 정해 둔 순서로 돌며, 도착한 자판의 이름을 알려 준다. 길게 누르면 한자

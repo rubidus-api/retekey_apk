@@ -141,7 +141,8 @@ public final class CheonjiinInterpreter {
         if (vowel != null) {
             // The run grew into another vowel: swap the one on screen for it.
             List<SemanticInput> edits =
-                vowelOnScreen ? replaceWith(SemanticInput.jamo(SemanticJamo.vowel(vowel)))
+                vowelOnScreen
+                    ? replaceVowel(VOWELS.get(vowelRun), vowel)
                     : addOf(SemanticInput.jamo(SemanticJamo.vowel(vowel)));
             vowelRun = extended;
             vowelOnScreen = true;
@@ -186,5 +187,19 @@ public final class CheonjiinInterpreter {
 
     private static List<SemanticInput> replaceWith(SemanticInput input) {
         return new ArrayList<>(Arrays.asList(SemanticInput.deleteBackward(), input));
+    }
+
+    /**
+     * Swaps the vowel on screen for another. A compound one takes two deletes, because the composer
+     * decomposes it to the simple vowel it grew from before removing anything.
+     */
+    private static List<SemanticInput> replaceVowel(Integer current, int replacement) {
+        List<SemanticInput> edits = new ArrayList<>(3);
+        edits.add(SemanticInput.deleteBackward());
+        if (current != null && HangulTables.isCompoundMedial(current)) {
+            edits.add(SemanticInput.deleteBackward());
+        }
+        edits.add(SemanticInput.jamo(SemanticJamo.vowel(replacement)));
+        return edits;
     }
 }

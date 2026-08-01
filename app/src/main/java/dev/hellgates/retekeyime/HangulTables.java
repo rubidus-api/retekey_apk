@@ -7,6 +7,26 @@ package dev.hellgates.retekeyime;
  * This class is platform-neutral and holds no state.
  */
 public final class HangulTables {
+    /**
+     * The medials built from two or three elements. Backspacing one of these takes it back to the
+     * simple vowel it grew from rather than removing it, so anything that replaces a vowel in place
+     * has to delete twice to be rid of a compound one.
+     */
+    public static boolean isCompoundMedial(int index) {
+        switch (index) {
+            case 9:   // ㅘ
+            case 10:  // ㅙ
+            case 11:  // ㅚ
+            case 14:  // ㅝ
+            case 15:  // ㅞ
+            case 16:  // ㅟ
+            case 19:  // ㅢ
+                return true;
+            default:
+                return false;
+        }
+    }
+
     public static final int HANGUL_BASE = 0xAC00;
     public static final int CHO_COUNT = 19;
     public static final int JUNG_COUNT = 21;

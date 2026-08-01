@@ -186,6 +186,11 @@ public class ReteKeyImeService extends InputMethodService {
             return true;
         }
         hideHanjaCandidatesIfShown();
+        if (keyboardView != null) {
+            // A physical key ends any 12-key run on screen, the same way an on-screen key that is
+            // not part of the run does; otherwise the next tap would continue a run the user left.
+            keyboardView.resetPhoneInterpreters();
+        }
         if (passThroughChord(event)) {
             return super.onKeyDown(keyCode, event);
         }

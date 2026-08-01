@@ -32,6 +32,34 @@ public final class NaratgeulInterpreterTest {
     }
 
     @Test
+    public void sibilantAndGlottalChainsFollowTheirOwnStrokes() {
+        interpreter.press(Key.SIOT);
+        assertEquals(replaced(12), interpreter.press(Key.STROKE));   // ㅅ → ㅈ
+        assertEquals(replaced(14), interpreter.press(Key.STROKE));   // ㅈ → ㅊ
+        assertEquals(replaced(9), interpreter.press(Key.STROKE));    // ㅊ → ㅅ
+
+        interpreter.press(Key.IEUNG);
+        assertEquals(replaced(18), interpreter.press(Key.STROKE));   // ㅇ → ㅎ
+        assertEquals(replaced(11), interpreter.press(Key.STROKE));   // ㅎ → ㅇ
+    }
+
+    @Test
+    public void theLiquidHasNoStrokeOfItsOwn() {
+        interpreter.press(Key.RIEUL);
+
+        // ㄹ is not on any stroke chain, so the key answers nothing rather than inventing a letter.
+        assertTrue(interpreter.press(Key.STROKE).isEmpty());
+    }
+
+    @Test
+    public void theLabialChainWalksFromTheNasal() {
+        interpreter.press(Key.MIEUM);
+        assertEquals(replaced(7), interpreter.press(Key.STROKE));    // ㅁ → ㅂ
+        assertEquals(replaced(17), interpreter.press(Key.STROKE));   // ㅂ → ㅍ
+        assertEquals(replaced(6), interpreter.press(Key.STROKE));    // ㅍ → ㅁ
+    }
+
+    @Test
     public void doublingTurnsAConsonantTenseAndBack() {
         interpreter.press(Key.SIOT);
         assertEquals(replaced(10), interpreter.press(Key.TWIN));     // ㅅ → ㅆ
@@ -55,6 +83,13 @@ public final class NaratgeulInterpreterTest {
     public void aConsonantThatCannotDoubleIsLeftAlone() {
         interpreter.press(Key.IEUNG);                                // ㅇ
         assertTrue(interpreter.press(Key.TWIN).isEmpty());
+    }
+
+    @Test
+    public void aStrokeCanBeDoubledAfterwards() {
+        interpreter.press(Key.SIOT);
+        interpreter.press(Key.STROKE);                               // ㅈ
+        assertEquals(replaced(13), interpreter.press(Key.TWIN));     // ㅉ
     }
 
     @Test
@@ -82,7 +117,8 @@ public final class NaratgeulInterpreterTest {
     public void theRoundVowelsBuildTheCompounds() {
         assertEquals(vowel(8), interpreter.press(Key.O));            // ㅗ
         assertEquals(replacedVowel(9), interpreter.press(Key.A));    // ㅘ
-        assertEquals(replacedVowel(10), interpreter.press(Key.I));   // ㅙ
+        // ㅘ is compound, so replacing it deletes twice before the new vowel.
+        assertEquals(replacedCompoundVowel(10), interpreter.press(Key.I));   // ㅙ
     }
 
     @Test
@@ -119,6 +155,14 @@ public final class NaratgeulInterpreterTest {
         return Arrays.asList(
             SemanticInput.deleteBackward(),
             SemanticInput.jamo(SemanticJamo.contextualConsonant(index)));
+    }
+
+    /** Replacing a compound vowel takes two deletes: the composer decomposes it before removing. */
+    private static List<SemanticInput> replacedCompoundVowel(int index) {
+        return Arrays.asList(
+            SemanticInput.deleteBackward(),
+            SemanticInput.deleteBackward(),
+            SemanticInput.jamo(SemanticJamo.vowel(index)));
     }
 
     private static List<SemanticInput> replacedVowel(int index) {

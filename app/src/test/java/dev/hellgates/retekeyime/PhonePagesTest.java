@@ -84,6 +84,20 @@ public final class PhonePagesTest {
     }
 
     @Test
+    public void cheonjiinPutsIeungUnderSiotWithTheCommitKeyBesideIt() {
+        List<SoftwareKeySpec> bottom = CHEONJIIN.rows().get(3);
+        List<SoftwareKeySpec> above = CHEONJIIN.rows().get(2);
+
+        // Same cell index, so ㅇㅁ lands directly under ㅅㅎ.
+        assertEquals("ㅅㅎ", above.get(3).label());
+        assertEquals("ㅇㅁ", bottom.get(3).label());
+        assertFalse("the cell to its left is empty", bottom.get(2).enabled());
+        SoftwareKeySpec commit = bottom.get(4);
+        assertEquals(SemanticInput.Kind.FLUSH, commit.semanticInput().kind());
+        assertEquals(2, commit.columnSpan());
+    }
+
+    @Test
     public void naratgeulPutsTheStrokeKeysEitherSideOfTheEarthVowel() {
         assertEquals(Arrays.asList("획", "ㅡ", "쌍"), hangulLabels(NARATGEUL.rows().get(3)));
     }

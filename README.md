@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.37** —
-[retekey-0.1.37.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.37/retekey-0.1.37.apk)
+Current release: **v0.1.38** —
+[retekey-0.1.38.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.38/retekey-0.1.38.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -100,7 +100,7 @@ Five letter layouts share that grid:
 | **두벌식** | the standard Korean full keyboard |
 | **QWERTY** | English |
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
-| **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels, and each consonant key cycles its group (ㄱ → ㅋ → ㄲ) |
+| **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels, each consonant key cycles its group (ㄱ → ㅋ → ㄲ), and ▷ ends the syllable so the next letter starts its own |
 | **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ) |
 
 The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each

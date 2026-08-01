@@ -57,7 +57,8 @@ public final class CheonjiinInterpreterTest {
         assertEquals(replacedVowel(13), interpreter.press(Key.DOT));        // ㅡㆍ = ㅜ
         assertEquals(replacedVowel(17), interpreter.press(Key.DOT));        // ㅡㆍㆍ = ㅠ
         assertEquals(replacedVowel(14), interpreter.press(Key.I));          // ㅡㆍㆍㅣ = ㅝ
-        assertEquals(replacedVowel(15), interpreter.press(Key.I));          // ㅞ
+        // ㅝ is compound, so replacing it deletes twice before the new vowel.
+        assertEquals(replacedCompoundVowel(15), interpreter.press(Key.I));  // ㅞ
     }
 
     @Test
@@ -65,8 +66,8 @@ public final class CheonjiinInterpreterTest {
         interpreter.press(Key.DOT);
         assertEquals(vowel(8), interpreter.press(Key.EU));                  // ㆍㅡ = ㅗ
         assertEquals(replacedVowel(11), interpreter.press(Key.I));          // ㆍㅡㅣ = ㅚ
-        assertEquals(replacedVowel(9), interpreter.press(Key.DOT));         // ㆍㅡㅣㆍ = ㅘ
-        assertEquals(replacedVowel(10), interpreter.press(Key.I));          // ㅙ
+        assertEquals(replacedCompoundVowel(9), interpreter.press(Key.DOT)); // ㆍㅡㅣㆍ = ㅘ
+        assertEquals(replacedCompoundVowel(10), interpreter.press(Key.I));  // ㅙ
     }
 
     @Test
@@ -111,6 +112,14 @@ public final class CheonjiinInterpreterTest {
         return java.util.Arrays.asList(
             SemanticInput.deleteBackward(),
             SemanticInput.jamo(SemanticJamo.contextualConsonant(index)));
+    }
+
+    /** Replacing a compound vowel takes two deletes: the composer decomposes it before removing. */
+    private static List<SemanticInput> replacedCompoundVowel(int index) {
+        return java.util.Arrays.asList(
+            SemanticInput.deleteBackward(),
+            SemanticInput.deleteBackward(),
+            SemanticInput.jamo(SemanticJamo.vowel(index)));
     }
 
     private static List<SemanticInput> replacedVowel(int index) {
