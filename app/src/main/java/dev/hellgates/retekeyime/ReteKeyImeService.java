@@ -1,5 +1,6 @@
 package dev.hellgates.retekeyime;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -12,8 +13,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -138,16 +139,17 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Commits the current date and time as text, e.g. "2026. 12. 23.(월) 13:59". */
     private void insertCurrentDate() {
-        DateTimeFormatter formatter =
-            DateTimeFormatter.ofPattern("yyyy. MM. dd.(E) HH:mm", Locale.KOREAN);
-        String stamp = LocalDateTime.now().format(formatter);
+        // SimpleDateFormat rather than java.time, which only exists from API 26.
+        String stamp = new SimpleDateFormat("yyyy. MM. dd.(E) HH:mm", Locale.KOREAN)
+            .format(new Date());
         dispatchSoftwareInput(
             ProjectKeyEvent.softwareDown("touch.menu.date", SemanticInput.text(stamp)));
     }
 
     /** Opens the system input-method picker (keyboard chooser) from the 키보드전환 tile. */
     private void showImePicker() {
-        InputMethodManager manager = getSystemService(InputMethodManager.class);
+        InputMethodManager manager = Compat.systemService(
+            this, Context.INPUT_METHOD_SERVICE, InputMethodManager.class);
         if (manager != null) {
             try {
                 manager.showInputMethodPicker();
@@ -667,9 +669,23 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.setCollapsed(true);
         }
         updateInputViewShown();
-        requestShowSelf(0);
+        showSelfForCandidates();
         candidateWindowAttempts = 0;
         retryCandidateWindow();
+    }
+
+    /**
+     * Brings this IME's own window up so the candidate window has something to attach to.
+     * {@code requestShowSelf} is API 28; {@code showWindow} has been there since the beginning and
+     * does the same job from inside the service.
+     */
+    @SuppressWarnings("deprecation")
+    private void showSelfForCandidates() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            requestShowSelf(0);
+        } else {
+            showWindow(true);
+        }
     }
 
     /** Shows the candidate window if this IME already has a window to attach it to. */
@@ -837,7 +853,8 @@ public class ReteKeyImeService extends InputMethodService {
 
     @SuppressWarnings("deprecation")
     private InputMethodSubtype currentSubtype() {
-        InputMethodManager manager = getSystemService(InputMethodManager.class);
+        InputMethodManager manager = Compat.systemService(
+            this, Context.INPUT_METHOD_SERVICE, InputMethodManager.class);
         return manager == null ? null : manager.getCurrentInputMethodSubtype();
     }
 
@@ -846,7 +863,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (subtype == null) {
             return false;
         }
-        String languageTag = subtype.getLanguageTag();
+        String languageTag = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+            ? subtype.getLanguageTag()
+            : null;
         if (languageTag == null || languageTag.isEmpty()) {
             languageTag = subtype.getLocale().replace('_', '-');
         }

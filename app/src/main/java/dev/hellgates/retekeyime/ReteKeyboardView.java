@@ -15,7 +15,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.IntConsumer;
 
 @SuppressLint("ViewConstructor")
 public final class ReteKeyboardView extends View {
@@ -68,7 +67,7 @@ public final class ReteKeyboardView extends View {
     /** Invoked when the 설정 tile is tapped; the host service opens the settings screen. */
     private Runnable onOpenSettings;
     /** Invoked with an editor context-menu id (copy/paste/undo) for the host to perform. */
-    private IntConsumer onEditCommand;
+    private Fn.IntConsumer onEditCommand;
     /** Invoked when the 날짜 tile is tapped; the host inserts the current date and time. */
     private Runnable onInsertDate;
     /** Invoked when the 키보드전환 tile is tapped; the host opens the input-method picker. */
@@ -78,7 +77,7 @@ public final class ReteKeyboardView extends View {
     /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
     private Runnable onHanja;
     private Runnable onFloatingToggle;
-    private java.util.function.Consumer<KeyboardLayoutId> onLayoutChanged;
+    private Fn.Consumer<KeyboardLayoutId> onLayoutChanged;
     private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
     private final NaratgeulInterpreter naratgeul = new NaratgeulInterpreter();
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
@@ -123,7 +122,7 @@ public final class ReteKeyboardView extends View {
     }
 
     /** Sets the handler for editor context-menu commands (copy/paste/undo) from menu tiles. */
-    public void setOnEditCommand(IntConsumer handler) {
+    public void setOnEditCommand(Fn.IntConsumer handler) {
         this.onEditCommand = handler;
     }
 
@@ -152,7 +151,7 @@ public final class ReteKeyboardView extends View {
     }
 
     /** Told which letter layout the globe key moved to, so the host can name it on screen. */
-    public void setOnLayoutChanged(java.util.function.Consumer<KeyboardLayoutId> handler) {
+    public void setOnLayoutChanged(Fn.Consumer<KeyboardLayoutId> handler) {
         this.onLayoutChanged = handler;
     }
 
@@ -393,7 +392,7 @@ public final class ReteKeyboardView extends View {
                 int left = layout.columnEdge(startColumn, width);
                 int right = layout.columnEdge(startColumn + key.columnSpan(), width);
                 // Cut each key face out of the wash; what is left is exactly the gaps.
-                canvas.clipOutRect(
+                Compat.clipOut(canvas,
                     left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx);
             }
         }
@@ -939,10 +938,10 @@ public final class ReteKeyboardView extends View {
                 runEditCommand(android.R.id.paste);
                 break;
             case UNDO:
-                runEditCommand(android.R.id.undo);
+                runEditCommand(EditMenuIds.UNDO);
                 break;
             case REDO:
-                runEditCommand(android.R.id.redo);
+                runEditCommand(EditMenuIds.REDO);
                 break;
             case SELECT_ALL:
                 runEditCommand(android.R.id.selectAll);

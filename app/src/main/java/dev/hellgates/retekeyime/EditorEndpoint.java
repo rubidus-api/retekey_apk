@@ -1,17 +1,16 @@
 package dev.hellgates.retekeyime;
 
 import java.util.Objects;
-import java.util.function.BooleanSupplier;
 
 public final class EditorEndpoint {
     private final long generation;
     private final EditorBridge bridge;
-    private final BooleanSupplier current;
+    private final Fn.BooleanSupplier current;
 
     private EditorEndpoint(
         long generation,
         EditorBridge bridge,
-        BooleanSupplier current
+        Fn.BooleanSupplier current
     ) {
         if (generation < 1) {
             throw new IllegalArgumentException("generation must be positive");
@@ -41,7 +40,7 @@ public final class EditorEndpoint {
         }
     }
 
-    EditorEndpoint guardedBy(BooleanSupplier additionalGuard) {
+    EditorEndpoint guardedBy(Fn.BooleanSupplier additionalGuard) {
         Objects.requireNonNull(additionalGuard, "additionalGuard");
         return new EditorEndpoint(
             generation,

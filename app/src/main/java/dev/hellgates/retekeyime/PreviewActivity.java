@@ -1,6 +1,7 @@
 package dev.hellgates.retekeyime;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
@@ -38,7 +39,7 @@ public final class PreviewActivity extends Activity {
 
         TextView hint = new TextView(this);
         hint.setText(R.string.preview_hint);
-        hint.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        Compat.setTextAppearance(hint, android.R.style.TextAppearance_DeviceDefault_Medium);
         hint.setPadding(0, 0, 0, dp(12));
         root.addView(hint);
 
@@ -75,7 +76,7 @@ public final class PreviewActivity extends Activity {
     private void addListItem(LinearLayout list, int textRes, View.OnClickListener onClick) {
         TextView row = new TextView(this);
         row.setText(textRes);
-        row.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        Compat.setTextAppearance(row, android.R.style.TextAppearance_DeviceDefault_Medium);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setMinHeight(dp(56));
         int h = dp(12);
@@ -121,14 +122,14 @@ public final class PreviewActivity extends Activity {
     protected void onResume() {
         super.onResume();
         field.requestFocus();
-        InputMethodManager imm = getSystemService(InputMethodManager.class);
+        InputMethodManager imm = Compat.systemService(this, Context.INPUT_METHOD_SERVICE, InputMethodManager.class);
         if (imm != null) {
             imm.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT);
         }
     }
 
     private void showKeyboardPicker(View view) {
-        InputMethodManager imm = getSystemService(InputMethodManager.class);
+        InputMethodManager imm = Compat.systemService(this, Context.INPUT_METHOD_SERVICE, InputMethodManager.class);
         if (imm != null) {
             imm.showInputMethodPicker();
         }

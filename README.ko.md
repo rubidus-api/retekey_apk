@@ -25,41 +25,59 @@
 
 ## 내려받기
 
-**[⬇ 최신 APK 내려받기](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+&nbsp;·&nbsp;
+**[⬇ 안드로이드 5 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.41** —
-[retekey-0.1.41.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.41/retekey-0.1.41.apk)
+현재 릴리즈: **v0.1.42** —
+[retekey-0.1.42.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.42/retekey-0.1.42.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
 
 ## 안드로이드 버전 지원 범위
 
-**안드로이드 9(API 28)부터 안드로이드 16(API 36)까지.**
+같은 앱의 빌드가 둘이다. 기기가 받는 쪽을 설치하면 된다. 패키지 이름이 같아서 한쪽이 다른 쪽을
+대체한다.
 
-| | 버전 | 비고 |
+| 빌드 | 동작 범위 | APK |
 |---|---|---|
-| 최소 | **안드로이드 9** — API 28 | `minSdk 28`. 안드로이드 8.1 이하에는 설치되지 않는다. |
-| 타깃 | **안드로이드 16** — API 36 | `targetSdk 36`, `compileSdk 36`. |
-| 자동 검증 | 안드로이드 13 — API 33 | AOSP x86_64 에뮬레이터, IME 수명주기 테스트. |
-| 수동 검증 | 안드로이드 13 — API 33 | 갤럭시 노트20, 이 프로젝트의 기준 기기. |
+| **modern** | 안드로이드 9 ~ 16 (API 28~36) | `retekey.apk` |
+| **legacy** | 안드로이드 5.0 ~ 16 (API 21~36) | `retekey-legacy.apk` |
 
-9~16 전 구간을 하나의 API 표면으로 컴파일해 지원한다. 앱이 호출하는 플랫폼 API는 모두 API 29에
-존재하며, 그렇지 않은 몇 곳만 명시적인 버전 검사로 감싼다. 표에서 *검증*으로 적은 버전은 실제 테스트가
-돌아간 버전이고, 나머지는 구성상 지원되지만 아직 기기에서 돌려 본 적은 없다.
+둘 다 같은 소스에서 나오고 타깃 API 36 이며, 플랫폼이 허락하는 한 동작이 같다. 빌드를 나눈 이유는
+안드로이드 5 까지 내려가려면 몇 군데에서 옛길을 택해야 하는데, 요즘 폰까지 그 길로 보낼 이유가 없기
+때문이다.
 
-OS 버전에 따라 달라지는 동작:
+### legacy 빌드에서 달라지는 것
 
-- **안드로이드 12(API 31) 이상** — 키보드 색을 사용자의 **Material You** 팔레트에서 가져오고, 눌림
-  진동을 `VibratorManager`로 낸다. 안드로이드 10·11에서는 손으로 맞춘 라이트/다크 팔레트와 구형
-  진동 API를 쓴다. 그 밖에는 동일하다.
-- **안드로이드 9~12(API 28~32)** — 삭제가 UTF-16 코드 단위나 원시 키 이벤트로 물러난다. 이 버전대의
-  코드포인트 삭제를 신뢰할 수 없기 때문이다. 음절이나 이모지가 한 번에 지워지는 결과는 같고, 수단만
-  다르다.
+세 가지뿐이고, 별도 코드가 아니라 모두 기기 쪽 버전 검사 뒤에 있다.
 
-지원 버전 중 기능이 빠지는 버전은 없다. 한자 변환, 2벌식 조합기, 물리 키보드 매핑, 자동반복, 설정
-화면은 전 구간에서 동일하게 동작한다.
+| 구버전에서 | 어떻게 되나 | 기준 |
+|---|---|---|
+| 진동 | 세기 조절 없이 고정 세기. `VibrationEffect` 가 API 26 이고, 그 이전 호출은 지속 시간만 받는다 | API 26 미만 |
+| 슬라이더 | 키보드 높이·투명도 슬라이더가 내부적으로 0 부터 시작해 값을 옮겨 쓴다. `SeekBar.setMin` 이 API 26 | API 26 미만 |
+| 삭제 | 코드포인트 삭제가 없어, 구형 에디터용으로 이미 쓰던 UTF-16 대체 경로가 처리한다. 음절·이모지가 한 번에 지워지는 결과는 같다 | API 24 미만 |
+
+그 밖의 전부 — 다섯 자판, 2벌식과 12키 조합기, 한자 변환, 플로팅 키보드, 물리 키보드, 자동반복,
+테마 — 는 두 빌드에서 같은 코드다. `java.time` 도 `java.util.function` 도 라이브러리 desugaring 도
+쓰지 않으며, 그래서 legacy APK 가 modern 보다 오히려 *작다*.
+
+안드로이드 12(API 31) 이상은 두 빌드 모두 Material You 팔레트를 쓰고, 그 아래는 둘 다 다듬어 둔
+라이트/다크 팔레트로 물러난다.
+
+### 실제로 돌려 본 것
+
+| | 버전 | 방법 |
+|---|---|---|
+| 자동 검증 | 안드로이드 13 — API 33 | AOSP x86_64 에뮬레이터, IME 수명주기 테스트 |
+| 수동 검증 | 안드로이드 13 — API 33 | 갤럭시 노트20, 이 프로젝트의 기준 기기 |
+| 수동 검증 | 안드로이드 13 — API 33 | 같은 에뮬레이터에서 legacy 빌드 |
+
+위 표가 실제 실행이 덮은 버전이다. 나머지 구간은 구성상 지원된다 — 각 빌드의 하한에서 앱이 호출하는
+플랫폼 API 는 모두 존재하고, 그렇지 않은 것은 명시적인 버전 검사 뒤에 있다. 린트도 두 하한 모두에서
+에러 0 이다.
 
 ## 기능
 
@@ -226,7 +244,7 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 캐시는 `RGB_565` 다 — 키보드는 불투명하므로 알파 채널이 필요 없고, 픽셀당 절반은 태블릿에서 크다.
 
 - Java / JDK 17 LTS
-- Android SDK 36 (`minSdk 28`, `targetSdk 36`)
+- Android SDK 36 (`targetSdk 36`, `minSdk` 은 modern 28 / legacy 21)
 - Android Gradle Plugin 9.2.1, Gradle 래퍼 9.4.1
 - R8 최소화, 서드파티 런타임 라이브러리 없음
 
@@ -236,7 +254,8 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 포함된 래퍼를 사용한다.
 
 ```sh
-./gradlew testDebugUnitTest assembleDebug
+./gradlew testModernDebugUnitTest assembleModernDebug   # 안드로이드 9 이상
+./gradlew assembleLegacyDebug                            # 안드로이드 5 이상
 ```
 
 서명된 릴리즈 빌드에는 로컬 `keystore.properties`가 추가로 필요하다. 없으면 릴리즈 변형이 서명되지 않을

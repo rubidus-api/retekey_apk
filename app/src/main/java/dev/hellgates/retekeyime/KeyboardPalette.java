@@ -61,7 +61,7 @@ final class KeyboardPalette {
     }
 
     private static int sys(Context context, int colorRes) {
-        return context.getResources().getColor(colorRes, context.getTheme());
+        return Compat.getColor(context, colorRes);
     }
 
     private static KeyboardPalette dynamic(Context context, boolean night) {

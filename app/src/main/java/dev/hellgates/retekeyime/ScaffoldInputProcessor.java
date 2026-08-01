@@ -1,7 +1,6 @@
 package dev.hellgates.retekeyime;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * No-loss scaffold behavior used until the stateful Hangul composer lands.
@@ -18,13 +17,13 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
     };
     private static final int VOWEL_BASE = 0x314f;
 
-    private final Supplier<EditorProfile> editorProfile;
+    private final Fn.Supplier<EditorProfile> editorProfile;
 
     public ScaffoldInputProcessor() {
         this(EditorProfile::unsupported);
     }
 
-    public ScaffoldInputProcessor(Supplier<EditorProfile> editorProfile) {
+    public ScaffoldInputProcessor(Fn.Supplier<EditorProfile> editorProfile) {
         this.editorProfile = Objects.requireNonNull(editorProfile, "editorProfile");
     }
 

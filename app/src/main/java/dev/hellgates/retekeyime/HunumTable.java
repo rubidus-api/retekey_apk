@@ -33,7 +33,9 @@ public final class HunumTable {
             String hanja = text.substring(0, colon).trim();
             String gloss = text.substring(colon + 1).trim();
             if (!hanja.isEmpty() && !gloss.isEmpty()) {
-                map.putIfAbsent(hanja, gloss);
+                if (!map.containsKey(hanja)) {
+                    map.put(hanja, gloss);
+                }
             }
         }
         return new HunumTable(Collections.unmodifiableMap(map));

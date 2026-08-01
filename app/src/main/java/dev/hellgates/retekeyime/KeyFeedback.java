@@ -61,10 +61,15 @@ final class KeyFeedback {
             try {
                 if (vibrator.hasVibrator()) {
                     int durationMs = 15 + Math.round(haptic * 25.0f);
-                    int amplitude = vibrator.hasAmplitudeControl()
-                        ? Math.max(1, Math.round(haptic * 255.0f))
-                        : VibrationEffect.DEFAULT_AMPLITUDE;
-                    vibrator.vibrate(VibrationEffect.createOneShot(durationMs, amplitude));
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        int amplitude = vibrator.hasAmplitudeControl()
+                            ? Math.max(1, Math.round(haptic * 255.0f))
+                            : VibrationEffect.DEFAULT_AMPLITUDE;
+                        vibrator.vibrate(VibrationEffect.createOneShot(durationMs, amplitude));
+                    } else {
+                        // Before VibrationEffect the only dial is how long it buzzes.
+                        vibrator.vibrate(durationMs);
+                    }
                 }
             } catch (RuntimeException ignored) {
                 // Some devices throw from the vibrator; feedback is optional, typing is not.

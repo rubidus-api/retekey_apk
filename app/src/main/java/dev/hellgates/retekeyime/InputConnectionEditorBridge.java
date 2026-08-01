@@ -44,6 +44,11 @@ public final class InputConnectionEditorBridge implements EditorBridge {
 
     @Override
     public EditorCallResult deleteSurroundingTextInCodePoints(int before, int after) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
+            // Code-point deletion arrived in API 24. Below it the caller's UTF-16 fallback — the
+            // one it already uses for the editors that mishandle code points — is the whole story.
+            return EditorCallResult.rejected();
+        }
         return booleanCall(
             () -> inputConnection.deleteSurroundingTextInCodePoints(before, after)
         );

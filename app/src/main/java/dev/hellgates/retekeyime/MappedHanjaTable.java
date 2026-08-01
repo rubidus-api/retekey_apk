@@ -1,7 +1,6 @@
 package dev.hellgates.retekeyime;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -75,8 +74,12 @@ public final class MappedHanjaTable {
         if (value == null || value.isEmpty()) {
             return Collections.emptyList();
         }
-        List<String> parts = new ArrayList<>(Arrays.asList(value.split(",")));
-        parts.removeIf(String::isEmpty);
+        List<String> parts = new ArrayList<>();
+        for (String part : value.split(",")) {
+            if (!part.isEmpty()) {
+                parts.add(part);
+            }
+        }
         return Collections.unmodifiableList(parts);
     }
 }

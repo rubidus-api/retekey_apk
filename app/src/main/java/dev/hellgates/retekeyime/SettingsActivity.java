@@ -58,20 +58,19 @@ public final class SettingsActivity extends Activity {
         root.addView(sectionHint(R.string.settings_height_hint));
 
         valueLabel = new TextView(this);
-        valueLabel.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        Compat.setTextAppearance(valueLabel, android.R.style.TextAppearance_DeviceDefault_Medium);
         root.addView(valueLabel);
 
         slider = new SeekBar(this);
         int minPercent = Math.round(KeyboardHeightScale.MIN_SCALE * 100);
         int maxPercent = Math.round(KeyboardHeightScale.MAX_SCALE * 100);
-        slider.setMin(minPercent);
-        slider.setMax(maxPercent);
-        slider.setProgress(Math.round(currentScale() * 100));
+        rangeSlider(slider, minPercent, maxPercent);
+        setSliderValue(slider, minPercent, Math.round(currentScale() * 100));
         slider.setPadding(dp(4), dp(12), dp(4), dp(12));
         slider.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                applyPercent(progress);
+                applyPercent(sliderValue(progress, minPercent));
             }
         });
         root.addView(slider, matchWidth());
@@ -140,25 +139,51 @@ public final class SettingsActivity extends Activity {
     }
 
     /** How solid the floating keyboard is; it is translucent so the app stays readable under it. */
+    /**
+     * A slider over {@code [min, max]}. {@code setMin} is API 26; below it the bar runs from zero
+     * and the caller shifts, which is what {@link #sliderValue} and {@link #setSliderValue} do.
+     */
+    private static void rangeSlider(SeekBar bar, int min, int max) {
+        if (Compat.canSetSeekBarMin()) {
+            bar.setMin(min);
+            bar.setMax(max);
+        } else {
+            bar.setMax(max - min);
+        }
+    }
+
+    private static int sliderValue(SeekBar bar, int min) {
+        return Compat.canSetSeekBarMin() ? bar.getProgress() : bar.getProgress() + min;
+    }
+
+    private static void setSliderValue(SeekBar bar, int min, int value) {
+        bar.setProgress(Compat.canSetSeekBarMin() ? value : value - min);
+    }
+
+    private static int sliderValue(int progress, int min) {
+        return Compat.canSetSeekBarMin() ? progress : progress + min;
+    }
+
     private void addFloatingControls(LinearLayout root) {
         root.addView(sectionHeader(R.string.settings_floating_label));
         root.addView(sectionHint(R.string.settings_floating_hint));
 
         TextView label = new TextView(this);
-        label.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        Compat.setTextAppearance(label, android.R.style.TextAppearance_DeviceDefault_Medium);
         root.addView(label);
 
         SeekBar bar = new SeekBar(this);
-        bar.setMin(FloatingKeyboardSettings.MIN_OPACITY_PERCENT);
-        bar.setMax(FloatingKeyboardSettings.MAX_OPACITY_PERCENT);
-        bar.setProgress(FloatingKeyboardSettings.opacityPercent(prefs()));
+        int floor = FloatingKeyboardSettings.MIN_OPACITY_PERCENT;
+        rangeSlider(bar, floor, FloatingKeyboardSettings.MAX_OPACITY_PERCENT);
+        setSliderValue(bar, floor, FloatingKeyboardSettings.opacityPercent(prefs()));
         bar.setPadding(dp(4), dp(12), dp(4), dp(12));
-        label.setText(getString(R.string.settings_floating_value, bar.getProgress()));
+        label.setText(getString(R.string.settings_floating_value, sliderValue(bar, floor)));
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                FloatingKeyboardSettings.setOpacityPercent(prefs(), progress);
-                label.setText(getString(R.string.settings_floating_value, progress));
+                int percent = sliderValue(progress, floor);
+                FloatingKeyboardSettings.setOpacityPercent(prefs(), percent);
+                label.setText(getString(R.string.settings_floating_value, percent));
             }
         });
         root.addView(bar, matchWidth());
@@ -339,18 +364,18 @@ public final class SettingsActivity extends Activity {
         root.addView(label);
 
         SeekBar bar = new SeekBar(this);
-        bar.setMin(min);
-        bar.setMax(max);
+        rangeSlider(bar, min, max);
         int start = Math.max(min, Math.min(max, prefs().getInt(prefKey, def)));
-        bar.setProgress(start);
+        setSliderValue(bar, min, start);
         bar.setPadding(dp(4), dp(8), dp(4), dp(8));
         label.setText(getString(titleRes) + "  " + getString(R.string.settings_ms_value, start));
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
-                prefs().edit().putInt(prefKey, progress).apply();
+                int value = sliderValue(progress, min);
+                prefs().edit().putInt(prefKey, value).apply();
                 label.setText(getString(titleRes) + "  "
-                    + getString(R.string.settings_ms_value, progress));
+                    + getString(R.string.settings_ms_value, value));
             }
         });
         root.addView(bar, matchWidth());
@@ -416,7 +441,7 @@ public final class SettingsActivity extends Activity {
 
             TextView name = new TextView(this);
             name.setText(bindingLabel(binding));
-            name.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+            Compat.setTextAppearance(name, android.R.style.TextAppearance_DeviceDefault_Medium);
             row.addView(name, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -515,7 +540,7 @@ public final class SettingsActivity extends Activity {
     private TextView sectionHeader(int textRes) {
         TextView header = new TextView(this);
         header.setText(textRes);
-        header.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Large);
+        Compat.setTextAppearance(header, android.R.style.TextAppearance_DeviceDefault_Large);
         header.setPadding(0, dp(28), 0, dp(2));
         return header;
     }
@@ -523,7 +548,7 @@ public final class SettingsActivity extends Activity {
     private TextView sectionHint(int textRes) {
         TextView hint = new TextView(this);
         hint.setText(textRes);
-        hint.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Small);
+        Compat.setTextAppearance(hint, android.R.style.TextAppearance_DeviceDefault_Small);
         hint.setPadding(0, dp(4), 0, dp(8));
         return hint;
     }

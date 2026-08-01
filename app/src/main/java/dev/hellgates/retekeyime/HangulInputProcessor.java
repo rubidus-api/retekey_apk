@@ -3,7 +3,6 @@ package dev.hellgates.retekeyime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * Lowers semantic input to editor actions through the stateful {@link HangulComposer}. A jamo
@@ -13,9 +12,9 @@ import java.util.function.Supplier;
  */
 public final class HangulInputProcessor implements StatelessInputProcessor {
     private final HangulComposer composer = new HangulComposer();
-    private final Supplier<EditorProfile> editorProfile;
+    private final Fn.Supplier<EditorProfile> editorProfile;
 
-    public HangulInputProcessor(Supplier<EditorProfile> editorProfile) {
+    public HangulInputProcessor(Fn.Supplier<EditorProfile> editorProfile) {
         this.editorProfile = Objects.requireNonNull(editorProfile, "editorProfile");
     }
 

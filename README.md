@@ -26,42 +26,61 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 
 ## Download
 
-**[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+&nbsp;·&nbsp;
+**[⬇ Android 5+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.41** —
-[retekey-0.1.41.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.41/retekey-0.1.41.apk)
+Current release: **v0.1.42** —
+[retekey-0.1.42.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.42/retekey-0.1.42.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
 
 ## Android version support
 
-**Android 9 (API 28) through Android 16 (API 36).**
+There are two builds of the same app. Install whichever your device takes; they carry the same
+package name, so one replaces the other.
 
-| | Version | Note |
+| Build | Runs on | APK |
 |---|---|---|
-| Minimum | **Android 9** — API 28 | `minSdk 28`. Android 8.1 and older cannot install the APK. |
-| Target | **Android 16** — API 36 | `targetSdk 36`, `compileSdk 36`. |
-| Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test. |
-| Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device. |
+| **modern** | Android 9 – 16 (API 28–36) | `retekey.apk` |
+| **legacy** | Android 5.0 – 16 (API 21–36) | `retekey-legacy.apk` |
 
-The whole 9–16 range is supported and compiled against one API surface: every platform call the
-app makes exists on API 28, and the few that do not are guarded by an explicit version check.
-The rows marked *verified* are the versions an actual test run has covered; the others are
-supported by construction and have not yet been exercised on a device.
+Both are built from the same source, target API 36, and behave identically wherever the platform
+lets them. The split exists because reaching down to Android 5 means taking an older road in a few
+places, and there is no reason to make a current phone take it.
 
-What changes with the OS version:
+### What the legacy build does differently
 
-- **Android 12 (API 31) and newer** — the keyboard takes its colours from the user's **Material You**
-  palette, and press vibration goes through `VibratorManager`. Android 10 and 11 use a hand-tuned
-  light/dark palette and the legacy vibrator instead. Everything else is identical.
-- **Android 9–12 (API 28–32)** — deletion falls back to UTF-16 code units, or to a raw key event,
-  because code-point deletion is not dependable on those releases. A syllable or an emoji still
-  disappears in one press; only the mechanism differs.
+Three things, all of them on the device's side of a version check rather than in a separate
+codebase:
 
-No feature is withheld on any supported version. Hanja conversion, the 2-beolsik composer, physical
-keyboard mapping, auto-repeat, and the settings screen behave the same across the whole range.
+| On older Android | What happens | From |
+|---|---|---|
+| Vibration | one fixed strength instead of a strength dial — `VibrationEffect` is API 26, and the older call only takes a duration | below API 26 |
+| Sliders | the keyboard-height and opacity sliders run from zero internally and are offset — `SeekBar.setMin` is API 26 | below API 26 |
+| Deletion | code-point deletion is not available, so the UTF-16 fallback already used for older editors handles it; a syllable or emoji still disappears in one press | below API 24 |
+
+Everything else — the five layouts, the 2-beolsik and 12-key composers, Hanja conversion, the
+floating keyboard, physical keyboards, auto-repeat, theming — is the same code on both. The app
+uses no `java.time`, no `java.util.function`, and no library desugaring, which is why the legacy
+APK is *smaller* than the modern one rather than larger.
+
+Android 12 (API 31) and newer still take the Material You palette on both builds; below it, both
+fall back to the tuned light/dark palette.
+
+### What has actually been run
+
+| | Version | How |
+|---|---|---|
+| Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test |
+| Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device |
+| Verified by hand | Android 13 — API 33 | the legacy build, on the same emulator |
+
+The rows above are the versions an actual run has covered. The rest of each range is supported by
+construction: every platform call the app makes exists at that build's floor, and the ones that do
+not are behind an explicit version check. Lint agrees at both floors, with no errors.
 
 ## Features
 
@@ -243,7 +262,7 @@ the raised styling costs nothing per frame. That cache is `RGB_565` — the keyb
 needs no alpha channel, and half the bytes per pixel matters on a tablet.
 
 - Java / JDK 17 LTS
-- Android SDK 36 (`minSdk 28`, `targetSdk 36`)
+- Android SDK 36 (`targetSdk 36`; `minSdk 28` modern, `minSdk 21` legacy)
 - Android Gradle Plugin 9.2.1, Gradle wrapper 9.4.1
 - R8 minification; no third-party runtime libraries
 
@@ -253,7 +272,8 @@ Local builds require JDK 17 and Android SDK platform 36 with Build Tools 36.0.0.
 wrapper rather than a system Gradle:
 
 ```sh
-./gradlew testDebugUnitTest assembleDebug
+./gradlew testModernDebugUnitTest assembleModernDebug   # Android 9+
+./gradlew assembleLegacyDebug                            # Android 5+
 ```
 
 A signed release build additionally needs a local `keystore.properties`; without it the release
