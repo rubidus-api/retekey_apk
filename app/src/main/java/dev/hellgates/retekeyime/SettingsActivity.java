@@ -86,6 +86,7 @@ public final class SettingsActivity extends Activity {
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
 
         addLayoutControls(root);
+        addFloatingControls(root);
         addRepeatControls(root);
         addHardwareControls(root);
 
@@ -136,6 +137,31 @@ public final class SettingsActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    /** How solid the floating keyboard is; it is translucent so the app stays readable under it. */
+    private void addFloatingControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_floating_label));
+        root.addView(sectionHint(R.string.settings_floating_hint));
+
+        TextView label = new TextView(this);
+        label.setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Medium);
+        root.addView(label);
+
+        SeekBar bar = new SeekBar(this);
+        bar.setMin(FloatingKeyboardSettings.MIN_OPACITY_PERCENT);
+        bar.setMax(FloatingKeyboardSettings.MAX_OPACITY_PERCENT);
+        bar.setProgress(FloatingKeyboardSettings.opacityPercent(prefs()));
+        bar.setPadding(dp(4), dp(12), dp(4), dp(12));
+        label.setText(getString(R.string.settings_floating_value, bar.getProgress()));
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                FloatingKeyboardSettings.setOpacityPercent(prefs(), progress);
+                label.setText(getString(R.string.settings_floating_value, progress));
+            }
+        });
+        root.addView(bar, matchWidth());
     }
 
     /**

@@ -80,6 +80,7 @@ public class ReteKeyImeService extends InputMethodService {
             floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
         }
         floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
+        floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs()));
         floatingFrame.setOnClose(this::leaveFloatingMode);
         floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
         if (floatingBounds != null) {
@@ -303,6 +304,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (keyboardView != null) {
             // Settings may have turned the current layout off while the keyboard was away.
             keyboardView.reloadLetterLayouts();
+        }
+        if (floatingFrame != null) {
+            floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs()));
         }
         hideHanjaCandidatesIfShown();
         updateHardwareMapper(currentSubtype());

@@ -8,6 +8,9 @@
     <string name="preview_manage_keyboards">Manage installed keyboards (enable/disable)</string>
     <string name="preview_open_settings">⚙ ReteKey settings</string>
     <string name="settings_title">ReteKey settings</string>
+    <string name="settings_floating_label">Floating keyboard</string>
+    <string name="settings_floating_hint">How solid the floating panel is. Lower lets more of the app show through.</string>
+    <string name="settings_floating_value">Opacity: %1$d%%</string>
     <string name="settings_layouts_label">Keyboard layouts</string>
     <string name="settings_layouts_hint">Tick the layouts the 🌐 key should cycle through, and order them with ▲ ▼. Hold 🌐 to convert Hanja.</string>
     <string name="settings_back">← Back to main screen</string>

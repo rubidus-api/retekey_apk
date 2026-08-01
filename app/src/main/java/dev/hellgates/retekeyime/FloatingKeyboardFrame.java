@@ -39,7 +39,8 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     private static final int CELL_WIDTH_DP = 44;
     private static final int CORNER_DP = 10;
     /** How opaque the panel is; low enough to see the app underneath, high enough to read keys. */
-    private static final int PANEL_ALPHA = 0xE0;
+    private int panelAlpha =
+        FloatingKeyboardSettings.alphaOf(FloatingKeyboardSettings.DEFAULT_OPACITY_PERCENT);
 
     private final ReteKeyboardView keyboardView;
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -69,7 +70,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         setWillNotDraw(false);
         // The keyboard paints its own opaque background, so the translucency has to be applied to
         // the whole child rather than to the panel behind it.
-        keyboardView.setAlpha(PANEL_ALPHA / 255.0f);
+        keyboardView.setAlpha(panelAlpha / 255.0f);
         addView(keyboardView);
     }
 
@@ -166,11 +167,11 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         }
         float corner = dp(CORNER_DP);
         panelRect.set(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
-        fill.setColor(withAlpha(palette.background, PANEL_ALPHA));
+        fill.setColor(withAlpha(palette.background, panelAlpha));
         canvas.drawRoundRect(panelRect, corner, corner, fill);
 
         // The bar is a shade brighter than the panel so the handles read as controls, not as keys.
-        fill.setColor(withAlpha(palette.keyFace, PANEL_ALPHA));
+        fill.setColor(withAlpha(palette.keyFace, panelAlpha));
         canvas.drawRoundRect(
             new RectF(bounds.left(), bounds.top(), bounds.right(), bounds.top() + barHeightPx()),
             corner,
@@ -279,6 +280,17 @@ public final class FloatingKeyboardFrame extends ViewGroup {
 
     private static boolean contains(Rect cell, float x, float y) {
         return x >= cell.left && x < cell.right && y >= cell.top && y < cell.bottom;
+    }
+
+    /** Sets how solid the panel is, from the user's opacity setting. */
+    public void setOpacityPercent(int percent) {
+        int alpha = FloatingKeyboardSettings.alphaOf(percent);
+        if (alpha == panelAlpha) {
+            return;
+        }
+        panelAlpha = alpha;
+        keyboardView.setAlpha(panelAlpha / 255.0f);
+        invalidate();
     }
 
     /** Re-reads the theme so the panel follows a light/dark switch like the keyboard does. */

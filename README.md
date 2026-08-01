@@ -29,8 +29,8 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.38** —
-[retekey-0.1.38.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.38/retekey-0.1.38.apk)
+Current release: **v0.1.39** —
+[retekey-0.1.39.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.39/retekey-0.1.39.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -163,7 +163,8 @@ Dragging stops at the centre line: crossing over is the arrow key's job, and it 
 rather than dropping it somewhere new, so a panel hugging the left edge comes back hugging the
 right one. Everything outside the panel still belongs to the app — the keyboard takes no touches
 there and the app is not resized to make room for it. The mode and the panel's placement are
-remembered, and a rotation rescales the panel instead of stranding it off-screen.
+remembered, and a rotation rescales the panel instead of stranding it off-screen. How solid the
+panel is, is yours to set — the opacity slider in settings runs from barely-there to fully solid.
 
 ## Hanja conversion
 
@@ -203,6 +204,7 @@ run select-all/copy/paste/undo.
 The settings screen uses stock controls only and follows the system theme:
 
 - **Keyboard height**, shown as the percentage of the screen the keyboard occupies.
+- **Floating keyboard opacity**, from 25% to fully solid.
 - **Key-press feedback** — visual, vibration, and sound strengths, each 0–100%.
 - **Key auto-repeat** — on/off, start delay, and repeat interval.
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.

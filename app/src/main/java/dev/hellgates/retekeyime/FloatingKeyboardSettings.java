@@ -12,6 +12,12 @@ import android.content.SharedPreferences;
  */
 public final class FloatingKeyboardSettings {
     static final String KEY_ENABLED = "floating_enabled";
+    static final String KEY_OPACITY = "floating_opacity";
+
+    /** How solid the panel is, as a percentage. Below this it is too faint to read the keys. */
+    public static final int MIN_OPACITY_PERCENT = 25;
+    public static final int MAX_OPACITY_PERCENT = 100;
+    public static final int DEFAULT_OPACITY_PERCENT = 88;
     static final String KEY_SIDE_LEFT = "floating_side_left";
     static final String KEY_LEFT = "floating_left";
     static final String KEY_TOP = "floating_top";
@@ -30,6 +36,27 @@ public final class FloatingKeyboardSettings {
     public static void setEnabled(SharedPreferences prefs, boolean enabled) {
         if (prefs != null) {
             prefs.edit().putBoolean(KEY_ENABLED, enabled).apply();
+        }
+    }
+
+    public static int clampOpacity(int percent) {
+        return Math.max(MIN_OPACITY_PERCENT, Math.min(MAX_OPACITY_PERCENT, percent));
+    }
+
+    /** The user's chosen opacity, as a 0-255 alpha the panel can paint with. */
+    public static int alphaOf(int percent) {
+        return Math.round(clampOpacity(percent) * 255.0f / 100.0f);
+    }
+
+    public static int opacityPercent(SharedPreferences prefs) {
+        return prefs == null
+            ? DEFAULT_OPACITY_PERCENT
+            : clampOpacity(prefs.getInt(KEY_OPACITY, DEFAULT_OPACITY_PERCENT));
+    }
+
+    public static void setOpacityPercent(SharedPreferences prefs, int percent) {
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_OPACITY, clampOpacity(percent)).apply();
         }
     }
 
