@@ -3,6 +3,7 @@ package dev.hellgates.retekeyime;
 import static org.junit.Assert.assertEquals;
 
 import dev.hellgates.retekeyime.CheonjiinInterpreter.Key;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
@@ -149,14 +150,58 @@ public final class PhoneCompositionTest {
         assertEquals("만하", naratgeul(N.MIEUM, N.A, N.NIEUN, N.IEUNG, N.STROKE, N.A));
     }
 
-    /** 천지인 reaches ㅎ by tapping ㅅ again, and needs the same re-opening. */
+    /**
+     * Every compound final, spelled on 천지인. Which ones were reachable used to depend on whether
+     * the tail happened to be the first letter of its key: ㅈ and ㅅ and ㅂ have their own tap, but
+     * ㅎ is ㅅ twice, ㅁ is ㅇ twice, ㅌ is ㄷ twice and ㅍ is ㅂ twice — and each of those types a
+     * letter that closes the syllable before the second tap can say what it really was.
+     */
     @Test
-    public void cheonjiinSpellsCompoundFinalsReachedByACycle() {
-        // ㅁ is ㅇ tapped twice, ㅏ is ㅣ ㆍ, and the final ㅎ is ㅅ tapped twice.
+    public void cheonjiinSpellsEveryCompoundFinal() {
+        assertEquals("넋", cheonjiin(Key.NIEUN, Key.DOT, Key.I, Key.GIYEOK, Key.SIOT));
+        assertEquals("앉", cheonjiin(Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.JIEUT));
         assertEquals("많", cheonjiin(
             Key.IEUNG, Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.SIOT, Key.SIOT));
-        // ㅈ has a key of its own, so this one never needed re-opening; it is the control.
-        assertEquals("앉", cheonjiin(Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.JIEUT));
+        assertEquals("닭", cheonjiin(
+            Key.DIGEUT, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.GIYEOK));
+        assertEquals("삶", cheonjiin(
+            Key.SIOT, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.IEUNG, Key.IEUNG));
+        assertEquals("밟", cheonjiin(
+            Key.BIEUP, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.BIEUP));
+        assertEquals("곬", cheonjiin(
+            Key.GIYEOK, Key.DOT, Key.EU, Key.NIEUN, Key.NIEUN, Key.SIOT));
+        assertEquals("핥", cheonjiin(
+            Key.SIOT, Key.SIOT, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.DIGEUT, Key.DIGEUT));
+        assertEquals("읊", cheonjiin(
+            Key.IEUNG, Key.EU, Key.NIEUN, Key.NIEUN, Key.BIEUP, Key.BIEUP));
+        assertEquals("옳", cheonjiin(
+            Key.IEUNG, Key.DOT, Key.EU, Key.NIEUN, Key.NIEUN, Key.SIOT, Key.SIOT));
+        assertEquals("값", cheonjiin(Key.GIYEOK, Key.I, Key.DOT, Key.BIEUP, Key.SIOT));
+    }
+
+    /** And the syllable after one of them, so the re-opened final is left in a usable state. */
+    @Test
+    public void cheonjiinCarriesOnAfterACompoundFinal() {
+        assertEquals("많은", cheonjiin(
+            Key.IEUNG, Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.SIOT, Key.SIOT,
+            Key.IEUNG, Key.EU, Key.NIEUN));
+        // A vowel after ㄶ moves the ㅎ on, exactly as a batchim should.
+        assertEquals("안하", cheonjiin(
+            Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.SIOT, Key.SIOT, Key.I, Key.DOT));
+    }
+
+    /**
+     * The multi-tap boundary. Two letters from one key in a row are one cycle, not two letters, so
+     * 삶 followed by ㅇ needs the ▷ key that ends the syllable — the reason that key is on the page.
+     */
+    @Test
+    public void cheonjiinNeedsTheCommitKeyBetweenTwoLettersOfOneKey() {
+        assertEquals("살은", cheonjiin(
+            Key.SIOT, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.IEUNG, Key.IEUNG,
+            Key.IEUNG, Key.EU, Key.NIEUN));
+        assertEquals("삶은", cheonjiinCommitting(
+            new Key[] {Key.SIOT, Key.I, Key.DOT, Key.NIEUN, Key.NIEUN, Key.IEUNG, Key.IEUNG},
+            new Key[] {Key.IEUNG, Key.EU, Key.NIEUN}));
     }
 
     private interface N {
@@ -192,6 +237,21 @@ public final class PhoneCompositionTest {
         editor.apply(java.util.Collections.singletonList(SemanticInput.flush()));
         interpreter.reset();
         editor.apply(interpreter.press(Key.GIYEOK));
+        return editor.text();
+    }
+
+    /** Types one run, presses ▷ (the key that ends the syllable), then types the next. */
+    private static String cheonjiinCommitting(Key[] first, Key[] second) {
+        CheonjiinInterpreter interpreter = new CheonjiinInterpreter();
+        FakeEditor editor = new FakeEditor();
+        for (Key key : first) {
+            editor.apply(interpreter.press(key));
+        }
+        interpreter.reset();
+        editor.apply(Collections.singletonList(SemanticInput.flush()));
+        for (Key key : second) {
+            editor.apply(interpreter.press(key));
+        }
         return editor.text();
     }
 
