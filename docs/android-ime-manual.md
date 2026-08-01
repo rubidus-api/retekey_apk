@@ -30,6 +30,8 @@ was paid for in this project.
 - [9. Hardware keyboards](#9-hardware-keyboards)
 - [10. The candidates view](#10-the-candidates-view)
 - [11. Drawing a custom keyboard](#11-drawing-a-custom-keyboard)
+  - [11.1 Caching the static image](#111-caching-the-static-image)
+  - [11.2 Touch: from finger to keystroke](#112-touch-from-finger-to-keystroke)
 - [12. Theming](#12-theming)
 - [13. Settings and persistence](#13-settings-and-persistence)
 - [14. Testing and verification](#14-testing-and-verification)
@@ -650,6 +652,8 @@ those keys *before* the "any other key hides the strip" rule.
 A canvas-drawn keyboard redraws on every press. The cost that matters is
 *redraw frequency × per-draw complexity*, so keep the per-frame work proportional to what changed.
 
+### 11.1 Caching the static image
+
 **Cache the static keyboard.** Render the unpressed keyboard — key shapes, bevels, labels — once
 into a `Bitmap`, and on each frame blit the bitmap and draw only the pressed key's overlay:
 
@@ -707,19 +711,125 @@ Other rules:
   expensive.
 - Recycle the cached bitmap in `onDetachedFromWindow`.
 
-Touch handling has its own rule: **a tap counts for the key it started on.** Resolve the key on
-`ACTION_DOWN`, and on `ACTION_UP` only commit if the release is still on that key:
+### 11.2 Touch: from finger to keystroke
+
+The touch layer answers three questions, and each one has a wrong answer that feels like a broken
+keyboard rather than a bug: **which key is this**, **whose finger is it**, and **when does it fire**.
+
+**Which key: every pixel belongs to one.** A key is drawn inset by a small gap, and it is tempting
+to hit-test against that visible face so a near-boundary tap cannot reach the neighbour. Don't. The
+gap belongs to the picture, not to the target — inset hit boxes leave a dead band between every
+pair of keys, and on a 240dpi phone that band is a third of the keyboard's area answering nothing
+(§15.16). Hit test against the whole grid cell, with the same edges the drawing uses:
 
 ```java
-case MotionEvent.ACTION_DOWN:  beginHold(event.getX(), event.getY()); return true;
-case MotionEvent.ACTION_UP:    releaseHold(event.getX(), event.getY()); return true;
+private int rowAt(KeyboardLayout layout, float y) {
+    int height = getHeight();
+    if (height <= 0 || y < 0.0f || y >= height) {
+        return -1;
+    }
+    return Math.min(layout.rows().size() - 1, (int) (y * layout.rows().size() / height));
+}
 ```
 
-If you want a dead zone between keys so near-boundary taps do not hit the neighbour, test the touch
-against the key's *visible* face rather than its whole grid cell.
+**Whose finger: every pointer owns a key.** Typing rolls — the next finger lands before the last
+one lifts — so a view that handles only `ACTION_DOWN` and `ACTION_UP` loses everything pressed in
+between and then releases the *first* finger's key on the final up (§15.11). Handle the masked
+actions, and key the state by pointer id:
+
+```java
+@Override
+public boolean onTouchEvent(MotionEvent event) {
+    int index = event.getActionIndex();
+    switch (event.getActionMasked()) {
+        case MotionEvent.ACTION_DOWN:
+        case MotionEvent.ACTION_POINTER_DOWN:
+            beginTouch(event.getPointerId(index), event.getX(index), event.getY(index));
+            return true;
+        case MotionEvent.ACTION_MOVE:
+            moveTouches(event);                 // every pointer, not getActionIndex()
+            return true;
+        case MotionEvent.ACTION_UP:
+        case MotionEvent.ACTION_POINTER_UP:
+            endTouch(event.getPointerId(index));
+            return true;
+        case MotionEvent.ACTION_CANCEL:
+            cancelAllTouches();
+            return true;
+        default:
+            return true;
+    }
+}
+```
+
+Everything a press carries belongs to the finger, not to the view — the key, the long-press timer,
+the auto-repeat timer, the "a hold already acted" flag, and the grid the indexes were read from:
+
+```java
+private final SparseArray<Touch> touches = new SparseArray<>();
+
+private final class Touch {
+    final int pointerId;
+    final String grid;            // another finger can switch the page mid-press
+    int row;                      // not final: a finger that slides takes the key it slid to
+    int key;
+    boolean holdConsumed;
+    boolean repeatFired;
+    final Runnable onHold = () -> handleLongPress(this);
+    final Runnable onRepeat = () -> handleRepeat(this);
+}
+```
+
+Two guards make that safe. Each timer checks `touches.get(touch.pointerId) != touch` before acting,
+so a callback that outlives its finger does nothing; and `grid` — the page, the layout id, anything
+that changes which cell is where — is compared before the indexes are used, so a finger whose page
+was switched out from under it types nothing instead of typing whatever now sits at `row, key`.
+
+**A finger keeps its key until it clearly leaves it.** A fingertip is never still; it rolls as it
+presses. Re-resolving the key on every move would flip a boundary tap back and forth, and dropping
+the press when the release lands elsewhere loses the keystroke outright. Use hysteresis: the key
+changes only once the finger is a whole touch slop *clear* of its cell.
+
+```java
+/** Whether (x, y) has left the cell [left, right) x [top, bottom) by slop. */
+public static boolean escaped(
+        float x, float y, int left, int top, int right, int bottom, int slop) {
+    return x < left - slop || x > right + slop || y < top - slop || y > bottom + slop;
+}
+```
+
+```java
+if (!escapedKey(layout, touch, x, y)) {
+    continue;                                   // same tap, wobbling
+}
+removeCallbacks(touch.onHold);
+removeCallbacks(touch.onRepeat);
+touch.row = rowIndex;                           // it genuinely went somewhere else
+touch.key = keyIndex;
+armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+```
+
+**When it fires: on release, for whatever key the finger is on.** Do not hit-test the release —
+moves already decided the key, and a second test is only a second chance to disagree. Skip the tap
+when a hold or a repeat already acted for that finger:
+
+```java
+if (touch.holdConsumed || touch.repeatFired) {
+    return;
+}
+SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
+```
 
 Held-key auto-repeat is a `postDelayed` loop that re-fires the held key and re-posts itself; cancel
-it in every path that ends the press, and skip the release-tap if a repeat already fired.
+it in every path that ends the press — release, cancel, retarget, and any layer reset.
+
+**What can and cannot be tested.** Keep the geometry and the hysteresis in Android-free classes and
+they are ordinary JVM tests: sample every few pixels of every layout and require a key at each one,
+and assert the slop rule directly at, on, and past the boundary. What no test reaches is the thing
+that caused the bug — `adb shell input` injects one pointer at a time, so genuine two-finger overlap
+cannot be reproduced from a shell. Keep the per-pointer state small enough to be obviously right by
+reading, and check the overlap by hand on a device.
+
 
 ## 12. Theming
 

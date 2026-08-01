@@ -32,6 +32,8 @@ IME 구현에 관한 내용만 담았고, 실제로 배포된 코드를 기준�
 - [9. 물리 키보드](#9-물리-키보드)
 - [10. 후보 뷰](#10-후보-뷰)
 - [11. 커스텀 키보드 그리기](#11-커스텀-키보드-그리기)
+  - [11.1 정적인 이미지를 캐시하기](#111-정적인-이미지를-캐시하기)
+  - [11.2 터치: 손가락에서 키 입력까지](#112-터치-손가락에서-키-입력까지)
 - [12. 테마](#12-테마)
 - [13. 설정과 영속화](#13-설정과-영속화)
 - [14. 테스트와 검증](#14-테스트와-검증)
@@ -639,6 +641,8 @@ private void showCandidates(String reading, List<Item> items) {
 캔버스로 그리는 키보드는 키를 누를 때마다 다시 그린다. 문제가 되는 비용은
 *다시 그리는 빈도 × 한 번 그리는 복잡도*이므로, 프레임당 작업량을 바뀐 것에 비례하게 유지해야 한다.
 
+### 11.1 정적인 이미지를 캐시하기
+
 **정적인 키보드를 캐시할 것.** 눌리지 않은 키보드 — 키 모양, 입체감, 라벨 — 를 `Bitmap`에 한 번 렌더한
 뒤, 매 프레임 그 비트맵을 붙이고 눌린 키의 오버레이만 그린다.
 
@@ -695,19 +699,123 @@ canvas.drawRoundRect(l, t, r, b, radius, radius, paint);
 - 입체감은 흐림 처리로 비싼 `setShadowLayer`보다 1–2px 어긋난 둥근 사각형으로 낼 것.
 - `onDetachedFromWindow`에서 캐시 비트맵을 recycle할 것.
 
-터치 처리에도 규칙이 있다. **탭은 시작한 키의 것이다.** `ACTION_DOWN`에서 키를 정하고, `ACTION_UP`에서
-여전히 그 키 위일 때만 커밋한다.
+### 11.2 터치: 손가락에서 키 입력까지
+
+터치 층이 답하는 질문은 셋이고, 각각에는 버그가 아니라 **고장 난 자판처럼 느껴지는** 오답이 있다.
+**어느 키인가**, **누구의 손가락인가**, **언제 발사되는가**.
+
+**어느 키인가: 모든 픽셀이 어느 키엔가 속한다.** 키는 작은 간격만큼 안으로 들여 그려지므로, 경계 근처
+탭이 옆 키에 닿지 않도록 그 *보이는 면*과 비교하고 싶어진다. 그러지 말 것. 간격은 그림의 것이지 목표물의
+것이 아니다 — 히트 박스를 들여놓으면 키 쌍마다 죽은 띠가 생기고, 240dpi 기기에서 그 띠는 자판 넓이의
+3분의 1이 아무 답도 하지 않는다는 뜻이다(§15.16). 그리기가 쓰는 것과 같은 경계로, 격자 칸 전체에 대해
+판정할 것.
 
 ```java
-case MotionEvent.ACTION_DOWN:  beginHold(event.getX(), event.getY()); return true;
-case MotionEvent.ACTION_UP:    releaseHold(event.getX(), event.getY()); return true;
+private int rowAt(KeyboardLayout layout, float y) {
+    int height = getHeight();
+    if (height <= 0 || y < 0.0f || y >= height) {
+        return -1;
+    }
+    return Math.min(layout.rows().size() - 1, (int) (y * layout.rows().size() / height));
+}
 ```
 
-경계 근처 탭이 옆 키를 누르지 않도록 키 사이에 데드존을 두려면, 터치를 격자 셀 전체가 아니라 키의
-*보이는 면*과 비교하면 된다.
+**누구의 손가락인가: 포인터마다 자기 키를 갖는다.** 타이핑은 겹친다 — 앞 손가락이 떨어지기 전에 다음
+손가락이 내려앉는다 — 그래서 `ACTION_DOWN` 과 `ACTION_UP` 만 처리하는 뷰는 그 사이에 눌린 것을 전부
+잃고, 마지막으로 뗄 때 **첫** 손가락의 키를 놓아 준다(§15.11). 마스킹된 동작을 처리하고, 상태를 포인터
+id 로 색인할 것.
+
+```java
+@Override
+public boolean onTouchEvent(MotionEvent event) {
+    int index = event.getActionIndex();
+    switch (event.getActionMasked()) {
+        case MotionEvent.ACTION_DOWN:
+        case MotionEvent.ACTION_POINTER_DOWN:
+            beginTouch(event.getPointerId(index), event.getX(index), event.getY(index));
+            return true;
+        case MotionEvent.ACTION_MOVE:
+            moveTouches(event);                 // getActionIndex() 가 아니라 포인터 전부
+            return true;
+        case MotionEvent.ACTION_UP:
+        case MotionEvent.ACTION_POINTER_UP:
+            endTouch(event.getPointerId(index));
+            return true;
+        case MotionEvent.ACTION_CANCEL:
+            cancelAllTouches();
+            return true;
+        default:
+            return true;
+    }
+}
+```
+
+누름이 지니는 것은 전부 뷰가 아니라 손가락의 것이다 — 키, 길게 누르기 타이머, 자동 반복 타이머,
+"홀드가 이미 처리했다" 표시, 그리고 그 색인을 읽어 온 격자까지.
+
+```java
+private final SparseArray<Touch> touches = new SparseArray<>();
+
+private final class Touch {
+    final int pointerId;
+    final String grid;            // 누르는 도중 다른 손가락이 페이지를 바꿀 수 있다
+    int row;                      // final 이 아니다: 미끄러진 손가락은 옮겨간 키를 갖는다
+    int key;
+    boolean holdConsumed;
+    boolean repeatFired;
+    final Runnable onHold = () -> handleLongPress(this);
+    final Runnable onRepeat = () -> handleRepeat(this);
+}
+```
+
+이것을 안전하게 만드는 방벽이 둘이다. 각 타이머는 동작 전에 `touches.get(touch.pointerId) != touch`
+를 확인하므로 손가락보다 오래 산 콜백은 아무 일도 하지 않는다. 그리고 `grid` — 페이지, 자판 id, 어느
+칸이 어디인지를 바꾸는 모든 것 — 를 색인을 쓰기 전에 대조하므로, 발밑에서 페이지가 바뀐 손가락은 지금
+`row, key` 자리에 있는 아무 키나 치는 대신 아무것도 치지 않는다.
+
+**손가락은 확실히 떠날 때까지 자기 키를 유지한다.** 손끝은 결코 가만있지 않고, 누르면서 구른다. 이동마다
+키를 다시 정하면 경계에 놓인 탭이 이쪽저쪽으로 뒤집히고, 뗀 자리가 다르다고 누름을 버리면 입력 자체가
+사라진다. 이력 현상을 쓸 것: 손가락이 자기 칸에서 **터치 슬롭만큼 온전히 벗어났을 때만** 키가 바뀐다.
+
+```java
+/** (x, y) 가 칸 [left, right) × [top, bottom) 에서 slop 만큼 벗어났는가. */
+public static boolean escaped(
+        float x, float y, int left, int top, int right, int bottom, int slop) {
+    return x < left - slop || x > right + slop || y < top - slop || y > bottom + slop;
+}
+```
+
+```java
+if (!escapedKey(layout, touch, x, y)) {
+    continue;                                   // 같은 탭이 흔들리는 것뿐이다
+}
+removeCallbacks(touch.onHold);
+removeCallbacks(touch.onRepeat);
+touch.row = rowIndex;                           // 진짜로 다른 데로 갔다
+touch.key = keyIndex;
+armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+```
+
+**언제 발사되는가: 뗄 때, 그 손가락이 올라가 있는 키로.** 뗄 때 다시 판정하지 말 것 — 키는 이미 이동이
+정했고, 두 번째 판정은 반대할 두 번째 기회일 뿐이다. 그 손가락에 대해 홀드나 반복이 이미 처리했다면
+탭은 건너뛴다.
+
+```java
+if (touch.holdConsumed || touch.repeatFired) {
+    return;
+}
+SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
+```
 
 키 자동 반복은 눌린 키를 다시 발사하고 스스로를 다시 예약하는 `postDelayed` 루프다. 누름이 끝나는 모든
-경로에서 취소하고, 이미 반복이 발생했다면 뗄 때의 탭은 건너뛸 것.
+경로 — 뗌, 취소, 대상 변경, 그리고 모든 레이어 초기화 — 에서 취소할 것.
+
+**검증할 수 있는 것과 없는 것.** 기하와 이력 규칙을 안드로이드 없는 클래스에 두면 평범한 JVM 테스트가
+된다. 모든 자판을 몇 픽셀 간격으로 훑어 어느 점에서나 키가 나오는지 보고, 슬롭 규칙을 경계 안·위·밖에서
+직접 단언한다. 어떤 테스트도 닿지 못하는 것은 정작 버그를 만든 그것이다 — `adb shell input` 은 포인터를
+하나씩만 주입하므로 진짜 두 손가락 겹침은 셸에서 재현할 수 없다. 포인터별 상태는 읽어서 옳음이 드러날
+만큼 작게 유지하고, 겹침은 기기에서 손으로 확인할 것.
+
 
 ## 12. 테마
 

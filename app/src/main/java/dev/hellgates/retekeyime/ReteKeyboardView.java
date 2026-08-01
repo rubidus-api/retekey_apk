@@ -69,8 +69,8 @@ public final class ReteKeyboardView extends View {
 
     /** One height step applied by the menu's 높이 −/＋ tiles. */
     private static final float HEIGHT_STEP = 0.1f;
-    /** Gap (in dp) drawn around each key; also the touch dead zone, so the space between keys
-     * registers no press and a near-boundary tap can't land on the wrong neighbour. */
+    /** Gap (in dp) drawn around each key. Drawing only: the touch target is the whole cell, so
+     * the space between keys still belongs to a key. See TouchTargeting. */
     private static final float KEY_GAP_DP = 4.0f;
     private static final float KEY_RADIUS_DP = 5.0f;
     private static final float KEY_SHADOW_DP = 2.0f;
