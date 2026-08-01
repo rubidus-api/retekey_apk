@@ -769,6 +769,8 @@ public final class ReteKeyboardView extends View {
             // Holding a key types its alternate straight away. There is no popup to aim at and
             // nothing to drag to: the finger is already where it needs to be.
             sink.accept(key.longPressEvent(0));
+            // The alternate is not part of a 12-key run, so it ends one.
+            resetPhoneInterpreters();
             consumeOneShotShift();
             feedback.playKeyDown();
             flashKeyboard(key, key.longPressTexts().get(0));

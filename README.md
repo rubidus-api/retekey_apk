@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 5+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.46** —
-[retekey-0.1.46.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.46/retekey-0.1.46.apk)
+Current release: **v0.1.47** —
+[retekey-0.1.47.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.47/retekey-0.1.47.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -159,7 +159,7 @@ Five letter layouts share that grid:
 | **QWERTY** | English |
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
 | **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels, each consonant key cycles its group (ㄱ → ㅋ → ㄲ), and ▷ ends the syllable so the next letter starts its own |
-| **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ) |
+| **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
 The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each
 one as it arrives. Holding it runs the Hanja conversion.

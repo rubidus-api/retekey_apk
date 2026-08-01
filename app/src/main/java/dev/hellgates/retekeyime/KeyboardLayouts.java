@@ -143,6 +143,16 @@ public final class KeyboardLayouts {
             "touch.naratgeul." + key.name().toLowerCase(java.util.Locale.ROOT), label, span);
     }
 
+    /**
+     * A 나랏글 key with the keypad character it holds. The page's twelve keys sit exactly where a
+     * phone keypad's do, so they carry exactly what a phone keypad carries: 1-9 across the jamo,
+     * 0 under ㅡ in the middle of the bottom row, and * and # either side of it.
+     */
+    private static SoftwareKeySpec naratgeulKey(NaratgeulInterpreter.Key key, String label,
+            int span, String hold) {
+        return naratgeulKey(key, label, span).withLongPress(hold);
+    }
+
     /** The modifier that owns this row's leftmost cell. */
     private static SoftwareKeySpec phoneModifier(int row) {
         switch (row) {
@@ -242,25 +252,25 @@ public final class KeyboardLayouts {
     private static KeyboardLayout naratgeul() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneMenuKey(),
-            naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, "1"),
+            naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2, "2"),
+            naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2, "3"),
             backspaceKey().withColumnSpan(2)));
         rows.add(phoneRow(1, phonePadKey(),
-            naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2, "4"),
+            naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, "5"),
+            naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, "6"),
             phoneSpaceKey()));
         rows.add(phoneRow(2, phoneGap("r2", 1),
-            naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2),
+            naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, "7"),
+            naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, "8"),
+            naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, "9"),
             letterPeriodKey(),
             enterKey()));
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
-            naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2),
-            naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2));
+            naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, "*"),
+            naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, "0"),
+            naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, "#"));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);

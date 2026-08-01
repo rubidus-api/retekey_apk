@@ -98,6 +98,26 @@ public final class PhonePagesTest {
     }
 
     @Test
+    public void naratgeulHoldsAPhoneKeypad() {
+        // The twelve keys sit where a phone keypad's do, so they hold what a phone keypad holds.
+        assertEquals(Arrays.asList("1", "2", "3"), holds(NARATGEUL, 0));
+        assertEquals(Arrays.asList("4", "5", "6"), holds(NARATGEUL, 1));
+        assertEquals(Arrays.asList("7", "8", "9"), holds(NARATGEUL, 2));
+        assertEquals(Arrays.asList("*", "0", "#"), holds(NARATGEUL, 3));
+    }
+
+    /** The alternates of a row's Hangul and transform keys, in order. */
+    private static List<String> holds(KeyboardLayout layout, int row) {
+        List<String> found = new ArrayList<>();
+        for (SoftwareKeySpec key : layout.rows().get(row)) {
+            if (key.stableKeyId().startsWith("touch.naratgeul.")) {
+                found.add(key.hasLongPress() ? key.longPressTexts().get(0) : null);
+            }
+        }
+        return found;
+    }
+
+    @Test
     public void naratgeulPutsTheStrokeKeysEitherSideOfTheEarthVowel() {
         assertEquals(Arrays.asList("획", "ㅡ", "쌍"), hangulLabels(NARATGEUL.rows().get(3)));
     }
