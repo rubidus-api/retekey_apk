@@ -27,11 +27,11 @@
 
 **[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 5 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.47** —
-[retekey-0.1.47.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.47/retekey-0.1.47.apk)
+현재 릴리즈: **v0.1.48** —
+[retekey-0.1.48.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.48/retekey-0.1.48.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -292,7 +292,7 @@ F13–F15와 미디어키·뒤로가기는 비활성 상태로 둔다:
 
 ```sh
 ./gradlew testModernDebugUnitTest assembleModernDebug   # 안드로이드 9 이상
-./gradlew assembleLegacyDebug                            # 안드로이드 5 이상
+./gradlew assembleLegacyDebug                            # 안드로이드 4.0 이상
 ```
 
 서명된 릴리즈 빌드에는 로컬 `keystore.properties`가 추가로 필요하다. 없으면 릴리즈 변형이 서명되지 않을

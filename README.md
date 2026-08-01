@@ -28,11 +28,11 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 
 **[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 5+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.47** —
-[retekey-0.1.47.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.47/retekey-0.1.47.apk)
+Current release: **v0.1.48** —
+[retekey-0.1.48.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.48/retekey-0.1.48.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -313,7 +313,7 @@ wrapper rather than a system Gradle:
 
 ```sh
 ./gradlew testModernDebugUnitTest assembleModernDebug   # Android 9+
-./gradlew assembleLegacyDebug                            # Android 5+
+./gradlew assembleLegacyDebug                            # Android 4.0+
 ```
 
 A signed release build additionally needs a local `keystore.properties`; without it the release

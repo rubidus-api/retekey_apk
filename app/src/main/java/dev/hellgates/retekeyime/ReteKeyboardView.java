@@ -31,13 +31,31 @@ public final class ReteKeyboardView extends View {
     private final KeyFeedback feedback;
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
-    private final Runnable onHoldElapsed = this::handleLongPress;
-    private final Runnable onRepeatElapsed = this::handleRepeat;
+    /**
+     * One finger, and the key it is holding. Typing with two thumbs means two of these at once, so
+     * each carries its own long-press and auto-repeat timers rather than sharing the view's.
+     */
+    private final class Touch {
+        final int pointerId;
+        final int row;
+        final int key;
+        boolean holdConsumed;
+        boolean repeatFired;
+        final Runnable onHold = () -> handleLongPress(this);
+        final Runnable onRepeat = () -> handleRepeat(this);
+
+        Touch(int pointerId, int row, int key) {
+            this.pointerId = pointerId;
+            this.row = row;
+            this.key = key;
+        }
+    }
+
+    private final android.util.SparseArray<Touch> touches = new android.util.SparseArray<>();
     // Held-key auto-repeat (space, enter, backspace, arrows, letters …), configured in settings.
     private boolean repeatEnabled = KeyRepeatSettings.DEFAULT_ENABLED;
     private int repeatDelayMs = KeyRepeatSettings.DEFAULT_DELAY_MS;
     private int repeatIntervalMs = KeyRepeatSettings.DEFAULT_INTERVAL_MS;
-    private boolean repeatFired;
     // Held strongly so the weak listener registration in the preferences survives; it applies
     // settings changes (feedback strengths, height) to a keyboard that is already on screen.
     private final SharedPreferences.OnSharedPreferenceChangeListener prefsListener =
@@ -60,9 +78,6 @@ public final class ReteKeyboardView extends View {
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
     private Page page = Page.LETTERS;
     private NumpadMode numpadMode = NumpadMode.NUMBERS;
-    private int heldRow = -1;
-    private int heldKey = -1;
-    private boolean holdConsumed;
 
     /** Invoked when the 설정 tile is tapped; the host service opens the settings screen. */
     private Runnable onOpenSettings;
@@ -304,7 +319,7 @@ public final class ReteKeyboardView extends View {
     public void resetLayerState() {
         shiftLayer.clear();
         armedModifiers.clear();
-        cancelHold();
+        cancelAllTouches();
         feedback.reload(prefs());
         invalidate();
     }
@@ -433,33 +448,35 @@ public final class ReteKeyboardView extends View {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    /** Tints the held key for a colour-change press feedback (respecting the intensity setting). */
+    /** Tints each held key for a colour-change press feedback, one per finger on the keyboard. */
     private void drawPressFeedback(Canvas canvas, int width, int height) {
-        if (heldRow < 0 || heldKey < 0 || feedback.visualIntensity() <= 0.0f) {
+        if (touches.size() == 0 || feedback.visualIntensity() <= 0.0f) {
             return;
         }
         KeyboardLayout layout = layout();
-        if (heldRow >= layout.rows().size()) {
-            return;
+        for (int i = 0; i < touches.size(); i++) {
+            Touch touch = touches.valueAt(i);
+            if (touch.row >= layout.rows().size()) {
+                continue;
+            }
+            List<SoftwareKeySpec> row = layout.rows().get(touch.row);
+            if (touch.key >= row.size()) {
+                continue;
+            }
+            SoftwareKeySpec key = row.get(touch.key);
+            int top = layout.rowEdge(touch.row, height);
+            int bottom = layout.rowEdge(touch.row + 1, height);
+            int startColumn = layout.startColumn(touch.row, touch.key);
+            int left = layout.columnEdge(startColumn, width);
+            int right = layout.columnEdge(startColumn + key.columnSpan(), width);
+            int tint = palette.pressTint;
+            paint.setColor(Color.argb(Math.round(feedback.visualIntensity() * 150.0f),
+                Color.red(tint), Color.green(tint), Color.blue(tint)));
+            Compat.drawRoundRect(canvas, left + keyGapPx, top + keyGapPx, right - keyGapPx,
+                bottom - keyGapPx, keyRadiusPx, paint);
         }
-        List<SoftwareKeySpec> row = layout.rows().get(heldRow);
-        if (heldKey >= row.size()) {
-            return;
-        }
-        SoftwareKeySpec key = row.get(heldKey);
-        int top = layout.rowEdge(heldRow, height);
-        int bottom = layout.rowEdge(heldRow + 1, height);
-        int startColumn = layout.startColumn(heldRow, heldKey);
-        int left = layout.columnEdge(startColumn, width);
-        int right = layout.columnEdge(startColumn + key.columnSpan(), width);
-        int tint = palette.pressTint;
-        paint.setColor(Color.argb(Math.round(feedback.visualIntensity() * 150.0f),
-            Color.red(tint), Color.green(tint), Color.blue(tint)));
-        Compat.drawRoundRect(canvas, left + keyGapPx, top + keyGapPx, right - keyGapPx,
-            bottom - keyGapPx, keyRadiusPx, paint);
     }
 
-    /** Rebuilds the cached keyboard bitmap when the layout, highlight state, or size changes. */
     private void ensureBaseBitmap(int width, int height) {
         String signature = layoutSignature();
         if (baseBitmap != null && signature.equals(baseSignature)
@@ -547,17 +564,21 @@ public final class ReteKeyboardView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        int index = event.getActionIndex();
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                beginHold(event.getX(), event.getY());
+            case MotionEvent.ACTION_POINTER_DOWN:
+                // Every finger gets its own key. Typing fast rolls — the next finger lands before
+                // the last one lifts — and a keyboard that only hears the first and last pointer
+                // loses everything pressed in between.
+                beginTouch(event.getPointerId(index), event.getX(index), event.getY(index));
                 return true;
             case MotionEvent.ACTION_UP:
-                releaseHold(event.getX(), event.getY());
-                invalidate();
+            case MotionEvent.ACTION_POINTER_UP:
+                endTouch(event.getPointerId(index), event.getX(index), event.getY(index));
                 return true;
             case MotionEvent.ACTION_CANCEL:
-                cancelHold();
-                invalidate();
+                cancelAllTouches();
                 return true;
             default:
                 return true;
@@ -570,8 +591,8 @@ public final class ReteKeyboardView extends View {
         return true;
     }
 
-    private void beginHold(float x, float y) {
-        cancelHold();
+    /** Starts this finger on the key under it, with its own hold and repeat timers. */
+    private void beginTouch(int pointerId, float x, float y) {
         KeyboardLayout layout = layout();
         int rowIndex = rowAt(layout, y);
         int keyIndex = keyIndexAt(layout, rowIndex, x);
@@ -583,8 +604,8 @@ public final class ReteKeyboardView extends View {
             // cannot register as the wrong neighbour.
             return;
         }
-        heldRow = rowIndex;
-        heldKey = keyIndex;
+        Touch touch = new Touch(pointerId, rowIndex, keyIndex);
+        touches.put(pointerId, touch);
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
         invalidate();
@@ -593,10 +614,10 @@ public final class ReteKeyboardView extends View {
         if (key.hasLongPress()
             || key.hasLongPressControl()
             || (key.isControl() && key.control() == ControlKey.SHIFT)) {
-            postDelayed(onHoldElapsed, ViewConfiguration.getLongPressTimeout());
+            postDelayed(touch.onHold, ViewConfiguration.getLongPressTimeout());
         } else if (repeatEnabled && repeatsOnHold(key)) {
             // Ordinary keys with no long press auto-repeat while held.
-            postDelayed(onRepeatElapsed, repeatDelayMs);
+            postDelayed(touch.onRepeat, repeatDelayMs);
         }
     }
 
@@ -607,44 +628,40 @@ public final class ReteKeyboardView extends View {
     }
 
     /** Fires the held key once and schedules the next repeat, until the finger lifts. */
-    private void handleRepeat() {
-        if (heldRow < 0 || heldKey < 0) {
+    private void handleRepeat(Touch touch) {
+        if (touches.get(touch.pointerId) != touch) {
             return;
         }
-        SoftwareKeySpec key = layout().rows().get(heldRow).get(heldKey);
+        SoftwareKeySpec key = layout().rows().get(touch.row).get(touch.key);
         if (!repeatsOnHold(key)) {
             return;
         }
         if (!emitPhoneKey(key)) {
             sink.accept(pressEventWithModifiers(key));
         }
-        repeatFired = true;
+        touch.repeatFired = true;
         feedback.playKeyDown();
         flashKeyboard(key, null);
-        postDelayed(onRepeatElapsed, repeatIntervalMs);
+        postDelayed(touch.onRepeat, repeatIntervalMs);
     }
 
-    private void releaseHold(float x, float y) {
-        int rowIndex = heldRow;
-        int keyIndex = heldKey;
-        boolean consumed = holdConsumed;
-        boolean repeated = repeatFired;
-        removeCallbacks(onHoldElapsed);
-        removeCallbacks(onRepeatElapsed);
-
-        cancelHold();
-        if (consumed || repeated) {
-            // A hold already acted — shift lock, a layer switch, or auto-repeat — so the release
-            // must not also fire the tap.
+    /** Ends this finger's key: it types unless a hold already acted for it. */
+    private void endTouch(int pointerId, float x, float y) {
+        Touch touch = touches.get(pointerId);
+        if (touch == null) {
             return;
         }
-        if (rowIndex < 0 || keyIndex < 0) {
+        forget(touch);
+        invalidate();
+        if (touch.holdConsumed || touch.repeatFired) {
+            // A hold already acted — shift lock, a layer switch, an alternate, or auto-repeat — so
+            // the release must not also fire the tap.
             return;
         }
         KeyboardLayout layout = layout();
         // A tap counts for the key it started on, so a small slide inside one key still types it.
         SoftwareKeySpec key = layout.keyAt(x, y, getWidth(), getHeight());
-        SoftwareKeySpec held = layout.rows().get(rowIndex).get(keyIndex);
+        SoftwareKeySpec held = layout.rows().get(touch.row).get(touch.key);
         if (key != held) {
             return;
         }
@@ -667,6 +684,24 @@ public final class ReteKeyboardView extends View {
             flashKeyboard(held, null);
             performClick();
         }
+    }
+
+    /** Drops a finger's timers and its claim on a key. */
+    private void forget(Touch touch) {
+        removeCallbacks(touch.onHold);
+        removeCallbacks(touch.onRepeat);
+        touches.remove(touch.pointerId);
+    }
+
+    /** The gesture was cancelled: no finger types. */
+    private void cancelAllTouches() {
+        for (int i = touches.size() - 1; i >= 0; i--) {
+            Touch touch = touches.valueAt(i);
+            removeCallbacks(touch.onHold);
+            removeCallbacks(touch.onRepeat);
+        }
+        touches.clear();
+        invalidate();
     }
 
     /**
@@ -749,20 +784,20 @@ public final class ReteKeyboardView extends View {
         return ProjectKeyEvent.softwareDown(key.stableKeyId(), input.withModifiers(mods));
     }
 
-    private void handleLongPress() {
-        if (heldRow < 0 || heldKey < 0) {
+    private void handleLongPress(Touch touch) {
+        if (touches.get(touch.pointerId) != touch) {
             return;
         }
-        SoftwareKeySpec key = layout().rows().get(heldRow).get(heldKey);
+        SoftwareKeySpec key = layout().rows().get(touch.row).get(touch.key);
         if (key.isControl() && key.control() == ControlKey.SHIFT) {
             shiftLayer.toggleLock();
-            holdConsumed = true;
+            touch.holdConsumed = true;
             invalidate();
             return;
         }
         if (key.hasLongPressControl()) {
             applyControl(key.longPressControl());
-            holdConsumed = true;
+            touch.holdConsumed = true;
             return;
         }
         if (key.hasLongPress()) {
@@ -774,18 +809,9 @@ public final class ReteKeyboardView extends View {
             consumeOneShotShift();
             feedback.playKeyDown();
             flashKeyboard(key, key.longPressTexts().get(0));
-            holdConsumed = true;
+            touch.holdConsumed = true;
             performClick();
         }
-    }
-
-    private void cancelHold() {
-        removeCallbacks(onHoldElapsed);
-        removeCallbacks(onRepeatElapsed);
-        repeatFired = false;
-        heldRow = -1;
-        heldKey = -1;
-        holdConsumed = false;
     }
 
     /**

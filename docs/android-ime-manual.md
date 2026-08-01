@@ -1004,6 +1004,99 @@ fault.
 **Rule.** Before concluding "the keyboard is broken", reproduce with a build that is known to work.
 See [§14](#14-testing-and-verification).
 
+### 15.11 Listening only to the first and last pointer
+
+**What happened.** `onTouchEvent` handled `ACTION_DOWN` and `ACTION_UP` and nothing else. Typing
+quickly *rolls* — the next finger lands before the last one lifts — and those presses arrive as
+`ACTION_POINTER_DOWN`, which fell through to `default` and was ignored. Every key pressed while
+another finger was still down was silently lost, and worse, the eventual `ACTION_UP` released the
+*first* finger's key, so a ㅅ pressed during a ㅈ came out as ㅈ. It reads as the keyboard eating
+input, and no test that injects one tap at a time can see it.
+
+**The fix.** Give every pointer its own key, with its own timers:
+
+```java
+case MotionEvent.ACTION_DOWN:
+case MotionEvent.ACTION_POINTER_DOWN:
+    beginTouch(event.getPointerId(index), event.getX(index), event.getY(index));
+    return true;
+case MotionEvent.ACTION_UP:
+case MotionEvent.ACTION_POINTER_UP:
+    endTouch(event.getPointerId(index), event.getX(index), event.getY(index));
+    return true;
+```
+
+```java
+private final SparseArray<Touch> touches = new SparseArray<>();
+
+private final class Touch {
+    final int pointerId; final int row; final int key;
+    boolean holdConsumed; boolean repeatFired;
+    // Two thumbs means two of these at once, so the long-press and repeat timers cannot be
+    // fields on the view.
+    final Runnable onHold = () -> handleLongPress(this);
+    final Runnable onRepeat = () -> handleRepeat(this);
+}
+```
+
+Each timer checks `touches.get(touch.pointerId) != touch` before acting, so a callback that fires
+after its finger has lifted does nothing. The press highlight draws every held key, not one.
+
+**Rule.** A keyboard may draw one highlight, but it must *hear* every pointer. Anything the view
+keeps per press — the held key, the long-press timer, the repeat timer, the "a hold already acted"
+flag — belongs to the finger, not to the view. And note what cannot be tested this way: adb injects
+one pointer at a time, so the overlap that causes the bug cannot be reproduced from a shell. Keep
+the per-pointer state small enough to be obviously right by reading.
+
+### 15.12 Throwing away the meaning of a repeat
+
+**What happened.** Holding a key on a Bluetooth keyboard typed one character and then went silent.
+The platform delivers a held key as further `ACTION_DOWN`s with a rising `getRepeatCount()`, and two
+layers independently discarded them: the event normaliser refused to attach semantic input to
+anything with `repeatCount != 0`, and the dispatcher answered a tracked repeat with "handled, no
+actions" — swallowed, so the editor never saw it either.
+
+**Rule.** A repeat is a keystroke. If you consume the first press you must consume and *act on* the
+repeats, or delegate both. Half of each is the one combination that loses input.
+
+### 15.13 Assuming backspace deletes what you last added
+
+**What happened.** A 12-key mode replaces the jamo on screen by sending backspace and then the
+successor — the natural way to express "that tap turned ㅗ into ㅜ". It worked until compound
+vowels: the composer *decomposes* a compound medial rather than removing it, so 과 backspaces to 고,
+not to ㄱ. The replacement then landed next to a leftover vowel and ㆍㅡㅣㆍ produced 고ㅘ instead of
+과.
+
+**Rule.** If you drive a composer by deleting and re-adding, you own its deletion semantics too.
+Know which jamo decompose and delete twice for them — and test through the composer into editor
+text, not just at the interface between your layers. Table-level tests passed the whole time.
+
+### 15.14 A glyph the device has no font for
+
+**What happened.** The menu key was drawn as `☰`. On Android 4.4 the canvas drew *nothing*: the
+platform has no font covering it, so the key was an empty cell. The same was true of most of the
+symbol labels. No test could see this — it was found by taking a screenshot.
+
+**Rule.** On old platforms, prefer a short word to a glyph you have not seen render there. Keep the
+substitution in one table keyed by API level, so the layout keeps its glyph and only the painting
+changes. And screenshot the oldest version you support: a blank key is invisible to every assertion
+you will think to write.
+
+### 15.15 Parsing a dictionary that could have stayed on disk
+
+**What happened.** 190 KB of Hanja tables became about 2.6 MB of Java heap once every entry was a
+`String` in a `HashMap` — an object header and a char array for each of some twenty thousand keys
+and values, to answer lookups that touch one of them at a time.
+
+**The fix.** Ship the tables sorted, store them uncompressed so they can be mapped
+(`androidResources { noCompress += ["idx"] }`), and bisect the mapped bytes in place. The data never
+enters the heap: the pages are file-backed and clean, so the kernel drops them under pressure and
+reads them back when a lookup touches them again.
+
+**Rule.** A lookup table that is read far more often than it changes belongs on disk, not in a map.
+When you generate the shipped form, test that it answers exactly what the old form answered — on
+every entry, in every direction. That comparison is what caught a candidate ordering difference here.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

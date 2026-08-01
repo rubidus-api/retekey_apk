@@ -63,6 +63,24 @@ public final class HardwareKeyLifecycleTest {
     }
 
     @Test
+    public void twoPhysicalKeysHeldAtOnceBothType() {
+        // The on-screen keyboard types one key at a time; a physical keyboard must not. Holding a
+        // key while pressing the next is how anyone types fast on hardware, and both must land.
+        InputDispatcher dispatcher = new InputDispatcher();
+
+        Assert.assertEquals(
+            DispatchResult.handled(KeyAction.commitText("a")),
+            dispatcher.dispatch(textDown(7, 29)));
+        Assert.assertEquals(
+            DispatchResult.handled(KeyAction.commitText("a")),
+            dispatcher.dispatch(textDown(7, 30)));
+
+        // And each key's own release is matched to it, in whichever order the fingers lift.
+        Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(keyUp(7, 29, false)));
+        Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(keyUp(7, 30, false)));
+    }
+
+    @Test
     public void canceledMatchingUpClearsTheConsumedIdentity() {
         InputDispatcher dispatcher = new InputDispatcher();
 
