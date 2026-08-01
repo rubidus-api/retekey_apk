@@ -469,7 +469,9 @@ public final class ReteKeyboardView extends View {
         if (baseBitmap != null) {
             baseBitmap.recycle();
         }
-        baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        // The cached keyboard is opaque — it starts with a solid background fill — so it needs no
+        // alpha channel, and RGB_565 halves what the cache costs. On a tablet that is megabytes.
+        baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         palette = KeyboardPalette.resolve(getContext());
         Canvas cache = new Canvas(baseBitmap);
         cache.drawColor(palette.background);

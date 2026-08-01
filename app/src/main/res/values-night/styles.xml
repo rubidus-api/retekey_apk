@@ -1,0 +1,4 @@
+<resources>
+    <!-- The dark half of ReteScreenTheme; see res/values/styles.xml. -->
+    <style name="ReteScreenTheme" parent="@android:style/Theme.DeviceDefault" />
+</resources>

@@ -29,25 +29,25 @@ dependencies — the release APK is about 230 KB.
 **[⬇ Download the latest APK](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.39** —
-[retekey-0.1.39.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.39/retekey-0.1.39.apk)
+Current release: **v0.1.40** —
+[retekey-0.1.40.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.40/retekey-0.1.40.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
 
 ## Android version support
 
-**Android 10 (API 29) through Android 16 (API 36).**
+**Android 9 (API 28) through Android 16 (API 36).**
 
 | | Version | Note |
 |---|---|---|
-| Minimum | **Android 10** — API 29 | `minSdk 29`. Android 9 and older cannot install the APK. |
+| Minimum | **Android 9** — API 28 | `minSdk 28`. Android 8.1 and older cannot install the APK. |
 | Target | **Android 16** — API 36 | `targetSdk 36`, `compileSdk 36`. |
 | Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test. |
 | Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device. |
 
-The whole 10–16 range is supported and compiled against one API surface: every platform call the
-app makes exists on API 29, and the three that do not are guarded by an explicit version check.
+The whole 9–16 range is supported and compiled against one API surface: every platform call the
+app makes exists on API 28, and the few that do not are guarded by an explicit version check.
 The rows marked *verified* are the versions an actual test run has covered; the others are
 supported by construction and have not yet been exercised on a device.
 
@@ -56,7 +56,7 @@ What changes with the OS version:
 - **Android 12 (API 31) and newer** — the keyboard takes its colours from the user's **Material You**
   palette, and press vibration goes through `VibratorManager`. Android 10 and 11 use a hand-tuned
   light/dark palette and the legacy vibrator instead. Everything else is identical.
-- **Android 10–12 (API 29–32)** — deletion falls back to UTF-16 code units, or to a raw key event,
+- **Android 9–12 (API 28–32)** — deletion falls back to UTF-16 code units, or to a raw key event,
   because code-point deletion is not dependable on those releases. A syllable or an emoji still
   disappears in one press; only the mechanism differs.
 
@@ -237,10 +237,11 @@ refuses input because its idea of the cursor disagrees with the editor's.
 
 The keyboard is drawn on a canvas. The unpressed keyboard is rendered once into a cached bitmap and
 reused until the layout, highlight state, size, or theme changes; a key press only tints one key, so
-the raised styling costs nothing per frame.
+the raised styling costs nothing per frame. That cache is `RGB_565` — the keyboard is opaque, so it
+needs no alpha channel, and half the bytes per pixel matters on a tablet.
 
 - Java / JDK 17 LTS
-- Android SDK 36 (`minSdk 29`, `targetSdk 36`)
+- Android SDK 36 (`minSdk 28`, `targetSdk 36`)
 - Android Gradle Plugin 9.2.1, Gradle wrapper 9.4.1
 - R8 minification; no third-party runtime libraries
 

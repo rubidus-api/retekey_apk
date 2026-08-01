@@ -3,4 +3,11 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:fontFamily">sans</item>
     </style>
+
+    <!--
+      The screens follow the system's light/dark mode. Theme.DeviceDefault.DayNight would do this
+      in one line but only from API 29; picking the light or dark parent through the -night
+      resource qualifier is the same result and works everywhere.
+    -->
+    <style name="ReteScreenTheme" parent="@android:style/Theme.DeviceDefault.Light" />
 </resources>
