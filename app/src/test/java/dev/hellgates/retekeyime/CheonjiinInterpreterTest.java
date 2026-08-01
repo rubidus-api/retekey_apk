@@ -110,21 +110,21 @@ public final class CheonjiinInterpreterTest {
 
     private static List<SemanticInput> replaced(int index) {
         return java.util.Arrays.asList(
-            SemanticInput.deleteBackward(),
+            SemanticInput.deleteForCorrection(),
             SemanticInput.jamo(SemanticJamo.contextualConsonant(index)));
     }
 
     /** Replacing a compound vowel takes two deletes: the composer decomposes it before removing. */
     private static List<SemanticInput> replacedCompoundVowel(int index) {
         return java.util.Arrays.asList(
-            SemanticInput.deleteBackward(),
-            SemanticInput.deleteBackward(),
+            SemanticInput.deleteForCorrection(),
+            SemanticInput.deleteForCorrection(),
             SemanticInput.jamo(SemanticJamo.vowel(index)));
     }
 
     private static List<SemanticInput> replacedVowel(int index) {
         return java.util.Arrays.asList(
-            SemanticInput.deleteBackward(),
+            SemanticInput.deleteForCorrection(),
             SemanticInput.jamo(SemanticJamo.vowel(index)));
     }
 }

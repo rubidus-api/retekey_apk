@@ -47,6 +47,13 @@ public final class HangulComposer {
     private int cho = -1;
     private int jung = -1;
     private int jong = -1;
+    /**
+     * The syllable the last consonant closed and pushed out, kept for exactly one input. A 12-key
+     * automaton types a consonant and only then learns what it becomes: ㅇ, then 획추가, is ㅎ. By
+     * the time the stroke arrives the ㅇ has already started a new syllable and 만 is committed, so
+     * without this the ㄶ of 많 can never be assembled. Null whenever there is nothing to re-open.
+     */
+    private int[] closedSyllable;
 
     public boolean isComposing() {
         return state != State.EMPTY;
@@ -57,6 +64,7 @@ public final class HangulComposer {
         cho = -1;
         jung = -1;
         jong = -1;
+        closedSyllable = null;
     }
 
     /** Feeds one jamo. CONTEXTUAL_CONSONANT is a choseong index, VOWEL is a jungseong index. */
@@ -64,6 +72,8 @@ public final class HangulComposer {
         if (jamo == null) {
             throw new IllegalArgumentException("jamo must not be null");
         }
+        // Only the input immediately after a syllable break may re-open it.
+        closedSyllable = null;
         switch (jamo.role()) {
             case CONTEXTUAL_CONSONANT:
             case DIRECT_INITIAL:
@@ -104,6 +114,7 @@ public final class HangulComposer {
                     return preedit(syllable());
                 }
                 String commit = syllable();
+                closedSyllable = new int[] {cho, jung, -1};
                 cho = c;
                 jung = -1;
                 state = State.CHO;
@@ -116,6 +127,7 @@ public final class HangulComposer {
                     return preedit(syllable());
                 }
                 String commit = syllable();
+                closedSyllable = new int[] {cho, jung, jong};
                 cho = c;
                 jung = -1;
                 jong = -1;
@@ -184,6 +196,7 @@ public final class HangulComposer {
      * caller should let the editor handle the backspace).
      */
     public Result backspace() {
+        closedSyllable = null;
         switch (state) {
             case EMPTY:
                 return null;
@@ -215,6 +228,27 @@ public final class HangulComposer {
             default:
                 throw new IllegalStateException("unreachable state");
         }
+    }
+
+    /**
+     * Takes back the syllable the consonant now composing pushed out, discarding that consonant.
+     * The caller is left holding a syllable that is composing again, and must remove the one
+     * character it had already committed for it. Returns null when there is nothing to re-open,
+     * which is every case except the input right after a consonant closed a syllable.
+     *
+     * <p>This is what lets 나랏글 spell 많: ㅁㅏㄴ closes as 만 when ㅇ arrives, 획추가 asks for the
+     * ㅇ back, and the ㅎ that replaces it then has a 만 to attach to.
+     */
+    public Result reopenClosedSyllable() {
+        if (closedSyllable == null || state != State.CHO) {
+            return null;
+        }
+        cho = closedSyllable[0];
+        jung = closedSyllable[1];
+        jong = closedSyllable[2];
+        state = jong > 0 ? State.CHO_JUNG_JONG : State.CHO_JUNG;
+        closedSyllable = null;
+        return preedit(syllable());
     }
 
     /** Commits whatever is composing and resets. Returns the committed text (may be empty). */

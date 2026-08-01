@@ -186,7 +186,7 @@ public final class CheonjiinInterpreter {
     }
 
     private static List<SemanticInput> replaceWith(SemanticInput input) {
-        return new ArrayList<>(Arrays.asList(SemanticInput.deleteBackward(), input));
+        return new ArrayList<>(Arrays.asList(SemanticInput.deleteForCorrection(), input));
     }
 
     /**
@@ -195,9 +195,9 @@ public final class CheonjiinInterpreter {
      */
     private static List<SemanticInput> replaceVowel(Integer current, int replacement) {
         List<SemanticInput> edits = new ArrayList<>(3);
-        edits.add(SemanticInput.deleteBackward());
+        edits.add(SemanticInput.deleteForCorrection());
         if (current != null && HangulTables.isCompoundMedial(current)) {
-            edits.add(SemanticInput.deleteBackward());
+            edits.add(SemanticInput.deleteForCorrection());
         }
         edits.add(SemanticInput.jamo(SemanticJamo.vowel(replacement)));
         return edits;

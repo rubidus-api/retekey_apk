@@ -25,6 +25,44 @@ public final class HangulInputProcessorTest {
     }
 
     @Test
+    public void aCorrectionDeleteTakesBackTheSyllableItClosed() {
+        HangulInputProcessor processor = processor();
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(6)));  // ㅁ
+        processor.process(SemanticInput.jamo(SemanticJamo.vowel(0)));                // 마
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2)));  // 만
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11))); // 만 + ㅇ
+
+        // The automaton asks for its ㅇ back: clear it, take 만 out of the editor, compose it again.
+        assertEquals(
+            Arrays.asList(
+                KeyAction.setComposingText(""),
+                KeyAction.deleteBackward(),
+                KeyAction.setComposingText("만")
+            ),
+            processor.process(SemanticInput.deleteForCorrection()).actions()
+        );
+        assertEquals(
+            Collections.singletonList(KeyAction.setComposingText("많")),
+            processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(18))).actions()
+        );
+    }
+
+    @Test
+    public void theUsersOwnBackspaceJustDeletes() {
+        HangulInputProcessor processor = processor();
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(6)));
+        processor.process(SemanticInput.jamo(SemanticJamo.vowel(0)));
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2)));
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11)));
+
+        // The ㅇ goes, and 만 stays committed where the user can see it.
+        assertEquals(
+            Collections.singletonList(KeyAction.setComposingText("")),
+            processor.process(SemanticInput.deleteBackward()).actions()
+        );
+    }
+
+    @Test
     public void aComposingJamoOnlySetsComposingText() {
         HangulInputProcessor processor = processor();
         assertEquals(

@@ -2,6 +2,7 @@ package dev.hellgates.retekeyime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -65,6 +66,54 @@ public final class HangulComposerTest {
         }
         out.append(composer.flush());
         return out.toString();
+    }
+
+    @Test
+    public void aClosedSyllableCanBeReopenedByTheKeyThatClosedIt() {
+        HangulComposer composer = new HangulComposer();
+        composer.input(SemanticJamo.contextualConsonant(6));   // ㅁ
+        composer.input(SemanticJamo.vowel(0));                 // ㅏ
+        composer.input(SemanticJamo.contextualConsonant(2));   // ㄴ, a batchim: 만
+        // ㅇ cannot join ㄴ, so 만 is committed and ㅇ starts over.
+        assertEquals("만", composer.input(SemanticJamo.contextualConsonant(11)).commit());
+
+        // 획추가 takes the ㅇ back; 만 is composing again.
+        HangulComposer.Result reopened = composer.reopenClosedSyllable();
+        assertNotNull(reopened);
+        assertEquals("만", reopened.preedit());
+        // And the ㅎ that replaces the ㅇ now has a syllable to attach to.
+        assertEquals("많", composer.input(SemanticJamo.contextualConsonant(18)).preedit());
+    }
+
+    @Test
+    public void thereIsNothingToReopenWithoutAJustClosedSyllable() {
+        HangulComposer composer = new HangulComposer();
+        assertNull(composer.reopenClosedSyllable());
+        composer.input(SemanticJamo.contextualConsonant(6));   // ㅁ
+        composer.input(SemanticJamo.vowel(0));                 // ㅏ
+        assertNull(composer.reopenClosedSyllable());           // mid-syllable, nothing was closed
+    }
+
+    @Test
+    public void aSyllableIsOnlyReopenableForOneInput() {
+        HangulComposer composer = new HangulComposer();
+        composer.input(SemanticJamo.contextualConsonant(6));   // ㅁ
+        composer.input(SemanticJamo.vowel(0));                 // ㅏ
+        composer.input(SemanticJamo.contextualConsonant(2));   // 만
+        composer.input(SemanticJamo.contextualConsonant(11));  // commits 만, starts ㅇ
+        composer.input(SemanticJamo.vowel(0));                 // 아 — the moment has passed
+        assertNull(composer.reopenClosedSyllable());
+    }
+
+    @Test
+    public void anOrdinaryBackspaceSpendsTheReopening() {
+        HangulComposer composer = new HangulComposer();
+        composer.input(SemanticJamo.contextualConsonant(6));
+        composer.input(SemanticJamo.vowel(0));
+        composer.input(SemanticJamo.contextualConsonant(2));
+        composer.input(SemanticJamo.contextualConsonant(11));  // commits 만, starts ㅇ
+        composer.backspace();                                  // the user deleting, not a correction
+        assertNull(composer.reopenClosedSyllable());
     }
 
     @Test

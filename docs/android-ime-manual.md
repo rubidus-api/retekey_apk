@@ -1240,6 +1240,48 @@ Prefer hysteresis (a slop the finger must exceed) over a dead zone (an area that
 and let the target tile the surface with no space left over. A unit test can assert exactly that:
 sample every few pixels of every layout and require a key at each one.
 
+### 15.17 A syllable committed before the letter was finished
+
+**What happened.** 나랏글 could not spell 많. The 12-key automata reach most letters by transforming
+what is already on screen — ㅇ then 획추가 is ㅎ — so the keyboard types a letter *before* it knows
+what that letter will be. By the time the stroke arrives, the composer has already seen ㅇ, decided
+that ㄴ + ㅇ is not a compound final, committed 만 to the editor, and started a new syllable. The
+stroke's delete-and-retype then produced 만 ㅎ, because the ㅎ had nothing left to attach to: the
+syllable it belonged to was no longer the composer's to change.
+
+Compound finals typed outright were fine all along — 값, 삶, 닭 — which is why the tables looked
+innocent. Every 겹받침 whose tail needs a transform was unreachable: 많, 않, 앉, 옳, 핥.
+
+**The fix.** Distinguish the two reasons a keyboard deletes. A user's backspace means *undo what I
+see*; an automaton's means *take back the letter I typed, I am about to say what it really was*.
+The second one is allowed to re-open the syllable the composer closed a moment ago:
+
+```java
+public Result reopenClosedSyllable() {
+    if (closedSyllable == null || state != State.CHO) {
+        return null;
+    }
+    cho = closedSyllable[0];
+    jung = closedSyllable[1];
+    jong = closedSyllable[2];
+    state = jong > 0 ? State.CHO_JUNG_JONG : State.CHO_JUNG;
+    closedSyllable = null;
+    return preedit(syllable());
+}
+```
+
+The composer remembers the syllable a consonant pushed out, for exactly one input — any other input
+clears it, so only the transform that immediately follows can use it. The processor spends it as
+three editor actions: clear the consonant being corrected, take the committed syllable back out of
+the editor, and put it into composition again. The replacement then joins it by the ordinary
+compound-final rule, and 많 assembles itself.
+
+**Rule.** When a keyboard types letters it may still revise, "commit" is a promise it cannot yet
+make. Either delay the commit or keep a way to take it back — and make the two kinds of delete
+different values in the vocabulary rather than the same one, because the automaton knows something
+the user's backspace does not. Test this where the syllables are, not where the jamo are: the jamo
+tables were right the whole time.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

@@ -38,7 +38,7 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
             case TEXT:
                 return flushThen(KeyAction.commitText(input.text()));
             case DELETE_BACKWARD:
-                return delete();
+                return delete(input.isCorrection());
             case FLUSH:
                 return flushOnly();
             case PRIMARY_ACTION:
@@ -61,7 +61,19 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         return DispatchResult.handled(actions);
     }
 
-    private DispatchResult delete() {
+    private DispatchResult delete(boolean correction) {
+        if (correction) {
+            HangulComposer.Result reopened = composer.reopenClosedSyllable();
+            if (reopened != null) {
+                // Drop the consonant being corrected, take back the syllable it closed, and put
+                // that syllable back into composition so the replacement can join it.
+                return DispatchResult.handled(
+                    KeyAction.setComposingText(""),
+                    KeyAction.deleteBackward(),
+                    KeyAction.setComposingText(reopened.preedit())
+                );
+            }
+        }
         HangulComposer.Result result = composer.backspace();
         if (result == null) {
             // Nothing composing: let the editor delete a real character.

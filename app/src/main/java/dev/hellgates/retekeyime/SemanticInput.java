@@ -16,24 +16,28 @@ public final class SemanticInput {
     }
 
     private static final SemanticInput DELETE_BACKWARD =
-        new SemanticInput(Kind.DELETE_BACKWARD, "", null, null, Collections.emptySet());
+        new SemanticInput(Kind.DELETE_BACKWARD, "", null, null, Collections.emptySet(), false);
+    private static final SemanticInput DELETE_FOR_CORRECTION =
+        new SemanticInput(Kind.DELETE_BACKWARD, "", null, null, Collections.emptySet(), true);
     private static final SemanticInput FLUSH =
-        new SemanticInput(Kind.FLUSH, "", null, null, Collections.emptySet());
+        new SemanticInput(Kind.FLUSH, "", null, null, Collections.emptySet(), false);
     private static final SemanticInput PRIMARY_ACTION =
-        new SemanticInput(Kind.PRIMARY_ACTION, "", null, null, Collections.emptySet());
+        new SemanticInput(Kind.PRIMARY_ACTION, "", null, null, Collections.emptySet(), false);
 
     private final Kind kind;
     private final String text;
     private final SemanticJamo jamo;
     private final RawKey rawKey;
     private final Set<KeyModifier> modifiers;
+    private final boolean correction;
 
     private SemanticInput(
         Kind kind,
         String text,
         SemanticJamo jamo,
         RawKey rawKey,
-        Set<KeyModifier> modifiers
+        Set<KeyModifier> modifiers,
+        boolean correction
     ) {
         this.kind = kind;
         this.text = text;
@@ -42,20 +46,21 @@ public final class SemanticInput {
         this.modifiers = modifiers.isEmpty()
             ? Collections.emptySet()
             : Collections.unmodifiableSet(EnumSet.copyOf(modifiers));
+        this.correction = correction;
     }
 
     public static SemanticInput text(String text) {
         if (text == null || text.isEmpty() || !UnicodeScalar.isWellFormed(text)) {
             throw new IllegalArgumentException("text input must be non-empty well-formed Unicode");
         }
-        return new SemanticInput(Kind.TEXT, text, null, null, Collections.emptySet());
+        return new SemanticInput(Kind.TEXT, text, null, null, Collections.emptySet(), false);
     }
 
     public static SemanticInput jamo(SemanticJamo jamo) {
         if (jamo == null) {
             throw new IllegalArgumentException("jamo must not be null");
         }
-        return new SemanticInput(Kind.JAMO, "", jamo, null, Collections.emptySet());
+        return new SemanticInput(Kind.JAMO, "", jamo, null, Collections.emptySet(), false);
     }
 
     /** A hardware key, optionally chorded with modifiers, delivered to the editor as a key event. */
@@ -70,7 +75,7 @@ public final class SemanticInput {
         if (modifiers == null) {
             throw new IllegalArgumentException("modifiers must not be null");
         }
-        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, modifiers);
+        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, modifiers, false);
     }
 
     /** The same raw key with an added set of modifiers folded in. */
@@ -84,11 +89,28 @@ public final class SemanticInput {
         EnumSet<KeyModifier> merged = EnumSet.noneOf(KeyModifier.class);
         merged.addAll(modifiers);
         merged.addAll(extra);
-        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, merged);
+        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, merged, false);
     }
 
     public static SemanticInput deleteBackward() {
         return DELETE_BACKWARD;
+    }
+
+    /**
+     * A delete the keyboard issues to take back a letter it typed itself, on the way to typing the
+     * letter that replaces it — the 12-key automata do this whenever a key transforms what is on
+     * screen. It deletes exactly what an ordinary backspace deletes, and additionally lets the
+     * Hangul composer re-open the syllable it closed a moment ago, so a consonant reached by 획추가
+     * or 쌍자음 can still become the tail of a compound final. A user's own backspace must stay
+     * {@link #deleteBackward()}: it means "undo what I see", not "I am mid-letter".
+     */
+    public static SemanticInput deleteForCorrection() {
+        return DELETE_FOR_CORRECTION;
+    }
+
+    /** Whether this delete is the keyboard correcting its own output rather than the user's. */
+    public boolean isCorrection() {
+        return correction;
     }
 
     public static SemanticInput flush() {
@@ -133,6 +155,7 @@ public final class SemanticInput {
         }
         SemanticInput that = (SemanticInput) other;
         return kind == that.kind
+            && correction == that.correction
             && text.equals(that.text)
             && Objects.equals(jamo, that.jamo)
             && rawKey == that.rawKey
@@ -141,7 +164,7 @@ public final class SemanticInput {
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, jamo, rawKey, modifiers);
+        return Objects.hash(kind, text, jamo, rawKey, modifiers, correction);
     }
 
     @Override
@@ -152,6 +175,7 @@ public final class SemanticInput {
             ", jamo=" + jamo +
             ", rawKey=" + rawKey +
             ", modifiers=" + modifiers +
+            ", correction=" + correction +
             '}';
     }
 }

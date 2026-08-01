@@ -117,6 +117,48 @@ public final class PhoneCompositionTest {
         assertEquals("갈", naratgeul(N.GIYEOK, N.A, N.RIEUL));
     }
 
+    /**
+     * A compound final whose tail is reached by 획추가 or by a multi-tap: the consonant starts a
+     * fresh syllable when it is typed, and only the transform that follows reveals that it belongs
+     * to the syllable before it.
+     */
+    @Test
+    public void naratgeulSpellsCompoundFinalsReachedByAStroke() {
+        assertEquals("많", naratgeul(N.MIEUM, N.A, N.NIEUN, N.IEUNG, N.STROKE));
+        assertEquals("않", naratgeul(N.IEUNG, N.A, N.NIEUN, N.IEUNG, N.STROKE));
+        assertEquals("앉", naratgeul(N.IEUNG, N.A, N.NIEUN, N.SIOT, N.STROKE));
+        assertEquals("옳", naratgeul(N.IEUNG, N.O, N.RIEUL, N.IEUNG, N.STROKE));
+        assertEquals("핥", naratgeul(N.IEUNG, N.STROKE, N.A, N.RIEUL, N.NIEUN, N.STROKE, N.STROKE));
+    }
+
+    /** The compound finals whose parts are both typed outright still work, unchanged. */
+    @Test
+    public void naratgeulSpellsTheCompoundFinalsTypedOutright() {
+        assertEquals("값", naratgeul(N.GIYEOK, N.A, N.MIEUM, N.STROKE, N.SIOT));
+        assertEquals("삶", naratgeul(N.SIOT, N.A, N.RIEUL, N.MIEUM));
+        assertEquals("닭", naratgeul(N.NIEUN, N.STROKE, N.A, N.RIEUL, N.GIYEOK));
+        assertEquals("읽", naratgeul(N.IEUNG, N.I, N.RIEUL, N.GIYEOK));
+    }
+
+    /** And a stroke that spells no compound final still just starts the next syllable. */
+    @Test
+    public void naratgeulLeavesAnImpossibleFinalAlone() {
+        // ㄴ + ㅂ is not a compound final, so ㅂ stays the initial it started as.
+        assertEquals("만ㅂ", naratgeul(N.MIEUM, N.A, N.NIEUN, N.MIEUM, N.STROKE));
+        // And the batchim still moves when a vowel follows one that did combine.
+        assertEquals("만하", naratgeul(N.MIEUM, N.A, N.NIEUN, N.IEUNG, N.STROKE, N.A));
+    }
+
+    /** 천지인 reaches ㅎ by tapping ㅅ again, and needs the same re-opening. */
+    @Test
+    public void cheonjiinSpellsCompoundFinalsReachedByACycle() {
+        // ㅁ is ㅇ tapped twice, ㅏ is ㅣ ㆍ, and the final ㅎ is ㅅ tapped twice.
+        assertEquals("많", cheonjiin(
+            Key.IEUNG, Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.SIOT, Key.SIOT));
+        // ㅈ has a key of its own, so this one never needed re-opening; it is the control.
+        assertEquals("앉", cheonjiin(Key.IEUNG, Key.I, Key.DOT, Key.NIEUN, Key.JIEUT));
+    }
+
     private interface N {
         NaratgeulInterpreter.Key GIYEOK = NaratgeulInterpreter.Key.GIYEOK;
         NaratgeulInterpreter.Key NIEUN = NaratgeulInterpreter.Key.NIEUN;
