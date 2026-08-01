@@ -421,7 +421,8 @@ public final class ReteKeyboardView extends View {
         float radius = dp(10);
 
         paint.setColor(palette.keyAccent);
-        canvas.drawRoundRect(left, top, left + boxWidth, top + boxHeight, radius, radius, paint);
+        Compat.drawRoundRect(
+            canvas, left, top, left + boxWidth, top + boxHeight, radius, paint);
         paint.setColor(palette.background);
         canvas.drawText(
             flashLabel, centerX, top + boxHeight * 0.5f - (paint.descent() + paint.ascent()) / 2.0f,
@@ -454,8 +455,8 @@ public final class ReteKeyboardView extends View {
         int tint = palette.pressTint;
         paint.setColor(Color.argb(Math.round(feedback.visualIntensity() * 150.0f),
             Color.red(tint), Color.green(tint), Color.blue(tint)));
-        canvas.drawRoundRect(left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx,
-            keyRadiusPx, keyRadiusPx, paint);
+        Compat.drawRoundRect(canvas, left + keyGapPx, top + keyGapPx, right - keyGapPx,
+            bottom - keyGapPx, keyRadiusPx, paint);
     }
 
     /** Rebuilds the cached keyboard bitmap when the layout, highlight state, or size changes. */
@@ -508,9 +509,9 @@ public final class ReteKeyboardView extends View {
         float b = bottom - keyGapPx;
         // A darker lip just below the face makes the key look raised.
         paint.setColor(palette.keyShadow);
-        canvas.drawRoundRect(l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, keyRadiusPx, paint);
+        Compat.drawRoundRect(canvas, l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, paint);
         paint.setColor(keyFillColor(key));
-        canvas.drawRoundRect(l, t, r, b, keyRadiusPx, keyRadiusPx, paint);
+        Compat.drawRoundRect(canvas, l, t, r, b, keyRadiusPx, paint);
         paint.setColor(key.enabled() || key.isControl() ? palette.keyText : palette.keyTextMuted);
         fitLabel(key.label(), right - left, bottom - top);
         canvas.drawText(key.label(), (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);

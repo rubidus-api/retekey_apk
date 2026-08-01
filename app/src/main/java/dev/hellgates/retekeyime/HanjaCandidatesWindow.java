@@ -43,7 +43,7 @@ public final class HanjaCandidatesWindow {
         popup.setOutsideTouchable(false);
         popup.setClippingEnabled(true);
         popup.setBackgroundDrawable(new ColorDrawable(0x00000000));
-        popup.setElevation(dp(context, 8));
+        Compat.setElevation(popup, dp(context, 8));
     }
 
     /**

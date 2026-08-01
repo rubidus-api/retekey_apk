@@ -2,10 +2,15 @@ package dev.hellgates.retekeyime;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.Region;
 import android.os.Build;
+import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import java.nio.charset.Charset;
+import java.util.Locale;
 
 /**
  * The handful of places where a newer API is nicer and an older one still works.
@@ -52,6 +57,42 @@ public final class Compat {
         }
         return context.getResources().getColor(colorResId);
     }
+
+    /** A rounded rectangle. The all-float overload is API 21; the RectF one has always existed. */
+    public static void drawRoundRect(Canvas canvas, float left, float top, float right,
+            float bottom, float radius, Paint paint) {
+        RectF rect = new RectF(left, top, right, bottom);
+        canvas.drawRoundRect(rect, radius, radius, paint);
+    }
+
+    /** A drop shadow under a popup. {@code setElevation} is API 21; below it there is none. */
+    public static void setElevation(PopupWindow popup, float elevation) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            popup.setElevation(elevation);
+        }
+    }
+
+    /**
+     * The language of a BCP-47 tag. {@code Locale.forLanguageTag} is API 21, and all this code
+     * needs is the part before the first separator — "ko" out of "ko-KR".
+     */
+    public static String languageOf(String languageTag) {
+        if (languageTag == null || languageTag.isEmpty()) {
+            return "";
+        }
+        int end = 0;
+        while (end < languageTag.length()) {
+            char c = languageTag.charAt(end);
+            if (c == '-' || c == '_') {
+                break;
+            }
+            end++;
+        }
+        return languageTag.substring(0, end).toLowerCase(Locale.US);
+    }
+
+    /** UTF-8 without {@code StandardCharsets}, which is API 19. */
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
 
     /** {@code getSystemService(Class)} is API 23; the name-based form has always been there. */
     @SuppressWarnings("unchecked")

@@ -869,7 +869,7 @@ public class ReteKeyImeService extends InputMethodService {
         if (languageTag == null || languageTag.isEmpty()) {
             languageTag = subtype.getLocale().replace('_', '-');
         }
-        return "ko".equals(Locale.forLanguageTag(languageTag).getLanguage());
+        return "ko".equals(Compat.languageOf(languageTag));
     }
 
     private ExecutionResult execute(DispatchResult result) {

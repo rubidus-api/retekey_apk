@@ -17,8 +17,8 @@ android {
     defaultConfig {
         applicationId = "dev.hellgates.retekeyime"
         targetSdk = 36
-        versionCode = 43
-        versionName = "0.1.42"
+        versionCode = 44
+        versionName = "0.1.43"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -35,10 +35,11 @@ android {
         }
         legacy {
             dimension = "platform"
-            // Android 5.0 and up, for the devices that are still in daily use and will never see
-            // another update. Everything works; three things behave differently, and the README
-            // says which.
-            minSdk = 21
+            // Android 4.0 and up, for the devices that are still in daily use and will never see
+            // another update. Everything works; a few things behave differently, and the README
+            // says which. API 11 is the real floor below this: no InputMethodSubtype, no
+            // modifier-key detection, no touchable region — features rather than fallbacks.
+            minSdk = 14
             versionNameSuffix = "-legacy"
         }
     }

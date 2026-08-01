@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 5+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.42** —
-[retekey-0.1.42.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.42/retekey-0.1.42.apk)
+Current release: **v0.1.43** —
+[retekey-0.1.43.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.43/retekey-0.1.43.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -45,10 +45,10 @@ package name, so one replaces the other.
 | Build | Runs on | APK |
 |---|---|---|
 | **modern** | Android 9 – 16 (API 28–36) | `retekey.apk` |
-| **legacy** | Android 5.0 – 16 (API 21–36) | `retekey-legacy.apk` |
+| **legacy** | Android 4.0 – 16 (API 14–36) | `retekey-legacy.apk` |
 
 Both are built from the same source, target API 36, and behave identically wherever the platform
-lets them. The split exists because reaching down to Android 5 means taking an older road in a few
+lets them. The split exists because reaching down to Android 4 means taking an older road in a few
 places, and there is no reason to make a current phone take it.
 
 ### What the legacy build does differently
@@ -61,11 +61,20 @@ codebase:
 | Vibration | one fixed strength instead of a strength dial — `VibrationEffect` is API 26, and the older call only takes a duration | below API 26 |
 | Sliders | the keyboard-height and opacity sliders run from zero internally and are offset — `SeekBar.setMin` is API 26 | below API 26 |
 | Deletion | code-point deletion is not available, so the UTF-16 fallback already used for older editors handles it; a syllable or emoji still disappears in one press | below API 24 |
+| Shadows | the Hanja window has no drop shadow — `PopupWindow.setElevation` is API 21 | below API 21 |
+| Theme | the screens use the platform's own DeviceDefault rather than Material | below API 21 |
 
 Everything else — the five layouts, the 2-beolsik and 12-key composers, Hanja conversion, the
 floating keyboard, physical keyboards, auto-repeat, theming — is the same code on both. The app
 uses no `java.time`, no `java.util.function`, and no library desugaring, which is why the legacy
 APK is *smaller* than the modern one rather than larger.
+
+Android 4.0 is where it stops, and the reason is structural rather than stubborn. Below API 11
+there is no `InputMethodSubtype` (so no 한/영 mode), no `KeyEvent.isCtrlPressed` or F-key codes (so
+no physical-keyboard support), no `Insets.touchableRegion` (so no floating keyboard); below API 9
+there is no `getSelectedText` (so no Hanja on a selection) and no `MotionEvent.getActionMasked`.
+Reaching Android 2 would not be a port of this keyboard; it would be a different, much smaller
+one.
 
 Android 12 (API 31) and newer still take the Material You palette on both builds; below it, both
 fall back to the tuned light/dark palette.
@@ -77,6 +86,7 @@ fall back to the tuned light/dark palette.
 | Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test |
 | Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device |
 | Verified by hand | Android 13 — API 33 | the legacy build, on the same emulator |
+| Verified by hand | **Android 4.4 — API 19** | the legacy build on a KitKat emulator: Korean types, 한자 converts, settings opens |
 
 The rows above are the versions an actual run has covered. The rest of each range is supported by
 construction: every platform call the app makes exists at that build's floor, and the ones that do

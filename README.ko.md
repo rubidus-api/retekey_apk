@@ -30,8 +30,8 @@
 **[⬇ 안드로이드 5 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.42** —
-[retekey-0.1.42.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.42/retekey-0.1.42.apk)
+현재 릴리즈: **v0.1.43** —
+[retekey-0.1.43.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.43/retekey-0.1.43.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -44,10 +44,10 @@
 | 빌드 | 동작 범위 | APK |
 |---|---|---|
 | **modern** | 안드로이드 9 ~ 16 (API 28~36) | `retekey.apk` |
-| **legacy** | 안드로이드 5.0 ~ 16 (API 21~36) | `retekey-legacy.apk` |
+| **legacy** | 안드로이드 4.0 ~ 16 (API 14~36) | `retekey-legacy.apk` |
 
 둘 다 같은 소스에서 나오고 타깃 API 36 이며, 플랫폼이 허락하는 한 동작이 같다. 빌드를 나눈 이유는
-안드로이드 5 까지 내려가려면 몇 군데에서 옛길을 택해야 하는데, 요즘 폰까지 그 길로 보낼 이유가 없기
+안드로이드 4 까지 내려가려면 몇 군데에서 옛길을 택해야 하는데, 요즘 폰까지 그 길로 보낼 이유가 없기
 때문이다.
 
 ### legacy 빌드에서 달라지는 것
@@ -59,10 +59,18 @@
 | 진동 | 세기 조절 없이 고정 세기. `VibrationEffect` 가 API 26 이고, 그 이전 호출은 지속 시간만 받는다 | API 26 미만 |
 | 슬라이더 | 키보드 높이·투명도 슬라이더가 내부적으로 0 부터 시작해 값을 옮겨 쓴다. `SeekBar.setMin` 이 API 26 | API 26 미만 |
 | 삭제 | 코드포인트 삭제가 없어, 구형 에디터용으로 이미 쓰던 UTF-16 대체 경로가 처리한다. 음절·이모지가 한 번에 지워지는 결과는 같다 | API 24 미만 |
+| 그림자 | 한자 창에 그림자가 없다 (`PopupWindow.setElevation` 이 API 21) | API 21 미만 |
+| 테마 | 화면이 Material 대신 플랫폼 기본 테마를 쓴다 | API 21 미만 |
 
 그 밖의 전부 — 다섯 자판, 2벌식과 12키 조합기, 한자 변환, 플로팅 키보드, 물리 키보드, 자동반복,
 테마 — 는 두 빌드에서 같은 코드다. `java.time` 도 `java.util.function` 도 라이브러리 desugaring 도
 쓰지 않으며, 그래서 legacy APK 가 modern 보다 오히려 *작다*.
+
+안드로이드 4.0 이 하한인 이유는 고집이 아니라 구조다. API 11 미만에는 `InputMethodSubtype` 이 없고
+(한/영 모드가 없다), `KeyEvent.isCtrlPressed` 와 F 키 코드가 없으며(물리 키보드 지원이 없다),
+`Insets.touchableRegion` 이 없다(플로팅 키보드가 없다). API 9 미만에는 `getSelectedText` 도
+`MotionEvent.getActionMasked` 도 없다. 안드로이드 2 로 내려가는 것은 이 키보드의 이식이 아니라 훨씬
+작은 다른 키보드를 만드는 일이 된다.
 
 안드로이드 12(API 31) 이상은 두 빌드 모두 Material You 팔레트를 쓰고, 그 아래는 둘 다 다듬어 둔
 라이트/다크 팔레트로 물러난다.
@@ -74,6 +82,7 @@
 | 자동 검증 | 안드로이드 13 — API 33 | AOSP x86_64 에뮬레이터, IME 수명주기 테스트 |
 | 수동 검증 | 안드로이드 13 — API 33 | 갤럭시 노트20, 이 프로젝트의 기준 기기 |
 | 수동 검증 | 안드로이드 13 — API 33 | 같은 에뮬레이터에서 legacy 빌드 |
+| 수동 검증 | **안드로이드 4.4 — API 19** | KitKat 에뮬레이터에서 legacy 빌드: 한글 입력·한자 변환·설정 화면 |
 
 위 표가 실제 실행이 덮은 버전이다. 나머지 구간은 구성상 지원된다 — 각 빌드의 하한에서 앱이 호출하는
 플랫폼 API 는 모두 존재하고, 그렇지 않은 것은 명시적인 버전 검사 뒤에 있다. 린트도 두 하한 모두에서

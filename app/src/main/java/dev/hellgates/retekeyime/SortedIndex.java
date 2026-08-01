@@ -1,7 +1,6 @@
 package dev.hellgates.retekeyime;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * A lookup table that stays on disk. The bytes are sorted {@code key\tvalue} lines, and a search
@@ -79,7 +78,7 @@ public final class SortedIndex {
         if (key == null || key.isEmpty() || isEmpty()) {
             return null;
         }
-        byte[] wanted = key.getBytes(StandardCharsets.UTF_8);
+        byte[] wanted = key.getBytes(Compat.UTF_8);
         int lineStart = lowerBound(wanted);
         if (lineStart >= end) {
             return null;
@@ -168,6 +167,6 @@ public final class SortedIndex {
         for (int i = 0; i < slice.length; i++) {
             slice[i] = bytes.get(from + i);
         }
-        return new String(slice, StandardCharsets.UTF_8);
+        return new String(slice, Compat.UTF_8);
     }
 }
