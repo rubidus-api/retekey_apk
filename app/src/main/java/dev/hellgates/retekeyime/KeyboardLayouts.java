@@ -137,6 +137,16 @@ public final class KeyboardLayouts {
             "touch.cheonjiin." + key.name().toLowerCase(java.util.Locale.ROOT), label, 2);
     }
 
+    /**
+     * A 천지인 key with the keypad digit it holds. The ten Hangul keys sit where a phone keypad's
+     * do — ㅣ ㆍ ㅡ across the top, then the consonant groups, then ㅇㅁ at the bottom — so they
+     * carry 1 to 9 and 0, the same numbers those keys have always carried.
+     */
+    private static SoftwareKeySpec cheonjiinKey(
+            CheonjiinInterpreter.Key key, String label, String hold) {
+        return cheonjiinKey(key, label).withLongPress(hold);
+    }
+
     private static SoftwareKeySpec naratgeulKey(NaratgeulInterpreter.Key key, String label,
             int span) {
         return phoneKey(
@@ -219,26 +229,26 @@ public final class KeyboardLayouts {
     private static KeyboardLayout cheonjiin() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneMenuKey(),
-            cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ"),
-            cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ"),
-            cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", "1"),
+            cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", "2"),
+            cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", "3"),
             backspaceKey().withColumnSpan(2)));
         rows.add(phoneRow(1, phonePadKey(),
-            cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ"),
-            cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ"),
-            cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", "4"),
+            cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", "5"),
+            cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", "6"),
             phoneSpaceKey()));
         rows.add(phoneRow(2, phoneGap("r2", 1),
-            cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ"),
-            cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ"),
-            cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", "7"),
+            cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", "8"),
+            cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", "9"),
             letterPeriodKey(),
             enterKey()));
         // ㅇㅁ sits under ㅅㅎ; to its right the key that ends the syllable being composed and
         // moves on, so two same-key letters can follow each other without a space between them.
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
             phoneGap("r3b", 2),
-            cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ"),
+            cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0"),
             commitKey());
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);

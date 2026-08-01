@@ -207,6 +207,31 @@ public final class CheonjiinInterpreter {
         return addOf(SemanticInput.jamo(SemanticJamo.contextualConsonant(target)));
     }
 
+    /**
+     * The letter a drag off {@code key} would type, for the guide the keyboard shows under a held
+     * finger. A consonant has nothing above or below it, so those directions answer with the
+     * letter a plain tap gives — which is what dragging that way actually types.
+     */
+    public static String flickLabel(Key key, Flick direction) {
+        if (key == null || direction == null) {
+            return null;
+        }
+        if (isVowelKey(key)) {
+            Integer vowel = VOWEL_FLICKS.get(key.name() + ":" + direction.name());
+            return vowel == null ? null : HangulTables.jungJamo(vowel);
+        }
+        int[] group = CONSONANTS.get(key);
+        if (group == null) {
+            return null;
+        }
+        if (direction == Flick.UP || direction == Flick.DOWN) {
+            return HangulTables.choJamo(group[0]);
+        }
+        return HangulTables.choJamo(direction == Flick.RIGHT
+            ? group[Math.min(1, group.length - 1)]
+            : group[group.length - 1]);
+    }
+
     private static int indexOf(int[] group, int value) {
         for (int i = 0; i < group.length; i++) {
             if (group[i] == value) {

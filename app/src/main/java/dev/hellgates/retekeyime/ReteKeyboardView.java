@@ -47,6 +47,10 @@ public final class ReteKeyboardView extends View {
         int key;
         boolean holdConsumed;
         boolean repeatFired;
+        /** The 천지인 direction guide is showing for this finger. */
+        boolean guideOpen;
+        /** Which way the finger has gone since the guide opened; null means it is still still. */
+        CheonjiinInterpreter.Flick guideDirection;
         final Runnable onHold = () -> handleLongPress(this);
         final Runnable onRepeat = () -> handleRepeat(this);
 
@@ -407,6 +411,7 @@ public final class ReteKeyboardView extends View {
         ensureBaseBitmap(width, height);
         canvas.drawBitmap(baseBitmap, 0.0f, 0.0f, null);
         drawPressFeedback(canvas, width, height);
+        drawFlickGuides(canvas, width, height);
         drawFlash(canvas, width, height);
         drawEchoBox(canvas, width, height);
     }
@@ -504,6 +509,77 @@ public final class ReteKeyboardView extends View {
             Compat.drawRoundRect(canvas, left + keyGapPx, top + keyGapPx, right - keyGapPx,
                 bottom - keyGapPx, keyRadiusPx, paint);
         }
+    }
+
+    /**
+     * The guide a held 천지인 key raises: the four letters around it and, in the middle, the digit
+     * it holds. The way the finger has gone is lit, so what will be typed on release is the one
+     * under it — and a quick drag shows the same thing with its choice already made.
+     */
+    private void drawFlickGuides(Canvas canvas, int width, int height) {
+        KeyboardLayout layout = layout();
+        for (int i = 0; i < touches.size(); i++) {
+            Touch touch = touches.valueAt(i);
+            if (!touch.guideOpen || touch.row >= layout.rows().size()) {
+                continue;
+            }
+            List<SoftwareKeySpec> row = layout.rows().get(touch.row);
+            if (touch.key >= row.size()) {
+                continue;
+            }
+            SoftwareKeySpec key = row.get(touch.key);
+            CheonjiinInterpreter.Key phoneKey = phoneKeyOf(key);
+            if (phoneKey == null) {
+                continue;
+            }
+            int startColumn = layout.startColumn(touch.row, touch.key);
+            float cellLeft = layout.columnEdge(startColumn, width);
+            float cellRight = layout.columnEdge(startColumn + key.columnSpan(), width);
+            float cellTop = layout.rowEdge(touch.row, height);
+            float cellBottom = layout.rowEdge(touch.row + 1, height);
+            float box = Math.min(cellRight - cellLeft, cellBottom - cellTop) * 0.78f;
+            float step = box * 1.04f;
+            // Centred on the key, then nudged back inside the keyboard when it would hang off.
+            float centreX = Math.min(Math.max((cellLeft + cellRight) * 0.5f, step + box * 0.5f),
+                width - step - box * 0.5f);
+            float centreY = Math.min(Math.max((cellTop + cellBottom) * 0.5f, step + box * 0.5f),
+                height - step - box * 0.5f);
+
+            drawGuideCell(canvas, centreX, centreY, box,
+                key.hasLongPress() ? key.longPressTexts().get(0) : null,
+                touch.guideDirection == null);
+            drawGuideCell(canvas, centreX - step, centreY, box,
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.LEFT),
+                touch.guideDirection == CheonjiinInterpreter.Flick.LEFT);
+            drawGuideCell(canvas, centreX + step, centreY, box,
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.RIGHT),
+                touch.guideDirection == CheonjiinInterpreter.Flick.RIGHT);
+            drawGuideCell(canvas, centreX, centreY - step, box,
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.UP),
+                touch.guideDirection == CheonjiinInterpreter.Flick.UP);
+            drawGuideCell(canvas, centreX, centreY + step, box,
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.DOWN),
+                touch.guideDirection == CheonjiinInterpreter.Flick.DOWN);
+        }
+    }
+
+    private void drawGuideCell(
+            Canvas canvas, float centreX, float centreY, float box, String label, boolean aimed) {
+        if (label == null) {
+            return;
+        }
+        float half = box * 0.5f;
+        float radius = box * 0.18f;
+        paint.setColor(palette.keyShadow);
+        Compat.drawRoundRect(canvas, centreX - half, centreY - half + keyShadowPx,
+            centreX + half, centreY + half + keyShadowPx, radius, paint);
+        paint.setColor(aimed ? palette.keyAccent : palette.keyFace);
+        Compat.drawRoundRect(
+            canvas, centreX - half, centreY - half, centreX + half, centreY + half, radius, paint);
+        paint.setColor(aimed ? palette.background : palette.keyText);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(box * 0.5f);
+        canvas.drawText(label, centreX, centreY - (paint.descent() + paint.ascent()) / 2.0f, paint);
     }
 
     private void ensureBaseBitmap(int width, int height) {
@@ -673,6 +749,16 @@ public final class ReteKeyboardView extends View {
             }
             float x = event.getX(pointer);
             float y = event.getY(pointer);
+            if (touch.guideOpen) {
+                // The guide is up: the finger is choosing, not typing. It types when it lifts.
+                CheonjiinInterpreter.Flick aimed =
+                    FlickDirection.of(x - touch.downX, y - touch.downY, flickDistancePx);
+                if (aimed != touch.guideDirection) {
+                    touch.guideDirection = aimed;
+                    invalidate();
+                }
+                continue;
+            }
             if (tryFlick(layout, touch, x, y)) {
                 continue;
             }
@@ -718,9 +804,36 @@ public final class ReteKeyboardView extends View {
         emit(key, cheonjiin.flick(phoneKey, direction));
         restartMultiTapTimeout();
         feedback.playKeyDown();
-        flashKeyboard(key, null);
+        // Show the same guide with the chosen way lit, so a drag says what it did and which way
+        // it went — the letter alone leaves the gesture unexplained.
+        touch.guideOpen = true;
+        touch.guideDirection = direction;
+        flashKeyboard(key, CheonjiinInterpreter.flickLabel(phoneKey, direction));
         invalidate();
         return true;
+    }
+
+    /** The 천지인 key this spec drives, or null when it is not one of them. */
+    private static CheonjiinInterpreter.Key phoneKeyOf(SoftwareKeySpec key) {
+        String id = key.stableKeyId();
+        if (!id.startsWith("touch.cheonjiin.")) {
+            return null;
+        }
+        return CheonjiinInterpreter.Key.valueOf(
+            id.substring("touch.cheonjiin.".length()).toUpperCase(java.util.Locale.ROOT));
+    }
+
+    /** Types a key's held alternate — the digit on a 천지인 key, whatever it is elsewhere. */
+    private void typeLongPress(SoftwareKeySpec key) {
+        if (!key.hasLongPress()) {
+            return;
+        }
+        sink.accept(key.longPressEvent(0));
+        resetPhoneInterpreters();
+        consumeOneShotShift();
+        feedback.playKeyDown();
+        flashKeyboard(key, key.longPressTexts().get(0));
+        performClick();
     }
 
     /** Whether a finger has left its key's cell by more than a touch slop. */
@@ -779,6 +892,22 @@ public final class ReteKeyboardView extends View {
         }
         if (!touch.grid.equals(gridSignature())) {
             // Another finger switched the page while this one was down; its key is gone.
+            return;
+        }
+        if (touch.guideOpen) {
+            // Held, then lifted: whatever the guide was showing under the finger is what types.
+            SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
+            CheonjiinInterpreter.Flick aimed =
+                FlickDirection.of(x - touch.downX, y - touch.downY, flickDistancePx);
+            if (aimed == null) {
+                typeLongPress(held);
+            } else {
+                emit(held, cheonjiin.flick(phoneKeyOf(held), aimed));
+                restartMultiTapTimeout();
+                feedback.playKeyDown();
+                flashKeyboard(held, CheonjiinInterpreter.flickLabel(phoneKeyOf(held), aimed));
+                performClick();
+            }
             return;
         }
         if (tryFlick(layout(), touch, x, y)) {
@@ -922,6 +1051,15 @@ public final class ReteKeyboardView extends View {
         if (key.hasLongPressControl()) {
             applyControl(key.longPressControl());
             touch.holdConsumed = true;
+            return;
+        }
+        if (phoneKeyOf(key) != null) {
+            // A 천지인 key has four letters around it and a digit under it, so holding one shows
+            // what is where and waits. Lift without moving and the digit is what you meant; drag
+            // to one of the four and lift, and that is.
+            touch.guideOpen = true;
+            feedback.playKeyDown();
+            invalidate();
             return;
         }
         if (key.hasLongPress()) {

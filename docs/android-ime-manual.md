@@ -823,6 +823,23 @@ SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
 Held-key auto-repeat is a `postDelayed` loop that re-fires the held key and re-posts itself; cancel
 it in every path that ends the press — release, cancel, retarget, and any layer reset.
 
+**Showing what a gesture would do.** A drag is invisible until it happens, so the keys that answer
+to one say so under a held finger: a guide of the four letters around the key with what it holds in
+the middle, the way the finger has gone lit up. Holding waits — it types on release, whichever cell
+is lit — while a quick drag types at once and raises the same guide with its choice already made,
+so the gesture is explained rather than merely obeyed. The guide is drawn over the cached keyboard
+in `onDraw`, clamped inside the view so a key at the edge does not push it off:
+
+```java
+float centreX = Math.min(Math.max((cellLeft + cellRight) * 0.5f, step + box * 0.5f),
+    width - step - box * 0.5f);
+```
+
+Keep what the guide promises and what the gesture delivers in one place. Here a static
+`flickLabel(key, direction)` answers the guide and the automaton answers the press, and a test walks
+every key and every direction asserting the two agree — otherwise the picture drifts from the code
+and the keyboard starts lying to the user.
+
 **What can and cannot be tested.** Keep the geometry and the hysteresis in Android-free classes and
 they are ordinary JVM tests: sample every few pixels of every layout and require a key at each one,
 and assert the slop rule directly at, on, and past the boundary. What no test reaches is the thing
