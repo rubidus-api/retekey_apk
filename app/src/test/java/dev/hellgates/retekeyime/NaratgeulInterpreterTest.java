@@ -93,10 +93,35 @@ public final class NaratgeulInterpreterTest {
     }
 
     @Test
-    public void aVowelEndsTheConsonantSoTransformsDoNotReachBack() {
+    public void aVowelEndsTheConsonantSoAStrokeActsOnTheVowelInstead() {
         interpreter.press(Key.GIYEOK);
         interpreter.press(Key.A);
 
+        // Not ㄱ → ㅋ: the stroke reaches the vowel just typed, and iotates it.
+        assertEquals(replacedVowel(2), interpreter.press(Key.STROKE));   // ㅏ → ㅑ
+    }
+
+    @Test
+    public void aStrokeIotatesAVowel() {
+        assertEquals(vowel(8), interpreter.press(Key.O));                // ㅗ
+        assertEquals(replacedVowel(12), interpreter.press(Key.STROKE));  // ㅛ
+        assertEquals(replacedVowel(8), interpreter.press(Key.STROKE));   // back to ㅗ
+    }
+
+    @Test
+    public void theRoundKeyPressedTwiceReachesTheOtherRoundVowel() {
+        assertEquals(vowel(8), interpreter.press(Key.O));                // ㅗ
+        assertEquals(replacedVowel(13), interpreter.press(Key.O));       // ㅜ
+        assertEquals(replacedVowel(17), interpreter.press(Key.O));       // ㅠ
+    }
+
+    @Test
+    public void aVowelWithNoStrokeOfItsOwnIsLeftAlone() {
+        interpreter.press(Key.EU);                                       // ㅡ
+        assertTrue(interpreter.press(Key.STROKE).isEmpty());
+
+        interpreter.reset();
+        interpreter.press(Key.I);                                        // ㅣ
         assertTrue(interpreter.press(Key.STROKE).isEmpty());
     }
 
@@ -107,10 +132,11 @@ public final class NaratgeulInterpreterTest {
     }
 
     @Test
-    public void theDoubledVowelIsTheIotisedOne() {
-        assertEquals(vowel(0), interpreter.press(Key.A));
-        assertEquals(replacedVowel(2), interpreter.press(Key.A));    // ㅏㅏ = ㅑ
-        assertEquals(replacedVowel(3), interpreter.press(Key.I));    // ㅒ
+    public void theFlatKeyPressedTwiceReachesTheOtherFlatVowel() {
+        assertEquals(vowel(0), interpreter.press(Key.A));            // ㅏ
+        assertEquals(replacedVowel(4), interpreter.press(Key.A));    // ㅓ
+        assertEquals(replacedVowel(6), interpreter.press(Key.A));    // ㅕ
+        assertEquals(replacedVowel(7), interpreter.press(Key.I));    // ㅖ
     }
 
     @Test
@@ -122,7 +148,7 @@ public final class NaratgeulInterpreterTest {
     }
 
     @Test
-    public void theDownStrokePairMakesTheUVowels() {
+    public void theDownStrokePairAlsoMakesTheUVowels() {
         assertEquals(vowel(18), interpreter.press(Key.EU));          // ㅡ
         assertEquals(replacedVowel(13), interpreter.press(Key.O));   // ㅜ
         assertEquals(replacedVowel(17), interpreter.press(Key.O));   // ㅠ

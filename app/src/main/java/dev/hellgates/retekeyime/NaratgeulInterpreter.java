@@ -12,9 +12,14 @@ import java.util.Map;
  * that act on what was just typed rather than typing anything themselves.
  *
  * <p>획추가 adds a stroke — ㄱ becomes ㅋ, ㄴ becomes ㄷ then ㅌ, ㅅ becomes ㅈ then ㅊ, ㅇ becomes
- * ㅎ, and ㄹ has no stroke of its own — and 쌍자음 doubles
+ * ㅎ, and ㄹ has no stroke of its own. It does the same to a vowel, iotating it: ㅏ becomes ㅑ, ㅗ
+ * becomes ㅛ. 쌍자음 doubles
  * a consonant that can be doubled. Vowels are spelled the same way a pen would: ㅏ and ㅣ and ㅗ and
  * ㅡ combine into the compound vowels, so ㅏ then ㅣ is ㅐ and ㅗ then ㅏ is ㅘ.
+ *
+ * <p>A vowel key pressed twice reaches its pair — ㅏ then ㅓ, ㅗ then ㅜ — and a third press
+ * iotates that, so ㅏㅏㅏ is ㅕ and ㅗㅗㅗ is ㅠ. 획추가 iotates whatever vowel is showing, which is
+ * the short way to ㅑ and ㅛ.
  *
  * <p>Like {@link CheonjiinInterpreter} this answers each press with the edits the composer should
  * see — a new jamo, or a backspace and the jamo that replaces it — and is Android-free so the
@@ -85,6 +90,24 @@ public final class NaratgeulInterpreter {
         CONSONANTS.put(Key.IEUNG, 11);   // ㅇ
     }
 
+    /**
+     * 획추가 on a vowel adds the stroke that iotates it — ㅏ becomes ㅑ, ㅗ becomes ㅛ — the same
+     * gesture the key performs on a consonant, and the only route to ㅛ and ㅠ now that pressing ㅗ
+     * twice reaches ㅜ instead.
+     */
+    private static final Map<Integer, Integer> VOWEL_STROKE = new HashMap<>();
+
+    static {
+        VOWEL_STROKE.put(0, 2);      // ㅏ → ㅑ
+        VOWEL_STROKE.put(2, 0);      // ㅑ → ㅏ
+        VOWEL_STROKE.put(4, 6);      // ㅓ → ㅕ
+        VOWEL_STROKE.put(6, 4);      // ㅕ → ㅓ
+        VOWEL_STROKE.put(8, 12);     // ㅗ → ㅛ
+        VOWEL_STROKE.put(12, 8);     // ㅛ → ㅗ
+        VOWEL_STROKE.put(13, 17);    // ㅜ → ㅠ
+        VOWEL_STROKE.put(17, 13);    // ㅠ → ㅜ
+    }
+
     /** Which vowel each vowel key starts from, over the standard 21 medial indices. */
     private static final Map<Key, Integer> VOWELS = new HashMap<>();
 
@@ -100,14 +123,14 @@ public final class NaratgeulInterpreter {
 
     static {
         combine(0, Key.I, 1);            // ㅏㅣ = ㅐ
-        combine(0, Key.A, 2);            // ㅏㅏ = ㅑ
+        combine(0, Key.A, 4);            // ㅏㅏ = ㅓ, the flat pair
         combine(2, Key.I, 3);            // ㅑㅣ = ㅒ
         combine(4, Key.I, 5);            // ㅓㅣ = ㅔ
         combine(6, Key.I, 7);            // ㅕㅣ = ㅖ
         combine(8, Key.A, 9);            // ㅗㅏ = ㅘ
         combine(9, Key.I, 10);           // ㅘㅣ = ㅙ
         combine(8, Key.I, 11);           // ㅗㅣ = ㅚ
-        combine(8, Key.O, 12);           // ㅗㅗ = ㅛ
+        combine(8, Key.O, 13);           // ㅗㅗ = ㅜ, the round pair
         combine(13, Key.I, 16);          // ㅜㅣ = ㅟ
         combine(14, Key.I, 15);          // ㅝㅣ = ㅞ
         combine(18, Key.I, 19);          // ㅡㅣ = ㅢ
@@ -137,7 +160,7 @@ public final class NaratgeulInterpreter {
             throw new IllegalArgumentException("key must not be null");
         }
         if (key == Key.STROKE) {
-            return transform(STROKE);
+            return lastConsonant < 0 && lastVowel >= 0 ? strokeVowel() : transform(STROKE);
         }
         if (key == Key.TWIN) {
             return transform(TWIN);
@@ -163,6 +186,17 @@ public final class NaratgeulInterpreter {
         lastVowel = vowel;
         lastConsonant = -1;
         return addOf(SemanticInput.jamo(SemanticJamo.vowel(vowel)));
+    }
+
+    /** Adds the iotating stroke to the vowel just typed; nothing when it has none. */
+    private List<SemanticInput> strokeVowel() {
+        Integer next = VOWEL_STROKE.get(lastVowel);
+        if (next == null) {
+            return Collections.emptyList();
+        }
+        int previous = lastVowel;
+        lastVowel = next;
+        return replaceVowel(previous, next);
     }
 
     /**

@@ -69,7 +69,46 @@ public final class PhoneCompositionTest {
         assertEquals("거", naratgeul(N.GIYEOK, N.I, N.A));
         assertEquals("과", naratgeul(N.GIYEOK, N.O, N.A));
         assertEquals("개", naratgeul(N.GIYEOK, N.A, N.I));
-        assertEquals("갸", naratgeul(N.GIYEOK, N.A, N.A));
+        assertEquals("거", naratgeul(N.GIYEOK, N.A, N.A));
+    }
+
+    @Test
+    public void naratgeulReachesEveryVowelThereIs() {
+        // ㅗ twice is ㅜ, so ㅛ and ㅠ come from the stroke key, which iotates a vowel the way it
+        // adds a stroke to a consonant. Between them nothing is out of reach.
+        assertEquals("가", naratgeul(N.GIYEOK, N.A));
+        assertEquals("거", naratgeul(N.GIYEOK, N.A, N.A));
+        assertEquals("갸", naratgeul(N.GIYEOK, N.A, N.STROKE));
+        assertEquals("거", naratgeul(N.GIYEOK, N.I, N.A));
+        assertEquals("겨", naratgeul(N.GIYEOK, N.I, N.A, N.STROKE));
+        assertEquals("고", naratgeul(N.GIYEOK, N.O));
+        assertEquals("교", naratgeul(N.GIYEOK, N.O, N.STROKE));
+        assertEquals("구", naratgeul(N.GIYEOK, N.O, N.O));
+        assertEquals("구", naratgeul(N.GIYEOK, N.EU, N.O));
+        assertEquals("규", naratgeul(N.GIYEOK, N.O, N.O, N.STROKE));
+        assertEquals("그", naratgeul(N.GIYEOK, N.EU));
+        assertEquals("기", naratgeul(N.GIYEOK, N.I));
+        assertEquals("개", naratgeul(N.GIYEOK, N.A, N.I));
+        assertEquals("걔", naratgeul(N.GIYEOK, N.A, N.STROKE, N.I));
+        assertEquals("게", naratgeul(N.GIYEOK, N.I, N.A, N.I));
+        assertEquals("계", naratgeul(N.GIYEOK, N.I, N.A, N.STROKE, N.I));
+        assertEquals("과", naratgeul(N.GIYEOK, N.O, N.A));
+        assertEquals("괘", naratgeul(N.GIYEOK, N.O, N.A, N.I));
+        assertEquals("괴", naratgeul(N.GIYEOK, N.O, N.I));
+        assertEquals("궈", naratgeul(N.GIYEOK, N.O, N.O, N.A));
+        assertEquals("궤", naratgeul(N.GIYEOK, N.O, N.O, N.A, N.I));
+        assertEquals("귀", naratgeul(N.GIYEOK, N.O, N.O, N.I));
+        assertEquals("긔", naratgeul(N.GIYEOK, N.EU, N.I));
+    }
+
+    @Test
+    public void naratgeulStrokesEveryConsonantChain() {
+        assertEquals("마", naratgeul(N.MIEUM, N.A));
+        assertEquals("바", naratgeul(N.MIEUM, N.STROKE, N.A));
+        assertEquals("파", naratgeul(N.MIEUM, N.STROKE, N.STROKE, N.A));
+        assertEquals("빠", naratgeul(N.MIEUM, N.STROKE, N.TWIN, N.A));
+        // And on a final consonant, where the composer has to take it apart first.
+        assertEquals("갑", naratgeul(N.GIYEOK, N.A, N.MIEUM, N.STROKE));
     }
 
     @Test
