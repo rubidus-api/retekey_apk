@@ -17,9 +17,10 @@ final class KeyFeedback {
     static final String KEY_HAPTIC = "haptic_strength";
     static final String KEY_SOUND = "sound_volume";
     static final String KEY_VISUAL = "visual_intensity";
-    static final float DEFAULT_HAPTIC = 0.4f;
-    static final float DEFAULT_SOUND = 0.3f;
-    static final float DEFAULT_VISUAL = 0.6f;
+    // Enough to feel and hear that a key went in, without the keyboard buzzing at every letter.
+    static final float DEFAULT_HAPTIC = 0.10f;
+    static final float DEFAULT_SOUND = 0.10f;
+    static final float DEFAULT_VISUAL = 0.30f;
 
     private final Vibrator vibrator;
     private final AudioManager audio;

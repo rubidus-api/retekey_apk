@@ -28,6 +28,8 @@ public final class SettingsActivity extends Activity {
     private static final String PREFS = "retekey_view";
     private static final String KEY_HEIGHT_SCALE = "height_scale";
 
+    /** Which screen's settings this page is showing; the device's own, until the user picks. */
+    private ScreenOrientation editing;
     private SeekBar slider;
     private TextView valueLabel;
     private String capturingKey;
@@ -40,7 +42,15 @@ public final class SettingsActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setTitle(R.string.settings_title);
+        editing = OrientedPrefs.current(this);
+        buildUi();
+    }
 
+    /**
+     * Builds the whole screen. Called again when the user switches which orientation they are
+     * setting, because every oriented control then has a different value to show.
+     */
+    private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         int pad = dp(20);
@@ -54,6 +64,8 @@ public final class SettingsActivity extends Activity {
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        addOrientationControls(root);
+
         root.addView(sectionHeader(R.string.settings_height_label));
         root.addView(sectionHint(R.string.settings_height_hint));
 
@@ -62,15 +74,13 @@ public final class SettingsActivity extends Activity {
         root.addView(valueLabel);
 
         slider = new SeekBar(this);
-        int minPercent = Math.round(KeyboardHeightScale.MIN_SCALE * 100);
-        int maxPercent = Math.round(KeyboardHeightScale.MAX_SCALE * 100);
-        rangeSlider(slider, minPercent, maxPercent);
-        setSliderValue(slider, minPercent, Math.round(currentScale() * 100));
+        rangeSlider(slider, KeyboardHeightScale.MIN_LEVEL, KeyboardHeightScale.MAX_LEVEL);
+        setSliderValue(slider, KeyboardHeightScale.MIN_LEVEL, currentLevel());
         slider.setPadding(dp(4), dp(12), dp(4), dp(12));
         slider.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                applyPercent(sliderValue(progress, minPercent));
+                applyLevel(sliderValue(progress, KeyboardHeightScale.MIN_LEVEL));
             }
         });
         root.addView(slider, matchWidth());
@@ -103,7 +113,39 @@ public final class SettingsActivity extends Activity {
         ScrollView scroller = new ScrollView(this);
         scroller.addView(root);
         setContentView(scroller);
-        applyPercent(slider.getProgress());
+        applyLevel(currentLevel());
+    }
+
+    /**
+     * Picks which screen the oriented settings below are for. A keyboard held sideways wants a
+     * different height and often a different set of layouts, and rotating the phone to change them
+     * would mean losing sight of the setting you came for.
+     */
+    private void addOrientationControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_orientation_label));
+        root.addView(sectionHint(R.string.settings_orientation_hint));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.addView(orientationButton(
+            ScreenOrientation.PORTRAIT, R.string.settings_orientation_portrait));
+        row.addView(orientationButton(
+            ScreenOrientation.LANDSCAPE, R.string.settings_orientation_landscape));
+        root.addView(row, matchWidth());
+    }
+
+    private Button orientationButton(ScreenOrientation orientation, int titleRes) {
+        Button button = new Button(this);
+        String title = getString(titleRes);
+        // The one being edited is marked in the label itself: no colour is hardcoded anywhere on
+        // this screen, so the mark has to be something the theme cannot take away.
+        button.setText(editing == orientation ? "● " + title : title);
+        button.setAllCaps(false);
+        button.setEnabled(editing != orientation);
+        button.setOnClickListener(view -> {
+            editing = orientation;
+            buildUi();
+        });
+        return button;
     }
 
     /** Returns to the app's main screen, whichever entry point opened these settings. */
@@ -168,6 +210,13 @@ public final class SettingsActivity extends Activity {
         root.addView(sectionHeader(R.string.settings_floating_label));
         root.addView(sectionHint(R.string.settings_floating_hint));
 
+        CheckBox floating = new CheckBox(this);
+        floating.setText(R.string.settings_floating_enabled);
+        floating.setChecked(FloatingKeyboardSettings.isEnabled(prefs(), editing));
+        floating.setOnCheckedChangeListener((b, checked) ->
+            FloatingKeyboardSettings.setEnabled(prefs(), editing, checked));
+        root.addView(floating);
+
         TextView label = new TextView(this);
         Compat.setTextAppearance(label, android.R.style.TextAppearance_DeviceDefault_Medium);
         root.addView(label);
@@ -175,14 +224,14 @@ public final class SettingsActivity extends Activity {
         SeekBar bar = new SeekBar(this);
         int floor = FloatingKeyboardSettings.MIN_OPACITY_PERCENT;
         rangeSlider(bar, floor, FloatingKeyboardSettings.MAX_OPACITY_PERCENT);
-        setSliderValue(bar, floor, FloatingKeyboardSettings.opacityPercent(prefs()));
+        setSliderValue(bar, floor, FloatingKeyboardSettings.opacityPercent(prefs(), editing));
         bar.setPadding(dp(4), dp(12), dp(4), dp(12));
         label.setText(getString(R.string.settings_floating_value, sliderValue(bar, floor)));
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 int percent = sliderValue(progress, floor);
-                FloatingKeyboardSettings.setOpacityPercent(prefs(), percent);
+                FloatingKeyboardSettings.setOpacityPercent(prefs(), editing, percent);
                 label.setText(getString(R.string.settings_floating_value, percent));
             }
         });
@@ -268,25 +317,27 @@ public final class SettingsActivity extends Activity {
     }
 
     private void storeLayouts(List<KeyboardLayoutId> order) {
-        prefs().edit().putString(LetterLayouts.KEY_ORDER, LetterLayouts.format(order)).apply();
+        OrientedPrefs.putString(prefs(), LetterLayouts.KEY_ORDER, editing, LetterLayouts.format(order));
         refreshLayoutList();
     }
 
     private List<KeyboardLayoutId> orderedLayouts() {
-        return LetterLayouts.parse(prefs().getString(LetterLayouts.KEY_ORDER, null));
+        return LetterLayouts.parse(
+            OrientedPrefs.getString(prefs(), LetterLayouts.KEY_ORDER, editing, null));
     }
 
-    private float currentScale() {
-        return KeyboardHeightScale.clamp(
-            prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
+    private int currentLevel() {
+        return KeyboardHeightScale.levelForScale(KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
+            prefs(), KEY_HEIGHT_SCALE, editing, KeyboardHeightScale.DEFAULT_SCALE)));
     }
 
     private static final int KEYBOARD_ROWS = 4;
 
-    private void applyPercent(int percent) {
-        float scale = KeyboardHeightScale.clamp(percent / 100.0f);
-        prefs().edit().putFloat(KEY_HEIGHT_SCALE, scale).apply();
-        valueLabel.setText(getString(R.string.settings_height_value, screenPercent(scale)));
+    private void applyLevel(int level) {
+        int clamped = KeyboardHeightScale.clampLevel(level);
+        float scale = KeyboardHeightScale.scaleForLevel(clamped);
+        OrientedPrefs.putFloat(prefs(), KEY_HEIGHT_SCALE, editing, scale);
+        valueLabel.setText(getString(R.string.settings_height_value, clamped, screenPercent(scale)));
     }
 
     /** The keyboard's height at {@code scale} as a percentage of the screen height. */
@@ -329,9 +380,8 @@ public final class SettingsActivity extends Activity {
     }
 
     private void resetHeight(View view) {
-        int percent = Math.round(KeyboardHeightScale.DEFAULT_SCALE * 100);
-        slider.setProgress(percent);
-        applyPercent(percent);
+        setSliderValue(slider, KeyboardHeightScale.MIN_LEVEL, KeyboardHeightScale.DEFAULT_LEVEL);
+        applyLevel(KeyboardHeightScale.DEFAULT_LEVEL);
     }
 
     // ---- Held-key auto-repeat ----

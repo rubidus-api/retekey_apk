@@ -14,8 +14,8 @@ public final class FloatingKeyboardSettings {
     static final String KEY_ENABLED = "floating_enabled";
     static final String KEY_OPACITY = "floating_opacity";
 
-    /** How solid the panel is, as a percentage. Below this it is too faint to read the keys. */
-    public static final int MIN_OPACITY_PERCENT = 25;
+    /** How solid the panel is, as a percentage: 1 is a ghost, 100 is a solid keyboard. */
+    public static final int MIN_OPACITY_PERCENT = 1;
     public static final int MAX_OPACITY_PERCENT = 100;
     public static final int DEFAULT_OPACITY_PERCENT = 88;
     static final String KEY_SIDE_LEFT = "floating_side_left";
@@ -29,14 +29,17 @@ public final class FloatingKeyboardSettings {
     private FloatingKeyboardSettings() {
     }
 
-    public static boolean isEnabled(SharedPreferences prefs) {
-        return prefs != null && prefs.getBoolean(KEY_ENABLED, false);
+    /**
+     * Whether the panel is on in this orientation. A floating keyboard earns its place on a wide
+     * screen and is often in the way on a tall one, so the two are remembered separately.
+     */
+    public static boolean isEnabled(SharedPreferences prefs, ScreenOrientation orientation) {
+        return OrientedPrefs.getBoolean(prefs, KEY_ENABLED, orientation, false);
     }
 
-    public static void setEnabled(SharedPreferences prefs, boolean enabled) {
-        if (prefs != null) {
-            prefs.edit().putBoolean(KEY_ENABLED, enabled).apply();
-        }
+    public static void setEnabled(
+            SharedPreferences prefs, ScreenOrientation orientation, boolean enabled) {
+        OrientedPrefs.putBoolean(prefs, KEY_ENABLED, orientation, enabled);
     }
 
     public static int clampOpacity(int percent) {
@@ -48,16 +51,14 @@ public final class FloatingKeyboardSettings {
         return Math.round(clampOpacity(percent) * 255.0f / 100.0f);
     }
 
-    public static int opacityPercent(SharedPreferences prefs) {
-        return prefs == null
-            ? DEFAULT_OPACITY_PERCENT
-            : clampOpacity(prefs.getInt(KEY_OPACITY, DEFAULT_OPACITY_PERCENT));
+    public static int opacityPercent(SharedPreferences prefs, ScreenOrientation orientation) {
+        return clampOpacity(OrientedPrefs.getInt(
+            prefs, KEY_OPACITY, orientation, DEFAULT_OPACITY_PERCENT));
     }
 
-    public static void setOpacityPercent(SharedPreferences prefs, int percent) {
-        if (prefs != null) {
-            prefs.edit().putInt(KEY_OPACITY, clampOpacity(percent)).apply();
-        }
+    public static void setOpacityPercent(
+            SharedPreferences prefs, ScreenOrientation orientation, int percent) {
+        OrientedPrefs.putInt(prefs, KEY_OPACITY, orientation, clampOpacity(percent));
     }
 
     public static void store(SharedPreferences prefs, FloatingKeyboardBounds bounds) {

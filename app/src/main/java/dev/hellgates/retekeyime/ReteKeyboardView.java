@@ -157,8 +157,8 @@ public final class ReteKeyboardView extends View {
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
-        heightScale = KeyboardHeightScale.clamp(
-            prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
+        heightScale = KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
+            prefs(), KEY_HEIGHT_SCALE, orientation(), KeyboardHeightScale.DEFAULT_SCALE));
         feedback = new KeyFeedback(context);
         feedback.reload(prefs());
         letterLayoutId = restoreLetterLayout();
@@ -205,7 +205,8 @@ public final class ReteKeyboardView extends View {
 
     /** The layouts the globe key walks, as the user ordered them in settings. */
     private java.util.List<KeyboardLayoutId> letterOrder() {
-        return LetterLayouts.parse(prefs().getString(LetterLayouts.KEY_ORDER, null));
+        return LetterLayouts.parse(
+            OrientedPrefs.getString(prefs(), LetterLayouts.KEY_ORDER, orientation(), null));
     }
 
     /** Re-reads the layout order and lands on a layout that is still enabled. */
@@ -255,7 +256,7 @@ public final class ReteKeyboardView extends View {
         }
         heightScale = clamped;
         if (persist) {
-            prefs().edit().putFloat(KEY_HEIGHT_SCALE, heightScale).apply();
+            OrientedPrefs.putFloat(prefs(), KEY_HEIGHT_SCALE, orientation(), heightScale);
         }
         requestLayout();
         invalidate();
@@ -478,6 +479,11 @@ public final class ReteKeyboardView extends View {
             paint);
     }
 
+    /** Which way the device is held; the height and the layouts on offer depend on it. */
+    private ScreenOrientation orientation() {
+        return OrientedPrefs.current(getContext());
+    }
+
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
@@ -549,27 +555,18 @@ public final class ReteKeyboardView extends View {
                 key.hasLongPress() ? key.longPressTexts().get(0) : null,
                 touch.guideDirection == null);
             drawGuideCell(canvas, centreX - step, centreY, box,
-                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.LEFT),
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.LEFT),
                 touch.guideDirection == CheonjiinInterpreter.Flick.LEFT);
             drawGuideCell(canvas, centreX + step, centreY, box,
-                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.RIGHT),
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.RIGHT),
                 touch.guideDirection == CheonjiinInterpreter.Flick.RIGHT);
             drawGuideCell(canvas, centreX, centreY - step, box,
-                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.UP),
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.UP),
                 touch.guideDirection == CheonjiinInterpreter.Flick.UP);
             drawGuideCell(canvas, centreX, centreY + step, box,
-                guideLabel(key, phoneKey, CheonjiinInterpreter.Flick.DOWN),
+                CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.DOWN),
                 touch.guideDirection == CheonjiinInterpreter.Flick.DOWN);
         }
-    }
-
-    /** What the guide should show for one way off a key, or null when that way means nothing. */
-    private static String guideLabel(SoftwareKeySpec key, CheonjiinInterpreter.Key phoneKey,
-            CheonjiinInterpreter.Flick direction) {
-        if (CheonjiinInterpreter.flickTypesHeldCharacter(phoneKey, direction)) {
-            return key.hasLongPress() ? key.longPressTexts().get(0) : null;
-        }
-        return CheonjiinInterpreter.flickLabel(phoneKey, direction);
     }
 
     private void drawGuideCell(
@@ -832,15 +829,11 @@ public final class ReteKeyboardView extends View {
 
     /**
      * Types what dragging {@code direction} off this 천지인 key means, and says whether it meant
-     * anything. Down on a consonant is the digit the key holds; up on a group with no tense letter
-     * is nothing at all, which is why the guide leaves that cell empty.
+     * anything. A direction with no letter behind it — above a consonant, or below one whose group
+     * has no tense letter — types nothing, which is why the guide leaves that cell empty.
      */
     private boolean typeFlick(SoftwareKeySpec key, CheonjiinInterpreter.Key phoneKey,
             CheonjiinInterpreter.Flick direction) {
-        if (CheonjiinInterpreter.flickTypesHeldCharacter(phoneKey, direction)) {
-            typeLongPress(key);
-            return true;
-        }
         String label = CheonjiinInterpreter.flickLabel(phoneKey, direction);
         if (label == null) {
             return false;

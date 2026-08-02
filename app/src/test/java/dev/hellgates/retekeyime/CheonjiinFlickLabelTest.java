@@ -1,9 +1,7 @@
 package dev.hellgates.retekeyime;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import dev.hellgates.retekeyime.CheonjiinInterpreter.Flick;
 import dev.hellgates.retekeyime.CheonjiinInterpreter.Key;
@@ -54,18 +52,15 @@ public final class CheonjiinFlickLabelTest {
         assertNull(CheonjiinInterpreter.flickLabel(Key.IEUNG, Flick.DOWN));
     }
 
-    /** Up off a consonant is not a letter: it is the digit the key holds, typed by the view. */
+    /** Nothing is above a consonant at all: the digit is held for, never dragged to. */
     @Test
-    public void upOffAConsonantIsTheDigitItHolds() {
+    public void nothingIsAboveAConsonant() {
         for (Key key : new Key[] {Key.GIYEOK, Key.NIEUN, Key.DIGEUT, Key.BIEUP, Key.SIOT,
             Key.JIEUT, Key.IEUNG}) {
             assertNull(CheonjiinInterpreter.flickLabel(key, Flick.UP));
-            assertTrue(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.UP));
         }
-        // A vowel key's upward drag is a vowel, not a digit.
-        for (Key key : new Key[] {Key.I, Key.DOT, Key.EU}) {
-            assertFalse(CheonjiinInterpreter.flickTypesHeldCharacter(key, Flick.UP));
-        }
+        // A vowel key still has all four of its own.
+        assertEquals("ㅗ", CheonjiinInterpreter.flickLabel(Key.DOT, Flick.UP));
     }
 
     @Test

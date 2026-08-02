@@ -10,12 +10,22 @@ package dev.hellgates.retekeyime;
 final class KeyboardHeightScale {
     /** Default nominal height of one key row, in density-independent pixels. */
     static final float BASE_ROW_DP = 58.0f;
+    /**
+     * The height is set as a level from 1 to 50, and each level is 4% of the keyboard's base
+     * height — so level 25 is the size it has always been, 50 is twice that, and 1 is a sliver.
+     * A number the user can name beats a percentage of something they cannot see.
+     */
+    static final int MIN_LEVEL = 1;
+    static final int MAX_LEVEL = 50;
+    static final int DEFAULT_LEVEL = 25;
+    static final float SCALE_PER_LEVEL = 0.04f;
+
     /** Shortest the keyboard may be shrunk to, as a fraction of its base height. */
-    static final float MIN_SCALE = 0.65f;
+    static final float MIN_SCALE = MIN_LEVEL * SCALE_PER_LEVEL;
     /** Tallest the keyboard may be grown to, as a fraction of its base height. */
-    static final float MAX_SCALE = 1.75f;
+    static final float MAX_SCALE = MAX_LEVEL * SCALE_PER_LEVEL;
     /** Scale used before the user has ever adjusted the height. */
-    static final float DEFAULT_SCALE = 1.0f;
+    static final float DEFAULT_SCALE = DEFAULT_LEVEL * SCALE_PER_LEVEL;
 
     private KeyboardHeightScale() {
     }
@@ -26,6 +36,24 @@ final class KeyboardHeightScale {
             return DEFAULT_SCALE;
         }
         return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+    }
+
+    /** A level forced into 1-50. */
+    static int clampLevel(int level) {
+        return Math.max(MIN_LEVEL, Math.min(MAX_LEVEL, level));
+    }
+
+    /** The scale a height level means. */
+    static float scaleForLevel(int level) {
+        return clampLevel(level) * SCALE_PER_LEVEL;
+    }
+
+    /** The level a scale amounts to, for showing a stored setting on the slider. */
+    static int levelForScale(float scale) {
+        if (Float.isNaN(scale)) {
+            return DEFAULT_LEVEL;
+        }
+        return clampLevel(Math.round(scale / SCALE_PER_LEVEL));
     }
 
     /** The base (scale-1.0) keyboard height in pixels for the given rows and display density. */

@@ -1327,6 +1327,34 @@ two chained `input tap` calls on an emulator took **ten seconds**, so anything w
 shorter than that cannot be exercised from a shell at all. Know which of your behaviours the test
 harness is too slow to reach, and say so rather than reporting them as verified.
 
+### 15.19 One setting for two shapes of screen
+
+**What happened.** Height, the layouts on offer, the floating panel and its opacity were each one
+value. A keyboard sized to leave room on an upright phone swallows a sideways one; a floating panel
+that earns its place on a wide screen is in the way on a tall one. The user set it right, turned the
+device, and had to set it again.
+
+**The fix.** Give the settings that depend on the shape of the screen two values apiece, under keys
+with the orientation appended, and read the one for the orientation being drawn:
+
+```java
+public String key(String base) {
+    return base + "." + suffix;          // height_scale.portrait, height_scale.landscape
+}
+```
+
+Two things make the split safe. Reads fall back to the un-suffixed key the setting had before, so an
+upgrade keeps what the user chose in **both** orientations until each is set on its own; and writes
+go to the oriented key only, so the moment one side is changed it stops following the old value. And
+the settings screen names which orientation it is editing rather than following the device, because
+turning the phone to change a setting means losing sight of the setting you came for.
+
+**Rule.** Before storing a preference, ask whether it is a preference about the *keyboard* or about
+the *screen*. A per-screen one wants a value per screen, a migration path from the single value it
+used to be, and a way to set the other screen's value from this one. And rebuild on rotation: the
+input view is not guaranteed to be recreated, so `onConfigurationChanged` must do it when the
+orientation actually changed.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

@@ -8,8 +8,9 @@ public final class KeyboardHeightScaleTest {
 
     @Test
     public void clampsScaleIntoTheSupportedRange() {
+        // Below the floor the range now reaches — the floor itself is level 1.
         Assert.assertEquals(KeyboardHeightScale.MIN_SCALE,
-            KeyboardHeightScale.clamp(0.1f), EPS);
+            KeyboardHeightScale.clamp(0.001f), EPS);
         Assert.assertEquals(KeyboardHeightScale.MAX_SCALE,
             KeyboardHeightScale.clamp(9.0f), EPS);
         Assert.assertEquals(1.0f, KeyboardHeightScale.clamp(1.0f), EPS);

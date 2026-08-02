@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.54** —
-[retekey-0.1.54.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.54/retekey-0.1.54.apk)
+Current release: **v0.1.55** —
+[retekey-0.1.55.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.55/retekey-0.1.55.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -158,7 +158,7 @@ Five letter layouts share that grid:
 | **두벌식** | the standard Korean full keyboard |
 | **QWERTY** | English |
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
-| **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), up the key's digit, down the tense one (ㄲ) — and a group with no tense letter (ㄴㄹ, ㅇㅁ) simply has no cell below it. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **다음** key — starts the next letter |
+| **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **다음** key — starts the next letter |
 | **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
 The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each
@@ -264,9 +264,10 @@ run select-all/copy/paste/undo.
 
 The settings screen uses stock controls only and follows the system theme:
 
-- **Keyboard height**, shown as the percentage of the screen the keyboard occupies.
-- **Floating keyboard opacity**, from 25% to fully solid.
-- **Key-press feedback** — visual, vibration, and sound strengths, each 0–100%.
+- **Which screen these settings are for** — height, the layouts and their order, and the floating keyboard are **remembered separately for portrait and landscape.** Pick which one you are setting at the top of the screen, without having to turn the device to reach it.
+- **Keyboard height**, from 1 to 50: 25 is the size it has always been and 50 is twice that. The percentage of the screen it takes is shown alongside.
+- **Floating keyboard** — whether to use it on this screen, and how solid it is (1–100%).
+- **Key-press feedback** — visual, vibration, and sound strengths, each 0–100% (30, 10 and 10 by default).
 - **Key auto-repeat** — on/off, start delay, and repeat interval.
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.
 

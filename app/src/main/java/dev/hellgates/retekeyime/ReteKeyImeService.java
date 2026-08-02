@@ -53,12 +53,15 @@ public class ReteKeyImeService extends InputMethodService {
     private final android.os.Handler mainHandler =
         new android.os.Handler(android.os.Looper.getMainLooper());
     private boolean floatingMode;
+    /** The orientation the current input view was built for; a rotation rebuilds it. */
+    private ScreenOrientation builtFor;
     private FloatingKeyboardBounds floatingBounds;
     private FloatingKeyboardFrame floatingFrame;
 
     @Override
     public View onCreateInputView() {
-        floatingMode = FloatingKeyboardSettings.isEnabled(viewPrefs());
+        builtFor = OrientedPrefs.current(this);
+        floatingMode = FloatingKeyboardSettings.isEnabled(viewPrefs(), builtFor);
         keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
         keyboardView.setOnOpenSettings(this::openSettings);
         keyboardView.setOnEditCommand(this::performEditCommand);
@@ -81,13 +84,26 @@ public class ReteKeyImeService extends InputMethodService {
             floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
         }
         floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
-        floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs()));
+        floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         floatingFrame.setOnClose(this::leaveFloatingMode);
         floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
         if (floatingBounds != null) {
             floatingFrame.setBounds(floatingBounds);
         }
         return floatingFrame;
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        ScreenOrientation now = OrientedPrefs.current(this);
+        if (now == builtFor || keyboardView == null) {
+            return;
+        }
+        // Turning the device sideways is a different keyboard: its height, the layouts the globe
+        // key visits, and whether there is a floating panel at all are settings of their own.
+        setInputView(onCreateInputView());
+        updateInputViewShown();
     }
 
     /** Names the layout the globe key just moved to, so a five-way cycle is not a guessing game. */
@@ -110,7 +126,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void setFloatingMode(boolean enabled) {
-        FloatingKeyboardSettings.setEnabled(viewPrefs(), enabled);
+        FloatingKeyboardSettings.setEnabled(viewPrefs(), OrientedPrefs.current(this), enabled);
         // Rebuilding is the whole switch: onCreateInputView re-reads the mode and returns either
         // the bare keyboard or the floating frame around it.
         setInputView(onCreateInputView());
@@ -308,7 +324,7 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.reloadLetterLayouts();
         }
         if (floatingFrame != null) {
-            floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs()));
+            floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         }
         hideHanjaCandidatesIfShown();
         updateHardwareMapper(currentSubtype());

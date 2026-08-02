@@ -195,8 +195,8 @@ public final class CheonjiinInterpreter {
         int[] group = CONSONANTS.get(key);
         int slot = consonantSlot(direction);
         if (slot < 0 || slot >= group.length) {
-            // Up is the key's digit, which is the view's to type, and a group with no tense
-            // letter has nothing below it. Either way this drag types no jamo.
+            // Nothing is above a consonant, and a group with no tense letter has nothing below
+            // it either. Either way this drag types nothing at all.
             return Collections.emptyList();
         }
         int target = group[slot];
@@ -230,8 +230,8 @@ public final class CheonjiinInterpreter {
 
     /**
      * Which letter of a consonant group each way points at: left is the plain one the key already
-     * types, right the aspirate beside it, down the tense one. Up is not a letter at all — it is
-     * the digit the key holds, so it answers -1 and the caller types that instead.
+     * types, right the aspirate beside it, down the tense one. Nothing is above a consonant — the
+     * digit is reached by holding the key, not by dragging — so up answers -1 and types nothing.
      */
     private static int consonantSlot(Flick direction) {
         switch (direction) {
@@ -244,11 +244,6 @@ public final class CheonjiinInterpreter {
             default:
                 return -1;
         }
-    }
-
-    /** Whether dragging this way off this key means the digit it holds rather than a letter. */
-    public static boolean flickTypesHeldCharacter(Key key, Flick direction) {
-        return key != null && direction == Flick.UP && !isVowelKey(key);
     }
 
     /** Whether {@code key} is one of the three vowel elements. */

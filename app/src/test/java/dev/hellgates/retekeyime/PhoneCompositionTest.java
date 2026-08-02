@@ -228,10 +228,12 @@ public final class PhoneCompositionTest {
             drag(Key.NIEUN, Flick.DOWN), tap(Key.IEUNG), tap(Key.I), tap(Key.DOT)));
     }
 
-    /** And upwards is the key's digit, which no automaton types — so it types no jamo. */
+    /** And upwards off a consonant is nothing at all — the digit is held for, not dragged to. */
     @Test
-    public void cheonjiinDragsUpToNoJamoAtAll() {
+    public void cheonjiinDragsUpOffAConsonantToNothing() {
         assertEquals("", cheonjiinDragging(drag(Key.GIYEOK, Flick.UP)));
+        assertEquals("아", cheonjiinDragging(
+            drag(Key.GIYEOK, Flick.UP), tap(Key.IEUNG), tap(Key.I), tap(Key.DOT)));
     }
 
     /** And off a vowel key it types the vowel the direction points at. */
