@@ -1410,6 +1410,38 @@ state waiting for a next key; holding is a fact the editor has already been told
 If you create the second, create the way back out of it (hold again) and the way
 it cannot leak (release on session end) in the same breath.
 
+### 15.22 One key, or every key
+
+**What happened.** Shift had three states for a long time — off, armed for one letter, locked.
+Ctrl, Meta and Alt did not. They were in a set or out of it, two states, so using Ctrl more than
+once meant pressing it again for every key. The same idea had been built twice and only one of
+them had grown.
+
+**The fix.** Pull the state out into `LatchState` and let Shift and the modifiers share it. A tap
+arms for one key, a hold locks, and a tap on a locked one clears it — the way out of a lock should
+be the easiest thing to find. The difference only shows when a key is pressed: a chord carries
+**every** modifier that is active, and afterwards **only the one-shots are spent**.
+
+```java
+public boolean consumeOneShots() {   // ModifierLatches
+    boolean changed = false;
+    for (ControlKey modifier : KEYS) {
+        changed |= latch(modifier).consumeOneShot();   // a locked one is never spent
+    }
+    return changed;
+}
+```
+
+**Showing it.** A background colour alone cannot separate "one key" from "every key". So the key
+carries a mark in its top-right corner: **an open ring while it is not held, a filled disc while
+it is.** The background says the same thing in colour — soft accent for armed, solid for locked.
+One fact on two channels, so the shape is still there for anyone the colour does not reach. Tab
+and Shift draw the same mark, because they are keys that do the same thing.
+
+**Rule.** The second time you need a state machine you already have, take the first one out rather
+than writing the second. And three states need two channels to show them: two states fit in one
+colour, three do not.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

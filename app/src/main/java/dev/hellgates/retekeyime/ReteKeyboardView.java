@@ -32,8 +32,9 @@ public final class ReteKeyboardView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
     private final KeyFeedback feedback;
-    private final ShiftLayerState shiftLayer = new ShiftLayerState();
-    private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
+    private final LatchState shiftLayer = new LatchState();
+    /** Ctrl, Meta and Alt: tap to arm for one key, hold to lock. */
+    private final ModifierLatches modifierLatches = new ModifierLatches();
     /**
      * Whether Tab is currently latched down. Not an armed modifier: the editor has been sent Tab's
      * down half and has not been sent the up, so as far as it knows a finger is still on the key.
@@ -360,7 +361,7 @@ public final class ReteKeyboardView extends View {
     /** Clears transient one-shot and pointer state when the editor session changes. */
     public void resetLayerState() {
         shiftLayer.clear();
-        armedModifiers.clear();
+        modifierLatches.clear();
         releaseTabHoldIfLatched();
         cancelAllTouches();
         feedback.reload(prefs());
@@ -633,7 +634,7 @@ public final class ReteKeyboardView extends View {
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + numpadMode + "|" + shiftLayer.isActive()
-            + "|" + shiftLayer.isLocked() + "|" + armedModifiers + "|" + tabHeld + "|"
+            + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
             + KeyboardPalette.isNight(getContext());
     }
 
@@ -665,10 +666,52 @@ public final class ReteKeyboardView extends View {
             paint.setTextSize(hint);
             canvas.drawText(key.longPressTexts().get(0),
                 right - hint * 0.75f, top + hint * 1.15f, paint);
+        } else if (canBeHeld(key)) {
+            drawLatchMark(canvas, right, top, isHeld(key));
         } else if (key.hasLongPress() || key.hasLongPressControl()) {
             paint.setColor(palette.hint);
             canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
         }
+    }
+
+    /**
+     * The corner mark on a key that can be held without a finger on it: an open ring while it is
+     * not, a filled disc while it is. The two read as one shape in two states, which is what the
+     * key is — the background colour says the same thing, and a mark says it again for anyone the
+     * colour does not reach.
+     */
+    private void drawLatchMark(Canvas canvas, int right, int top, boolean locked) {
+        float cx = right - 11.0f;
+        float cy = top + 11.0f;
+        paint.setColor(palette.hint);
+        if (locked) {
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(cx, cy, 4.0f, paint);
+            return;
+        }
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.5f);
+        canvas.drawCircle(cx, cy, 3.5f, paint);
+        paint.setStyle(Paint.Style.FILL);
+    }
+
+    /** Whether holding this key keeps it down: Shift, the three modifiers, and Tab. */
+    private static boolean canBeHeld(SoftwareKeySpec key) {
+        if (key.isControl()) {
+            return key.control() == ControlKey.SHIFT || ModifierLatches.handles(key.control());
+        }
+        return TAB_KEY_ID.equals(key.stableKeyId());
+    }
+
+    /** Whether it is being held right now — locked, not merely armed for the next key. */
+    private boolean isHeld(SoftwareKeySpec key) {
+        if (!key.isControl()) {
+            return tabHeld;
+        }
+        if (key.control() == ControlKey.SHIFT) {
+            return shiftLayer.isLocked();
+        }
+        return modifierLatches.isLocked(key.control());
     }
 
     /** Sizes {@link #paint} so {@code label} fits a cell of the given size, tracking cell size. */
@@ -738,7 +781,9 @@ public final class ReteKeyboardView extends View {
         // Shift, and any key with a long press, react to a hold.
         if (key.hasLongPress()
             || key.hasLongPressControl()
-            || (key.isControl() && key.control() == ControlKey.SHIFT)) {
+            || (key.isControl()
+                && (key.control() == ControlKey.SHIFT
+                    || ModifierLatches.handles(key.control())))) {
             postDelayed(touch.onHold, ViewConfiguration.getLongPressTimeout());
         } else if (repeatEnabled && repeatsOnHold(key)) {
             // Ordinary keys with no long press auto-repeat while held.
@@ -996,16 +1041,7 @@ public final class ReteKeyboardView extends View {
      * modifiers are one-shot: consumed after the chord.
      */
     private boolean tryArmedModifierChord(SoftwareKeySpec key) {
-        Set<KeyModifier> mods = EnumSet.noneOf(KeyModifier.class);
-        if (armedModifiers.contains(ControlKey.CTRL)) {
-            mods.add(KeyModifier.CTRL);
-        }
-        if (armedModifiers.contains(ControlKey.ALT)) {
-            mods.add(KeyModifier.ALT);
-        }
-        if (armedModifiers.contains(ControlKey.META)) {
-            mods.add(KeyModifier.META);
-        }
+        Set<KeyModifier> mods = modifierLatches.active();
         if (mods.isEmpty()) {
             return false;
         }
@@ -1029,9 +1065,7 @@ public final class ReteKeyboardView extends View {
         }
         sink.accept(ProjectKeyEvent.softwareDown(
             key.stableKeyId(), SemanticInput.rawKey(rawKey, mods)));
-        armedModifiers.remove(ControlKey.CTRL);
-        armedModifiers.remove(ControlKey.ALT);
-        armedModifiers.remove(ControlKey.META);
+        consumeOneShotModifiers();
         consumeOneShotShift();
         invalidate();
         return true;
@@ -1063,26 +1097,8 @@ public final class ReteKeyboardView extends View {
     /** Folds the armed Ctrl/Meta/Alt into a raw key so it forms a chord; other keys are unchanged. */
     private ProjectKeyEvent pressEventWithModifiers(SoftwareKeySpec key) {
         SemanticInput input = key.semanticInput();
-        if (input.kind() != SemanticInput.Kind.RAW_KEY || armedModifiers.isEmpty()) {
-            return key.pressEvent();
-        }
-        Set<KeyModifier> mods = EnumSet.noneOf(KeyModifier.class);
-        for (ControlKey armed : armedModifiers) {
-            switch (armed) {
-                case CTRL:
-                    mods.add(KeyModifier.CTRL);
-                    break;
-                case ALT:
-                    mods.add(KeyModifier.ALT);
-                    break;
-                case META:
-                    mods.add(KeyModifier.META);
-                    break;
-                default:
-                    break;
-            }
-        }
-        if (mods.isEmpty()) {
+        Set<KeyModifier> mods = modifierLatches.active();
+        if (input.kind() != SemanticInput.Kind.RAW_KEY || mods.isEmpty()) {
             return key.pressEvent();
         }
         return ProjectKeyEvent.softwareDown(key.stableKeyId(), input.withModifiers(mods));
@@ -1096,6 +1112,14 @@ public final class ReteKeyboardView extends View {
         if (key.isControl() && key.control() == ControlKey.SHIFT) {
             shiftLayer.toggleLock();
             touch.holdConsumed = true;
+            invalidate();
+            return;
+        }
+        if (key.isControl() && ModifierLatches.handles(key.control())) {
+            // Holding a modifier keeps it down until it is held again, the way a finger would.
+            modifierLatches.hold(key.control());
+            touch.holdConsumed = true;
+            feedback.playKeyDown();
             invalidate();
             return;
         }
@@ -1167,6 +1191,12 @@ public final class ReteKeyboardView extends View {
         removeCallbacks(endMultiTap);
         cheonjiin.reset();
         naratgeul.reset();
+    }
+
+    private void consumeOneShotModifiers() {
+        if (modifierLatches.consumeOneShots()) {
+            invalidate();
+        }
     }
 
     private void consumeOneShotShift() {
@@ -1311,10 +1341,9 @@ public final class ReteKeyboardView extends View {
             case CTRL:
             case META:
             case ALT:
-                // Latch the modifier. Its armed state is view-local until the raw-key action lands.
-                if (!armedModifiers.remove(control)) {
-                    armedModifiers.add(control);
-                }
+                // A tap arms it for one key; a hold locks it. Both are view-local: what reaches
+                // the editor is the chord the next key makes.
+                modifierLatches.tap(control);
                 break;
             case TAB_HOLD:
                 toggleTabHold();
@@ -1342,8 +1371,11 @@ public final class ReteKeyboardView extends View {
             if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
                 return palette.keyAccent;
             }
-            if (armedModifiers.contains(control)) {
+            if (modifierLatches.isLocked(control)) {
                 return palette.keyAccent;
+            }
+            if (modifierLatches.isActive(control)) {
+                return palette.keyAccentSoft;
             }
         }
         if (tabHeld && TAB_KEY_ID.equals(key.stableKeyId())) {
