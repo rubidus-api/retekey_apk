@@ -41,7 +41,7 @@ public final class EchoLabelTest {
         assertNull(ReteKeyboardView.echoLabel(en.rows().get(2).get(0), null));
         assertNull(ReteKeyboardView.echoLabel(en.rows().get(1).get(9), null));
         assertNull(ReteKeyboardView.echoLabel(en.rows().get(2).get(9), null));
-        assertNull(ReteKeyboardView.echoLabel(en.findById("touch.menu"), null));
+        assertNull(ReteKeyboardView.echoLabel(en.findById("touch.layout.toggle"), null));
         assertNull(ReteKeyboardView.echoLabel(null, null));
     }
 

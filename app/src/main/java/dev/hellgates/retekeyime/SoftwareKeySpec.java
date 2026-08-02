@@ -12,6 +12,8 @@ public final class SoftwareKeySpec {
     private final int columnSpan;
     private final List<String> longPressTexts;
     private final ControlKey longPressControl;
+    /** What to write in the corner for a long press that runs a control rather than typing. */
+    private final String longPressHint;
 
     private SoftwareKeySpec(
         String stableKeyId,
@@ -22,6 +24,21 @@ public final class SoftwareKeySpec {
         List<String> longPressTexts,
         ControlKey longPressControl
     ) {
+        this(stableKeyId, label, semanticInput, control, columnSpan, longPressTexts,
+            longPressControl, null);
+    }
+
+    private SoftwareKeySpec(
+        String stableKeyId,
+        String label,
+        SemanticInput semanticInput,
+        ControlKey control,
+        int columnSpan,
+        List<String> longPressTexts,
+        ControlKey longPressControl,
+        String longPressHint
+    ) {
+        this.longPressHint = longPressHint;
         if (stableKeyId == null || stableKeyId.isEmpty()) {
             throw new IllegalArgumentException("stable key id must not be empty");
         }
@@ -147,7 +164,8 @@ public final class SoftwareKeySpec {
             control,
             columnSpan,
             longPressTexts,
-            longPressCommand
+            longPressCommand,
+            longPressHint
         );
     }
 
@@ -161,6 +179,41 @@ public final class SoftwareKeySpec {
 
     public boolean hasLongPressControl() {
         return longPressControl != null;
+    }
+
+    /**
+     * Marks what this key's long press reaches, in one or two characters drawn in the corner —
+     * "m" for the menu, "p" for the pad. A control has no character of its own the way an
+     * alternate letter does, so without this the corner can only say that a long press exists.
+     */
+    public SoftwareKeySpec withLongPressHint(String hint) {
+        if (hint == null || hint.isEmpty()) {
+            throw new IllegalArgumentException("long-press hint must not be empty");
+        }
+        if (longPressControl == null) {
+            throw new IllegalStateException("a long-press hint needs a long press to describe");
+        }
+        return new SoftwareKeySpec(
+            stableKeyId,
+            label,
+            semanticInput,
+            control,
+            columnSpan,
+            longPressTexts,
+            longPressControl,
+            hint
+        );
+    }
+
+    public boolean hasLongPressHint() {
+        return longPressHint != null;
+    }
+
+    public String longPressHint() {
+        if (longPressHint == null) {
+            throw new IllegalStateException("key has no long-press hint");
+        }
+        return longPressHint;
     }
 
     public ControlKey longPressControl() {

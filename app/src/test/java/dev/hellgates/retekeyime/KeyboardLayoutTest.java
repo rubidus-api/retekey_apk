@@ -156,7 +156,7 @@ public final class KeyboardLayoutTest {
             labels(korean, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "☰", "pad", "!#", "\uD83C\uDF10"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", " ", "!#", "\uD83C\uDF10"),
             labels(korean, 3)
         );
     }
@@ -253,12 +253,14 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
-    public void theMenuKeyOpensTheMenuPage() {
+    public void holdingTheGlobeOpensTheMenu() {
         KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
-        SoftwareKeySpec menu = korean.findById("touch.menu");
-        assertNotNull(menu);
-        assertTrue("the ☰ menu key is a control that opens the menu page", menu.isControl());
-        assertEquals(ControlKey.MENU_LAYER, menu.control());
+        SoftwareKeySpec globe = korean.findById("touch.layout.toggle");
+        assertNotNull(globe);
+        assertEquals(ControlKey.LAYOUT_TOGGLE, globe.control());
+        assertEquals(ControlKey.MENU_LAYER, globe.longPressControl());
+        assertEquals("m", globe.longPressHint());
+        assertNull("the menu no longer has a cell of its own", korean.findById("touch.menu"));
     }
 
     @Test
@@ -283,14 +285,32 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
-    public void thePadKeyEntersTheSpecialKeysPage() {
-        SoftwareKeySpec padKey = KeyboardLayouts
-            .of(KeyboardLayoutId.KO_DUBEOLSIK, false)
-            .findById("touch.layer.pad");
-        assertNotNull(padKey);
-        assertTrue(padKey.isControl());
-        assertEquals("pad", padKey.label());
-        assertEquals(ControlKey.SPECIAL_KEYS_LAYER, padKey.control());
+    public void holdingTheSymbolsKeyEntersTheSpecialKeysPage() {
+        KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        SoftwareKeySpec chars = korean.findById("touch.layer.chars");
+        assertNotNull(chars);
+        assertEquals(ControlKey.SPECIAL_CHARS_LAYER, chars.control());
+        assertEquals(ControlKey.SPECIAL_KEYS_LAYER, chars.longPressControl());
+        assertEquals("p", chars.longPressHint());
+        assertNull("the pad no longer has a cell of its own", korean.findById("touch.layer.pad"));
+    }
+
+    @Test
+    public void everyLayoutCarriesBothPagesOnAHold() {
+        for (KeyboardLayoutId id : KeyboardLayoutId.values()) {
+            for (boolean shifted : new boolean[] {false, true}) {
+                KeyboardLayout layout = KeyboardLayouts.of(id, shifted);
+                SoftwareKeySpec globe = layout.findById("touch.layout.toggle");
+                SoftwareKeySpec chars = layout.findById("touch.layer.chars");
+                String where = id + (shifted ? " shifted" : "");
+                assertNotNull(where, globe);
+                assertNotNull(where, chars);
+                assertEquals(where, ControlKey.MENU_LAYER, globe.longPressControl());
+                assertEquals(where, ControlKey.SPECIAL_KEYS_LAYER, chars.longPressControl());
+                assertNull(where, layout.findById("touch.menu"));
+                assertNull(where, layout.findById("touch.layer.pad"));
+            }
+        }
     }
 
     @Test

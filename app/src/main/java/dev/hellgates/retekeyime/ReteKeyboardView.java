@@ -659,13 +659,17 @@ public final class ReteKeyboardView extends View {
         String label = labelOf(key);
         fitLabel(label, right - left, bottom - top);
         canvas.drawText(label, (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
-        if (key.longPressTexts().size() == 1) {
-            // A single long-press character is hinted in small text at the top-right corner.
+        if (key.longPressTexts().size() == 1 || key.hasLongPressHint()) {
+            // What a long press reaches, in small text at the top-right corner: the alternate
+            // character for a key that types one, or a letter naming the page for a key that
+            // opens one.
+            String corner = key.hasLongPressHint()
+                ? key.longPressHint()
+                : key.longPressTexts().get(0);
             paint.setColor(palette.hint);
             float hint = (bottom - top) * 0.22f;
             paint.setTextSize(hint);
-            canvas.drawText(key.longPressTexts().get(0),
-                right - hint * 0.75f, top + hint * 1.15f, paint);
+            canvas.drawText(corner, right - hint * 0.75f, top + hint * 1.15f, paint);
         } else if (canBeHeld(key)) {
             drawLatchMark(canvas, right, top, isHeld(key));
         } else if (key.hasLongPress() || key.hasLongPressControl()) {

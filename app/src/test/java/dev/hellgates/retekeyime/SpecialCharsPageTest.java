@@ -29,7 +29,7 @@ public final class SpecialCharsPageTest {
             labels(PAGE, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "☰", "pad", "!#", "\uD83C\uDF10"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", " ", "!#", "\uD83C\uDF10"),
             labels(PAGE, 3)
         );
     }
@@ -78,10 +78,11 @@ public final class SpecialCharsPageTest {
     }
 
     @Test
-    public void thePadKeyLeadsToTheSpecialKeysPage() {
-        SoftwareKeySpec pad = PAGE.findById("touch.layer.pad");
-        assertNotNull(pad);
-        assertEquals(ControlKey.SPECIAL_KEYS_LAYER, pad.control());
+    public void holdingTheSymbolsKeyLeadsToTheSpecialKeysPage() {
+        SoftwareKeySpec chars = PAGE.findById("touch.layer.chars");
+        assertNotNull(chars);
+        assertEquals(ControlKey.SPECIAL_KEYS_LAYER, chars.longPressControl());
+        assertEquals("p", chars.longPressHint());
     }
 
     private static List<String> labels(KeyboardLayout layout, int rowIndex) {

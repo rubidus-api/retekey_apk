@@ -193,22 +193,37 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec.disabled("touch.phone.gap." + id, " ").withColumnSpan(span);
     }
 
-    /** The menu and pad keys, which ride the second column rather than the bottom row. */
-    private static SoftwareKeySpec phoneMenuKey() {
-        return SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER);
+    /**
+     * The globe: a tap moves to the next layout, a hold opens the menu page. The menu had a key
+     * of its own and no longer needs one — it is opened rarely and from anywhere, which is what a
+     * hold is for. The corner "m" says where the hold goes, since a control has no character of
+     * its own to show there. Holding it used to reach 한자; that key still sits on the pad page.
+     */
+    private static SoftwareKeySpec layoutToggleKey() {
+        return SoftwareKeySpec
+            .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
+            .withLongPressControl(ControlKey.MENU_LAYER)
+            .withLongPressHint("m");
     }
 
-    private static SoftwareKeySpec phonePadKey() {
-        return SoftwareKeySpec.control("touch.layer.pad", "pad", ControlKey.SPECIAL_KEYS_LAYER);
+    /** !#: a tap opens the symbols page, a hold opens the pad — marked "p" in the corner. */
+    private static SoftwareKeySpec specialCharsKey() {
+        return SoftwareKeySpec
+            .control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER)
+            .withLongPressControl(ControlKey.SPECIAL_KEYS_LAYER)
+            .withLongPressHint("p");
+    }
+
+    /** A cell left empty because the key that was in it moved onto another key's hold. */
+    private static SoftwareKeySpec vacatedCell(String id) {
+        return SoftwareKeySpec.disabled("touch.gap." + id, " ");
     }
 
     /** The two page keys that close a 12-key page's bottom row, one column each. */
     private static List<SoftwareKeySpec> phoneBottomPageKeys() {
         return Arrays.asList(
-            SoftwareKeySpec.control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER),
-            SoftwareKeySpec
-                .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
-                .withLongPressControl(ControlKey.HANJA)
+            specialCharsKey(),
+            layoutToggleKey()
         );
     }
 
@@ -239,12 +254,12 @@ public final class KeyboardLayouts {
      */
     private static KeyboardLayout cheonjiin() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(phoneRow(0, phoneMenuKey(),
+        rows.add(phoneRow(0, phoneGap("menu", 1),
             cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", "1"),
             cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", "2"),
             cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", "3"),
             backspaceKey().withColumnSpan(2)));
-        rows.add(phoneRow(1, phonePadKey(),
+        rows.add(phoneRow(1, phoneGap("pad", 1),
             cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", "4"),
             cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", "5"),
             cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", "6"),
@@ -272,12 +287,12 @@ public final class KeyboardLayouts {
      */
     private static KeyboardLayout naratgeul() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(phoneRow(0, phoneMenuKey(),
+        rows.add(phoneRow(0, phoneGap("menu", 1),
             naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, "1"),
             naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2, "2"),
             naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2, "3"),
             backspaceKey().withColumnSpan(2)));
-        rows.add(phoneRow(1, phonePadKey(),
+        rows.add(phoneRow(1, phoneGap("pad", 1),
             naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2, "4"),
             naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, "5"),
             naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, "6"),
@@ -358,7 +373,7 @@ public final class KeyboardLayouts {
         String[] groups
     ) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHolds(letterRows, groups));
-        rows.add(bottomRow(padKey()));
+        rows.add(bottomRow(vacatedCell("layer")));
         return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }
 
@@ -429,7 +444,7 @@ public final class KeyboardLayouts {
             text("tilde", "~").withLongPress("+"),
             enterKey()
         ));
-        rows.add(bottomRow(padKey()));
+        rows.add(bottomRow(vacatedCell("layer")));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_CHARS, false, COLUMNS, rows);
     }
 
@@ -566,17 +581,11 @@ public final class KeyboardLayouts {
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            SoftwareKeySpec.control("touch.menu", "☰", ControlKey.MENU_LAYER),
+            vacatedCell("menu"),
             layerKey,
-            SoftwareKeySpec.control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER),
-            SoftwareKeySpec
-                .control("touch.layout.toggle", "\uD83C\uDF10", ControlKey.LAYOUT_TOGGLE)
-                .withLongPressControl(ControlKey.HANJA)
+            specialCharsKey(),
+            layoutToggleKey()
         );
-    }
-
-    private static SoftwareKeySpec padKey() {
-        return SoftwareKeySpec.control("touch.layer.pad", "pad", ControlKey.SPECIAL_KEYS_LAYER);
     }
 
     private static SoftwareKeySpec returnToLettersKey() {

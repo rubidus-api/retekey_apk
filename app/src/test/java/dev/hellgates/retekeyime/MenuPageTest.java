@@ -93,6 +93,7 @@ public final class MenuPageTest {
         SoftwareKeySpec returnKey = menu.rows().get(3).get(6);
         assertEquals("ABC", returnKey.label());
         assertEquals(ControlKey.PREVIOUS_LAYER, returnKey.control());
-        assertEquals(ControlKey.MENU_LAYER, menu.findById("touch.menu").control());
+        assertEquals(ControlKey.MENU_LAYER,
+            menu.findById("touch.layout.toggle").longPressControl());
     }
 }

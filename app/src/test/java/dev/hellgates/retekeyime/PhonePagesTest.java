@@ -44,13 +44,13 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void theMenuAndPadKeysRideTheSecondColumn() {
+    public void theSecondColumnIsEmptyNowThatBothPagesAreHolds() {
+        // The menu and the pad used to sit here. They are reached by holding the globe and the
+        // symbols key, and the cells they left are empty rather than filled with something else.
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
-            assertEquals(ControlKey.MENU_LAYER, layout.rows().get(0).get(1).control());
-            assertEquals(ControlKey.SPECIAL_KEYS_LAYER, layout.rows().get(1).get(1).control());
-            // The rest of the column is empty, and an empty cell answers no touch.
-            assertFalse(layout.rows().get(2).get(1).enabled());
-            assertFalse(layout.rows().get(3).get(1).enabled());
+            for (int row = 0; row < 4; row++) {
+                assertFalse("row " + row, layout.rows().get(row).get(1).enabled());
+            }
         }
     }
 
@@ -79,7 +79,10 @@ public final class PhonePagesTest {
             assertEquals(1, chars.columnSpan());
             assertEquals(ControlKey.LAYOUT_TOGGLE, globe.control());
             assertEquals(1, globe.columnSpan());
-            assertEquals(ControlKey.HANJA, globe.longPressControl());
+            assertEquals(ControlKey.MENU_LAYER, globe.longPressControl());
+            assertEquals("m", globe.longPressHint());
+            assertEquals(ControlKey.SPECIAL_KEYS_LAYER, chars.longPressControl());
+            assertEquals("p", chars.longPressHint());
         }
     }
 
