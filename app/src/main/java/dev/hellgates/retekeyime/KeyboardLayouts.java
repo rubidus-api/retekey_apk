@@ -173,8 +173,19 @@ public final class KeyboardLayouts {
             case 2:
                 return SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT);
             default:
-                return SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB);
+                return tabKey();
         }
+    }
+
+    /**
+     * Tab. A tap types one, chording with whatever modifier is armed; a hold latches it down and
+     * leaves it there until the next hold lets it up, which is the only way to hold a key on a
+     * keyboard with no key to hold.
+     */
+    private static SoftwareKeySpec tabKey() {
+        return SoftwareKeySpec
+            .enabled("touch.edit.tab", "Tab", SemanticInput.rawKey(RawKey.TAB))
+            .withLongPressControl(ControlKey.TAB_HOLD);
     }
 
     /** An empty cell: the column a 12-key page does not need, left blank rather than padded out. */
@@ -551,7 +562,7 @@ public final class KeyboardLayouts {
             SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL),
             SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META),
             SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT),
-            SoftwareKeySpec.control("touch.edit.tab", "Tab", ControlKey.TAB),
+            tabKey(),
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),

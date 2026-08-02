@@ -6,6 +6,38 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public final class EditorBoundsPredictorTest {
+    /**
+     * A raw key used to reach this predictor and throw, which the service caught and swallowed —
+     * so Tab, Escape, the arrows, and every other raw key silently did nothing. Where the cursor
+     * ends up after one is the editor's business; the honest answer is that it is unknown.
+     */
+    @Test
+    public void aRawKeyLeavesTheCursorUnknownRatherThanThrowing() {
+        Assert.assertEquals(
+            EditorBounds.unknown(),
+            EditorBoundsPredictor.after(
+                EditorBounds.of(2, 2, -1, -1),
+                Collections.singletonList(
+                    KeyAction.rawKey(RawKey.TAB, Collections.emptySet()))
+            )
+        );
+    }
+
+    @Test
+    public void aHeldRawKeyIsJustAsUnpredictable() {
+        for (RawKeyPhase phase : RawKeyPhase.values()) {
+            Assert.assertEquals(
+                phase.toString(),
+                EditorBounds.unknown(),
+                EditorBoundsPredictor.after(
+                    EditorBounds.of(2, 2, -1, -1),
+                    Collections.singletonList(
+                        KeyAction.rawKey(RawKey.TAB, Collections.emptySet(), phase))
+                )
+            );
+        }
+    }
+
     @Test
     public void commitReplacesSelectionAndExistingComposition() {
         Assert.assertEquals(

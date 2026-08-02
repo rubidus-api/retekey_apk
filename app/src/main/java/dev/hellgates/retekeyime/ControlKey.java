@@ -56,5 +56,10 @@ public enum ControlKey {
     CTRL,
     META,
     ALT,
-    TAB
+    /**
+     * Latches the Tab key down, or lets it up again. Unlike the modifiers above this is not an
+     * armed state waiting for a next key: the editor is told Tab is pressed and is not told
+     * otherwise until this fires a second time. Tab itself types on a tap; only a hold latches.
+     */
+    TAB_HOLD
 }

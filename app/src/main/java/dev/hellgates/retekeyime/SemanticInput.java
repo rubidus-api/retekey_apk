@@ -30,6 +30,7 @@ public final class SemanticInput {
     private final RawKey rawKey;
     private final Set<KeyModifier> modifiers;
     private final boolean correction;
+    private final RawKeyPhase rawKeyPhase;
 
     private SemanticInput(
         Kind kind,
@@ -39,6 +40,19 @@ public final class SemanticInput {
         Set<KeyModifier> modifiers,
         boolean correction
     ) {
+        this(kind, text, jamo, rawKey, modifiers, correction, RawKeyPhase.TAP);
+    }
+
+    private SemanticInput(
+        Kind kind,
+        String text,
+        SemanticJamo jamo,
+        RawKey rawKey,
+        Set<KeyModifier> modifiers,
+        boolean correction,
+        RawKeyPhase rawKeyPhase
+    ) {
+        this.rawKeyPhase = Objects.requireNonNull(rawKeyPhase, "rawKeyPhase");
         this.kind = kind;
         this.text = text;
         this.jamo = jamo;
@@ -69,13 +83,25 @@ public final class SemanticInput {
     }
 
     public static SemanticInput rawKey(RawKey rawKey, Set<KeyModifier> modifiers) {
+        return rawKey(rawKey, modifiers, RawKeyPhase.TAP);
+    }
+
+    /**
+     * A raw key sent as one half of a press. {@link RawKeyPhase#HOLD} presses it and leaves it
+     * down; {@link RawKeyPhase#RELEASE} lets it up. Used by keys that latch themselves down.
+     */
+    public static SemanticInput rawKey(
+        RawKey rawKey,
+        Set<KeyModifier> modifiers,
+        RawKeyPhase phase
+    ) {
         if (rawKey == null) {
             throw new IllegalArgumentException("raw key must not be null");
         }
         if (modifiers == null) {
             throw new IllegalArgumentException("modifiers must not be null");
         }
-        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, modifiers, false);
+        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, modifiers, false, phase);
     }
 
     /** The same raw key with an added set of modifiers folded in. */
@@ -89,7 +115,7 @@ public final class SemanticInput {
         EnumSet<KeyModifier> merged = EnumSet.noneOf(KeyModifier.class);
         merged.addAll(modifiers);
         merged.addAll(extra);
-        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, merged, false);
+        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, merged, false, rawKeyPhase);
     }
 
     public static SemanticInput deleteBackward() {
@@ -145,6 +171,11 @@ public final class SemanticInput {
         return modifiers;
     }
 
+    /** Which half of a press this raw key is; {@link RawKeyPhase#TAP} for everything else. */
+    public RawKeyPhase rawKeyPhase() {
+        return rawKeyPhase;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -159,12 +190,13 @@ public final class SemanticInput {
             && text.equals(that.text)
             && Objects.equals(jamo, that.jamo)
             && rawKey == that.rawKey
+            && rawKeyPhase == that.rawKeyPhase
             && modifiers.equals(that.modifiers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, jamo, rawKey, modifiers, correction);
+        return Objects.hash(kind, text, jamo, rawKey, modifiers, correction, rawKeyPhase);
     }
 
     @Override
@@ -175,6 +207,7 @@ public final class SemanticInput {
             ", jamo=" + jamo +
             ", rawKey=" + rawKey +
             ", modifiers=" + modifiers +
+            ", rawKeyPhase=" + rawKeyPhase +
             ", correction=" + correction +
             '}';
     }

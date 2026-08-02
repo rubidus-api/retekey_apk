@@ -50,7 +50,7 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
                 );
             case RAW_KEY:
                 return DispatchResult.handled(
-                    KeyAction.rawKey(input.rawKey(), input.modifiers())
+                    KeyAction.rawKey(input.rawKey(), input.modifiers(), input.rawKeyPhase())
                 );
             default:
                 throw new IllegalStateException("unsupported semantic input: " + input.kind());

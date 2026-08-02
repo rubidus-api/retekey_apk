@@ -26,6 +26,7 @@ public final class KeyAction {
     private final int actionId;
     private final RawKey rawKey;
     private final Set<KeyModifier> modifiers;
+    private final RawKeyPhase rawKeyPhase;
 
     private KeyAction(
         Kind kind,
@@ -34,6 +35,18 @@ public final class KeyAction {
         RawKey rawKey,
         Set<KeyModifier> modifiers
     ) {
+        this(kind, text, actionId, rawKey, modifiers, RawKeyPhase.TAP);
+    }
+
+    private KeyAction(
+        Kind kind,
+        String text,
+        int actionId,
+        RawKey rawKey,
+        Set<KeyModifier> modifiers,
+        RawKeyPhase rawKeyPhase
+    ) {
+        this.rawKeyPhase = Objects.requireNonNull(rawKeyPhase, "rawKeyPhase");
         this.kind = Objects.requireNonNull(kind, "kind");
         this.text = Objects.requireNonNull(text, "text");
         this.actionId = actionId;
@@ -68,10 +81,20 @@ public final class KeyAction {
     }
 
     public static KeyAction rawKey(RawKey rawKey, Set<KeyModifier> modifiers) {
+        return rawKey(rawKey, modifiers, RawKeyPhase.TAP);
+    }
+
+    /** A raw key that is only half a press: pressed and left down, or let up. */
+    public static KeyAction rawKey(RawKey rawKey, Set<KeyModifier> modifiers, RawKeyPhase phase) {
         if (rawKey == null) {
             throw new IllegalArgumentException("raw key must not be null");
         }
-        return new KeyAction(Kind.RAW_KEY, "", 0, rawKey, modifiers);
+        return new KeyAction(Kind.RAW_KEY, "", 0, rawKey, modifiers, phase);
+    }
+
+    /** Which half of a press this raw key is; {@link RawKeyPhase#TAP} for everything else. */
+    public RawKeyPhase rawKeyPhase() {
+        return rawKeyPhase;
     }
 
     public RawKey rawKey() {
@@ -119,17 +142,18 @@ public final class KeyAction {
             && text.equals(that.text)
             && actionId == that.actionId
             && rawKey == that.rawKey
+            && rawKeyPhase == that.rawKeyPhase
             && modifiers.equals(that.modifiers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, actionId, rawKey, modifiers);
+        return Objects.hash(kind, text, actionId, rawKey, modifiers, rawKeyPhase);
     }
 
     @Override
     public String toString() {
         return "KeyAction{" + "kind=" + kind + ", textLength=" + text.length()
-            + ", rawKey=" + rawKey + '}';
+            + ", rawKey=" + rawKey + ", rawKeyPhase=" + rawKeyPhase + '}';
     }
 }

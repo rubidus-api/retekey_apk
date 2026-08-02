@@ -26,11 +26,19 @@ public final class ReteKeyboardView extends View {
     private static final String KEY_HEIGHT_SCALE = "height_scale";
     private static final String KEY_LAST_LETTERS = "last_letter_layout";
 
+    /** The Tab key's stable id, which the hold latch paints and addresses its events to. */
+    private static final String TAB_KEY_ID = "touch.edit.tab";
+
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
     private final KeyFeedback feedback;
     private final ShiftLayerState shiftLayer = new ShiftLayerState();
     private final Set<ControlKey> armedModifiers = EnumSet.noneOf(ControlKey.class);
+    /**
+     * Whether Tab is currently latched down. Not an armed modifier: the editor has been sent Tab's
+     * down half and has not been sent the up, so as far as it knows a finger is still on the key.
+     */
+    private boolean tabHeld;
     /**
      * One finger, and the key it is holding. Typing with two thumbs means two of these at once, so
      * each carries its own long-press and auto-repeat timers rather than sharing the view's.
@@ -353,6 +361,7 @@ public final class ReteKeyboardView extends View {
     public void resetLayerState() {
         shiftLayer.clear();
         armedModifiers.clear();
+        releaseTabHoldIfLatched();
         cancelAllTouches();
         feedback.reload(prefs());
         invalidate();
@@ -624,7 +633,7 @@ public final class ReteKeyboardView extends View {
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + numpadMode + "|" + shiftLayer.isActive()
-            + "|" + shiftLayer.isLocked() + "|" + armedModifiers + "|"
+            + "|" + shiftLayer.isLocked() + "|" + armedModifiers + "|" + tabHeld + "|"
             + KeyboardPalette.isNight(getContext());
     }
 
@@ -1028,6 +1037,29 @@ public final class ReteKeyboardView extends View {
         return true;
     }
 
+    /**
+     * Presses Tab and leaves it pressed, or lets it up again. A tap on Tab types one and is over;
+     * this is the other thing a finger can do to a key, and a keyboard drawn on glass has no way
+     * to keep one down, so the hold toggles it. No modifier is folded in: an armed Ctrl stays
+     * armed for whatever key comes next rather than being spent on the latch.
+     */
+    private void toggleTabHold() {
+        tabHeld = !tabHeld;
+        sink.accept(ProjectKeyEvent.softwareDown(
+            TAB_KEY_ID,
+            SemanticInput.rawKey(
+                RawKey.TAB,
+                EnumSet.noneOf(KeyModifier.class),
+                tabHeld ? RawKeyPhase.HOLD : RawKeyPhase.RELEASE)));
+    }
+
+    /** Lets a latched Tab up, so a held key cannot outlive the editor it was held in. */
+    private void releaseTabHoldIfLatched() {
+        if (tabHeld) {
+            toggleTabHold();
+        }
+    }
+
     /** Folds the armed Ctrl/Meta/Alt into a raw key so it forms a chord; other keys are unchanged. */
     private ProjectKeyEvent pressEventWithModifiers(SoftwareKeySpec key) {
         SemanticInput input = key.semanticInput();
@@ -1279,11 +1311,13 @@ public final class ReteKeyboardView extends View {
             case CTRL:
             case META:
             case ALT:
-            case TAB:
                 // Latch the modifier. Its armed state is view-local until the raw-key action lands.
                 if (!armedModifiers.remove(control)) {
                     armedModifiers.add(control);
                 }
+                break;
+            case TAB_HOLD:
+                toggleTabHold();
                 break;
             default:
                 break;
@@ -1311,6 +1345,9 @@ public final class ReteKeyboardView extends View {
             if (armedModifiers.contains(control)) {
                 return palette.keyAccent;
             }
+        }
+        if (tabHeld && TAB_KEY_ID.equals(key.stableKeyId())) {
+            return palette.keyAccent;
         }
         if (!key.enabled() && !key.isControl()) {
             return palette.keyDisabled;

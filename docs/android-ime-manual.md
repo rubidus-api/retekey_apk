@@ -1355,6 +1355,61 @@ used to be, and a way to set the other screen's value from this one. And rebuild
 input view is not guaranteed to be recreated, so `onConfigurationChanged` must do it when the
 orientation actually changed.
 
+### 15.20 A key swallowed by trying to predict the unpredictable
+
+**What happened.** Tab, Escape, the arrows and the F-keys did nothing at all. The
+key drew as pressed, the view emitted a proper `RAW_KEY`, and the executor's route
+for it was right. In between, `EditorBoundsPredictor.after` did not know `RAW_KEY`
+and threw `IllegalStateException` — and the service's "no editor may ever kill the
+keyboard" `catch (RuntimeException)` swallowed it. The guard hid the defect: a
+catch wide enough to absorb your own bugs manufactures silence.
+
+**The fix.** Teach the predictor `RAW_KEY`, not by predicting anything but by
+saying it **cannot** be predicted. Tab may indent or move focus, an arrow moves
+the cursor, Escape may do nothing. Only the editor knows where the cursor went.
+
+```java
+case PERFORM_EDITOR_ACTION:
+case RAW_ENTER:
+case RAW_KEY:
+    return EditorBounds.unknown();
+```
+
+**Rule.** When a new action kind joins the pipeline, find every `switch` that
+consumes it. A `default: throw` catches what you missed — unless something above
+swallows the throw, in which case it catches nothing. And "I don't know where the
+cursor is" is not a wrong answer; pretending to know a wrong position is worse.
+
+### 15.21 Glass has no key you can keep holding
+
+**What happened.** Tab sat beside Ctrl/Meta/Alt as a latching modifier. A press
+moved it in and out of the armed set, but nothing that reads that set has a TAB
+branch and `KeyModifier` has no TAB. Pressing it changed a colour and typed
+nothing. Tab is not a modifier — it is a key in its own right.
+
+**The fix.** There are two things a finger can do to a key: a tap **types**, and a
+hold **keeps it held**. So a tap on Tab types one (chording with whatever modifier
+is armed), a hold latches it down, and a second hold lets it up.
+
+Holding a key down means being able to send half a press. `RawKeyPhase` carries
+that half: `TAP` is down and up, `HOLD` is the down alone, `RELEASE` the up.
+
+```java
+sink.accept(ProjectKeyEvent.softwareDown(TAB_KEY_ID, SemanticInput.rawKey(
+    RawKey.TAB, EnumSet.noneOf(KeyModifier.class),
+    tabHeld ? RawKeyPhase.HOLD : RawKeyPhase.RELEASE)));
+```
+
+`keyFillColor` paints a latched key with the accent — which means **the latch must
+be in the drawing cache signature**, or the state changes and the screen does not.
+And the up must be sent when the editor session changes: a key left pressed must
+not outlive the editor it was pressed in.
+
+**Rule.** Arming a key and holding one are different things. Arming is view-local
+state waiting for a next key; holding is a fact the editor has already been told.
+If you create the second, create the way back out of it (hold again) and the way
+it cannot leak (release on session end) in the same breath.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

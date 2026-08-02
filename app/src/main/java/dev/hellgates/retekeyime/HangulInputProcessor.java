@@ -44,7 +44,8 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
             case PRIMARY_ACTION:
                 return primaryAction();
             case RAW_KEY:
-                return flushThen(KeyAction.rawKey(input.rawKey(), input.modifiers()));
+                return flushThen(
+                    KeyAction.rawKey(input.rawKey(), input.modifiers(), input.rawKeyPhase()));
             default:
                 throw new IllegalStateException("unsupported semantic input: " + input.kind());
         }

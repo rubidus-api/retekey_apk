@@ -52,6 +52,10 @@ static EditorBounds after(EditorBounds current, KeyAction action) {
                     : EditorBounds.unknown();
             case PERFORM_EDITOR_ACTION:
             case RAW_ENTER:
+            case RAW_KEY:
+                // A raw key belongs to the editor once it is sent: Tab may indent or move focus,
+                // an arrow moves the cursor, Escape may do nothing at all. Nothing here can say
+                // where the cursor lands, and guessing wrong is worse than admitting it.
                 return EditorBounds.unknown();
             default:
                 throw new IllegalStateException("unsupported action kind");

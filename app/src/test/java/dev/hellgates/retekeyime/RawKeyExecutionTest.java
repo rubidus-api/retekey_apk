@@ -80,6 +80,90 @@ public final class RawKeyExecutionTest {
         );
     }
 
+    @Test
+    public void aHeldKeySendsTheDownHalfAndLeavesItDown() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        ExecutionResult result = execute(
+            bridge,
+            RICH,
+            KeyAction.rawKey(RawKey.TAB, Collections.emptySet(), RawKeyPhase.HOLD)
+        );
+
+        Assert.assertEquals(Collections.singletonList(
+            "sendRawKey:key=TAB:modifiers=[]:action=DOWN"
+        ), bridge.trace());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+    }
+
+    @Test
+    public void releasingAHeldKeySendsOnlyTheUpHalf() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        ExecutionResult result = execute(
+            bridge,
+            RICH,
+            KeyAction.rawKey(RawKey.TAB, Collections.emptySet(), RawKeyPhase.RELEASE)
+        );
+
+        Assert.assertEquals(Collections.singletonList(
+            "sendRawKey:key=TAB:modifiers=[]:action=UP"
+        ), bridge.trace());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+    }
+
+    @Test
+    public void aHeldKeyAlsoWorksInATypeNullEditor() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        execute(
+            bridge,
+            TYPE_NULL,
+            KeyAction.rawKey(RawKey.TAB, Collections.emptySet(), RawKeyPhase.HOLD)
+        );
+
+        Assert.assertEquals(Collections.singletonList(
+            "sendRawKey:key=TAB:modifiers=[]:action=DOWN"
+        ), bridge.trace());
+    }
+
+    @Test
+    public void aRawKeyIsAWholeTapUnlessItSaysOtherwise() {
+        Assert.assertEquals(
+            RawKeyPhase.TAP,
+            KeyAction.rawKey(RawKey.TAB, Collections.emptySet()).rawKeyPhase()
+        );
+        Assert.assertEquals(
+            RawKeyPhase.TAP,
+            SemanticInput.rawKey(RawKey.TAB).rawKeyPhase()
+        );
+    }
+
+    @Test
+    public void theProcessorCarriesTheHalfItWasGiven() {
+        StatelessInputProcessor processor = new ScaffoldInputProcessor();
+
+        DispatchResult result = processor.process(
+            SemanticInput.rawKey(RawKey.TAB, Collections.emptySet(), RawKeyPhase.HOLD)
+        );
+
+        Assert.assertEquals(
+            Collections.singletonList(
+                KeyAction.rawKey(RawKey.TAB, Collections.emptySet(), RawKeyPhase.HOLD)),
+            result.actions()
+        );
+    }
+
+    @Test
+    public void aHalfPressKeepsItsHalfWhenModifiersAreFoldedIn() {
+        SemanticInput held = SemanticInput
+            .rawKey(RawKey.TAB, Collections.emptySet(), RawKeyPhase.HOLD)
+            .withModifiers(EnumSet.of(KeyModifier.CTRL));
+
+        Assert.assertEquals(RawKeyPhase.HOLD, held.rawKeyPhase());
+        Assert.assertEquals(EnumSet.of(KeyModifier.CTRL), held.modifiers());
+    }
+
     private static ExecutionResult execute(
         FakeEditorBridge bridge,
         EditorCapabilities capabilities,

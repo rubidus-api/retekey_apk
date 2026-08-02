@@ -267,7 +267,19 @@ public final class KeyboardLayoutTest {
         assertEquals(ControlKey.CTRL, korean.findById("touch.modifier.ctrl").control());
         assertEquals(ControlKey.META, korean.findById("touch.modifier.meta").control());
         assertEquals(ControlKey.ALT, korean.findById("touch.modifier.alt").control());
-        assertEquals(ControlKey.TAB, korean.findById("touch.edit.tab").control());
+    }
+
+    @Test
+    public void tabTypesOnATapAndLatchesOnAHold() {
+        KeyboardLayout korean = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        SoftwareKeySpec tab = korean.findById("touch.edit.tab");
+        assertNotNull(tab);
+        assertTrue("a tap on Tab must reach the editor, not only arm view state", tab.enabled());
+        assertEquals(SemanticInput.Kind.RAW_KEY, tab.semanticInput().kind());
+        assertEquals(RawKey.TAB, tab.semanticInput().rawKey());
+        assertEquals(RawKeyPhase.TAP, tab.semanticInput().rawKeyPhase());
+        assertTrue("holding Tab latches it", tab.hasLongPressControl());
+        assertEquals(ControlKey.TAB_HOLD, tab.longPressControl());
     }
 
     @Test

@@ -175,6 +175,12 @@ public final class CheckedEditorExecutor {
                 : RawKey.BACKSPACE;
             modifiers = java.util.Collections.emptySet();
         }
+        RawKeyPhase phase = action.kind() == KeyAction.Kind.RAW_KEY
+            ? action.rawKeyPhase()
+            : RawKeyPhase.TAP;
+        if (phase != RawKeyPhase.TAP) {
+            return executeRawKeyHalf(plan, endpoint, action, rawKey, modifiers, phase);
+        }
         EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
             rawKey,
             modifiers,
@@ -222,6 +228,66 @@ public final class CheckedEditorExecutor {
             -1,
             -1,
             2,
+            null,
+            1,
+            false
+        );
+    }
+
+    /**
+     * Sends one half of a key press — the down that latches a key and leaves it held, or the up
+     * that ends it. One editor call, so there is no half-done pair to unwind: it either lands or
+     * it does not.
+     */
+    private static ExecutionResult executeRawKeyHalf(
+        TransitionPlan<?> plan,
+        EditorEndpoint endpoint,
+        KeyAction action,
+        RawKey rawKey,
+        java.util.Set<KeyModifier> modifiers,
+        RawKeyPhase phase
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        RawEditorKey.Action half = phase == RawKeyPhase.HOLD
+            ? RawEditorKey.Action.DOWN
+            : RawEditorKey.Action.UP;
+        EditorCallResult sent = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
+            rawKey,
+            modifiers,
+            half
+        )));
+        if (sent.isStaleSession()) {
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
+            );
+        }
+        if (!sent.isSucceeded()) {
+            return result(
+                plan,
+                ExecutionResult.Outcome.NOT_DISPATCHED,
+                reasonForOperation(sent),
+                ExecutionResult.Reason.NONE,
+                ExecutionResult.StateEffect.KEEP_CURRENT,
+                0,
+                0,
+                -1,
+                1,
+                action.kind(),
+                0,
+                false
+            );
+        }
+        return result(
+            plan,
+            ExecutionResult.Outcome.DISPATCHED,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.ADOPT_PROPOSED_AWAITING_CONFIRMATION,
+            -1,
+            -1,
+            -1,
+            1,
             null,
             1,
             false
