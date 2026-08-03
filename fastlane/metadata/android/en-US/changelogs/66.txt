@@ -1,0 +1,6 @@
+* First release on F-Droid. The build is reproducible: F-Droid compiles the app
+  itself and, on a byte-for-byte match, ships the same APK the releases page
+  serves, signed with this project's key. Installing from either place upgrades
+  the other in place.
+* The APK no longer records which git checkout it was built from, which is what
+  made a clean clone reproduce it exactly.

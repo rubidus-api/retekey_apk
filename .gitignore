@@ -19,6 +19,7 @@
 !/gradle
 !/app
 !/assets
+!/fastlane
 
 # gradle/: wrapper only
 /gradle/*
@@ -27,6 +28,8 @@
 # docs/: the public manuals only (Markdown)
 /docs/*
 !/docs/*.md
+# docs/fdroid/: the F-Droid recipe, kept beside the build it drives
+!/docs/fdroid
 
 # app/: build script, R8 rules, main sources, and JVM unit tests only
 /app/*

@@ -1,0 +1,37 @@
+A Hangul keyboard written in plain Java, with no third-party runtime dependencies, no account, no network and no permissions. It types Korean and English, converts Hanja, and works the same on a phone from 2011 as on one from this year.
+
+Layouts
+
+* 2-beolsik, the standard full Korean keyboard.
+* 천지인 and 나랏글, the two 12-key phone layouts. Both compose the whole of Hangul, including every compound final — 많, 삶, 앉 and the rest.
+* QWERTY and Dvorak for English.
+* A symbols page, a keypad with arrows and function keys, and a menu page for edit commands.
+* The globe key walks the layouts you enabled, in the order you set.
+
+Typing on twelve keys
+
+천지인 keys can be dragged instead of tapped: a consonant key gives its plain letter to the left, its aspirate to the right and its tense letter downward, and a vowel key points at the letter it makes. Hold a key instead and a guide shows what is where, with the keypad digit in the middle. Nothing has to be waited out.
+
+Hanja
+
+Conversion in both directions with 훈음 glosses, paging and number-key selection, from a candidate window the width of the keyboard. The tables are memory-mapped out of the APK, so they cost storage rather than memory.
+
+Physical keyboards
+
+The on-screen keyboard hides itself when a hardware keyboard is attached, and hardware typing composes Hangul through the same 2-beolsik automaton. Ctrl, Alt and Meta chords reach the app rather than being swallowed. 한/영 and 한자 can be bound to keys of your choosing.
+
+Made to suit you
+
+* Height, the layout list and its order, the floating panel and its opacity are remembered separately for a screen held upright and one held sideways.
+* Keys that can be held say so: an open ring in the corner while they are not, a filled disc while they are. Shift, Ctrl, Meta and Alt each arm for one key on a tap and lock on a hold.
+* A half-width floating panel you can place where you like, as see-through as you like.
+* Key-press feedback — highlight, vibration and sound — each adjustable to zero.
+* Follows the system light and dark theme, and Material You where the device has it.
+
+Old Android
+
+Two builds ship from one source. The one on F-Droid is for Android 9 and newer. A build for Android 4.0 and newer is on the project's releases page; everything works there, and the README says which few things behave differently.
+
+The name
+
+rete is Latin for net. It is meant to be said the Latin way, RAY-teh.

@@ -17,8 +17,8 @@ android {
     defaultConfig {
         applicationId = "dev.hellgates.retekeyime"
         targetSdk = 36
-        versionCode = 65
-        versionName = "0.1.64"
+        versionCode = 66
+        versionName = "0.1.65"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -68,6 +68,14 @@ android {
 
     buildTypes {
         release {
+            // Keep the git commit out of the APK. AGP embeds it in
+            // META-INF/version-control-info.textproto, which makes the APK depend on the checkout
+            // it was built from rather than on the source — the one thing that stopped a clean
+            // clone from reproducing the published build byte for byte, and F-Droid's reproducible
+            // build compares exactly that.
+            vcsInfo {
+                include = false
+            }
             // Shrink with R8: the app is pure Java but AGP bundles kotlin-stdlib, so without
             // shrinking the unused stdlib dominates the dex (~2 MB). R8 keeps only reachable code.
             minifyEnabled true

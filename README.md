@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.64** —
-[retekey-0.1.64.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.64/retekey-0.1.64.apk)
+Current release: **v0.1.65** —
+[retekey-0.1.65.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.65/retekey-0.1.65.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
