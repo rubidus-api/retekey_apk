@@ -1,0 +1,5 @@
+* The application id is now com.retekey, matching this author's other app. It was
+  dev.hellgates.retekeyime, which named a domain rather than the app.
+* Android treats a renamed app as a different one: this will install alongside an
+  earlier build rather than replacing it. Remove the old one, and re-enable the
+  keyboard in the system settings. Settings and layouts do not carry over.

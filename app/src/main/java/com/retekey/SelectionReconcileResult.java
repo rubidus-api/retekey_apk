@@ -1,0 +1,17 @@
+package com.retekey;
+
+public enum SelectionReconcileResult {
+    MATCHED,
+    COALESCED,
+    INTERMEDIATE,
+    DUPLICATE_OR_DELAYED,
+    EXTERNAL_MOVEMENT,
+    CONTRADICTION,
+    STALE_GENERATION,
+    STOPPED,
+    WAITING_FOR_BOUNDS,
+    UNSUPPORTED,
+    DESYNCHRONIZED,
+    DEFERRED,
+    DEFERRED_OVERFLOW
+}
