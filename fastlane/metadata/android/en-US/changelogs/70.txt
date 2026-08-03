@@ -1,0 +1,2 @@
+* Documentation only: the README now shows all five letter layouts and every
+  page as they are today, and lists what each key on the menu page does.

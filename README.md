@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.68** —
-[retekey-0.1.68.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.68/retekey-0.1.68.apk)
+Current release: **v0.1.69** —
+[retekey-0.1.69.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.69/retekey-0.1.69.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -86,9 +86,9 @@ on Android 4.4.
 
 | | |
 |---|---|
-| ![2-beolsik on Android 10](assets/modern-keyboard.png) | ![Hanja candidates on Android 10](assets/modern-hanja.png) |
+| ![2-beolsik on Android 10](assets/keyboard-korean.png) | ![Hanja candidates on Android 10](assets/keyboard-hanja.png) |
 | 2-beolsik: raised keys, each with its hold alternate in the corner | the Hanja window: keyboard-wide, 훈음 beside each character, nine to a page |
-| ![The menu page on Android 10](assets/modern-menu.png) | ![The floating keyboard on Android 10](assets/modern-floating.png) |
+| ![The menu page on Android 10](assets/keyboard-menu.png) | ![The floating keyboard on Android 10](assets/keyboard-floating.png) |
 | the ☰ page: editing and cursor keys on the right, settings in the corner | the floating keyboard, translucent and confined to its half of the screen |
 
 ### The legacy build, on Android 4.4
@@ -180,9 +180,27 @@ and the arrows have no alternate and keep repeating when held.
 A physical keyboard is not affected by any of this: it keeps its own layout, and the on-screen
 choice only changes what the on-screen keys do.
 
-Korean 2-beolsik:
+The five, as they are:
 
-![Korean 2-beolsik layout](assets/keyboard-korean.png)
+**두벌식** — 漢 beside `!#` converts what you just typed:
+
+![2-beolsik layout](assets/keyboard-korean.png)
+
+**QWERTY** — `Esc` beside space, for vi over ssh:
+
+![QWERTY layout](assets/keyboard-qwerty.png)
+
+**Dvorak** — the same bottom row, its own 7/10/9 letter block:
+
+![Dvorak layout](assets/keyboard-dvorak.png)
+
+**천지인** — 다음 beside Alt, 漢 beside Tab, and `.,` `!?` either side of ㅇㅁ:
+
+![Cheonjiin layout](assets/keyboard-cheonjiin.png)
+
+**나랏글** — 획 and 쌍 on the bottom letter row, 漢 beside Tab:
+
+![Naratgeul layout](assets/keyboard-naratgeul.png)
 
 The `!#` key opens the special-characters page, where every key commits its symbol. Holding a key
 types its alternate immediately — there is no popup to aim at and nothing to drag to. Holding the
@@ -190,28 +208,63 @@ period types a comma, and holding `_` types `-`, the pair a physical keyboard pu
 
 ![Special characters page](assets/keyboard-chars.png)
 
-The `pad` key opens the special-keys page: a right-hand keypad plus special keys. The digits and
-`+ - = .` commit text; `Esc`, `PrtSc`, `ScrLk`, `Pause`, and `Menu` send key events. `Num` turns the
-keypad into arrows and navigation, where the top-right key becomes forward-delete:
+**Holding `!#`** opens the special-keys page: a right-hand keypad plus the special keys. It opens
+with `Num` **on**, showing digits — num lock means digits here as it does on any keyboard. The
+digits and `+ - = .` commit text; `Esc`, `PrtSc`, `ScrLk`, `Pause` and `Menu` send key events:
 
-![Special keys page](assets/keyboard-keys.png)
+![Special keys page, digits](assets/keyboard-keys.png)
+
+Turning `Num` **off** swaps the keypad for arrows and navigation — Home/End, PgUp/PgDn, Ins, and
+forward-delete:
+
+![Special keys page, arrows](assets/keyboard-keys-arrows.png)
 
 `Fn` swaps the whole page to the function and media keys. F1–F12 send key events; F13–F15 (which
-have no Android key code), the media keys, and Back stay muted:
+have no Android key code), the media keys and Back stay muted:
 
 ![Special keys, Fn page](assets/keyboard-keys-fn.png)
 
-The `☰` key opens a menu page whose right half is the editing hand: copy, cut and paste down its
-near edge, the arrows in a cross with select-all at their centre, Home/End/PgUp/PgDn/Ins/Del around
-them, and settings in the bottom-right corner. The left half holds undo/redo, date insertion,
-keyboard height, the floating toggle, and shortcuts to the system keyboard settings.
+### The menu page
 
-> The four images above are rendered from the actual layout data, so each page is shown whole. For
-> photographs of the thing running, see below.
+**Holding 🌐** opens it. The right half is the editing hand — copy, cut and paste down its near
+edge, the arrows in a cross with select-all at their centre, the jump keys around them, and
+settings in the corner a thumb reaches without looking. The left half is everything about the
+keyboard itself.
+
+![Menu page](assets/keyboard-menu.png)
+
+| | Key | Does |
+|---|---|---|
+| ↶ | undo | undo the last edit |
+| ↷ | redo | redo it |
+| 📅 | date | insert the current date and time as text |
+| ☺ | emoji | *not built yet — drawn muted* |
+| 🗒 | clipboard | *not built yet* |
+| ⧉ | copy | copy the selection |
+| ✂ | cut | cut the selection |
+| 📋 | paste | paste the clipboard |
+| ⬚A | select all | select everything in the field |
+| size− / size+ | height | shrink or grow the keyboard, one step per press, remembered per orientation |
+| ⌨↔ | switch keyboard | open the system input-method picker |
+| ⌨⚙ | manage keyboards | open the system screen for enabling keyboards |
+| ❐ | floating | turn the floating panel on or off |
+| ◀\| / \|↔\| | one-handed | *not built yet* |
+| ◐ | theme | *not built yet* |
+| ★1 / ★2 | custom | *not built yet* |
+| Set | settings | open ReteKey's own settings |
+| ← ↑ → ↓ | arrows | move the cursor; they repeat when held |
+| Home / End | line ends | jump to the start or end |
+| PgUp / PgDn | page | jump a page |
+| Ins | insert | the Insert key |
+| Del | forward delete | delete forward |
+| ABC | back | leave the page and return to the letters |
+
+The muted keys are drawn but do nothing: they are the places the features will go, marked so the
+page does not shift under you when they arrive.
 
 ## Floating keyboard
 
-The ☰ menu's **Floating** tile turns the keyboard into a translucent panel that floats over the
+The menu page's **❐ floating** key turns the keyboard into a translucent panel that floats over the
 app instead of docking to the bottom edge — the shape a tablet in landscape wants, where a
 full-width keyboard is both too wide to type on and too tall to see past.
 
