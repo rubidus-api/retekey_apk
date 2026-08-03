@@ -52,4 +52,41 @@ public final class KeyboardHeightScaleTest {
         Assert.assertEquals(KeyboardHeightScale.MAX_SCALE,
             KeyboardHeightScale.scaleForHeight(100_000, 200), EPS);
     }
+
+    @Test
+    public void theDefaultIsAQuarterOfTheScreensLongEdge() {
+        // 4 rows at density 3 → base 58*3*4 = 696px. A 2400px-long screen wants 600px of
+        // keyboard, which is 600/696 of the base.
+        int base = KeyboardHeightScale.baseHeightPx(4, 3.0f);
+        float scale = KeyboardHeightScale.defaultScaleForScreen(base, 2400);
+        Assert.assertEquals(600, KeyboardHeightScale.heightForScale(scale, base), 8);
+    }
+
+    @Test
+    public void theDefaultIsTheSameHeightInBothOrientations() {
+        // The long edge is passed in either way round, so a rotated phone starts the same size.
+        int base = KeyboardHeightScale.baseHeightPx(4, 2.0f);
+        Assert.assertEquals(
+            KeyboardHeightScale.defaultScaleForScreen(base, 1920),
+            KeyboardHeightScale.defaultScaleForScreen(base, 1920),
+            EPS);
+    }
+
+    @Test
+    public void anUnknownScreenFallsBackToTheNominalDefault() {
+        Assert.assertEquals(KeyboardHeightScale.DEFAULT_SCALE,
+            KeyboardHeightScale.defaultScaleForScreen(0, 2400), EPS);
+        Assert.assertEquals(KeyboardHeightScale.DEFAULT_SCALE,
+            KeyboardHeightScale.defaultScaleForScreen(696, 0), EPS);
+    }
+
+    @Test
+    public void theScreenDefaultStaysInsideTheAdjustableRange() {
+        int base = KeyboardHeightScale.baseHeightPx(4, 1.0f);
+        // A absurdly tall screen cannot push the default past the slider's top level.
+        Assert.assertTrue(KeyboardHeightScale.defaultScaleForScreen(base, 100000)
+            <= KeyboardHeightScale.MAX_SCALE);
+        Assert.assertTrue(KeyboardHeightScale.defaultScaleForScreen(base, 1)
+            >= KeyboardHeightScale.MIN_SCALE);
+    }
 }

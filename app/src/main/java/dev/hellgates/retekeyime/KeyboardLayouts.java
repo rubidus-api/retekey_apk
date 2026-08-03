@@ -181,17 +181,9 @@ public final class KeyboardLayouts {
         }
     }
 
-    /**
-     * An empty cell in a 12-key bottom row that still answers a hold: 한자 conversion, marked 漢
-     * in the corner. A tap does nothing, which is what an empty cell should do — the conversion is
-     * deliberate enough to be worth a hold, and a stray thumb cannot trigger it.
-     */
-    private static SoftwareKeySpec hanjaHoldGap(String id, int span) {
-        return SoftwareKeySpec
-            .disabled("touch.phone.gap." + id, " ")
-            .withColumnSpan(span)
-            .withLongPressControl(ControlKey.HANJA)
-            .withLongPressHint("漢");
+    /** 한자 conversion, beside Tab on both 12-key pages. A tap runs it; there is no hold. */
+    private static SoftwareKeySpec phoneHanjaKey() {
+        return SoftwareKeySpec.control("touch.phone.hanja", "漢", ControlKey.HANJA);
     }
 
     /**
@@ -264,20 +256,13 @@ public final class KeyboardLayouts {
 
     /**
      * The punctuation either side of ㅇㅁ on 천지인's bottom row, two columns each like the Hangul
-     * keys around them. Each carries its pair on the hold, the way the period key does on the full
-     * layouts: a comma under the period, a question mark under the exclamation.
+     * keys around them, and behaving like them: the label holds both characters, tapping cycles
+     * between them, and dragging left or right picks the one written on that side.
      */
-    private static SoftwareKeySpec phonePeriodKey() {
+    private static SoftwareKeySpec phoneCycleKey(String id, String characters) {
         return SoftwareKeySpec
-            .enabled("touch.phone.period", ".", SemanticInput.text("."))
-            .withLongPress(",")
-            .withColumnSpan(2);
-    }
-
-    private static SoftwareKeySpec phoneExclaimKey() {
-        return SoftwareKeySpec
-            .enabled("touch.phone.exclaim", "!", SemanticInput.text("!"))
-            .withLongPress("?")
+            .enabled("touch.phone.cycle." + id, characters,
+                SemanticInput.text(characters.substring(0, 1)))
             .withColumnSpan(2);
     }
 
@@ -318,10 +303,10 @@ public final class KeyboardLayouts {
             letterPeriodKey(),
             enterKey()));
         // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it and 한자 beside Tab.
-        List<SoftwareKeySpec> bottom = phoneRow(3, hanjaHoldGap("r3", 1),
-            phonePeriodKey(),
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(),
+            phoneCycleKey("period", ".,"),
             cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0"),
-            phoneExclaimKey());
+            phoneCycleKey("exclaim", "!?"));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);
@@ -349,7 +334,7 @@ public final class KeyboardLayouts {
             naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, "9"),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3, hanjaHoldGap("r3", 1),
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(),
             naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, "*"),
             naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, "0"),
             naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, "#"));

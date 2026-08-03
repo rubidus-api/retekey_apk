@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.60** —
-[retekey-0.1.60.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.60/retekey-0.1.60.apk)
+Current release: **v0.1.61** —
+[retekey-0.1.61.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.61/retekey-0.1.61.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -124,7 +124,7 @@ not are behind an explicit version check. Lint agrees at both floors, with no er
 ## Features
 
 - **Five layouts** — 2-beolsik, QWERTY, Dvorak, and the 12-key 천지인 and 나랏글 phone modes. A 🌐
-  key walks the ones you enabled, in the order you set; holding it converts Hanja.
+  key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
@@ -152,9 +152,10 @@ small `m` and `p` in the corner. One cell is left over beside `!#`; on 2-beolsik
 Hanja conversion, and the other layouts leave it empty. The two 12-key pages keep the same frame in
 a different shape: the modifiers own the leftmost column, the second one is empty, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
-with `!#` and 🌐 closing the bottom row. The cell beside Tab is empty but converts to Hanja when
-held, marked 漢, on both of them. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.` and `!`, each
-carrying `,` and `?` on its hold.
+with `!#` and 🌐 closing the bottom row. The cell beside Tab carries 漢 on both of them, which
+converts on a tap. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.,` and `!?`, which work the way
+the Hangul keys around them do: tapping moves through the characters on the face, and dragging left
+or right picks the one written on that side.
 
 Five letter layouts share that grid:
 

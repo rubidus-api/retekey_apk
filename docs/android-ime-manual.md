@@ -1469,6 +1469,34 @@ pinned by tests.
 change to a text colour: compute the contrast rather than judging it, because the eye is generous
 to the colour it just picked.
 
+### 15.24 The key it wrote was not the key it read
+
+**What happened.** The keyboard's height would not change. The size keys in the menu and the
+slider in settings both wrote a new value, and the keyboard stayed exactly as it was. When the
+settings were split per orientation the write moved to `height_scale.portrait`, but the read that
+runs when a preference changes still asked for the old `height_scale`. That key does not exist, so
+it got **the default back** — and put the height back to default the instant the user changed it.
+
+```java
+// wrong: nothing writes this key any more
+prefs().getFloat(KEY_HEIGHT_SCALE, DEFAULT_SCALE)
+// right: the key this orientation actually writes
+OrientedPrefs.getFloat(prefs(), KEY_HEIGHT_SCALE, orientation(), defaultHeightScale())
+```
+
+Splitting a setting in two is one change at the write and several at the reads, because the reads
+are scattered. Here there were two — the constructor and the preference-change callback — and only
+one of them was moved.
+
+**The default moved with it.** A height computed from density alone means something different on
+every screen. It is now a quarter of the display's **long** edge, in both orientations, so the
+keyboard is about the same size in the hand whichever way the phone is held; a quarter of the
+short edge would make the landscape keyboard a strip.
+
+**Rule.** When one setting becomes two keys, find every place that reads it. And if the default
+depends on the screen, compute it in one place — a keyboard and a settings screen that believe
+different defaults put the slider on a number the user is not looking at.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

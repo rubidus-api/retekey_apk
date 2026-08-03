@@ -24,8 +24,16 @@ final class KeyboardHeightScale {
     static final float MIN_SCALE = MIN_LEVEL * SCALE_PER_LEVEL;
     /** Tallest the keyboard may be grown to, as a fraction of its base height. */
     static final float MAX_SCALE = MAX_LEVEL * SCALE_PER_LEVEL;
-    /** Scale used before the user has ever adjusted the height. */
+    /** Scale used before the user has ever adjusted the height, on a screen of unknown size. */
     static final float DEFAULT_SCALE = DEFAULT_LEVEL * SCALE_PER_LEVEL;
+
+    /**
+     * How much of the screen the keyboard takes before anyone adjusts it: a quarter of the display's
+     * long edge. The long edge in both orientations on purpose — a quarter of the short edge would
+     * make the landscape keyboard a strip, and the keyboard wants to be about the same size in the
+     * hand whichever way the phone is held.
+     */
+    static final float DEFAULT_SCREEN_FRACTION = 0.25f;
 
     private KeyboardHeightScale() {
     }
@@ -54,6 +62,18 @@ final class KeyboardHeightScale {
             return DEFAULT_LEVEL;
         }
         return clampLevel(Math.round(scale / SCALE_PER_LEVEL));
+    }
+
+    /**
+     * The scale to start at on a screen whose long edge is {@code longestScreenPx}: whatever makes
+     * the keyboard {@link #DEFAULT_SCREEN_FRACTION} of it. Falls back to {@link #DEFAULT_SCALE}
+     * when the screen size is not known yet.
+     */
+    static float defaultScaleForScreen(int baseHeightPx, int longestScreenPx) {
+        if (baseHeightPx <= 0 || longestScreenPx <= 0) {
+            return DEFAULT_SCALE;
+        }
+        return clamp(DEFAULT_SCREEN_FRACTION * longestScreenPx / baseHeightPx);
     }
 
     /** The base (scale-1.0) keyboard height in pixels for the given rows and display density. */

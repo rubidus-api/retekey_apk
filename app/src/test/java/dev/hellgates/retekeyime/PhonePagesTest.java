@@ -47,33 +47,28 @@ public final class PhonePagesTest {
     @Test
     public void theSecondColumnIsEmptyExceptWhereItWasGivenAJob() {
         // The menu and the pad used to sit here; both are holds now. 천지인 has since given the
-        // Alt row's cell to 다음, and both pages give the Tab row's cell to 한자 on a hold.
+        // Alt row's cell to 다음, and both pages give the Tab row's cell to 한자.
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
             assertFalse("row 0", layout.rows().get(0).get(1).enabled());
             assertFalse("row 1", layout.rows().get(1).get(1).enabled());
-            assertFalse("the 한자 cell answers a hold, never a tap",
-                layout.rows().get(3).get(1).enabled());
+            assertEquals("한자 has the Tab-row cell now", "漢",
+                layout.rows().get(3).get(1).label());
         }
         assertFalse("나랏글 keeps its Alt-row cell empty", NARATGEUL.rows().get(2).get(1).enabled());
         assertTrue("천지인 puts 다음 there", CHEONJIIN.rows().get(2).get(1).enabled());
     }
 
     @Test
-    public void theEmptyCellInTheBottomRowConvertsToHanjaOnAHold() {
-        // Both pages put it in the one-column cell beside Tab, and both are inert to a tap: the
-        // conversion is deliberate enough to be worth a hold.
-        SoftwareKeySpec cheonjiin = CHEONJIIN.findById("touch.phone.gap.r3");
-        SoftwareKeySpec naratgeul = NARATGEUL.findById("touch.phone.gap.r3");
-        for (SoftwareKeySpec cell : Arrays.asList(cheonjiin, naratgeul)) {
-            assertNotNull(cell);
-            assertFalse("a tap on it must do nothing", cell.enabled());
-            assertEquals(ControlKey.HANJA, cell.longPressControl());
-            assertEquals("漢", cell.longPressHint());
+    public void hanjaSitsBesideTabOnBothPagesAndRunsOnATap() {
+        for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
+            List<SoftwareKeySpec> bottom = layout.rows().get(3);
+            assertEquals("Tab", bottom.get(0).label());
+            SoftwareKeySpec hanja = bottom.get(1);
+            assertEquals("漢", hanja.label());
+            assertEquals(ControlKey.HANJA, hanja.control());
+            assertEquals("a tap runs it; there is no hold", 1, hanja.columnSpan());
+            assertFalse(hanja.hasLongPressControl());
         }
-        assertEquals("both sit in the one-column cell beside Tab", 1, cheonjiin.columnSpan());
-        assertEquals(1, naratgeul.columnSpan());
-        assertEquals("Tab", CHEONJIIN.rows().get(3).get(0).label());
-        assertEquals("Tab", NARATGEUL.rows().get(3).get(0).label());
     }
 
     @Test
@@ -119,12 +114,28 @@ public final class PhonePagesTest {
 
         SoftwareKeySpec period = bottom.get(2);
         SoftwareKeySpec exclaim = bottom.get(4);
-        assertEquals(".", period.label());
-        assertEquals(",", period.longPressTexts().get(0));
-        assertEquals("!", exclaim.label());
-        assertEquals("?", exclaim.longPressTexts().get(0));
+        assertEquals(".,", period.label());
+        assertEquals("!?", exclaim.label());
         assertEquals("as wide as the Hangul keys they sit between", 2, period.columnSpan());
         assertEquals(2, exclaim.columnSpan());
+    }
+
+    @Test
+    public void theBottomRowPunctuationCyclesRatherThanHolding() {
+        List<SoftwareKeySpec> bottom = CHEONJIIN.rows().get(3);
+        SoftwareKeySpec period = bottom.get(2);
+        SoftwareKeySpec exclaim = bottom.get(4);
+
+        assertEquals(".,", period.label());
+        assertEquals("!?", exclaim.label());
+        for (SoftwareKeySpec key : Arrays.asList(period, exclaim)) {
+            assertTrue("both characters are on the face, not under a hold",
+                key.longPressTexts().isEmpty());
+            assertFalse(key.hasLongPressControl());
+            assertEquals(2, key.columnSpan());
+            assertEquals("the tap types the first of them",
+                key.label().substring(0, 1), key.semanticInput().text());
+        }
     }
 
     @Test

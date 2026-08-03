@@ -134,7 +134,13 @@ public final class ReteKeyboardView extends View {
     private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
     private final NaratgeulInterpreter naratgeul = new NaratgeulInterpreter();
     /** Ends the 12-key multi-tap grouping after a pause, without ending the syllable. */
-    private final Runnable endMultiTap = () -> cheonjiin.endMultiTap();
+    private final Runnable endMultiTap = () -> {
+        cheonjiin.endMultiTap();
+        endCycleRun();
+    };
+    /** The cycling key a run of taps is currently inside, and how far through it that run is. */
+    private String cycleKeyId;
+    private int cycleIndex = -1;
     /** User-adjustable multiplier on the base keyboard height, persisted across sessions. */
     private static final long FLASH_MS = 180;
     private static final float FLASH_MAX_ALPHA = 150.0f;
@@ -146,7 +152,12 @@ public final class ReteKeyboardView extends View {
         invalidate();
     };
     private boolean collapsed;
-    private float heightScale = KeyboardHeightScale.DEFAULT_SCALE;
+    /**
+     * The height multiplier for the orientation being drawn. NaN until it is first needed: the
+     * default depends on the screen and on how many rows the layout has, neither of which the
+     * constructor can ask for safely.
+     */
+    private float heightScale = Float.NaN;
     // The unpressed keyboard is rendered once into this bitmap and reused until the layout changes.
     private Bitmap baseBitmap;
     private String baseSignature;
@@ -166,8 +177,6 @@ public final class ReteKeyboardView extends View {
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
-        heightScale = KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
-            prefs(), KEY_HEIGHT_SCALE, orientation(), KeyboardHeightScale.DEFAULT_SCALE));
         feedback = new KeyFeedback(context);
         feedback.reload(prefs());
         letterLayoutId = restoreLetterLayout();
@@ -252,15 +261,39 @@ public final class ReteKeyboardView extends View {
         return KeyboardHeightScale.baseHeightPx(layout().rows().size(), metrics.density);
     }
 
+    /**
+     * The height to use when this orientation has never been set: a quarter of the display's long
+     * edge, which is the same size in the hand whichever way the phone is held.
+     */
+    private float defaultHeightScale() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        return KeyboardHeightScale.defaultScaleForScreen(
+            baseHeightPx(), Math.max(metrics.widthPixels, metrics.heightPixels));
+    }
+
+    /** The stored height for the orientation being drawn, or the screen-derived default. */
+    private float storedHeightScale() {
+        return KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
+            prefs(), KEY_HEIGHT_SCALE, orientation(), defaultHeightScale()));
+    }
+
+    /** The height in use, resolving it from preferences the first time anything asks. */
+    private float heightScale() {
+        if (Float.isNaN(heightScale)) {
+            heightScale = storedHeightScale();
+        }
+        return heightScale;
+    }
+
     /** The current height multiplier; 1.0 is the default. Exposed for a future settings screen. */
     public float keyboardHeightScale() {
-        return heightScale;
+        return heightScale();
     }
 
     /** Sets the height multiplier, clamps it, optionally persists it, and re-lays out. */
     public void setKeyboardHeightScale(float scale, boolean persist) {
         float clamped = KeyboardHeightScale.clamp(scale);
-        if (clamped == heightScale && !persist) {
+        if (clamped == heightScale() && !persist) {
             return;
         }
         heightScale = clamped;
@@ -293,7 +326,7 @@ public final class ReteKeyboardView extends View {
             setMeasuredDimension(width, 1);
             return;
         }
-        int desired = KeyboardHeightScale.heightForScale(heightScale, baseHeightPx());
+        int desired = KeyboardHeightScale.heightForScale(heightScale(), baseHeightPx());
         int height;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {
             case MeasureSpec.EXACTLY:
@@ -349,9 +382,11 @@ public final class ReteKeyboardView extends View {
             KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS));
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
             KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
-        float storedScale = KeyboardHeightScale.clamp(
-            prefs().getFloat(KEY_HEIGHT_SCALE, KeyboardHeightScale.DEFAULT_SCALE));
-        if (storedScale != heightScale) {
+        // Read the key this orientation actually writes. Reading the un-suffixed one meant every
+        // preference change — including the height's own write — put the height back to default,
+        // which is why neither the size keys nor the settings slider appeared to do anything.
+        float storedScale = storedHeightScale();
+        if (storedScale != heightScale()) {
             heightScale = storedScale;
             requestLayout();
         }
@@ -855,6 +890,22 @@ public final class ReteKeyboardView extends View {
      */
     private boolean tryFlick(KeyboardLayout layout, Touch touch, float x, float y) {
         SoftwareKeySpec key = layout.rows().get(touch.row).get(touch.key);
+        if (isCycleKey(key)) {
+            CheonjiinInterpreter.Flick sideways =
+                FlickDirection.of(x - touch.downX, y - touch.downY, flickDistancePx);
+            if (sideways != CheonjiinInterpreter.Flick.LEFT
+                && sideways != CheonjiinInterpreter.Flick.RIGHT) {
+                // Up and down mean nothing on these keys, so the press stays a tap.
+                return false;
+            }
+            removeCallbacks(touch.onHold);
+            removeCallbacks(touch.onRepeat);
+            touch.holdConsumed = true;
+            typeCyclePick(key, sideways == CheonjiinInterpreter.Flick.RIGHT);
+            feedback.playKeyDown();
+            flashKeyboard(key, null);
+            return true;
+        }
         if (!key.stableKeyId().startsWith("touch.cheonjiin.")) {
             return false;
         }
@@ -1165,7 +1216,56 @@ public final class ReteKeyboardView extends View {
      * or a backspace and the jamo that replaces it. Returns false for every other key, which the
      * caller then emits itself.
      */
+    /** Whether this key holds several characters and cycles through them as it is tapped. */
+    private static boolean isCycleKey(SoftwareKeySpec key) {
+        return key.stableKeyId().startsWith("touch.phone.cycle.");
+    }
+
+    /** Forgets which cycling key was mid-run, so the next tap starts its label again. */
+    private void endCycleRun() {
+        cycleKeyId = null;
+        cycleIndex = -1;
+    }
+
+    /**
+     * Types a cycling key. A tap that lands while this same key's run is still open takes back the
+     * character it typed and puts the next one in its place; anything else starts the label again.
+     */
+    private void typeCycle(SoftwareKeySpec key) {
+        List<String> characters = MultiTapCycle.charactersOf(key.label());
+        boolean runIsOpen = key.stableKeyId().equals(cycleKeyId) && cycleIndex >= 0;
+        MultiTapCycle.Step step = MultiTapCycle.press(characters, cycleIndex, runIsOpen);
+        emitCycleStep(key, step);
+        cycleKeyId = key.stableKeyId();
+        cycleIndex = step.index;
+        restartMultiTapTimeout();
+    }
+
+    /** Types the character a drag picked, and ends the run: a drag chooses rather than cycles. */
+    private void typeCyclePick(SoftwareKeySpec key, boolean rightwards) {
+        emitCycleStep(key, MultiTapCycle.pick(MultiTapCycle.charactersOf(key.label()), rightwards));
+        endCycleRun();
+        removeCallbacks(endMultiTap);
+    }
+
+    private void emitCycleStep(SoftwareKeySpec key, MultiTapCycle.Step step) {
+        List<SemanticInput> inputs = new java.util.ArrayList<>(2);
+        if (step.replacesPrevious) {
+            inputs.add(SemanticInput.deleteForCorrection());
+        }
+        inputs.add(SemanticInput.text(step.character));
+        emit(key, inputs);
+    }
+
     private boolean emitPhoneKey(SoftwareKeySpec key) {
+        if (isCycleKey(key)) {
+            // The Hangul run ends — a period is not part of the syllable being spelled — but this
+            // key's own run carries on, which is what lets a second tap turn . into ,
+            cheonjiin.reset();
+            naratgeul.reset();
+            typeCycle(key);
+            return true;
+        }
         String id = key.stableKeyId();
         if (id.startsWith("touch.cheonjiin.")) {
             emit(key, cheonjiin.press(CheonjiinInterpreter.Key.valueOf(
@@ -1178,7 +1278,7 @@ public final class ReteKeyboardView extends View {
                 id.substring("touch.naratgeul.".length()).toUpperCase(java.util.Locale.ROOT))));
             return true;
         }
-        // Anything else — space, the period, the commit key — ends the run, so the next tap on a
+        // Anything else — space, the commit key, a layer key — ends the run, so the next tap on a
         // consonant key types its first letter instead of continuing the one before.
         resetPhoneInterpreters();
         return false;
@@ -1200,6 +1300,7 @@ public final class ReteKeyboardView extends View {
         removeCallbacks(endMultiTap);
         cheonjiin.reset();
         naratgeul.reset();
+        endCycleRun();
     }
 
     private void consumeOneShotModifiers() {
@@ -1299,10 +1400,10 @@ public final class ReteKeyboardView extends View {
                 }
                 break;
             case HEIGHT_UP:
-                setKeyboardHeightScale(heightScale + HEIGHT_STEP, true);
+                setKeyboardHeightScale(heightScale() + HEIGHT_STEP, true);
                 break;
             case HEIGHT_DOWN:
-                setKeyboardHeightScale(heightScale - HEIGHT_STEP, true);
+                setKeyboardHeightScale(heightScale() - HEIGHT_STEP, true);
                 break;
             case COPY:
                 runEditCommand(android.R.id.copy);

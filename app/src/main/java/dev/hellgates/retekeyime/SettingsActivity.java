@@ -3,6 +3,7 @@ package dev.hellgates.retekeyime;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -328,10 +329,22 @@ public final class SettingsActivity extends Activity {
 
     private int currentLevel() {
         return KeyboardHeightScale.levelForScale(KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
-            prefs(), KEY_HEIGHT_SCALE, editing, KeyboardHeightScale.DEFAULT_SCALE)));
+            prefs(), KEY_HEIGHT_SCALE, editing, defaultScale())));
     }
 
     private static final int KEYBOARD_ROWS = 4;
+
+    /**
+     * What the keyboard would be at if this orientation has never been set: a quarter of the
+     * display's long edge. The same rule the keyboard itself uses, so the slider opens on the size
+     * the user is actually looking at rather than on a nominal 25.
+     */
+    private float defaultScale() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        return KeyboardHeightScale.defaultScaleForScreen(
+            KeyboardHeightScale.baseHeightPx(KEYBOARD_ROWS, metrics.density),
+            Math.max(metrics.widthPixels, metrics.heightPixels));
+    }
 
     private void applyLevel(int level) {
         int clamped = KeyboardHeightScale.clampLevel(level);
@@ -345,7 +358,8 @@ public final class SettingsActivity extends Activity {
         float density = getResources().getDisplayMetrics().density;
         int keyboardPx = KeyboardHeightScale.heightForScale(
             scale, KeyboardHeightScale.baseHeightPx(KEYBOARD_ROWS, density));
-        int screenPx = getResources().getDisplayMetrics().heightPixels;
+        int screenPx = Math.max(getResources().getDisplayMetrics().widthPixels,
+            getResources().getDisplayMetrics().heightPixels);
         return screenPx > 0 ? Math.round(keyboardPx * 100.0f / screenPx) : 0;
     }
 
