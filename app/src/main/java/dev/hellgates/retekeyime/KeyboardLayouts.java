@@ -252,10 +252,32 @@ public final class KeyboardLayouts {
         );
     }
 
-    /** Ends the syllable being composed and starts the next one, without typing anything. */
+    /**
+     * Ends the syllable being composed and starts the next one, without typing anything. It sits
+     * beside Alt, in the one-column cell the pad key left, so the bottom row can carry the
+     * punctuation that flanks ㅇㅁ.
+     */
     private static SoftwareKeySpec commitKey() {
         return SoftwareKeySpec
-            .enabled("touch.phone.commit", "다음", SemanticInput.flush())
+            .enabled("touch.phone.commit", "다음", SemanticInput.flush());
+    }
+
+    /**
+     * The punctuation either side of ㅇㅁ on 천지인's bottom row, two columns each like the Hangul
+     * keys around them. Each carries its pair on the hold, the way the period key does on the full
+     * layouts: a comma under the period, a question mark under the exclamation.
+     */
+    private static SoftwareKeySpec phonePeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.phone.period", ".", SemanticInput.text("."))
+            .withLongPress(",")
+            .withColumnSpan(2);
+    }
+
+    private static SoftwareKeySpec phoneExclaimKey() {
+        return SoftwareKeySpec
+            .enabled("touch.phone.exclaim", "!", SemanticInput.text("!"))
+            .withLongPress("?")
             .withColumnSpan(2);
     }
 
@@ -289,18 +311,17 @@ public final class KeyboardLayouts {
             cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", "5"),
             cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", "6"),
             phoneSpaceKey()));
-        rows.add(phoneRow(2, phoneGap("r2", 1),
+        rows.add(phoneRow(2, commitKey(),
             cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", "7"),
             cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", "8"),
             cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", "9"),
             letterPeriodKey(),
             enterKey()));
-        // ㅇㅁ sits under ㅅㅎ; to its right the key that ends the syllable being composed and
-        // moves on, so two same-key letters can follow each other without a space between them.
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
-            hanjaHoldGap("r3b", 2),
+        // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it and 한자 beside Tab.
+        List<SoftwareKeySpec> bottom = phoneRow(3, hanjaHoldGap("r3", 1),
+            phonePeriodKey(),
             cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0"),
-            commitKey());
+            phoneExclaimKey());
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);

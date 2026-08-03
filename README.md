@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.59** —
-[retekey-0.1.59.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.59/retekey-0.1.59.apk)
+Current release: **v0.1.60** —
+[retekey-0.1.60.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.60/retekey-0.1.60.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -152,8 +152,9 @@ small `m` and `p` in the corner. One cell is left over beside `!#`; on 2-beolsik
 Hanja conversion, and the other layouts leave it empty. The two 12-key pages keep the same frame in
 a different shape: the modifiers own the leftmost column, the second one is empty, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
-with `!#` and 🌐 closing the bottom row. Their bottom row has one empty cell that converts to Hanja
-when held, marked 漢.
+with `!#` and 🌐 closing the bottom row. The cell beside Tab is empty but converts to Hanja when
+held, marked 漢, on both of them. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.` and `!`, each
+carrying `,` and `?` on its hold.
 
 Five letter layouts share that grid:
 

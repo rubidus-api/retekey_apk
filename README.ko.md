@@ -30,8 +30,8 @@
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.59** —
-[retekey-0.1.59.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.59/retekey-0.1.59.apk)
+현재 릴리즈: **v0.1.60** —
+[retekey-0.1.60.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.60/retekey-0.1.60.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -140,8 +140,9 @@
 과 `p` 가 그 사실을 알린다. `!#` 옆에 한 칸이 남는데, 2벌식에서는 그 자리가 한자 변환 키 漢 이고
 나머지 자판에서는 비어 있다. 12키 자판 둘은 같은 뼈대를 다른 모양으로 쓴다 — 수정자가 맨 왼쪽 열을
 차지하고 둘째 열은 비어 있으며, 한글 키는 모두 2칸이고, 오른쪽 열이 백스페이스·스페이스·마침표와
-엔터를 맡고 `!#` 와 🌐 가 맨 아랫줄을 닫는다. 맨 아랫줄의 빈 칸 하나는 길게 누르면 한자로 바꾼다.
-구석에 漢 이라고 적혀 있다.
+엔터를 맡고 `!#` 와 🌐 가 맨 아랫줄을 닫는다. 두 자판 모두 Tab 옆 칸은 비어 있지만 길게 누르면
+한자로 바꾸며, 구석에 漢 이라고 적혀 있다. 천지인은 다음 키를 Alt 옆에 두고 ㅇㅁ 양옆에 `.` 과 `!`
+를 놓는다. 각각 홀드에 `,` 와 `?` 가 붙어 있다.
 
 이 격자를 다섯 가지 글자 자판이 공유한다.
 

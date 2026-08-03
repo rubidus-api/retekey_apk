@@ -181,6 +181,29 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
+    public void everyFullSizePageGivesSpaceThreeColumns() {
+        // Letters, symbols, keypad and menu all close with the same bottom row, so space is the
+        // same width on all of them. The 12-key pages have their own, narrower one.
+        List<KeyboardLayout> fullSize = new ArrayList<>();
+        for (KeyboardLayoutId id : KeyboardLayoutId.values()) {
+            if (id == KeyboardLayoutId.KO_CHEONJIIN || id == KeyboardLayoutId.KO_NARATGEUL) {
+                continue;
+            }
+            fullSize.add(KeyboardLayouts.of(id, false));
+        }
+        fullSize.add(KeyboardLayouts.specialChars());
+        fullSize.add(KeyboardLayouts.menu());
+        for (NumpadMode mode : NumpadMode.values()) {
+            fullSize.add(KeyboardLayouts.specialKeys(mode));
+        }
+        for (KeyboardLayout layout : fullSize) {
+            SoftwareKeySpec space = layout.findById("touch.text.space");
+            assertNotNull(String.valueOf(layout.id()), space);
+            assertEquals(String.valueOf(layout.id()), 3, space.columnSpan());
+        }
+    }
+
+    @Test
     public void qwertyRowsCarryTheEnglishLetterBlock() {
         KeyboardLayout english = KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, false);
         assertEquals(

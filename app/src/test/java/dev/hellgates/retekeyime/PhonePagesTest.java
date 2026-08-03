@@ -45,21 +45,24 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void theSecondColumnIsEmptyNowThatBothPagesAreHolds() {
-        // The menu and the pad used to sit here. They are reached by holding the globe and the
-        // symbols key, and the cells they left are empty rather than filled with something else.
+    public void theSecondColumnIsEmptyExceptWhereItWasGivenAJob() {
+        // The menu and the pad used to sit here; both are holds now. 천지인 has since given the
+        // Alt row's cell to 다음, and both pages give the Tab row's cell to 한자 on a hold.
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
-            for (int row = 0; row < 4; row++) {
-                assertFalse("row " + row, layout.rows().get(row).get(1).enabled());
-            }
+            assertFalse("row 0", layout.rows().get(0).get(1).enabled());
+            assertFalse("row 1", layout.rows().get(1).get(1).enabled());
+            assertFalse("the 한자 cell answers a hold, never a tap",
+                layout.rows().get(3).get(1).enabled());
         }
+        assertFalse("나랏글 keeps its Alt-row cell empty", NARATGEUL.rows().get(2).get(1).enabled());
+        assertTrue("천지인 puts 다음 there", CHEONJIIN.rows().get(2).get(1).enabled());
     }
 
     @Test
     public void theEmptyCellInTheBottomRowConvertsToHanjaOnAHold() {
-        // 천지인 puts it under ㅂㅍ, two columns wide; 나랏글's bottom row has only the one empty
-        // cell, beside 획. Both are inert to a tap: the conversion is worth a hold.
-        SoftwareKeySpec cheonjiin = CHEONJIIN.findById("touch.phone.gap.r3b");
+        // Both pages put it in the one-column cell beside Tab, and both are inert to a tap: the
+        // conversion is deliberate enough to be worth a hold.
+        SoftwareKeySpec cheonjiin = CHEONJIIN.findById("touch.phone.gap.r3");
         SoftwareKeySpec naratgeul = NARATGEUL.findById("touch.phone.gap.r3");
         for (SoftwareKeySpec cell : Arrays.asList(cheonjiin, naratgeul)) {
             assertNotNull(cell);
@@ -67,8 +70,10 @@ public final class PhonePagesTest {
             assertEquals(ControlKey.HANJA, cell.longPressControl());
             assertEquals("漢", cell.longPressHint());
         }
-        assertEquals(2, cheonjiin.columnSpan());
-        assertEquals("the span must survive the hold being added", 1, naratgeul.columnSpan());
+        assertEquals("both sit in the one-column cell beside Tab", 1, cheonjiin.columnSpan());
+        assertEquals(1, naratgeul.columnSpan());
+        assertEquals("Tab", CHEONJIIN.rows().get(3).get(0).label());
+        assertEquals("Tab", NARATGEUL.rows().get(3).get(0).label());
     }
 
     @Test
@@ -104,17 +109,31 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void cheonjiinPutsIeungUnderSiotWithTheCommitKeyBesideIt() {
+    public void cheonjiinPutsIeungUnderSiotBetweenItsPunctuation() {
         List<SoftwareKeySpec> bottom = CHEONJIIN.rows().get(3);
         List<SoftwareKeySpec> above = CHEONJIIN.rows().get(2);
 
         // Same cell index, so ㅇㅁ lands directly under ㅅㅎ.
         assertEquals("ㅅㅎ", above.get(3).label());
         assertEquals("ㅇㅁ", bottom.get(3).label());
-        assertFalse("the cell to its left is empty", bottom.get(2).enabled());
-        SoftwareKeySpec commit = bottom.get(4);
+
+        SoftwareKeySpec period = bottom.get(2);
+        SoftwareKeySpec exclaim = bottom.get(4);
+        assertEquals(".", period.label());
+        assertEquals(",", period.longPressTexts().get(0));
+        assertEquals("!", exclaim.label());
+        assertEquals("?", exclaim.longPressTexts().get(0));
+        assertEquals("as wide as the Hangul keys they sit between", 2, period.columnSpan());
+        assertEquals(2, exclaim.columnSpan());
+    }
+
+    @Test
+    public void theCommitKeySitsBesideAlt() {
+        SoftwareKeySpec commit = CHEONJIIN.rows().get(2).get(1);
+        assertEquals("다음", commit.label());
         assertEquals(SemanticInput.Kind.FLUSH, commit.semanticInput().kind());
-        assertEquals(2, commit.columnSpan());
+        assertEquals("the cell beside Alt is one column", 1, commit.columnSpan());
+        assertEquals("Alt", CHEONJIIN.rows().get(2).get(0).label());
     }
 
     @Test
