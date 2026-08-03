@@ -33,7 +33,7 @@ Binaries: https://github.com/rubidus-api/retekey_apk/releases/download/v%v/retek
 Builds:
   - versionName: 0.1.67
     versionCode: 68
-    commit: 897e4341a5f6e2c81bdc3579aa4854b18780e094
+    commit: eb2e9055583269cab667de251957044ef764e8bb
     subdir: app
     gradle:
       - modern
