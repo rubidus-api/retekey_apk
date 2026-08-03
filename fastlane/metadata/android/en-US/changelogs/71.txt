@@ -1,0 +1,8 @@
+* The Hanja candidate panel no longer loses its bottom row. It was a child of the
+  keyboard's own window and clipped to it, so a panel taller than the keyboard was
+  cut off — all nine candidates show now.
+* A ✕ in the panel's header leaves it without converting.
+* The page controls are rounded, and keep their places as the pages turn.
+* Known: on a device with an on-screen navigation bar the last row can sit over
+  it. The candidates are visible and the number keys still pick them, but that row
+  may not take a tap. Being worked on.

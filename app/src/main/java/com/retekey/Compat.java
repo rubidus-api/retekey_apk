@@ -73,6 +73,31 @@ public final class Compat {
     }
 
     /**
+     * A view's background. {@code setBackground} is API 16; below it the same drawable goes in
+     * through the deprecated setter, which is the only one Android 4.0 has.
+     */
+    @SuppressWarnings("deprecation")
+    public static void setBackground(android.view.View view, android.graphics.drawable.Drawable d) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            view.setBackground(d);
+        } else {
+            view.setBackgroundDrawable(d);
+        }
+    }
+
+    /**
+     * Whether a popup is laid out inside its parent window's decor. A popup attached in the decor
+     * is clipped to that parent, which for an IME child window means clipped to the keyboard's own
+     * height. {@code setAttachedInDecor} is API 22; below it a popup is not attached in the decor
+     * anyway, so there is nothing to turn off.
+     */
+    public static void setAttachedInDecor(PopupWindow popup, boolean attached) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            popup.setAttachedInDecor(attached);
+        }
+    }
+
+    /**
      * The language of a BCP-47 tag. {@code Locale.forLanguageTag} is API 21, and all this code
      * needs is the part before the first separator — "ko" out of "ko-KR".
      */

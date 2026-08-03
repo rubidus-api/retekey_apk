@@ -711,7 +711,7 @@ public class ReteKeyImeService extends InputMethodService {
             return false;
         }
         if (hanjaWindow == null) {
-            hanjaWindow = new HanjaCandidatesWindow(this, this::commitHanja);
+            hanjaWindow = new HanjaCandidatesWindow(this, this::commitHanja, this::hideHanjaCandidates);
         }
         int[] frame = keyboardFrameOnScreen();
         hanjaWindow.show(anchor, pendingReading, pendingCandidates, frame[0], frame[1], frame[2]);

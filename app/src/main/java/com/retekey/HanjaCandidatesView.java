@@ -5,7 +5,6 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -40,6 +39,8 @@ public final class HanjaCandidatesView extends LinearLayout {
     private static final int PAGE_SIZE = COLUMNS * ROWS;
 
     private OnPick listener;
+    /** Run when the user closes the panel without converting anything. */
+    private Runnable onDismiss;
     private String reading = "";
     private List<Item> items = new ArrayList<>();
     private int page;
@@ -54,6 +55,10 @@ public final class HanjaCandidatesView extends LinearLayout {
 
     public void setOnPick(OnPick listener) {
         this.listener = listener;
+    }
+
+    public void setOnDismiss(Runnable onDismiss) {
+        this.onDismiss = onDismiss;
     }
 
     /** Shows candidates for {@code reading}, starting at the first page. */
@@ -150,8 +155,7 @@ public final class HanjaCandidatesView extends LinearLayout {
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         if (pageCount() > 1) {
-            Button prev = navButton("◀", page > 0);
-            prev.setOnClickListener(v -> {
+            View prev = navButton("‹", page > 0, v -> {
                 if (page > 0) {
                     page--;
                     render();
@@ -160,36 +164,64 @@ public final class HanjaCandidatesView extends LinearLayout {
             header.addView(prev);
 
             TextView pageLabel = new TextView(getContext());
-            pageLabel.setText((page + 1) + "/" + pageCount());
+            pageLabel.setText((page + 1) + " / " + pageCount());
             pageLabel.setTextColor(palette.keyTextMuted);
-            pageLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-            pageLabel.setPadding(dp(6), 0, dp(6), 0);
+            pageLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            pageLabel.setGravity(Gravity.CENTER);
+            pageLabel.setMinWidth(dp(40));
+            pageLabel.setPadding(dp(2), 0, dp(2), 0);
             header.addView(pageLabel);
 
-            Button next = navButton("▶", page < pageCount() - 1);
-            next.setOnClickListener(v -> {
+            header.addView(navButton("›", page < pageCount() - 1, v -> {
                 if (page < pageCount() - 1) {
                     page++;
                     render();
                 }
-            });
-            header.addView(next);
+            }));
         }
+
+        // Leaving without converting. The reading stays as it was typed — this is a way out, not
+        // an undo — and it is the only control here that is always present, so it sits at the end
+        // where the eye finishes rather than moving about with the page buttons.
+        header.addView(navButton("✕", true, v -> {
+            if (onDismiss != null) {
+                onDismiss.run();
+            }
+        }));
         return header;
     }
 
-    private Button navButton(String glyph, boolean enabled) {
-        Button button = new Button(getContext());
+    /**
+     * A round-cornered control for the panel's header. Disabled ones are drawn faintly rather than
+     * removed, so the header keeps its shape as the pages turn and nothing shifts under a thumb
+     * that is already on its way down.
+     */
+    private View navButton(String glyph, boolean enabled, OnClickListener onClick) {
+        TextView button = new TextView(getContext());
         button.setText(glyph);
-        button.setAllCaps(false);
+        button.setGravity(Gravity.CENTER);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         button.setTextColor(enabled ? palette.keyText : palette.keyTextMuted);
-        button.setBackgroundColor(palette.keyFace);
-        button.setMinWidth(dp(44));
+        Compat.setBackground(button, roundedKeyFace(enabled));
+        button.setMinWidth(dp(40));
+        button.setMinHeight(dp(34));
+        if (enabled) {
+            button.setOnClickListener(onClick);
+        }
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(dp(2), dp(4), dp(2), dp(4));
+        params.setMargins(dp(3), dp(5), dp(3), dp(5));
         button.setLayoutParams(params);
         return button;
+    }
+
+    private android.graphics.drawable.Drawable roundedKeyFace(boolean enabled) {
+        android.graphics.drawable.GradientDrawable face =
+            new android.graphics.drawable.GradientDrawable();
+        face.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        face.setCornerRadius(dp(6));
+        face.setColor(enabled ? palette.keyFace : palette.keyDisabled);
+        return face;
     }
 
     private LinearLayout buildCell(Item item, int number) {

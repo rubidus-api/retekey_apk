@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.69** —
-[retekey-0.1.69.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.69/retekey-0.1.69.apk)
+Current release: **v0.1.70** —
+[retekey-0.1.70.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.70/retekey-0.1.70.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -300,7 +300,16 @@ nine. Each 훈음 gloss sits beside its character (家 집 가) and wraps onto a
 column is narrow. The window is not part of the keyboard, so it appears the same way for the
 on-screen keyboard, an external keyboard with no keyboard on screen at all, and the floating panel;
 it keeps one size while it is up, so a short last page does not resize it. Tap a candidate, or
-press its number key **1**–**9**; `←`/`→` and `PageUp`/`PageDown` turn the page and `Esc` dismisses.
+press its number key **1**–**9**; `‹`/`›` in the header — or `←`/`→` and `PageUp`/`PageDown` on a
+keyboard — turn the page, and **✕** leaves without converting, as `Esc` does. What you typed stays
+as you typed it: it is a way out, not an undo.
+
+![Hanja candidates](assets/keyboard-hanja.png)
+
+> **Known limitation.** On a device with an on-screen navigation bar the panel's last row can end up
+> over it. The candidates are visible and the number keys still pick them, but that row may not take
+> a tap. The panel is a child of the keyboard's window and used to be clipped to it — losing the row
+> entirely — which is fixed; placing it clear of the system bars is not.
 
 The dictionary is bundled and searched where it lies: the tables are sorted files, memory-mapped
 out of the APK and bisected per lookup, so they cost the Java heap nothing and the kernel is free to
