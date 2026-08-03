@@ -21,7 +21,11 @@ import java.util.List;
  */
 public final class KeyboardLayouts {
     public static final int COLUMNS = 10;
-    public static final int SPACE_COLUMN_SPAN = 2;
+    /**
+     * Space is three columns wide. It took two until the menu key left the bottom row; rather
+     * than leave a hole beside the biggest key on the keyboard, space took the cell.
+     */
+    public static final int SPACE_COLUMN_SPAN = 3;
 
     // The keypad occupies columns 6-8; column 9 is the 0 / Enter / Backspace strip.
     private static final String[] DIGIT_CELLS = {"7", "8", "9", "4", "5", "6", "1", "2", "3"};
@@ -178,6 +182,19 @@ public final class KeyboardLayouts {
     }
 
     /**
+     * An empty cell in a 12-key bottom row that still answers a hold: 한자 conversion, marked 漢
+     * in the corner. A tap does nothing, which is what an empty cell should do — the conversion is
+     * deliberate enough to be worth a hold, and a stray thumb cannot trigger it.
+     */
+    private static SoftwareKeySpec hanjaHoldGap(String id, int span) {
+        return SoftwareKeySpec
+            .disabled("touch.phone.gap." + id, " ")
+            .withColumnSpan(span)
+            .withLongPressControl(ControlKey.HANJA)
+            .withLongPressHint("漢");
+    }
+
+    /**
      * Tab. A tap types one, chording with whatever modifier is armed; a hold latches it down and
      * leaves it there until the next hold lets it up, which is the only way to hold a key on a
      * keyboard with no key to hold.
@@ -212,6 +229,14 @@ public final class KeyboardLayouts {
             .control("touch.layer.chars", "!#", ControlKey.SPECIAL_CHARS_LAYER)
             .withLongPressControl(ControlKey.SPECIAL_KEYS_LAYER)
             .withLongPressHint("p");
+    }
+
+    /**
+     * Converts the reading before the cursor to Hanja. Labelled 漢 — the character for itself,
+     * which is the shortest way to say what the key does and needs no translating.
+     */
+    private static SoftwareKeySpec hanjaKey() {
+        return SoftwareKeySpec.control("touch.key.hanja.letters", "漢", ControlKey.HANJA);
     }
 
     /** A cell left empty because the key that was in it moved onto another key's hold. */
@@ -273,7 +298,7 @@ public final class KeyboardLayouts {
         // ㅇㅁ sits under ㅅㅎ; to its right the key that ends the syllable being composed and
         // moves on, so two same-key letters can follow each other without a space between them.
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
-            phoneGap("r3b", 2),
+            hanjaHoldGap("r3b", 2),
             cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0"),
             commitKey());
         bottom.addAll(phoneBottomPageKeys());
@@ -303,7 +328,7 @@ public final class KeyboardLayouts {
             naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, "9"),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
+        List<SoftwareKeySpec> bottom = phoneRow(3, hanjaHoldGap("r3", 1),
             naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, "*"),
             naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, "0"),
             naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, "#"));
@@ -373,7 +398,11 @@ public final class KeyboardLayouts {
         String[] groups
     ) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHolds(letterRows, groups));
-        rows.add(bottomRow(vacatedCell("layer")));
+        // 2-beolsik is the layout Hanja is for, and the cell the pad key left is right beside the
+        // symbols key. The other letter pages leave it empty.
+        rows.add(bottomRow(id == KeyboardLayoutId.KO_DUBEOLSIK
+            ? hanjaKey()
+            : vacatedCell("layer")));
         return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }
 
@@ -434,14 +463,15 @@ public final class KeyboardLayouts {
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(false),
-            // Minus lives on the underscore's hold, where a physical keyboard puts it too.
-            text("underscore", "_").withLongPress("-"),
             text("semicolon", ";"), text("colon", ":"),
             text("backtick", "`"),
             text("apostrophe", "'").withLongPress("="),
             text("quote", "\"").withLongPress("÷"),
             text("question", "?").withLongPress("×"),
             text("tilde", "~").withLongPress("+"),
+            // Minus lives on the underscore's hold, where a physical keyboard puts it too, and
+            // the pair sits beside Enter rather than at the far end of the row.
+            text("underscore", "_").withLongPress("-"),
             enterKey()
         ));
         rows.add(bottomRow(vacatedCell("layer")));
@@ -554,7 +584,7 @@ public final class KeyboardLayouts {
             menuRaw("cursor.end", "End", RawKey.END),
             menuRaw("cursor.down", "↓", RawKey.DOWN),
             menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),
-            menuControl("settings", "⚙", ControlKey.OPEN_SETTINGS)
+            menuControl("settings", "Set", ControlKey.OPEN_SETTINGS)
         ));
         rows.add(bottomRow(returnToLettersKey()));
         return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);
@@ -581,7 +611,6 @@ public final class KeyboardLayouts {
             SoftwareKeySpec
                 .enabled("touch.text.space", "space", SemanticInput.text(" "))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            vacatedCell("menu"),
             layerKey,
             specialCharsKey(),
             layoutToggleKey()

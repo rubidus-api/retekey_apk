@@ -21,9 +21,13 @@ final class KeyboardPalette {
     final int background;
     final int keyFace;
     final int keyDisabled;
+    /** A key held down until it is released again. The strongest state a key can be in. */
     final int keyAccent;
+    /** A key armed for exactly one press. Distinct from held, and no longer a whisper. */
     final int keyAccentSoft;
     final int keyText;
+    /** The label ink for fills the ordinary one would disappear into. */
+    final int keyTextInverse;
     final int keyTextMuted;
     final int keyShadow;
     final int hint;
@@ -31,6 +35,16 @@ final class KeyboardPalette {
 
     private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
             int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint) {
+        this(background, keyFace, keyDisabled, keyAccent, keyAccentSoft, keyText, keyTextMuted,
+            keyShadow, hint, pressTint,
+            KeyLabelContrast.prefersDarkInk(Color.red(keyText), Color.green(keyText),
+                Color.blue(keyText)) ? Color.rgb(248, 250, 253) : Color.rgb(18, 20, 24));
+    }
+
+    private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
+            int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint,
+            int keyTextInverse) {
+        this.keyTextInverse = keyTextInverse;
         this.background = background;
         this.keyFace = keyFace;
         this.keyDisabled = keyDisabled;
@@ -41,6 +55,19 @@ final class KeyboardPalette {
         this.keyShadow = keyShadow;
         this.hint = hint;
         this.pressTint = pressTint;
+    }
+
+    /**
+     * The label colour for a key filled with {@code fill}. A latched key is painted strongly, and
+     * "strongly" is dark in the light theme and vivid in the dark one, so the ink cannot be fixed
+     * per theme — it follows the fill's own luminance.
+     */
+    int inkOn(int fill) {
+        boolean fillWantsDarkInk =
+            KeyLabelContrast.prefersDarkInk(Color.red(fill), Color.green(fill), Color.blue(fill));
+        boolean ordinaryInkIsDark = KeyLabelContrast.prefersDarkInk(
+            Color.red(keyText), Color.green(keyText), Color.blue(keyText));
+        return fillWantsDarkInk == ordinaryInkIsDark ? keyTextInverse : keyText;
     }
 
     static boolean isNight(Context context) {
@@ -71,7 +98,7 @@ final class KeyboardPalette {
                 sys(context, android.R.color.system_neutral1_700),
                 sys(context, android.R.color.system_neutral1_800),
                 sys(context, android.R.color.system_accent1_300),
-                sys(context, android.R.color.system_accent2_700),
+                sys(context, android.R.color.system_accent1_800),
                 sys(context, android.R.color.system_neutral1_50),
                 sys(context, android.R.color.system_neutral2_300),
                 sys(context, android.R.color.system_neutral1_1000),
@@ -82,8 +109,8 @@ final class KeyboardPalette {
             sys(context, android.R.color.system_neutral1_100),
             sys(context, android.R.color.system_neutral1_50),
             sys(context, android.R.color.system_neutral1_200),
-            sys(context, android.R.color.system_accent1_600),
-            sys(context, android.R.color.system_accent2_100),
+            sys(context, android.R.color.system_accent1_700),
+            sys(context, android.R.color.system_accent1_200),
             sys(context, android.R.color.system_neutral1_900),
             sys(context, android.R.color.system_neutral2_500),
             sys(context, android.R.color.system_neutral1_300),
@@ -96,8 +123,8 @@ final class KeyboardPalette {
             Color.rgb(23, 24, 28),    // background (surface)
             Color.rgb(46, 49, 56),    // key face (elevated)
             Color.rgb(33, 35, 40),    // disabled
-            Color.rgb(90, 140, 205),  // active key (primary)
-            Color.rgb(55, 72, 96),    // one-shot active (soft)
+            Color.rgb(86, 150, 224),  // held: vivid, the strongest state
+            Color.rgb(48, 78, 116),   // armed for one key: deep, plainly not held
             Color.rgb(230, 233, 239), // label (onSurface)
             Color.rgb(139, 147, 158), // muted label
             Color.rgb(10, 11, 14),    // raised lip
@@ -110,8 +137,8 @@ final class KeyboardPalette {
             Color.rgb(210, 214, 220), // background (surface)
             Color.rgb(252, 253, 255), // key face (near white, elevated)
             Color.rgb(230, 233, 238), // disabled
-            Color.rgb(120, 160, 215), // active key (primary)
-            Color.rgb(196, 214, 240), // one-shot active (soft)
+            Color.rgb(28, 90, 168),   // held: deep, the strongest state
+            Color.rgb(138, 180, 232), // armed for one key: mid, plainly not held
             Color.rgb(28, 30, 34),    // label (onSurface)
             Color.rgb(120, 128, 138), // muted label
             Color.rgb(176, 182, 190), // raised lip

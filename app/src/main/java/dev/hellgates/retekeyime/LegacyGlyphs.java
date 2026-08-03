@@ -29,7 +29,7 @@ public final class LegacyGlyphs {
         WORDS.put("↷", "Redo");
         WORDS.put("📅", "Date");   // 📅
         WORDS.put("⬚A", "All");
-        WORDS.put("⚙", "Set");
+        // The settings key says Set on every version now, so no glyph needs replacing.
         WORDS.put("❐", "Float");
         WORDS.put("◐", "Theme");
         WORDS.put("☺", "Emoji");

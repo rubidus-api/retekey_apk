@@ -156,9 +156,28 @@ public final class KeyboardLayoutTest {
             labels(korean, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", " ", "!#", "\uD83C\uDF10"),
+            "2-beolsik fills the cell the pad key left with 漢; the other layouts leave it empty",
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "漢", "!#", "\uD83C\uDF10"),
             labels(korean, 3)
         );
+    }
+
+    @Test
+    public void onlyDubeolsikCarriesHanjaOnItsLetterPage() {
+        for (KeyboardLayoutId id : KeyboardLayoutId.values()) {
+            for (boolean shifted : new boolean[] {false, true}) {
+                SoftwareKeySpec hanja =
+                    KeyboardLayouts.of(id, shifted).findById("touch.key.hanja.letters");
+                String where = id + (shifted ? " shifted" : "");
+                if (id == KeyboardLayoutId.KO_DUBEOLSIK) {
+                    assertNotNull(where, hanja);
+                    assertEquals(where, "漢", hanja.label());
+                    assertEquals(where, ControlKey.HANJA, hanja.control());
+                } else {
+                    assertNull(where, hanja);
+                }
+            }
+        }
     }
 
     @Test
@@ -177,8 +196,8 @@ public final class KeyboardLayoutTest {
             labels(english, 2)
         );
         assertEquals(
-            "the bottom row is identical in every layout",
-            labels(KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false), 3),
+            "the bottom row is the same everywhere but the one cell 2-beolsik uses for 漢",
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", "!#", "\uD83C\uDF10"),
             labels(english, 3)
         );
     }

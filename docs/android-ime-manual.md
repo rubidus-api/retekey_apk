@@ -1442,6 +1442,33 @@ and Shift draw the same mark, because they are keys that do the same thing.
 than writing the second. And three states need two channels to show them: two states fit in one
 colour, three do not.
 
+### 15.23 Three states will not fit in one colour
+
+**What happened.** A modifier armed for one key was painted a blue so pale it was nearly white.
+Whether it was on at all took a second look, and set beside the locked state the only thing the two
+clearly had in common was being blue.
+
+**The fix.** Give each state its own colour — a mid blue for armed, a far deeper one for locked.
+But the moment a fill goes strong, **the label sinks into it**. The light theme's locked blue is
+dark; the dark theme's is bright. Choosing the ink by theme means one of the four gets it wrong.
+
+So the ink is chosen from the fill's own luminance. 0.179 is where sRGB black and white win
+equally against a background; it is not a taste setting.
+
+```java
+public static boolean prefersDarkInk(int red, int green, int blue) {
+    return relativeLuminance(red, green, blue) > 0.179;
+}
+```
+
+`KeyLabelContrast` leans on nothing from Android — it takes three channels rather than a packed
+colour, so it is testable without a device, and which ink each of the four latch colours gets is
+pinned by tests.
+
+**Rule.** Three states cannot be said in one colour. And a change to a background colour is a
+change to a text colour: compute the contrast rather than judging it, because the eye is generous
+to the colour it just picked.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

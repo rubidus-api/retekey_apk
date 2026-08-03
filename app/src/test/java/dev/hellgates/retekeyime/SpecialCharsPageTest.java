@@ -25,11 +25,11 @@ public final class SpecialCharsPageTest {
             labels(PAGE, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "_", ";", ":", "`", "'", "\"", "?", "~", "⏎"),
+            Arrays.asList("⇧", ";", ":", "`", "'", "\"", "?", "~", "_", "⏎"),
             labels(PAGE, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", " ", "!#", "\uD83C\uDF10"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", "!#", "\uD83C\uDF10"),
             labels(PAGE, 3)
         );
     }
@@ -83,6 +83,16 @@ public final class SpecialCharsPageTest {
         assertNotNull(chars);
         assertEquals(ControlKey.SPECIAL_KEYS_LAYER, chars.longPressControl());
         assertEquals("p", chars.longPressHint());
+    }
+
+    @Test
+    public void theUnderscorePairSitsBesideEnter() {
+        List<SoftwareKeySpec> row = PAGE.rows().get(2);
+        SoftwareKeySpec underscore = row.get(row.size() - 2);
+        assertEquals("_", underscore.label());
+        assertEquals("-", underscore.longPressTexts().get(0));
+        assertEquals("⏎", row.get(row.size() - 1).label());
+        assertEquals("the row still starts with shift", "⇧", row.get(0).label());
     }
 
     private static List<String> labels(KeyboardLayout layout, int rowIndex) {

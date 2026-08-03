@@ -2,6 +2,7 @@ package dev.hellgates.retekeyime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -52,6 +53,22 @@ public final class PhonePagesTest {
                 assertFalse("row " + row, layout.rows().get(row).get(1).enabled());
             }
         }
+    }
+
+    @Test
+    public void theEmptyCellInTheBottomRowConvertsToHanjaOnAHold() {
+        // 천지인 puts it under ㅂㅍ, two columns wide; 나랏글's bottom row has only the one empty
+        // cell, beside 획. Both are inert to a tap: the conversion is worth a hold.
+        SoftwareKeySpec cheonjiin = CHEONJIIN.findById("touch.phone.gap.r3b");
+        SoftwareKeySpec naratgeul = NARATGEUL.findById("touch.phone.gap.r3");
+        for (SoftwareKeySpec cell : Arrays.asList(cheonjiin, naratgeul)) {
+            assertNotNull(cell);
+            assertFalse("a tap on it must do nothing", cell.enabled());
+            assertEquals(ControlKey.HANJA, cell.longPressControl());
+            assertEquals("漢", cell.longPressHint());
+        }
+        assertEquals(2, cheonjiin.columnSpan());
+        assertEquals("the span must survive the hold being added", 1, naratgeul.columnSpan());
     }
 
     @Test

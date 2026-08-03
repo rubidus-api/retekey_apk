@@ -117,7 +117,8 @@ public final class SoftwareKeySpec {
             control,
             newColumnSpan,
             longPressTexts,
-            longPressControl
+            longPressControl,
+            longPressHint
         );
     }
 

@@ -653,9 +653,14 @@ public final class ReteKeyboardView extends View {
         // A darker lip just below the face makes the key look raised.
         paint.setColor(palette.keyShadow);
         Compat.drawRoundRect(canvas, l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, paint);
-        paint.setColor(keyFillColor(key));
+        int fill = keyFillColor(key);
+        paint.setColor(fill);
         Compat.drawRoundRect(canvas, l, t, r, b, keyRadiusPx, paint);
-        paint.setColor(key.enabled() || key.isControl() ? palette.keyText : palette.keyTextMuted);
+        // The ink follows the fill, not the theme: a held key is painted strongly enough that the
+        // ordinary label colour would sink into it.
+        paint.setColor(key.enabled() || key.isControl()
+            ? palette.inkOn(fill)
+            : palette.keyTextMuted);
         String label = labelOf(key);
         fitLabel(label, right - left, bottom - top);
         canvas.drawText(label, (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
@@ -1369,7 +1374,9 @@ public final class ReteKeyboardView extends View {
                     return palette.keyAccentSoft;
                 }
             }
-            if (control == ControlKey.NUMLOCK && numpadMode == NumpadMode.ARROWS) {
+            if (control == ControlKey.NUMLOCK && numpadMode == NumpadMode.NUMBERS) {
+                // Num lock on means digits, as on any keyboard: the pad starts locked, and it is
+                // turning it off that reaches the arrows.
                 return palette.keyAccent;
             }
             if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
