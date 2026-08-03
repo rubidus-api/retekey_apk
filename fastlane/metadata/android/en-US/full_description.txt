@@ -1,4 +1,4 @@
-A Hangul keyboard written in plain Java, with no third-party runtime dependencies, no account, no network and no permissions. It types Korean and English, converts Hanja, and works the same on a phone from 2011 as on one from this year.
+A Hangul keyboard written in plain Java, with no third-party runtime dependencies, no account and no network. Its only permission is VIBRATE — a normal permission, never requested at runtime — and it is used for nothing but key-press feedback, which you can turn off. It types Korean and English, converts Hanja, and works the same on a phone from 2011 as on one from this year.
 
 Layouts
 

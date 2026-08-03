@@ -1,0 +1,3 @@
+* Corrects the store description: the app does declare one permission, VIBRATE.
+  It is a normal permission, never requested at runtime, and it is used only for
+  key-press feedback, which can be turned off. Saying "no permissions" was wrong.
