@@ -28,9 +28,16 @@ public final class FloatingKeyboardSettingsTest {
     }
 
     @Test
-    public void theDefaultIsTranslucentButReadable() {
+    public void theDefaultIsClearlySeeThroughAndTheSameInBothOrientations() {
+        assertEquals("the owner's default", 40, FloatingKeyboardSettings.DEFAULT_OPACITY_PERCENT);
         int alpha = FloatingKeyboardSettings.alphaOf(FloatingKeyboardSettings.DEFAULT_OPACITY_PERCENT);
-        assertTrue("lets some of the app through", alpha < 255);
-        assertTrue("still readable", alpha > 200);
+        assertTrue("plainly lets the app through", alpha < 128);
+        assertTrue("not so faint the keys vanish", alpha > 64);
+        // One constant feeds both orientations, so neither can drift from the other.
+        for (ScreenOrientation orientation : ScreenOrientation.values()) {
+            assertEquals(orientation.toString(),
+                FloatingKeyboardSettings.DEFAULT_OPACITY_PERCENT,
+                FloatingKeyboardSettings.opacityPercent(null, orientation));
+        }
     }
 }

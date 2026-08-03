@@ -14,10 +14,14 @@ public final class FloatingKeyboardSettings {
     static final String KEY_ENABLED = "floating_enabled";
     static final String KEY_OPACITY = "floating_opacity";
 
-    /** How solid the panel is, as a percentage: 1 is a ghost, 100 is a solid keyboard. */
+    /**
+     * How solid the panel is, as a percentage: 1 is a ghost, 100 is a solid keyboard. The default
+     * is the same in both orientations — a floating panel sits over what you are reading, and
+     * starting it mostly see-through says that better than starting it nearly solid.
+     */
     public static final int MIN_OPACITY_PERCENT = 1;
     public static final int MAX_OPACITY_PERCENT = 100;
-    public static final int DEFAULT_OPACITY_PERCENT = 88;
+    public static final int DEFAULT_OPACITY_PERCENT = 40;
     static final String KEY_SIDE_LEFT = "floating_side_left";
     static final String KEY_LEFT = "floating_left";
     static final String KEY_TOP = "floating_top";
