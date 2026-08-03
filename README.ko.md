@@ -30,8 +30,8 @@
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [전체 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.67** —
-[retekey-0.1.67.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.67/retekey-0.1.67.apk)
+현재 릴리즈: **v0.1.68** —
+[retekey-0.1.68.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.68/retekey-0.1.68.apk)
 
 설치한 뒤 *설정 → 키보드*에서 ReteKey를 활성화하고 기본 입력기로 선택한다. 앱 실행 화면에 두 단계로 가는
 바로가기와, 키보드를 시험해 볼 입력란이 있다.
@@ -137,8 +137,9 @@
 터치 자판은 크기가 같은 키로 이루어진 직교 10열 격자이며, 행이 어긋나 있지 않다. 하단 행은 모든
 페이지에서 동일하게 고정된다: `Ctrl · Meta · Alt · Tab · space · !# · 🌐`, 스페이스는 3칸이다.
 메뉴와 키패드 자판은 제 키를 갖지 않는다 — 🌐 와 `!#` 를 길게 누르면 열리며, 각 키 구석의 작은 `m`
-과 `p` 가 그 사실을 알린다. `!#` 옆에 한 칸이 남는데, 2벌식에서는 그 자리가 한자 변환 키 漢 이고
-나머지 자판에서는 비어 있다. 12키 자판 둘은 같은 뼈대를 다른 모양으로 쓴다 — 수정자가 맨 왼쪽 열을
+과 `p` 가 그 사실을 알린다. `!#` 옆에 한 칸이 남는다. 자판마다 그 자판을 쓰는 사람이 손을 뻗는 키를 넣었다 —
+2벌식은 한자 변환 키 漢, 쿼티와 드보락은 `Esc`(진짜 `KEYCODE_ESCAPE` 라 ssh 로 vi 를 쓸 때
+쓴다), 나머지는 빈칸이다. 12키 자판 둘은 같은 뼈대를 다른 모양으로 쓴다 — 수정자가 맨 왼쪽 열을
 차지하고 둘째 열은 비어 있으며, 한글 키는 모두 2칸이고, 오른쪽 열이 백스페이스·스페이스·마침표와
 엔터를 맡고 `!#` 와 🌐 가 맨 아랫줄을 닫는다. 두 자판 모두 Tab 옆 칸에 漢 이 있고, 누르면 바로
 한자로 바꾼다. 천지인은 다음 키를 Alt 옆에 두고 ㅇㅁ 양옆에 `.,` 와 `!?` 를 놓는다. 둘 다 옆의 한글

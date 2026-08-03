@@ -181,6 +181,38 @@ public final class KeyboardLayoutTest {
     }
 
     @Test
+    public void theLatinLayoutsPutEscapeBesideSpace() {
+        // vi over ssh is the case: Esc without a trip to the keypad page.
+        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK)) {
+            for (boolean shifted : new boolean[] {false, true}) {
+                KeyboardLayout layout = KeyboardLayouts.of(id, shifted);
+                SoftwareKeySpec escape = layout.findById("touch.key.escape.letters");
+                String where = id + (shifted ? " shifted" : "");
+                assertNotNull(where, escape);
+                assertEquals(where, "Esc", escape.label());
+                assertEquals(where, RawKey.ESCAPE, escape.semanticInput().rawKey());
+                List<SoftwareKeySpec> bottom = layout.rows().get(3);
+                assertEquals(where + ": it sits directly right of space",
+                    "space", bottom.get(bottom.indexOf(escape) - 1).label());
+            }
+        }
+    }
+
+    @Test
+    public void eachLayoutOwnsThatCellDifferently() {
+        assertNotNull("2-beolsik keeps 漢 there",
+            KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false)
+                .findById("touch.key.hanja.letters"));
+        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK)) {
+            assertNull(id + " has no 漢 key",
+                KeyboardLayouts.of(id, false).findById("touch.key.hanja.letters"));
+        }
+        assertNull("2-beolsik has no Esc beside space",
+            KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false)
+                .findById("touch.key.escape.letters"));
+    }
+
+    @Test
     public void everyFullSizePageGivesSpaceThreeColumns() {
         // Letters, symbols, keypad and menu all close with the same bottom row, so space is the
         // same width on all of them. The 12-key pages have their own, narrower one.
@@ -219,8 +251,8 @@ public final class KeyboardLayoutTest {
             labels(english, 2)
         );
         assertEquals(
-            "the bottom row is the same everywhere but the one cell 2-beolsik uses for 漢",
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", "!#", "\uD83C\uDF10"),
+            "the free cell beside space carries Esc on the Latin layouts",
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "Esc", "!#", "\uD83C\uDF10"),
             labels(english, 3)
         );
     }

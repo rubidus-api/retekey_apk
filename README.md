@@ -31,8 +31,8 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.67** —
-[retekey-0.1.67.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.67/retekey-0.1.67.apk)
+Current release: **v0.1.68** —
+[retekey-0.1.68.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.68/retekey-0.1.68.apk)
 
 After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
 method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
@@ -148,8 +148,9 @@ The touch layout is one orthogonal ten-column grid with equal keys and no stagge
 bottom row is the same on every page of the full-size layouts:
 `Ctrl · Meta · Alt · Tab · space · !# · 🌐`, with space three columns wide. The menu and the keypad
 page do not have keys of their own — they are opened by holding 🌐 and `!#`, which say so with a
-small `m` and `p` in the corner. One cell is left over beside `!#`; on 2-beolsik it carries 漢 for
-Hanja conversion, and the other layouts leave it empty. The two 12-key pages keep the same frame in
+small `m` and `p` in the corner. One cell is left over beside `!#`. Each layout puts what its own users reach for
+there: 漢 for Hanja on 2-beolsik, `Esc` on QWERTY and Dvorak — a real
+`KEYCODE_ESCAPE`, for vi over ssh — and nothing on the rest. The two 12-key pages keep the same frame in
 a different shape: the modifiers own the leftmost column, the second one is empty, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
 with `!#` and 🌐 closing the bottom row. The cell beside Tab carries 漢 on both of them, which

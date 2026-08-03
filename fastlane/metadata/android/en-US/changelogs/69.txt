@@ -1,0 +1,3 @@
+* QWERTY and Dvorak put Esc in the free cell beside space. It sends a real
+  KEYCODE_ESCAPE, so vi over ssh no longer means a trip to the keypad page for
+  every Esc. 2-beolsik keeps 漢 in that cell.

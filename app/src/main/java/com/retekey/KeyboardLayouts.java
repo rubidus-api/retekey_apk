@@ -404,12 +404,26 @@ public final class KeyboardLayouts {
         String[] groups
     ) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHolds(letterRows, groups));
-        // 2-beolsik is the layout Hanja is for, and the cell the pad key left is right beside the
-        // symbols key. The other letter pages leave it empty.
-        rows.add(bottomRow(id == KeyboardLayoutId.KO_DUBEOLSIK
-            ? hanjaKey()
-            : vacatedCell("layer")));
+        rows.add(bottomRow(bottomRowCellFor(id)));
         return KeyboardLayout.of(id, shifted, COLUMNS, rows);
+    }
+
+    /**
+     * What a letter page puts in the cell beside space — the one the pad key left when the keypad
+     * moved onto a hold. Each layout gets the key its own users reach for: 한자 on 2-beolsik, and
+     * Esc on the Latin layouts, where it saves a trip to the keypad page every time vi is opened
+     * over ssh. A layout with no obvious answer leaves it empty rather than inventing one.
+     */
+    private static SoftwareKeySpec bottomRowCellFor(KeyboardLayoutId id) {
+        switch (id) {
+            case KO_DUBEOLSIK:
+                return hanjaKey();
+            case EN_QWERTY:
+            case EN_DVORAK:
+                return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
+            default:
+                return vacatedCell("layer");
+        }
     }
 
     private static KeyboardLayout korean(boolean shifted) {
