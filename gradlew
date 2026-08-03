@@ -88,19 +88,6 @@ APP_BASE_NAME=${0##*/}
 # Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
-# Prefer the workspace-shared JDK and Gradle cache when this checkout is under ai-share.
-ai_share_probe=$APP_HOME
-while [ "$ai_share_probe" != / ]; do
-    if [ -f "$ai_share_probe/usr/gradle-env.sh" ]; then
-        AI_SHARE_USR="$ai_share_probe/usr"
-        export AI_SHARE_USR
-        . "$AI_SHARE_USR/gradle-env.sh"
-        break
-    fi
-    ai_share_probe=$(dirname "$ai_share_probe")
-done
-unset ai_share_probe
-
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
 
