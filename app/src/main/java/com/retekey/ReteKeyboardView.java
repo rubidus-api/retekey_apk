@@ -54,6 +54,9 @@ public final class ReteKeyboardView extends View {
         // Not final: a finger that slides a slop clear of its key takes the key it slid onto.
         int row;
         int key;
+        // Which press this was, over the whole life of the view: settling types in press order,
+        // and the map is keyed by pointer id, which reuse can hand out in any order.
+        final int serial = nextTouchSerial++;
         boolean holdConsumed;
         boolean repeatFired;
         /** The 천지인 direction guide is showing for this finger. */
@@ -74,6 +77,7 @@ public final class ReteKeyboardView extends View {
     }
 
     private final android.util.SparseArray<Touch> touches = new android.util.SparseArray<>();
+    private int nextTouchSerial;
     // Held-key auto-repeat (space, enter, backspace, arrows, letters …), configured in settings.
     private boolean repeatEnabled = KeyRepeatSettings.DEFAULT_ENABLED;
     private int repeatDelayMs = KeyRepeatSettings.DEFAULT_DELAY_MS;
@@ -803,6 +807,13 @@ public final class ReteKeyboardView extends View {
 
     /** Starts this finger on the key under it, with its own hold and repeat timers. */
     private void beginTouch(int pointerId, float x, float y) {
+        // A new finger settles every letter still riding on an earlier one. Keys type on release
+        // so a fingertip can slide to its neighbour, but in a fast roll the fingers can lift out
+        // of press order — and the 12-key automata read 획추가-before-ㄱ as a stroke with nothing
+        // to act on, so the stroke is lost and the consonant lands plain. Typing the earlier key
+        // now fixes the order at the last moment it is still known. Control keys stay held: a
+        // modifier chord is two fingers down at once, and must remain one.
+        settlePendingTaps();
         KeyboardLayout layout = layout();
         int rowIndex = rowAt(layout, y);
         int keyIndex = keyIndexAt(layout, rowIndex, x);
@@ -1058,17 +1069,50 @@ public final class ReteKeyboardView extends View {
             return;
         }
         if (held.enabled()) {
-            if (tryArmedModifierChord(held)) {
-                flashKeyboard(held, null);
-                performClick();
-                return;
-            }
-            if (!emitPhoneKey(held)) {
-                sink.accept(pressEventWithModifiers(held));
-            }
-            consumeOneShotShift();
+            typeTapped(held);
+        }
+    }
+
+    /** Types an enabled, non-control key: the armed chord, the 12-key run, or the plain press. */
+    private void typeTapped(SoftwareKeySpec held) {
+        if (tryArmedModifierChord(held)) {
             flashKeyboard(held, null);
             performClick();
+            return;
+        }
+        if (!emitPhoneKey(held)) {
+            sink.accept(pressEventWithModifiers(held));
+        }
+        consumeOneShotShift();
+        flashKeyboard(held, null);
+        performClick();
+    }
+
+    /**
+     * Types every finger still waiting to type on release, in the order it went down, and spends
+     * its press so the release types nothing more. Fingers whose press already acted — a hold, a
+     * repeat, an open flick guide — and fingers on control keys are left exactly as they are.
+     */
+    private void settlePendingTaps() {
+        String grid = gridSignature();
+        java.util.List<Touch> pending = new java.util.ArrayList<>(touches.size());
+        for (int i = 0; i < touches.size(); i++) {
+            pending.add(touches.valueAt(i));
+        }
+        java.util.Collections.sort(pending, (a, b) -> Integer.compare(a.serial, b.serial));
+        for (Touch touch : pending) {
+            if (touch.holdConsumed || touch.repeatFired || touch.guideOpen
+                || !touch.grid.equals(grid)) {
+                continue;
+            }
+            SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
+            if (held.isControl() || !held.enabled()) {
+                continue;
+            }
+            removeCallbacks(touch.onHold);
+            removeCallbacks(touch.onRepeat);
+            touch.holdConsumed = true;
+            typeTapped(held);
         }
     }
 

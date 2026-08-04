@@ -1497,6 +1497,37 @@ short edge would make the landscape keyboard a strip.
 depends on the screen, compute it in one place — a keyboard and a settings screen that believe
 different defaults put the slider on a number the user is not looking at.
 
+### 15.25 Fingers lift in an order the automaton never saw
+
+**What happened.** 획추가 sometimes did nothing during fast typing: a consonant landed plain and
+the stroke was lost. Keys type on **release**, so that a fingertip can slide to its neighbour
+before committing — but in a fast roll the next finger is down before the last one is up, and the
+two can lift in either order. When the 획추가 finger lifted first, the interpreter saw
+stroke-then-consonant: the stroke found nothing to act on and answered nothing, and the consonant
+then typed as itself. Every table and every composer test was correct; the defect was in the
+order the touch layer fed them, which no unit test of the automata could ever reach.
+
+```java
+// beginTouch: a second finger coming down settles every letter still riding on an earlier one.
+settlePendingTaps();   // types them in press order, and spends their release
+```
+
+A finger that has already acted — a hold, a repeat, an open flick guide — is left alone, and so
+is a finger on a control key: a modifier chord *is* two fingers down at once, and settling it
+would tap the modifier out from under the chord. The settled press sets `holdConsumed`, the same
+flag every consumed gesture uses, so its release walks into the existing early-return and types
+nothing more.
+
+**Why press order needs its own counter.** The touch map is keyed by pointer id, and pointer ids
+are recycled: with two fingers down the next press can get an id *below* the one still held.
+Settling by map order would replay the roll bug it exists to fix, so each touch carries a serial
+from a monotonic counter, and settling sorts by that.
+
+**Rule.** A stateful automaton behind a release-typed keyboard must be fed in press order, and
+the only moment press order is still known is the next finger's down. Commit pending taps there.
+And test the *feed* — the interpreters and the composer were blameless for as long as this went
+unnoticed, because every test handed them keys in the order the user pressed them.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).
