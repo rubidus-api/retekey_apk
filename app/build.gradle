@@ -17,8 +17,8 @@ android {
     defaultConfig {
         applicationId = "com.retekey"
         targetSdk = 36
-        versionCode = 72
-        versionName = "0.1.71"
+        versionCode = 73
+        versionName = "0.1.72"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -104,7 +104,11 @@ androidComponents {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        // The F-Droid buildserver provides Java 21 only (their default since January 2026) and
+        // does not auto-provision toolchains, so this pin must name what that machine has. The
+        // bytecode target stays 17 via compileOptions; releases must be built with the same major
+        // JDK so the published APK stays byte-identical to their rebuild.
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
