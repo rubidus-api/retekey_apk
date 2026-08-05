@@ -1,0 +1,4 @@
+Fast typing no longer loses 획추가 or 쌍자음: in a fast roll the
+fingers can lift out of press order, and the transform key could reach
+the Hangul automaton before its consonant. Keys are now settled in
+press order the moment the next finger lands.

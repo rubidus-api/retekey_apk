@@ -1,0 +1,2 @@
+Built with Java 21, the JDK the F-Droid buildserver provides. No
+behavior changes.
