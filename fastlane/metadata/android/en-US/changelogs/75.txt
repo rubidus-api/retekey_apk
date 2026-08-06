@@ -1,0 +1,3 @@
+A half-typed syllable no longer follows the cursor: moving the cursor by
+touch or mouse while composing now settles that syllable where it was,
+and the next key starts clean at the new position.

@@ -1557,6 +1557,39 @@ it always was.
 memory becomes a dead key. Give every transformation a way to re-derive its target from the
 document itself; the memory then becomes an optimization, not a requirement.
 
+### 15.27 A composition that follows the cursor
+
+**What happened.** While a syllable was composing, tapping or clicking the cursor to another spot
+sometimes made that half-typed syllable appear at the new position. The composer does not watch
+the cursor; it kept its state across the move, and the next key's `setComposingText` painted the
+whole stale syllable wherever the cursor now was.
+
+**The trap this fix had to avoid.** The obvious rule — "selection changed in a way we did not
+predict, so reset" — was tried once (v0.1.11) and killed the keyboard: real editors do not land
+exactly on predicted positions, so our own keystrokes read as external movement and every key
+reset the composer. The fix was reverted within a day (v0.1.12).
+
+**The signal that cannot mis-fire.** `onUpdateSelection` also reports the editor's own composing
+region (`candidatesStart..End`). While the keyboard is composing, its own edits always leave the
+cursor at the end of that span — so a new selection lying outside the span is something only the
+user can produce:
+
+```java
+CursorMovePolicy.shouldAbandonComposition(composing, newSelStart, newSelEnd,
+    candidatesStart, candidatesEnd)
+// true → finishComposingText() (the syllable settles where it was), reset the
+// composer, end the 12-key run. The next key types clean at the new position.
+```
+
+Reports without a span are left alone — a commit's intermediate state looks like that, and so
+does every report from an editor that never marks its composing text; resetting on those would
+break composition one keystroke at a time. Those editors keep the old (rare) behavior rather than
+getting a new bug.
+
+**Rule.** Judge "did the user move the cursor?" only by evidence the editor asserts — its own
+composing span — never by comparing against positions you predicted. And when a composition is
+abandoned, settle it in place first; text must never travel with the cursor.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

@@ -417,6 +417,22 @@ public class ReteKeyImeService extends InputMethodService {
                 );
                 return;
             }
+            if (CursorMovePolicy.shouldAbandonComposition(
+                inputProcessor.isComposing(),
+                newSelStart,
+                newSelEnd,
+                candidatesStart,
+                candidatesEnd
+            )) {
+                // The user moved the cursor away from the syllable being composed. Settle that
+                // syllable where it is — it must not follow the cursor — and start clean, so the
+                // next key types at the new position instead of repainting the stale composition.
+                finishComposingInEditor();
+                inputProcessor.reset();
+                if (keyboardView != null) {
+                    keyboardView.resetPhoneInterpreters();
+                }
+            }
             int composingStart = candidatesStart >= 0
                 && candidatesEnd >= candidatesStart ? candidatesStart : -1;
             int composingEnd = composingStart >= 0 ? candidatesEnd : -1;
