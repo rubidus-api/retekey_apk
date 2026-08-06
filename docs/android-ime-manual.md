@@ -1528,6 +1528,35 @@ the only moment press order is still known is the next finger's down. Commit pen
 And test the *feed* — the interpreters and the composer were blameless for as long as this went
 unnoticed, because every test handed them keys in the order the user pressed them.
 
+### 15.26 An automaton whose memory is the only copy
+
+**What happened.** 획추가 and 쌍자음 still sometimes did nothing: the 나랏글 interpreter acts on
+the letter it *remembers* typing, and that memory is cleared by things the user does not connect
+to typing at all — an editor restarting its input session, a hardware key, a layer switch. The
+letter is still right there on screen; the key that transforms it has simply forgotten it.
+
+**The fix is a fallback, not more memory.** When the interpreter answers a transform key with
+nothing, the press is sent on as a `TRANSFORM` semantic input, and the processor resolves it
+against what is actually on screen, in two tiers:
+
+```java
+// Tier 1: something is composing — its trailing jamo is the target.
+int consonant = composer.trailingConsonant();   // bare choseong, or the batchim's tail
+// Tier 2: nothing composing — read the character before the cursor, transform its
+// last jamo, and re-open the result as a composing syllable so typing continues.
+```
+
+Tier two re-creates the live behavior exactly: a batchim transforms in place (각 → 갘), a double
+that cannot be a batchim splits the syllable (갇 → 가ㄸ), a compound final unwinds its tail
+(많 → 만ㅇ), an open syllable iotates its vowel (가 → 갸) — and the result is *composing* again,
+seeded into the composer, so the next vowel still moves the batchim on (갘 + ㅏ → 가카). Editors
+that cannot answer `getTextBeforeCursor` (terminals) simply make the press a no-op, which is what
+it always was.
+
+**Rule.** When an automaton's only state is its memory of what it just wrote, every reset of that
+memory becomes a dead key. Give every transformation a way to re-derive its target from the
+document itself; the memory then becomes an optimization, not a requirement.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).

@@ -1318,8 +1318,20 @@ public final class ReteKeyboardView extends View {
             return true;
         }
         if (id.startsWith("touch.naratgeul.")) {
-            emit(key, naratgeul.press(NaratgeulInterpreter.Key.valueOf(
-                id.substring("touch.naratgeul.".length()).toUpperCase(java.util.Locale.ROOT))));
+            NaratgeulInterpreter.Key phoneKey = NaratgeulInterpreter.Key.valueOf(
+                id.substring("touch.naratgeul.".length()).toUpperCase(java.util.Locale.ROOT));
+            java.util.List<SemanticInput> edits = naratgeul.press(phoneKey);
+            if (edits.isEmpty() && (phoneKey == NaratgeulInterpreter.Key.STROKE
+                || phoneKey == NaratgeulInterpreter.Key.TWIN)) {
+                // The run is broken — a restart, a hardware key, a layer switch — but the letter
+                // is still on screen. The processor resolves the transform against what is
+                // actually there: the composing syllable, or the character before the cursor.
+                edits = java.util.Collections.singletonList(SemanticInput.transform(
+                    phoneKey == NaratgeulInterpreter.Key.STROKE
+                        ? SemanticInput.Transform.STROKE
+                        : SemanticInput.Transform.TWIN));
+            }
+            emit(key, edits);
             return true;
         }
         // Anything else — space, the commit key, a layer key — ends the run, so the next tap on a

@@ -251,6 +251,66 @@ public final class HangulComposer {
         return preedit(syllable());
     }
 
+    /**
+     * The last consonant of the composing syllable as a choseong index — the bare choseong, or the
+     * batchim (a compound final answers its tail, the letter typed last) — or -1 when the syllable
+     * does not end in a consonant. This is what a transformation key acts on when the interpreter
+     * that would normally remember it has lost its run.
+     */
+    public int trailingConsonant() {
+        switch (state) {
+            case CHO:
+                return cho;
+            case CHO_JUNG_JONG:
+                return HangulTables.splitJong(jong)[1];
+            default:
+                return -1;
+        }
+    }
+
+    /** The composing syllable's vowel when it is the last jamo typed, or -1. */
+    public int trailingVowel() {
+        switch (state) {
+            case JUNG:
+            case CHO_JUNG:
+                return jung;
+            default:
+                return -1;
+        }
+    }
+
+    /**
+     * Starts composing an already-written syllable, replacing whatever was composing. This is how
+     * a transformation re-opens a character it found before the cursor: the caller removes the
+     * character from the editor and shows the returned preedit in its place, and typing continues
+     * as if the syllable had never been closed. Indices follow the standard tables; jung -1 for a
+     * bare consonant, jong -1 (or 0) for none.
+     */
+    public Result seed(int cho, int jung, int jong) {
+        if (cho < 0 && jung < 0) {
+            throw new IllegalArgumentException("seed needs a choseong or a jungseong");
+        }
+        reset();
+        if (cho < 0) {
+            this.jung = jung;
+            state = State.JUNG;
+            return preedit(HangulTables.jungJamo(jung));
+        }
+        this.cho = cho;
+        if (jung < 0) {
+            state = State.CHO;
+            return preedit(HangulTables.choJamo(cho));
+        }
+        this.jung = jung;
+        if (jong <= 0) {
+            state = State.CHO_JUNG;
+        } else {
+            this.jong = jong;
+            state = State.CHO_JUNG_JONG;
+        }
+        return preedit(syllable());
+    }
+
     /** Commits whatever is composing and resets. Returns the committed text (may be empty). */
     public String flush() {
         String text;

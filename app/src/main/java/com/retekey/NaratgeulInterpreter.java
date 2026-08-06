@@ -44,39 +44,8 @@ public final class NaratgeulInterpreter {
         TWIN
     }
 
-    /** Stroke chains over the standard 19 initial indices; each key steps to the next. */
-    private static final Map<Integer, Integer> STROKE = new HashMap<>();
-    /** Doubling, over the same indices. */
-    private static final Map<Integer, Integer> TWIN = new HashMap<>();
-
-    static {
-        // Each block key walks the letters its own strokes build, and returns to its start.
-        STROKE.put(0, 15);      // ㄱ → ㅋ
-        STROKE.put(15, 0);      // ㅋ → ㄱ
-        STROKE.put(2, 3);       // ㄴ → ㄷ
-        STROKE.put(3, 16);      // ㄷ → ㅌ
-        STROKE.put(16, 2);      // ㅌ → ㄴ
-        STROKE.put(6, 7);       // ㅁ → ㅂ
-        STROKE.put(7, 17);      // ㅂ → ㅍ
-        STROKE.put(17, 6);      // ㅍ → ㅁ
-        STROKE.put(9, 12);      // ㅅ → ㅈ
-        STROKE.put(12, 14);     // ㅈ → ㅊ
-        STROKE.put(14, 9);      // ㅊ → ㅅ
-        STROKE.put(11, 18);     // ㅇ → ㅎ
-        STROKE.put(18, 11);     // ㅎ → ㅇ
-        // ㄹ has no stroke of its own; the key answers nothing rather than inventing a letter.
-
-        TWIN.put(0, 1);         // ㄱ ㄲ
-        TWIN.put(1, 0);
-        TWIN.put(3, 4);         // ㄷ ㄸ
-        TWIN.put(4, 3);
-        TWIN.put(7, 8);         // ㅂ ㅃ
-        TWIN.put(8, 7);
-        TWIN.put(9, 10);        // ㅅ ㅆ
-        TWIN.put(10, 9);
-        TWIN.put(12, 13);       // ㅈ ㅉ
-        TWIN.put(13, 12);
-    }
+    // The stroke, twin and vowel-stroke chains live in NaratgeulTransforms, shared with the
+    // processor-side fallback that acts when this interpreter's memory has been lost.
 
     /** Which consonant each block key starts from. */
     private static final Map<Key, Integer> CONSONANTS = new HashMap<>();
@@ -88,24 +57,6 @@ public final class NaratgeulInterpreter {
         CONSONANTS.put(Key.MIEUM, 6);    // ㅁ
         CONSONANTS.put(Key.SIOT, 9);     // ㅅ
         CONSONANTS.put(Key.IEUNG, 11);   // ㅇ
-    }
-
-    /**
-     * 획추가 on a vowel adds the stroke that iotates it — ㅏ becomes ㅑ, ㅗ becomes ㅛ — the same
-     * gesture the key performs on a consonant, and the only route to ㅛ and ㅠ now that pressing ㅗ
-     * twice reaches ㅜ instead.
-     */
-    private static final Map<Integer, Integer> VOWEL_STROKE = new HashMap<>();
-
-    static {
-        VOWEL_STROKE.put(0, 2);      // ㅏ → ㅑ
-        VOWEL_STROKE.put(2, 0);      // ㅑ → ㅏ
-        VOWEL_STROKE.put(4, 6);      // ㅓ → ㅕ
-        VOWEL_STROKE.put(6, 4);      // ㅕ → ㅓ
-        VOWEL_STROKE.put(8, 12);     // ㅗ → ㅛ
-        VOWEL_STROKE.put(12, 8);     // ㅛ → ㅗ
-        VOWEL_STROKE.put(13, 17);    // ㅜ → ㅠ
-        VOWEL_STROKE.put(17, 13);    // ㅠ → ㅜ
     }
 
     /** Which vowel each vowel key starts from, over the standard 21 medial indices. */
@@ -160,10 +111,12 @@ public final class NaratgeulInterpreter {
             throw new IllegalArgumentException("key must not be null");
         }
         if (key == Key.STROKE) {
-            return lastConsonant < 0 && lastVowel >= 0 ? strokeVowel() : transform(STROKE);
+            return lastConsonant < 0 && lastVowel >= 0
+                ? strokeVowel()
+                : transform(NaratgeulTransforms::strokeOf);
         }
         if (key == Key.TWIN) {
-            return transform(TWIN);
+            return transform(NaratgeulTransforms::twinOf);
         }
         Integer consonant = CONSONANTS.get(key);
         if (consonant != null) {
@@ -190,8 +143,8 @@ public final class NaratgeulInterpreter {
 
     /** Adds the iotating stroke to the vowel just typed; nothing when it has none. */
     private List<SemanticInput> strokeVowel() {
-        Integer next = VOWEL_STROKE.get(lastVowel);
-        if (next == null) {
+        int next = NaratgeulTransforms.vowelStrokeOf(lastVowel);
+        if (next < 0) {
             return Collections.emptyList();
         }
         int previous = lastVowel;
@@ -203,12 +156,12 @@ public final class NaratgeulInterpreter {
      * Applies a transformation to the consonant just typed. With nothing to act on, or a consonant
      * the table has no entry for, the press does nothing rather than typing a stray letter.
      */
-    private List<SemanticInput> transform(Map<Integer, Integer> table) {
+    private List<SemanticInput> transform(java.util.function.IntUnaryOperator table) {
         if (lastConsonant < 0) {
             return Collections.emptyList();
         }
-        Integer next = table.get(lastConsonant);
-        if (next == null) {
+        int next = table.applyAsInt(lastConsonant);
+        if (next < 0) {
             return Collections.emptyList();
         }
         lastConsonant = next;

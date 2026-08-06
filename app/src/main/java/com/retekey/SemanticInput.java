@@ -12,7 +12,19 @@ public final class SemanticInput {
         DELETE_BACKWARD,
         FLUSH,
         PRIMARY_ACTION,
-        RAW_KEY
+        RAW_KEY,
+        TRANSFORM
+    }
+
+    /**
+     * A 나랏글 transformation asked for after the interpreter's memory of the last letter has been
+     * lost — a hardware key, a session restart, or a layer switch ends its run, but the letter is
+     * still on screen. The processor resolves it against the composing syllable, or failing that
+     * against the character before the cursor.
+     */
+    public enum Transform {
+        STROKE,
+        TWIN
     }
 
     private static final SemanticInput DELETE_BACKWARD =
@@ -25,6 +37,7 @@ public final class SemanticInput {
         new SemanticInput(Kind.PRIMARY_ACTION, "", null, null, Collections.emptySet(), false);
 
     private final Kind kind;
+    private final Transform transform;
     private final String text;
     private final SemanticJamo jamo;
     private final RawKey rawKey;
@@ -52,7 +65,21 @@ public final class SemanticInput {
         boolean correction,
         RawKeyPhase rawKeyPhase
     ) {
+        this(kind, text, jamo, rawKey, modifiers, correction, rawKeyPhase, null);
+    }
+
+    private SemanticInput(
+        Kind kind,
+        String text,
+        SemanticJamo jamo,
+        RawKey rawKey,
+        Set<KeyModifier> modifiers,
+        boolean correction,
+        RawKeyPhase rawKeyPhase,
+        Transform transform
+    ) {
         this.rawKeyPhase = Objects.requireNonNull(rawKeyPhase, "rawKeyPhase");
+        this.transform = transform;
         this.kind = kind;
         this.text = text;
         this.jamo = jamo;
@@ -143,6 +170,20 @@ public final class SemanticInput {
         return FLUSH;
     }
 
+    /** A 나랏글 transformation to resolve against what is actually on screen. */
+    public static SemanticInput transform(Transform transform) {
+        if (transform == null) {
+            throw new IllegalArgumentException("transform must not be null");
+        }
+        return new SemanticInput(Kind.TRANSFORM, "", null, null, Collections.emptySet(), false,
+            RawKeyPhase.TAP, transform);
+    }
+
+    /** Which transformation this is; null for every other kind. */
+    public Transform transform() {
+        return transform;
+    }
+
     /**
      * The editor's primary action: Enter, or whatever action the focused editor requests.
      * The editor profile, not the layout, decides what it means.
@@ -186,6 +227,7 @@ public final class SemanticInput {
         }
         SemanticInput that = (SemanticInput) other;
         return kind == that.kind
+            && transform == that.transform
             && correction == that.correction
             && text.equals(that.text)
             && Objects.equals(jamo, that.jamo)
@@ -196,7 +238,7 @@ public final class SemanticInput {
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, jamo, rawKey, modifiers, correction, rawKeyPhase);
+        return Objects.hash(kind, text, jamo, rawKey, modifiers, correction, rawKeyPhase, transform);
     }
 
     @Override

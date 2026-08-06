@@ -1,0 +1,4 @@
+획추가/쌍자음 now also work when the keyboard has lost track of the
+last letter (after an app restarts input, a hardware key, or a layer
+switch): the key transforms the letter actually on screen — composing
+or already committed — and the syllable keeps composing afterwards.

@@ -21,7 +21,7 @@ import java.util.Locale;
 
 public class ReteKeyImeService extends InputMethodService {
     private final HangulInputProcessor inputProcessor =
-        new HangulInputProcessor(this::currentEditorProfile);
+        new HangulInputProcessor(this::currentEditorProfile, this::characterBeforeCursor);
     private final InputDispatcher dispatcher = new InputDispatcher(inputProcessor);
     private final InputSessionController<ScaffoldSessionState> sessionController =
         new InputSessionController<>();
@@ -906,6 +906,22 @@ public class ReteKeyImeService extends InputMethodService {
         } catch (RuntimeException crash) {
             // The keyboard must survive any single bad editor interaction.
             inputProcessor.reset();
+            return null;
+        }
+    }
+
+    /**
+     * The character before the cursor, for a 나랏글 transformation arriving with nothing
+     * composing. Null when there is no connection or the editor cannot say (terminals).
+     */
+    private CharSequence characterBeforeCursor() {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) {
+            return null;
+        }
+        try {
+            return ic.getTextBeforeCursor(1, 0);
+        } catch (RuntimeException ignored) {
             return null;
         }
     }

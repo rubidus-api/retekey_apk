@@ -52,6 +52,9 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
                 return DispatchResult.handled(
                     KeyAction.rawKey(input.rawKey(), input.modifiers(), input.rawKeyPhase())
                 );
+            case TRANSFORM:
+                // A Hangul transformation means nothing to this processor.
+                return DispatchResult.handled();
             default:
                 throw new IllegalStateException("unsupported semantic input: " + input.kind());
         }
