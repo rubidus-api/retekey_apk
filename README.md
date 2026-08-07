@@ -40,8 +40,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.77** —
-[retekey-0.1.77.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.77/retekey-0.1.77.apk)
+Current release: **v0.1.78** —
+[retekey-0.1.78.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.78/retekey-0.1.78.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -216,7 +216,7 @@ keyboard itself.
 | ✂ | cut | cut the selection |
 | 📋 | paste | paste the clipboard |
 | ⬚A | select all | select everything in the field |
-| size− / size+ | height | shrink or grow the keyboard, one step per press, remembered per orientation |
+| size− / size+ | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
 | ⌨↔ | switch keyboard | open the system input-method picker |
 | ⌨⚙ | manage keyboards | open the system screen for enabling keyboards |
 | ❐ | floating | turn the floating panel on or off |
@@ -306,7 +306,7 @@ run select-all/copy/paste/undo.
 The settings screen uses stock controls only and follows the system theme:
 
 - **Which screen these settings are for** — height, the layouts and their order, and the floating keyboard are **remembered separately for portrait and landscape.** Pick which one you are setting at the top of the screen, without having to turn the device to reach it.
-- **Keyboard height**, from 1 to 50: 25 is the size it has always been and 50 is twice that. The percentage of the screen it takes is shown alongside.
+- **Keyboard height** — how much of the screen's height the keyboard takes, from 1% to 50%. The number on the slider is the number on the screen: 25% is a quarter of it. A keyboard set before this was a percentage keeps exactly the size it had.
 - **Floating keyboard** — whether to use it on this screen, and how solid it is (1–100%).
 - **Key-press feedback** — visual, vibration, and sound strengths, each 0–100% (30, 10 and 10 by default).
 - **Key auto-repeat** — on/off, start delay, and repeat interval.

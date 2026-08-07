@@ -27,7 +27,6 @@ import java.util.List;
  */
 public final class SettingsActivity extends Activity {
     private static final String PREFS = "retekey_view";
-    private static final String KEY_HEIGHT_SCALE = "height_scale";
 
     /** Which screen's settings this page is showing; the device's own, until the user picks. */
     private ScreenOrientation editing;
@@ -75,13 +74,13 @@ public final class SettingsActivity extends Activity {
         root.addView(valueLabel);
 
         slider = new SeekBar(this);
-        rangeSlider(slider, KeyboardHeightScale.MIN_LEVEL, KeyboardHeightScale.MAX_LEVEL);
-        setSliderValue(slider, KeyboardHeightScale.MIN_LEVEL, currentLevel());
+        rangeSlider(slider, KeyboardHeightPercent.MIN_PERCENT, KeyboardHeightPercent.MAX_PERCENT);
+        setSliderValue(slider, KeyboardHeightPercent.MIN_PERCENT, currentPercent());
         slider.setPadding(dp(4), dp(12), dp(4), dp(12));
         slider.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                applyLevel(sliderValue(progress, KeyboardHeightScale.MIN_LEVEL));
+                applyPercent(sliderValue(progress, KeyboardHeightPercent.MIN_PERCENT));
             }
         });
         root.addView(slider, matchWidth());
@@ -114,7 +113,7 @@ public final class SettingsActivity extends Activity {
         ScrollView scroller = new ScrollView(this);
         scroller.addView(root);
         setContentView(scroller);
-        applyLevel(currentLevel());
+        applyPercent(currentPercent());
     }
 
     /**
@@ -327,40 +326,24 @@ public final class SettingsActivity extends Activity {
             OrientedPrefs.getString(prefs(), LetterLayouts.KEY_ORDER, editing, null));
     }
 
-    private int currentLevel() {
-        return KeyboardHeightScale.levelForScale(KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
-            prefs(), KEY_HEIGHT_SCALE, editing, defaultScale())));
-    }
-
-    private static final int KEYBOARD_ROWS = 4;
-
     /**
-     * What the keyboard would be at if this orientation has never been set: a quarter of the
-     * display's long edge. The same rule the keyboard itself uses, so the slider opens on the size
-     * the user is actually looking at rather than on a nominal 25.
+     * The height set for the orientation being edited — which is not necessarily the one the
+     * device is being held in, so the screen height is the one that orientation would have.
      */
-    private float defaultScale() {
+    private int currentPercent() {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        return KeyboardHeightScale.defaultScaleForScreen(
-            KeyboardHeightScale.baseHeightPx(KEYBOARD_ROWS, metrics.density),
-            Math.max(metrics.widthPixels, metrics.heightPixels));
+        return KeyboardHeightPrefs.percent(
+            prefs(),
+            editing,
+            KeyboardHeightPrefs.screenHeightPx(editing, metrics),
+            Math.max(metrics.widthPixels, metrics.heightPixels),
+            metrics.density);
     }
 
-    private void applyLevel(int level) {
-        int clamped = KeyboardHeightScale.clampLevel(level);
-        float scale = KeyboardHeightScale.scaleForLevel(clamped);
-        OrientedPrefs.putFloat(prefs(), KEY_HEIGHT_SCALE, editing, scale);
-        valueLabel.setText(getString(R.string.settings_height_value, clamped, screenPercent(scale)));
-    }
-
-    /** The keyboard's height at {@code scale} as a percentage of the screen height. */
-    private int screenPercent(float scale) {
-        float density = getResources().getDisplayMetrics().density;
-        int keyboardPx = KeyboardHeightScale.heightForScale(
-            scale, KeyboardHeightScale.baseHeightPx(KEYBOARD_ROWS, density));
-        int screenPx = Math.max(getResources().getDisplayMetrics().widthPixels,
-            getResources().getDisplayMetrics().heightPixels);
-        return screenPx > 0 ? Math.round(keyboardPx * 100.0f / screenPx) : 0;
+    private void applyPercent(int percent) {
+        int clamped = KeyboardHeightPercent.clamp(percent);
+        KeyboardHeightPrefs.setPercent(prefs(), editing, clamped);
+        valueLabel.setText(getString(R.string.settings_height_value, clamped));
     }
 
     /** Adds a titled 0–100% slider bound to a 0–1 float preference. */
@@ -394,8 +377,12 @@ public final class SettingsActivity extends Activity {
     }
 
     private void resetHeight(View view) {
-        setSliderValue(slider, KeyboardHeightScale.MIN_LEVEL, KeyboardHeightScale.DEFAULT_LEVEL);
-        applyLevel(KeyboardHeightScale.DEFAULT_LEVEL);
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int fallback = KeyboardHeightPercent.defaultPercent(
+            KeyboardHeightPrefs.screenHeightPx(editing, metrics),
+            Math.max(metrics.widthPixels, metrics.heightPixels));
+        setSliderValue(slider, KeyboardHeightPercent.MIN_PERCENT, fallback);
+        applyPercent(fallback);
     }
 
     // ---- Held-key auto-repeat ----

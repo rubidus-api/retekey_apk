@@ -23,7 +23,7 @@ public final class ReteKeyboardView extends View {
     }
 
     private static final String PREFS = "retekey_view";
-    private static final String KEY_HEIGHT_SCALE = "height_scale";
+
     private static final String KEY_LAST_LETTERS = "last_letter_layout";
 
     /** The Tab key's stable id, which the hold latch paints and addresses its events to. */
@@ -91,8 +91,7 @@ public final class ReteKeyboardView extends View {
     /** What the 12-key pages' own cells show: Hangul, digits, or the cursor cluster. */
     private PhoneOverlay phoneOverlay = PhoneOverlay.NONE;
 
-    /** One height step applied by the menu's 높이 −/＋ tiles. */
-    private static final float HEIGHT_STEP = 0.1f;
+
     /**
      * How far a finger must go for a drag to be a drag. Kept small so the letter arrives at once —
      * that is the whole reason to drag rather than tap twice — but above the touch slop so an
@@ -164,7 +163,8 @@ public final class ReteKeyboardView extends View {
      * default depends on the screen and on how many rows the layout has, neither of which the
      * constructor can ask for safely.
      */
-    private float heightScale = Float.NaN;
+    /** The height in percent of the screen; 0 until the first read resolves it. */
+    private int heightPercent;
     // The unpressed keyboard is rendered once into this bitmap and reused until the layout changes.
     private Bitmap baseBitmap;
     private String baseSignature;
@@ -262,50 +262,40 @@ public final class ReteKeyboardView extends View {
         return getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    /** The base (scale-1.0) keyboard height in pixels for the current rows and display density. */
-    private int baseHeightPx() {
+    /** The height of the screen as it is being held now — what the percentage is a percentage of. */
+    private int screenHeightPx() {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        return KeyboardHeightScale.baseHeightPx(layout().rows().size(), metrics.density);
-    }
-
-    /**
-     * The height to use when this orientation has never been set: a quarter of the display's long
-     * edge, which is the same size in the hand whichever way the phone is held.
-     */
-    private float defaultHeightScale() {
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        return KeyboardHeightScale.defaultScaleForScreen(
-            baseHeightPx(), Math.max(metrics.widthPixels, metrics.heightPixels));
-    }
-
-    /** The stored height for the orientation being drawn, or the screen-derived default. */
-    private float storedHeightScale() {
-        return KeyboardHeightScale.clamp(OrientedPrefs.getFloat(
-            prefs(), KEY_HEIGHT_SCALE, orientation(), defaultHeightScale()));
+        return KeyboardHeightPrefs.screenHeightPx(orientation(), metrics);
     }
 
     /** The height in use, resolving it from preferences the first time anything asks. */
-    private float heightScale() {
-        if (Float.isNaN(heightScale)) {
-            heightScale = storedHeightScale();
+    private int heightPercent() {
+        if (heightPercent <= 0) {
+            DisplayMetrics metrics = getResources().getDisplayMetrics();
+            heightPercent = KeyboardHeightPrefs.percent(
+                prefs(),
+                orientation(),
+                screenHeightPx(),
+                Math.max(metrics.widthPixels, metrics.heightPixels),
+                metrics.density);
         }
-        return heightScale;
+        return heightPercent;
     }
 
-    /** The current height multiplier; 1.0 is the default. Exposed for a future settings screen. */
-    public float keyboardHeightScale() {
-        return heightScale();
+    /** The current height, as a percentage of the screen. */
+    public int keyboardHeightPercent() {
+        return heightPercent();
     }
 
-    /** Sets the height multiplier, clamps it, optionally persists it, and re-lays out. */
-    public void setKeyboardHeightScale(float scale, boolean persist) {
-        float clamped = KeyboardHeightScale.clamp(scale);
-        if (clamped == heightScale() && !persist) {
+    /** Sets the height in percent of the screen, clamps it, optionally persists it, re-lays out. */
+    public void setKeyboardHeightPercent(int percent, boolean persist) {
+        int clamped = KeyboardHeightPercent.clamp(percent);
+        if (clamped == heightPercent() && !persist) {
             return;
         }
-        heightScale = clamped;
+        heightPercent = clamped;
         if (persist) {
-            OrientedPrefs.putFloat(prefs(), KEY_HEIGHT_SCALE, orientation(), heightScale);
+            KeyboardHeightPrefs.setPercent(prefs(), orientation(), clamped);
         }
         requestLayout();
         invalidate();
@@ -333,7 +323,7 @@ public final class ReteKeyboardView extends View {
             setMeasuredDimension(width, 1);
             return;
         }
-        int desired = KeyboardHeightScale.heightForScale(heightScale(), baseHeightPx());
+        int desired = KeyboardHeightPercent.heightPx(heightPercent(), screenHeightPx());
         int height;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {
             case MeasureSpec.EXACTLY:
@@ -397,9 +387,15 @@ public final class ReteKeyboardView extends View {
         // Read the key this orientation actually writes. Reading the un-suffixed one meant every
         // preference change — including the height's own write — put the height back to default,
         // which is why neither the size keys nor the settings slider appeared to do anything.
-        float storedScale = storedHeightScale();
-        if (storedScale != heightScale()) {
-            heightScale = storedScale;
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int stored = KeyboardHeightPrefs.percent(
+            prefs(),
+            orientation(),
+            screenHeightPx(),
+            Math.max(metrics.widthPixels, metrics.heightPixels),
+            metrics.density);
+        if (stored != heightPercent()) {
+            heightPercent = stored;
             requestLayout();
         }
         invalidate();
@@ -1480,10 +1476,12 @@ public final class ReteKeyboardView extends View {
                 }
                 break;
             case HEIGHT_UP:
-                setKeyboardHeightScale(heightScale() + HEIGHT_STEP, true);
+                setKeyboardHeightPercent(
+                    heightPercent() + KeyboardHeightPercent.STEP_PERCENT, true);
                 break;
             case HEIGHT_DOWN:
-                setKeyboardHeightScale(heightScale() - HEIGHT_STEP, true);
+                setKeyboardHeightPercent(
+                    heightPercent() - KeyboardHeightPercent.STEP_PERCENT, true);
                 break;
             case COPY:
                 runEditCommand(android.R.id.copy);

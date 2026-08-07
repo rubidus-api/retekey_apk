@@ -1,0 +1,4 @@
+The keyboard height is now set as a percentage of the screen — 1% to
+50% — instead of a level from 1 to 50 that stood for a multiple of a
+nominal row height. The number on the slider is now the share of the
+screen you can see. A height set before this keeps the size it had.

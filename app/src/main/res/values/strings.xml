@@ -15,8 +15,8 @@
     <string name="settings_layouts_hint">Tick the layouts the 🌐 key should cycle through, and order them with ▲ ▼. Hold 🌐 to convert Hanja.</string>
     <string name="settings_back">← Back to main screen</string>
     <string name="settings_height_label">Keyboard height</string>
-    <string name="settings_height_hint">Slide to adjust the keyboard\'s vertical height, from 1 to 50. You can also drag two fingers up or down on the keyboard.</string>
-    <string name="settings_height_value">Height %1$d of 50 — %2$d%% of the screen</string>
+    <string name="settings_height_hint">How much of the screen\'s height the keyboard takes, from 1% to 50%. The menu page\'s size keys move it too, two points at a time.</string>
+    <string name="settings_height_value">%1$d%% of the screen height</string>
     <string name="settings_orientation_label">Which screen these settings are for</string>
     <string name="settings_orientation_hint">Height, layouts and the floating panel are remembered separately for a screen held upright and one held sideways. Choose which you are setting.</string>
     <string name="settings_orientation_portrait">Portrait</string>
