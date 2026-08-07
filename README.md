@@ -23,6 +23,7 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 - [Build](#build)
 - [Documentation](#documentation)
 - [License](#license)
+- [The name](#the-name)
 
 ## Download
 
@@ -433,3 +434,14 @@ repository and are not part of this public surface.
 
 MIT — see [LICENSE](LICENSE). Bundled third-party data and ported code are credited in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## The name
+
+**rete** is Latin for *net*, and *-key* is just a key.
+
+The intended pronunciation is the Latin one: **RAY-teh** (two syllables, `rē-te`; the first vowel is
+the long *e* of *they*, and the final *e* is pronounced, never silent).
+
+If you would rather say it the way English usually treats this word, that is fine too. English
+borrowed *rete* as an anatomical term and pronounces it **REE-tee**, so "REE-tee-key" is a
+perfectly good reading. Say it however you like; the keyboard does not mind.
