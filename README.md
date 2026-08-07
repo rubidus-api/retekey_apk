@@ -2,16 +2,25 @@
 
 **English** · [한국어](README.ko.md)
 
-An MIT-licensed Android Hangul keyboard focused on standard IME behaviour, hardware-keyboard
-friendliness, and efficient Korean input. Written in plain Java with no third-party runtime
-dependencies — the release APK is about 460 KB, most of it the Hanja tables.
+**An Android Hangul keyboard for developers and power users** — for anyone who needs Esc, Tab, Ctrl
+chords, function and arrow keys on a phone, and a keyboard that behaves itself in a terminal.
 
-> This English README is the canonical version. The Korean translation follows it.
+It is small and asks for almost nothing. The release APK is about 470 KB, most of that the Hanja
+tables; it is plain Java with no third-party runtime dependencies, and the Hanja tables are read
+straight out of the APK rather than loaded into memory. It declares **one permission, `VIBRATE`** —
+an ordinary permission that is never requested at runtime and does nothing but the buzz under your
+finger, which you can turn down to zero. No network, no account, no analytics.
+
+And nothing is missing for it: 천지인, 나랏글 and 2-beolsik, Hanja conversion, physical keyboards,
+and the special keys most keyboards leave out.
+
+> This English README is the canonical version; the Korean one is its translation.
 
 ## Table of contents
 
 - [Download](#download)
-- [Android version support](#android-version-support)
+- [What it looks like](#what-it-looks-like)
+- [Who it is for](#who-it-is-for)
 - [Features](#features)
 - [Layout](#layout)
 - [Floating keyboard](#floating-keyboard)
@@ -19,11 +28,10 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 - [Physical keyboards](#physical-keyboards)
 - [Settings](#settings)
 - [Theming](#theming)
-- [Architecture](#architecture)
-- [Build](#build)
-- [Documentation](#documentation)
-- [License](#license)
+- [Android version support](#android-version-support)
+- [For developers](#for-developers)
 - [The name](#the-name)
+- [License](#license)
 
 ## Download
 
@@ -35,55 +43,27 @@ dependencies — the release APK is about 460 KB, most of it the Hanja tables.
 Current release: **v0.1.77** —
 [retekey-0.1.77.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.77/retekey-0.1.77.apk)
 
-After installing, enable ReteKey in *Settings → Keyboards* and select it as the default input
-method. The app's launcher screen has shortcuts for both steps and a field for trying the keyboard.
+Take the first link unless your phone is older than Android 9; the two are the same app and one
+replaces the other. [More about the two builds](#android-version-support).
 
-## Android version support
+### Setting it up, step by step
 
-There are two builds of the same app. Install whichever your device takes; they carry the same
-package name, so one replaces the other.
+1. **Install it.** Open the downloaded APK on the phone and confirm. Older Android versions may
+   first ask you to allow installs from unknown sources.
+2. **Turn the keyboard on.** Android hides new keyboards until you enable them: *Settings →
+   System → Languages & input → On-screen keyboard → Manage keyboards*, and switch ReteKey on.
+3. **Choose it.** Tap any text field and pick ReteKey from the keyboard chooser, or use *Settings →
+   Default keyboard*.
+4. **Try it.** ReteKey's own launcher screen has a button for each of those two steps and a text
+   box to type in, so you can do the whole thing without hunting through system settings.
 
-| Build | Runs on | APK |
-|---|---|---|
-| **modern** | Android 9 – 16 (API 28–36) | `retekey.apk` |
-| **legacy** | Android 4.0 – 16 (API 14–36) | `retekey-legacy.apk` |
+To move between Korean, English and the 12-key layouts afterwards, tap the 🌐 key on the keyboard;
+hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
+in the settings.
 
-Both are built from the same source, target API 36, and behave identically wherever the platform
-lets them. The split exists because reaching down to Android 4 means taking an older road in a few
-places, and there is no reason to make a current phone take it.
+## What it looks like
 
-### What the legacy build does differently
-
-Three things, all of them on the device's side of a version check rather than in a separate
-codebase:
-
-| On older Android | What happens | From |
-|---|---|---|
-| Vibration | one fixed strength instead of a strength dial — `VibrationEffect` is API 26, and the older call only takes a duration | below API 26 |
-| Sliders | the keyboard-height and opacity sliders run from zero internally and are offset — `SeekBar.setMin` is API 26 | below API 26 |
-| Deletion | code-point deletion is not available, so the UTF-16 fallback already used for older editors handles it; a syllable or emoji still disappears in one press | below API 24 |
-| Shadows | the Hanja window has no drop shadow — `PopupWindow.setElevation` is API 21 | below API 21 |
-| Theme | the screens use the platform's own DeviceDefault rather than Material | below API 21 |
-
-Everything else — the five layouts, the 2-beolsik and 12-key composers, Hanja conversion, the
-floating keyboard, physical keyboards, auto-repeat, theming — is the same code on both. The app
-uses no `java.time`, no `java.util.function`, and no library desugaring, which is why the legacy
-APK is *smaller* than the modern one rather than larger.
-
-Android 4.0 is where it stops, and the reason is structural rather than stubborn. Below API 11
-there is no `InputMethodSubtype` (so no 한/영 mode), no `KeyEvent.isCtrlPressed` or F-key codes (so
-no physical-keyboard support), no `Insets.touchableRegion` (so no floating keyboard); below API 9
-there is no `getSelectedText` (so no Hanja on a selection) and no `MotionEvent.getActionMasked`.
-Reaching Android 2 would not be a port of this keyboard; it would be a different, much smaller
-one.
-
-Android 12 (API 31) and newer still take the Material You palette on both builds; below it, both
-fall back to the tuned light/dark palette.
-
-### On a device
-
-Screencaps from emulators running the release builds — the modern one on Android 10, the legacy one
-on Android 4.4.
+Screencaps from an emulator running the release build on Android 10.
 
 | | |
 |---|---|
@@ -92,35 +72,24 @@ on Android 4.4.
 | ![The menu page on Android 10](assets/keyboard-menu.png) | ![The floating keyboard on Android 10](assets/keyboard-floating.png) |
 | the ☰ page: editing and cursor keys on the right, settings in the corner | the floating keyboard, translucent and confined to its half of the screen |
 
-### The legacy build, on Android 4.4
+Every layout, page and panel is shown in [Layout](#layout) below, and the older-Android build has
+[screenshots of its own](#the-legacy-build-on-android-44).
 
-These are screencaps from a KitKat emulator running the legacy APK — not renders, and not the
-modern build with an older label on it.
+## Who it is for
 
-| | |
-|---|---|
-| ![Korean 2-beolsik on Android 4.4](assets/legacy-korean.png) | ![Hanja candidates on Android 4.4](assets/legacy-hanja.png) |
-| 2-beolsik with its hold alternates, on a 2013 platform | the Hanja window: full keyboard width, 훈음 beside each character, six pages |
-| ![The menu page on Android 4.4](assets/legacy-menu.png) | ![Settings on Android 4.4](assets/legacy-settings.png) |
-| the ☰ page: editing and cursor keys on the right, settings in the corner | settings, reached from that corner key |
+Most keyboards assume you are writing messages. This one assumes you are also, sometimes, working:
+editing a config file over ssh, running a command in Termux, moving through a long document with
+the arrow keys, or pasting into a terminal that does not behave like a chat box.
 
-The labels read as words rather than glyphs here, and that is the legacy build doing its job: a
-screenshot of an earlier attempt showed the menu key as an *empty cell*, because Android 4.4 has no
-font for ☰. Below the version where those glyphs became dependable, the keys say `Menu`, `Copy`,
-`Bksp`, `Lang` instead of drawing nothing.
+So the keys that usually go missing are here — **Esc, Tab, Ctrl, Alt, Meta, F1–F12, arrows,
+Home/End, PgUp/PgDn, Ins, forward-delete, PrtSc** — sending real key events rather than typing
+characters that look like them. Modifier chords the keyboard has no use for are handed to the app,
+so an editor's own shortcuts keep working, and a soft `Ctrl` plus a letter sends a genuine control
+code to a terminal.
 
-### What has actually been run
-
-| | Version | How |
-|---|---|---|
-| Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test |
-| Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device |
-| Verified by hand | Android 13 — API 33 | the legacy build, on the same emulator |
-| Verified by hand | **Android 4.4 — API 19** | the legacy build on a KitKat emulator: Korean types, 한자 converts, settings opens |
-
-The rows above are the versions an actual run has covered. The rest of each range is supported by
-construction: every platform call the app makes exists at that build's floor, and the ones that do
-not are behind an explicit version check. Lint agrees at both floors, with no errors.
+None of that gets in the way of ordinary typing. Korean composes properly on all three Korean
+layouts, including every compound final (많, 삶, 앉), Hanja conversion works both ways, and if you
+never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
@@ -152,12 +121,14 @@ page do not have keys of their own — they are opened by holding 🌐 and `!#`,
 small `m` and `p` in the corner. One cell is left over beside `!#`. Each layout puts what its own users reach for
 there: 漢 for Hanja on 2-beolsik, `Esc` on QWERTY and Dvorak — a real
 `KEYCODE_ESCAPE`, for vi over ssh — and nothing on the rest. The two 12-key pages keep the same frame in
-a different shape: the modifiers own the leftmost column, the second one is empty, every Hangul key
+a different shape: the modifiers own the leftmost column, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
 with `!#` and 🌐 closing the bottom row. The cell beside Tab carries 漢 on both of them, which
-converts on a tap. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.,` and `!?`, which work the way
-the Hangul keys around them do: tapping moves through the characters on the face, and dragging left
-or right picks the one written on that side.
+converts on a tap. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
+phone keypad's digits on them, **이동** the cursor cluster (arrows, Home/End, PgUp/PgDn, Ins, Esc,
+Del); the same key puts the Hangul back. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.,` and
+`!?`, which work the way the Hangul keys around them do: tapping moves through the characters on the
+face, and dragging left or right picks the one written on that side.
 
 Five letter layouts share that grid:
 
@@ -356,7 +327,83 @@ The keyboard resolves its colours from the device theme rather than hardcoding t
 The keys, the long-press popup, the Hanja candidate window, and the floating panel all share
 one palette.
 
-## Architecture
+## Android version support
+
+There are two builds of the same app. Install whichever your device takes; they carry the same
+package name, so one replaces the other.
+
+| Build | Runs on | APK |
+|---|---|---|
+| **modern** | Android 9 – 16 (API 28–36) | `retekey.apk` |
+| **legacy** | Android 4.0 – 16 (API 14–36) | `retekey-legacy.apk` |
+
+Both are built from the same source, target API 36, and behave identically wherever the platform
+lets them. The split exists because reaching down to Android 4 means taking an older road in a few
+places, and there is no reason to make a current phone take it.
+
+### What the legacy build does differently
+
+Three things, all of them on the device's side of a version check rather than in a separate
+codebase:
+
+| On older Android | What happens | From |
+|---|---|---|
+| Vibration | one fixed strength instead of a strength dial — `VibrationEffect` is API 26, and the older call only takes a duration | below API 26 |
+| Sliders | the keyboard-height and opacity sliders run from zero internally and are offset — `SeekBar.setMin` is API 26 | below API 26 |
+| Deletion | code-point deletion is not available, so the UTF-16 fallback already used for older editors handles it; a syllable or emoji still disappears in one press | below API 24 |
+| Shadows | the Hanja window has no drop shadow — `PopupWindow.setElevation` is API 21 | below API 21 |
+| Theme | the screens use the platform's own DeviceDefault rather than Material | below API 21 |
+
+Everything else — the five layouts, the 2-beolsik and 12-key composers, Hanja conversion, the
+floating keyboard, physical keyboards, auto-repeat, theming — is the same code on both. The app
+uses no `java.time`, no `java.util.function`, and no library desugaring, which is why the legacy
+APK is *smaller* than the modern one rather than larger.
+
+Android 4.0 is where it stops, and the reason is structural rather than stubborn. Below API 11
+there is no `InputMethodSubtype` (so no 한/영 mode), no `KeyEvent.isCtrlPressed` or F-key codes (so
+no physical-keyboard support), no `Insets.touchableRegion` (so no floating keyboard); below API 9
+there is no `getSelectedText` (so no Hanja on a selection) and no `MotionEvent.getActionMasked`.
+Reaching Android 2 would not be a port of this keyboard; it would be a different, much smaller
+one.
+
+Android 12 (API 31) and newer still take the Material You palette on both builds; below it, both
+fall back to the tuned light/dark palette.
+
+### The legacy build, on Android 4.4
+
+These are screencaps from a KitKat emulator running the legacy APK — not renders, and not the
+modern build with an older label on it.
+
+| | |
+|---|---|
+| ![Korean 2-beolsik on Android 4.4](assets/legacy-korean.png) | ![Hanja candidates on Android 4.4](assets/legacy-hanja.png) |
+| 2-beolsik with its hold alternates, on a 2013 platform | the Hanja window: full keyboard width, 훈음 beside each character, six pages |
+| ![The menu page on Android 4.4](assets/legacy-menu.png) | ![Settings on Android 4.4](assets/legacy-settings.png) |
+| the ☰ page: editing and cursor keys on the right, settings in the corner | settings, reached from that corner key |
+
+The labels read as words rather than glyphs here, and that is the legacy build doing its job: a
+screenshot of an earlier attempt showed the menu key as an *empty cell*, because Android 4.4 has no
+font for ☰. Below the version where those glyphs became dependable, the keys say `Menu`, `Copy`,
+`Bksp`, `Lang` instead of drawing nothing.
+
+### What has actually been run
+
+| | Version | How |
+|---|---|---|
+| Verified by an automated lane | Android 13 — API 33 | AOSP x86_64 emulator, IME lifecycle test |
+| Verified by hand | Android 13 — API 33 | Galaxy Note20, the project's primary device |
+| Verified by hand | Android 13 — API 33 | the legacy build, on the same emulator |
+| Verified by hand | **Android 4.4 — API 19** | the legacy build on a KitKat emulator: Korean types, 한자 converts, settings opens |
+
+The rows above are the versions an actual run has covered. The rest of each range is supported by
+construction: every platform call the app makes exists at that build's floor, and the ones that do
+not are behind an explicit version check. Lint agrees at both floors, with no errors.
+
+## For developers
+
+Nothing in this part is needed to use the keyboard.
+
+### Architecture
 
 The app uses Android's standard `InputMethodService` entry point. The input core is deliberately
 Android-free so it can be unit-tested on the JVM: event normalisation, semantic jamo, the 2-beolsik
@@ -372,14 +419,14 @@ reused until the layout, highlight state, size, or theme changes; a key press on
 the raised styling costs nothing per frame. That cache is `RGB_565` — the keyboard is opaque, so it
 needs no alpha channel, and half the bytes per pixel matters on a tablet.
 
-- Java / JDK 17 LTS
-- Android SDK 36 (`targetSdk 36`; `minSdk 28` modern, `minSdk 21` legacy)
+- Java / JDK 21 (the toolchain the F-Droid buildserver provides; bytecode target 17)
+- Android SDK 36 (`targetSdk 36`; `minSdk 28` modern, `minSdk 14` legacy)
 - Android Gradle Plugin 9.2.1, Gradle wrapper 9.4.1
 - R8 minification; no third-party runtime libraries
 
-## Build
+### Build
 
-Local builds require JDK 17 and Android SDK platform 36 with Build Tools 36.0.0. Use the checked-in
+Local builds require JDK 21 and Android SDK platform 36 with Build Tools 36.0.0. Use the checked-in
 wrapper rather than a system Gradle:
 
 ```sh
@@ -389,8 +436,6 @@ wrapper rather than a system Gradle:
 
 A signed release build additionally needs a local `keystore.properties`; without it the release
 variant is simply unsigned.
-
-## Documentation
 
 ### Android IME implementation manual
 
@@ -419,7 +464,7 @@ It covers:
 - drawing a custom keyboard cheaply, theming it to the system and Material You palettes, and
   keeping settings live on a running keyboard;
 - what a headless emulator can and cannot prove about an IME;
-- **a detailed anti-pattern chapter** — ten real failures from this project, each with what was
+- **a detailed anti-pattern chapter** — real failures from this project, each with what was
   built, what went wrong, the fix, and the resulting rule, with wrong-versus-right code;
 - a pre-release checklist.
 
@@ -429,11 +474,6 @@ describes working code rather than intentions.
 
 Design RFCs, the verification catalog, decisions, and the changelog live in a private companion
 repository and are not part of this public surface.
-
-## License
-
-MIT — see [LICENSE](LICENSE). Bundled third-party data and ported code are credited in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## The name
 
@@ -445,3 +485,8 @@ the long *e* of *they*, and the final *e* is pronounced, never silent).
 If you would rather say it the way English usually treats this word, that is fine too. English
 borrowed *rete* as an anatomical term and pronounces it **REE-tee**, so "REE-tee-key" is a
 perfectly good reading. Say it however you like; the keyboard does not mind.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Bundled third-party data and ported code are credited in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
