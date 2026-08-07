@@ -88,6 +88,9 @@ public final class ReteKeyboardView extends View {
         (changed, key) -> reloadPreferences();
     private enum Page { LETTERS, SPECIAL_CHARS, SPECIAL_KEYS, MENU }
 
+    /** What the 12-key pages' own cells show: Hangul, digits, or the cursor cluster. */
+    private PhoneOverlay phoneOverlay = PhoneOverlay.NONE;
+
     /** One height step applied by the menu's 높이 −/＋ tiles. */
     private static final float HEIGHT_STEP = 0.1f;
     /**
@@ -356,6 +359,11 @@ public final class ReteKeyboardView extends View {
             case MENU:
                 return KeyboardLayouts.menu();
             default:
+                if (phoneOverlay != PhoneOverlay.NONE
+                    && (letterLayoutId == KeyboardLayoutId.KO_CHEONJIIN
+                        || letterLayoutId == KeyboardLayoutId.KO_NARATGEUL)) {
+                    return KeyboardLayouts.phone(letterLayoutId, phoneOverlay);
+                }
                 return KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
         }
     }
@@ -672,7 +680,8 @@ public final class ReteKeyboardView extends View {
 
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
-        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + shiftLayer.isActive()
+        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + phoneOverlay
+            + "|" + shiftLayer.isActive()
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
             + KeyboardPalette.isNight(getContext());
     }
@@ -998,7 +1007,7 @@ public final class ReteKeyboardView extends View {
 
     /** What the grid of cells depends on: the same keys in the same places means the same value. */
     private String gridSignature() {
-        return page + "|" + letterLayoutId + "|" + numpadMode;
+        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + phoneOverlay;
     }
 
     /** Keys that fire again while held: plain text/edit/raw keys, but not controls or layer keys. */
@@ -1359,6 +1368,14 @@ public final class ReteKeyboardView extends View {
         endCycleRun();
     }
 
+    /** The toggle's own key turns its overlay on and off; the other key switches straight over. */
+    private void togglePhoneOverlay(PhoneOverlay overlay) {
+        phoneOverlay = phoneOverlay == overlay ? PhoneOverlay.NONE : overlay;
+        // The Hangul run cannot continue across the pad changing meaning under the fingers.
+        resetPhoneInterpreters();
+        invalidate();
+    }
+
     private void consumeOneShotModifiers() {
         if (modifierLatches.consumeOneShots()) {
             invalidate();
@@ -1414,6 +1431,7 @@ public final class ReteKeyboardView extends View {
                 // it just returns to letters, keeping the layout that was last in use.
                 if (page == Page.LETTERS) {
                     letterLayoutId = LetterLayouts.next(letterOrder(), letterLayoutId);
+                    phoneOverlay = PhoneOverlay.NONE;
                     resetPhoneInterpreters();
                     prefs().edit().putString(KEY_LAST_LETTERS, letterLayoutId.name()).apply();
                     if (onLayoutChanged != null) {
@@ -1439,6 +1457,12 @@ public final class ReteKeyboardView extends View {
             case PREVIOUS_LAYER:
                 page = Page.LETTERS;
                 shiftLayer.clear();
+                break;
+            case PHONE_DIGITS:
+                togglePhoneOverlay(PhoneOverlay.DIGITS);
+                break;
+            case PHONE_NAV:
+                togglePhoneOverlay(PhoneOverlay.NAV);
                 break;
             case NUMLOCK:
                 numpadMode = numpadMode == NumpadMode.ARROWS

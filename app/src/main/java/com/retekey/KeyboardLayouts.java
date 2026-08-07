@@ -74,6 +74,10 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
     private static final KeyboardLayout KEYS_FUNCTIONS = buildSpecialKeys(NumpadMode.FUNCTIONS);
     private static final KeyboardLayout MENU = buildMenu();
+    private static final KeyboardLayout CHEONJIIN_DIGITS = cheonjiin(PhoneOverlay.DIGITS);
+    private static final KeyboardLayout CHEONJIIN_NAV = cheonjiin(PhoneOverlay.NAV);
+    private static final KeyboardLayout NARATGEUL_DIGITS = naratgeul(PhoneOverlay.DIGITS);
+    private static final KeyboardLayout NARATGEUL_NAV = naratgeul(PhoneOverlay.NAV);
 
     private KeyboardLayouts() {
     }
@@ -98,6 +102,28 @@ public final class KeyboardLayouts {
             default:
                 return KEYS_NUMBERS;
         }
+    }
+
+    /** A 12-key page under an overlay: its cells as digits or the cursor cluster. */
+    public static KeyboardLayout phone(KeyboardLayoutId id, PhoneOverlay overlay) {
+        if (overlay == null) {
+            throw new IllegalArgumentException("overlay must not be null");
+        }
+        if (id == KeyboardLayoutId.KO_CHEONJIIN) {
+            switch (overlay) {
+                case DIGITS: return CHEONJIIN_DIGITS;
+                case NAV: return CHEONJIIN_NAV;
+                default: return CHEONJIIN;
+            }
+        }
+        if (id == KeyboardLayoutId.KO_NARATGEUL) {
+            switch (overlay) {
+                case DIGITS: return NARATGEUL_DIGITS;
+                case NAV: return NARATGEUL_NAV;
+                default: return NARATGEUL;
+            }
+        }
+        throw new IllegalArgumentException("not a 12-key layout: " + id);
     }
 
     public static KeyboardLayout specialChars() {
@@ -202,6 +228,51 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec.disabled("touch.phone.gap." + id, " ").withColumnSpan(span);
     }
 
+    /** 123: shows the phone keypad's digits on the pad's own keys; pressed again, the Hangul. */
+    private static SoftwareKeySpec phoneDigitsToggleKey() {
+        return SoftwareKeySpec.control(
+            "touch.phone.overlay.digits", "123", ControlKey.PHONE_DIGITS);
+    }
+
+    /** 이동: shows the cursor cluster on the pad's own keys; pressed again, the Hangul. */
+    private static SoftwareKeySpec phoneNavToggleKey() {
+        return SoftwareKeySpec.control(
+            "touch.phone.overlay.nav", "이동", ControlKey.PHONE_NAV);
+    }
+
+    /**
+     * The twelve overlay cells, in pad order (three per row, top to bottom). DIGITS is exactly
+     * the phone keypad the long-presses already carry — 1..9, then * 0 # — so the overlay types
+     * with a tap what a hold types today. NAV arranges the cursor cluster the way the pad page's
+     * arrow mode does (Home ↑ PgUp / ← Ins → / End ↓ PgDn), so the two never disagree, and puts
+     * Esc and Del on the bottom row where * and # would be.
+     */
+    private static SoftwareKeySpec overlayPadCell(PhoneOverlay overlay, int cell) {
+        if (overlay == PhoneOverlay.DIGITS) {
+            String[] digits = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"};
+            return digit("phone." + digits[cell], digits[cell]).withColumnSpan(2);
+        }
+        String[] labels = {
+            "Home", "↑", "PgUp", "←", "Ins", "→", "End", "↓", "PgDn", "Esc", "Del", ""
+        };
+        RawKey[] keys = {
+            RawKey.HOME, RawKey.UP, RawKey.PAGE_UP,
+            RawKey.LEFT, RawKey.INSERT, RawKey.RIGHT,
+            RawKey.END, RawKey.DOWN, RawKey.PAGE_DOWN,
+            RawKey.ESCAPE, RawKey.FORWARD_DELETE, null
+        };
+        if (keys[cell] == null) {
+            return phoneGap("nav", 2);
+        }
+        return rawKey("phone.nav." + cell, labels[cell], keys[cell]).withColumnSpan(2);
+    }
+
+    /** A pad cell: the Hangul key, unless an overlay has taken the pad over. */
+    private static SoftwareKeySpec padCell(
+            PhoneOverlay overlay, int cell, SoftwareKeySpec letters) {
+        return overlay == PhoneOverlay.NONE ? letters : overlayPadCell(overlay, cell);
+    }
+
     /**
      * The globe: a tap moves to the next layout, a hold opens the menu page. The menu had a key
      * of its own and no longer needs one — it is opened rarely and from anywhere, which is what a
@@ -285,28 +356,32 @@ public final class KeyboardLayouts {
      * bottom letter row. Ten Hangul keys leave the second column empty throughout.
      */
     private static KeyboardLayout cheonjiin() {
+        return cheonjiin(PhoneOverlay.NONE);
+    }
+
+    private static KeyboardLayout cheonjiin(PhoneOverlay overlay) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(phoneRow(0, phoneGap("menu", 1),
-            cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", "1"),
-            cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", "2"),
-            cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", "3"),
+        rows.add(phoneRow(0, phoneDigitsToggleKey(),
+            padCell(overlay, 0, cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", "1")),
+            padCell(overlay, 1, cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", "2")),
+            padCell(overlay, 2, cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", "3")),
             backspaceKey().withColumnSpan(2)));
-        rows.add(phoneRow(1, phoneGap("pad", 1),
-            cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", "4"),
-            cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", "5"),
-            cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", "6"),
+        rows.add(phoneRow(1, phoneNavToggleKey(),
+            padCell(overlay, 3, cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", "4")),
+            padCell(overlay, 4, cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", "5")),
+            padCell(overlay, 5, cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", "6")),
             phoneSpaceKey()));
         rows.add(phoneRow(2, commitKey(),
-            cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", "7"),
-            cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", "8"),
-            cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", "9"),
+            padCell(overlay, 6, cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", "7")),
+            padCell(overlay, 7, cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", "8")),
+            padCell(overlay, 8, cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", "9")),
             letterPeriodKey(),
             enterKey()));
         // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it and 한자 beside Tab.
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(),
-            phoneCycleKey("period", ".,"),
-            cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0"),
-            phoneCycleKey("exclaim", "!?"));
+            padCell(overlay, 9, phoneCycleKey("period", ".,")),
+            padCell(overlay, 10, cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0")),
+            padCell(overlay, 11, phoneCycleKey("exclaim", "!?")));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);
@@ -317,27 +392,31 @@ public final class KeyboardLayouts {
      * on the bottom letter row. Twelve Hangul keys need the second column, so ㅡ takes it there.
      */
     private static KeyboardLayout naratgeul() {
+        return naratgeul(PhoneOverlay.NONE);
+    }
+
+    private static KeyboardLayout naratgeul(PhoneOverlay overlay) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
-        rows.add(phoneRow(0, phoneGap("menu", 1),
-            naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, "1"),
-            naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2, "2"),
-            naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2, "3"),
+        rows.add(phoneRow(0, phoneDigitsToggleKey(),
+            padCell(overlay, 0, naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, "1")),
+            padCell(overlay, 1, naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2, "2")),
+            padCell(overlay, 2, naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2, "3")),
             backspaceKey().withColumnSpan(2)));
-        rows.add(phoneRow(1, phoneGap("pad", 1),
-            naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2, "4"),
-            naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, "5"),
-            naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, "6"),
+        rows.add(phoneRow(1, phoneNavToggleKey(),
+            padCell(overlay, 3, naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2, "4")),
+            padCell(overlay, 4, naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, "5")),
+            padCell(overlay, 5, naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, "6")),
             phoneSpaceKey()));
         rows.add(phoneRow(2, phoneGap("r2", 1),
-            naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, "7"),
-            naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, "8"),
-            naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, "9"),
+            padCell(overlay, 6, naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, "7")),
+            padCell(overlay, 7, naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, "8")),
+            padCell(overlay, 8, naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, "9")),
             letterPeriodKey(),
             enterKey()));
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(),
-            naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, "*"),
-            naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, "0"),
-            naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, "#"));
+            padCell(overlay, 9, naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, "*")),
+            padCell(overlay, 10, naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, "0")),
+            padCell(overlay, 11, naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, "#")));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);

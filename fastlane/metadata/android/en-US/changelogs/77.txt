@@ -1,0 +1,4 @@
+The 천지인 and 나랏글 pages gained two toggles in their spare column:
+123 shows the phone keypad's digits (1-9, *, 0, #) on the pad's own
+keys, and 이동 shows the cursor cluster (arrows, Home, End, PgUp, PgDn,
+plus Ins, Esc and Del). Press the same key again to return to Hangul.

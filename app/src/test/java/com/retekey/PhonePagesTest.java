@@ -45,13 +45,16 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void theSecondColumnIsEmptyExceptWhereItWasGivenAJob() {
-        // The menu and the pad used to sit here; both are holds now. 천지인 has since given the
-        // Alt row's cell to 다음, and both pages give the Tab row's cell to 한자.
+    public void theSecondColumnCarriesTheOverlayTogglesAndHanja() {
+        // The once-empty cells now hold the overlay toggles: 123 shows the keypad digits on the
+        // pad's own keys, 이동 the cursor cluster. 천지인 keeps 다음 in the Alt row, and both
+        // pages keep 한자 in the Tab row.
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
-            assertFalse("row 0", layout.rows().get(0).get(1).enabled());
-            assertFalse("row 1", layout.rows().get(1).get(1).enabled());
-            assertEquals("한자 has the Tab-row cell now", "漢",
+            assertEquals("row 0", "123", layout.rows().get(0).get(1).label());
+            assertTrue(layout.rows().get(0).get(1).isControl());
+            assertEquals("row 1", "이동", layout.rows().get(1).get(1).label());
+            assertTrue(layout.rows().get(1).get(1).isControl());
+            assertEquals("한자 has the Tab-row cell", "漢",
                 layout.rows().get(3).get(1).label());
         }
         assertFalse("나랏글 keeps its Alt-row cell empty", NARATGEUL.rows().get(2).get(1).enabled());

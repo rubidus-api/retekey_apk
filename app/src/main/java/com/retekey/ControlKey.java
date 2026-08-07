@@ -47,6 +47,10 @@ public enum ControlKey {
     MANAGE_IME,
     /** Convert the selected or preceding Hangul reading to Hanja through the host. */
     HANJA,
+    /** Toggle a 12-key page's cells between Hangul and the phone keypad's digits. */
+    PHONE_DIGITS,
+    /** Toggle a 12-key page's cells between Hangul and the arrow/Home/End/PgUp/PgDn cluster. */
+    PHONE_NAV,
     /** Turn the floating half-screen keyboard on or off through the host. */
     FLOATING_TOGGLE,
     /**
