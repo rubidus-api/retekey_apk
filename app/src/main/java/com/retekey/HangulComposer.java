@@ -311,6 +311,20 @@ public final class HangulComposer {
         return preedit(syllable());
     }
 
+    /** The text currently composing — what the editor's preedit shows — without changing state. */
+    public String preeditText() {
+        switch (state) {
+            case EMPTY:
+                return "";
+            case CHO:
+                return HangulTables.choJamo(cho);
+            case JUNG:
+                return HangulTables.jungJamo(jung);
+            default:
+                return syllable();
+        }
+    }
+
     /** Commits whatever is composing and resets. Returns the committed text (may be empty). */
     public String flush() {
         String text;

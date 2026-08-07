@@ -40,6 +40,11 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         return composer.isComposing();
     }
 
+    /** The text currently composing, for comparing against what sits before the editor's cursor. */
+    public String composingText() {
+        return composer.preeditText();
+    }
+
     @Override
     public DispatchResult process(SemanticInput input) {
         if (input == null) {

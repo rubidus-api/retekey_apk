@@ -1586,9 +1586,19 @@ does every report from an editor that never marks its composing text; resetting 
 break composition one keystroke at a time. Those editors keep the old (rare) behavior rather than
 getting a new bug.
 
+**The editors that report no span at all.** Compose text fields — Google Keep among them — pass
+`candidatesStart = -1` even mid-composition, so the span test never fires there and the stale
+composition survived: typing after a tap dragged the cursor straight back to the old spot. For
+exactly those reports there is a second verdict, still prediction-free: while the keyboard is
+composing, its own (batched) edits always leave the cursor immediately after the preedit, so
+`getTextBeforeCursor(preedit.length())` must read back as the preedit. Anything else there — or a
+range selection, which composing never produces — is the user's hand. A null read leaves the
+composition alone, exactly like a missing span.
+
 **Rule.** Judge "did the user move the cursor?" only by evidence the editor asserts — its own
-composing span — never by comparing against positions you predicted. And when a composition is
-abandoned, settle it in place first; text must never travel with the cursor.
+composing span, or failing that its own text — never by comparing against positions you
+predicted. And when a composition is abandoned, settle it in place first; text must never travel
+with the cursor.
 
 ## 16. Pre-release checklist
 

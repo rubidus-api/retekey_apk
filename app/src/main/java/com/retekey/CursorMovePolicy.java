@@ -47,4 +47,38 @@ public final class CursorMovePolicy {
         return newSelStart < candidatesStart || newSelStart > candidatesEnd
             || newSelEnd < candidatesStart || newSelEnd > candidatesEnd;
     }
+
+    /**
+     * The same verdict for editors that never report a composing region (Compose text fields —
+     * Google Keep among them — pass -1 even mid-composition). With no region to test against, the
+     * evidence is the text itself: while the keyboard is composing, its own edits always leave
+     * the cursor immediately after the preedit, so the characters before the cursor must read as
+     * the preedit. When they do not — or when the user has selected a range, which composing
+     * never does — the cursor has moved and the stale composition must be settled where it is,
+     * or the next keystroke would repaint it at the old spot and drag the cursor back there.
+     *
+     * @param textBeforeCursor what the editor says sits before the cursor (up to the preedit's
+     *     length); null when it cannot say, which leaves the composition alone.
+     */
+    public static boolean shouldAbandonWithoutRegion(
+        boolean composing,
+        int newSelStart,
+        int newSelEnd,
+        String preedit,
+        CharSequence textBeforeCursor
+    ) {
+        if (!composing || preedit == null || preedit.isEmpty()) {
+            return false;
+        }
+        if (newSelStart < 0 || newSelEnd < 0) {
+            return false;
+        }
+        if (newSelStart != newSelEnd) {
+            return true;
+        }
+        if (textBeforeCursor == null) {
+            return false;
+        }
+        return !preedit.contentEquals(textBeforeCursor);
+    }
 }

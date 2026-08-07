@@ -50,6 +50,29 @@ public final class CursorMovePolicyTest {
     }
 
     @Test
+    public void withoutARegionTheTextBeforeTheCursorDecides() {
+        // Our own edit: the cursor sits right after the preedit.
+        assertFalse(CursorMovePolicy.shouldAbandonWithoutRegion(true, 6, 6, "간", "간"));
+        // A tap elsewhere: something else sits before the cursor.
+        assertTrue(CursorMovePolicy.shouldAbandonWithoutRegion(true, 2, 2, "간", "다"));
+        // A tap to the start of the document: nothing sits before the cursor.
+        assertTrue(CursorMovePolicy.shouldAbandonWithoutRegion(true, 0, 0, "간", ""));
+        // A range selection is never something composing produces.
+        assertTrue(CursorMovePolicy.shouldAbandonWithoutRegion(true, 2, 5, "간", "간"));
+    }
+
+    @Test
+    public void withoutARegionUncertaintyLeavesTheCompositionAlone() {
+        // The editor cannot say what is before the cursor.
+        assertFalse(CursorMovePolicy.shouldAbandonWithoutRegion(true, 6, 6, "간", null));
+        // Unknown selection.
+        assertFalse(CursorMovePolicy.shouldAbandonWithoutRegion(true, -1, -1, "간", "다"));
+        // Nothing composing, or no preedit to compare.
+        assertFalse(CursorMovePolicy.shouldAbandonWithoutRegion(false, 2, 2, "간", "다"));
+        assertFalse(CursorMovePolicy.shouldAbandonWithoutRegion(true, 2, 2, "", "다"));
+    }
+
+    @Test
     public void aCursorInsideTheRegionKeepsComposing() {
         // Tapping into the middle of one's own preedit continues it rather than settling it.
         assertFalse(CursorMovePolicy.shouldAbandonComposition(true, 5, 5, 5, 6));

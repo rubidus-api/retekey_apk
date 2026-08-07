@@ -1,0 +1,4 @@
+Google Keep (and other Compose-based editors): typing after moving the
+cursor no longer jumps back to the old position. These editors report no
+composing region, so the cursor-move check now reads the text before the
+cursor instead.

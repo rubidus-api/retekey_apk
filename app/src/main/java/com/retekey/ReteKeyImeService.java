@@ -417,13 +417,30 @@ public class ReteKeyImeService extends InputMethodService {
                 );
                 return;
             }
-            if (CursorMovePolicy.shouldAbandonComposition(
+            boolean abandon = CursorMovePolicy.shouldAbandonComposition(
                 inputProcessor.isComposing(),
                 newSelStart,
                 newSelEnd,
                 candidatesStart,
                 candidatesEnd
-            )) {
+            );
+            if (!abandon && candidatesStart < 0 && inputProcessor.isComposing()) {
+                // Editors that never report a composing region (Compose text fields — Google
+                // Keep) get the text-based verdict: composing leaves the cursor right after the
+                // preedit, so anything else there means the user moved it.
+                String preedit = inputProcessor.composingText();
+                InputConnection connection = getCurrentInputConnection();
+                abandon = CursorMovePolicy.shouldAbandonWithoutRegion(
+                    true,
+                    newSelStart,
+                    newSelEnd,
+                    preedit,
+                    connection == null || preedit.isEmpty()
+                        ? null
+                        : connection.getTextBeforeCursor(preedit.length(), 0)
+                );
+            }
+            if (abandon) {
                 // The user moved the cursor away from the syllable being composed. Settle that
                 // syllable where it is — it must not follow the cursor — and start clean, so the
                 // next key types at the new position instead of repainting the stale composition.
