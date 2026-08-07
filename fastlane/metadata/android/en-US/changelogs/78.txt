@@ -1,0 +1,2 @@
+No functional changes: the APK no longer carries AGP's Google-encrypted
+dependency-metadata block, which F-Droid requires removed.

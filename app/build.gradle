@@ -17,8 +17,8 @@ android {
     defaultConfig {
         applicationId = "com.retekey"
         targetSdk = 36
-        versionCode = 77
-        versionName = "0.1.76"
+        versionCode = 78
+        versionName = "0.1.77"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -94,6 +94,14 @@ android {
     }
 
     testBuildType = "instrumentation"
+
+    dependenciesInfo {
+        // AGP writes a dependency-metadata block into the APK's signing block, encrypted so only
+        // Google Play can read it. F-Droid rejects opaque blobs no one else can inspect (their
+        // admin issue 367), and nothing here uses Play, so keep the APK free of it.
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 androidComponents {
