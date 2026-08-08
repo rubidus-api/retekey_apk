@@ -40,8 +40,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.82** —
-[retekey-0.1.82.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.82/retekey-0.1.82.apk)
+Current release: **v0.1.83** —
+[retekey-0.1.83.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.83/retekey-0.1.83.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -241,8 +241,11 @@ The menu page's **❐ floating** key turns the keyboard into a translucent panel
 app instead of docking to the bottom edge — the shape a tablet in landscape wants, where a
 full-width keyboard is both too wide to type on and too tall to see past.
 
-The panel is confined to one half of the screen and can never be wider than that half, so the other
-half stays yours. Its title bar carries, left to right:
+The panel is confined to one half of the screen, and which half that is follows the screen's
+shape: a screen wider than it is tall splits left and right, and a screen taller than it is wide
+splits top and bottom. Halving a phone held upright down the middle would leave two columns too
+narrow to type in, and halving a tablet held sideways across would leave two strips too short to
+read, so the panel always takes the half worth having. The other half stays yours. Its title bar carries, left to right:
 
 | Key | Does |
 |---|---|

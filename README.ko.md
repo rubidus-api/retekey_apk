@@ -40,8 +40,8 @@
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.82** —
-[retekey-0.1.82.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.82/retekey-0.1.82.apk)
+현재 릴리즈: **v0.1.83** —
+[retekey-0.1.83.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.83/retekey-0.1.83.apk)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다.
@@ -239,8 +239,10 @@ QWERTY의 줄 모양이자 Dvorak의 7/10/9를 다른 순서로 읽은 것이라
 패널로 바뀝니다. 태블릿을 눕혔을 때 어울리는 모습입니다. 그런 화면에서는 너비를 다 쓰는 키보드가
 치기에는 너무 넓고, 너머를 보기에는 너무 높기 때문입니다.
 
-패널은 화면의 절반 안에만 머무르고 그 절반보다 넓어질 수 없어서, 나머지 절반은 온전히 사용자 몫으로
-남습니다. 제목 줄에는 왼쪽부터 다음이 있습니다.
+패널은 화면의 절반 안에만 머무릅니다. 어느 쪽 절반인지는 화면 모양을 따릅니다. 가로로 긴 화면은
+좌우로 나누고, 세로로 긴 화면은 위아래로 나눕니다. 세로로 세운 폰을 가운데로 가르면 두 쪽 다 너무
+좁아 칠 수가 없고, 눕힌 태블릿을 가로로 가르면 두 쪽 다 너무 납작해 읽을 수가 없기 때문입니다.
+나머지 절반은 온전히 사용자 몫으로 남습니다. 제목 줄에는 왼쪽부터 다음이 있습니다.
 
 | 키 | 하는 일 |
 |---|---|

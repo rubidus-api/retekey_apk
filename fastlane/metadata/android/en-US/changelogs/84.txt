@@ -1,0 +1,4 @@
+The floating keyboard now splits the screen the way the screen is
+shaped: left and right on a wide screen as before, top and bottom on a
+tall one. Halving a phone held upright down the middle left two columns
+too narrow to type in.

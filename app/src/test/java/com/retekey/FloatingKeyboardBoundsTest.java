@@ -150,4 +150,50 @@ public final class FloatingKeyboardBoundsTest {
             assertTrue(expected.getMessage().contains("positive"));
         }
     }
+
+    /**
+     * A tall screen splits top and bottom, not left and right: halving a phone held upright down
+     * the middle would leave two columns too narrow to type in.
+     */
+    @Test
+    public void aTallScreenSplitsTopAndBottom() {
+        FloatingKeyboardBounds panel = FloatingKeyboardBounds.initial(
+            1080, 2400, FloatingKeyboardBounds.Side.LEFT);
+        assertFalse(panel.splitsHorizontally());
+        assertTrue("nearly the full width, as a keyboard wants", panel.width() > 1080 * 0.8);
+        assertTrue("and stays inside the top half", panel.bottom() <= 1200);
+    }
+
+    @Test
+    public void aWideScreenStillSplitsLeftAndRight() {
+        FloatingKeyboardBounds panel = FloatingKeyboardBounds.initial(
+            2400, 1080, FloatingKeyboardBounds.Side.LEFT);
+        assertTrue(panel.splitsHorizontally());
+        assertTrue("inside the left half", panel.right() <= 1200);
+        assertTrue("and no taller than the rules allow", panel.height() <= 1080 * 0.75 + 1);
+    }
+
+    /** Dragging cannot carry the panel across the middle, whichever way the middle runs. */
+    @Test
+    public void aTallScreenConfinesTheDragToItsHalf() {
+        FloatingKeyboardBounds panel = FloatingKeyboardBounds.initial(
+            1080, 2400, FloatingKeyboardBounds.Side.LEFT);
+        FloatingKeyboardBounds dragged = panel.movedBy(0, 5000);
+        assertTrue("still in the top half", dragged.bottom() <= 1200);
+        FloatingKeyboardBounds bottom = FloatingKeyboardBounds.initial(
+            1080, 2400, FloatingKeyboardBounds.Side.RIGHT);
+        assertTrue("the other half starts at the middle", bottom.top() >= 1200);
+        assertTrue(bottom.movedBy(0, -5000).top() >= 1200);
+    }
+
+    /** And the crossing key reflects it about the middle it actually has. */
+    @Test
+    public void mirroringFollowsTheSplittingAxis() {
+        FloatingKeyboardBounds top = FloatingKeyboardBounds.initial(
+            1080, 2400, FloatingKeyboardBounds.Side.LEFT);
+        FloatingKeyboardBounds bottom = top.mirrored();
+        assertFalse(bottom.isLeft());
+        assertTrue("mirrored into the bottom half", bottom.top() >= 1200);
+        assertTrue("and back again", bottom.mirrored().bottom() <= 1200);
+    }
 }
