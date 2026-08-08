@@ -31,9 +31,9 @@ Repo: https://github.com/rubidus-api/retekey_apk.git
 Binaries: https://github.com/rubidus-api/retekey_apk/releases/download/v%v/retekey-%v.apk
 
 Builds:
-  - versionName: 0.1.84
-    versionCode: 85
-    commit: fc38eee4769d54f794e425eb4dc095db04c983ea
+  - versionName: 0.1.85
+    versionCode: 86
+    commit: bcffc3a56bd2b35c9a70c3906feaa52c4a4214aa
     subdir: app
     gradle:
       - modern
@@ -42,5 +42,5 @@ AllowedAPKSigningKeys: 9edf10f8088e6eeece9831687fde92dcb737c774f1d39ec37c596905a
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[\d.]+$
-CurrentVersion: 0.1.84
-CurrentVersionCode: 85
+CurrentVersion: 0.1.85
+CurrentVersionCode: 86
