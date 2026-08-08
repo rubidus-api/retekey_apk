@@ -29,7 +29,7 @@ public final class SpecialCharsPageTest {
             labels(PAGE, 2)
         );
         assertEquals(
-            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", " ", "!#", "\uD83C\uDF10"),
+            Arrays.asList("Ctrl", "Meta", "Alt", "Tab", "space", "Esc", "!#", "\uD83C\uDF10"),
             labels(PAGE, 3)
         );
     }
@@ -101,5 +101,27 @@ public final class SpecialCharsPageTest {
             labels.add(key.label());
         }
         return labels;
+    }
+
+    @Test
+    public void theNumberRowHoldsTheNumbers() {
+        // Each shifted symbol holds the digit it shares a key with on a physical keyboard.
+        String[] digits = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
+        for (int column = 0; column < digits.length; column++) {
+            SoftwareKeySpec key = PAGE.rows().get(0).get(column);
+            assertEquals(key.label(), Arrays.asList(digits[column]), key.longPressTexts());
+        }
+    }
+
+    @Test
+    public void theClauseMarksHoldTheSentenceMarks() {
+        assertEquals(Arrays.asList(","), PAGE.findById("touch.sym.semicolon").longPressTexts());
+        assertEquals(Arrays.asList("."), PAGE.findById("touch.sym.colon").longPressTexts());
+    }
+
+    @Test
+    public void escapeSitsBesideSpace() {
+        assertEquals(RawKey.ESCAPE,
+            PAGE.rows().get(3).get(5).semanticInput().rawKey());
     }
 }

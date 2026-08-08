@@ -41,8 +41,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.89** —
-[retekey-0.1.89.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.89/retekey-0.1.89.apk)
+Current release: **v0.1.90** —
+[retekey-0.1.90.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.90/retekey-0.1.90.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -196,8 +196,9 @@ cursor cluster, and back again:
 ![The 12-key cursor overlay](assets/keyboard-cheonjiin-nav.png)
 
 The `!#` key opens the special-characters page, where every key commits its symbol. Holding a key
-types its alternate immediately — there is no popup to aim at and nothing to drag to. Holding the
-period types a comma, and holding `_` types `-`, the pair a physical keyboard puts on one key:
+types its alternate immediately — there is no popup to aim at and nothing to drag to. The top row
+holds the digits it shares keys with on a physical keyboard, so `!` holds **1** and `)` holds **0**;
+`;` holds a comma and `:` a full stop; holding `_` types `-`. `Esc` sits beside the space bar:
 
 ![Special characters page](assets/keyboard-chars.png)
 
@@ -250,7 +251,7 @@ keyboard itself.
 | PgUp / PgDn | page | jump a page |
 | Ins | insert | the Insert key |
 | Del | forward delete | delete forward |
-| ABC | back | leave the page and return to the letters |
+| 0 / F10 / Del | beside space | whatever the current mode is missing: the keypad's zero, the tenth function key, forward delete |
 
 The muted keys are drawn but do nothing: they are the places the features will go, marked so the
 page does not shift under you when they arrive.
@@ -307,6 +308,7 @@ The list behaves like a file manager's details view:
 | **New** | start a note, stamped now |
 | **Del** / **DelAll** | delete the ticked notes, or every one |
 | **List** | back to the list from a note; **Close** puts the keyboard back |
+| **Cp Cut Paste Del Un Re** | the second row of links: copy, cut, paste, delete, undo, redo — on the selection, or on the whole field when nothing is selected. Undo is the notepad's own, so it works the same on Android 4 as on 16 |
 
 Notes are kept in the keyboard's own storage and written through on every change, because a
 keyboard can be torn down between two keystrokes.

@@ -48,6 +48,11 @@ public final class NotepadView extends LinearLayout {
     private final TextView stampLabel;
     private final EditText titleField;
     private final EditText bodyField;
+    /** Undo history, one per field: the title and the body are edited independently. */
+    private final NoteHistory titleHistory = new NoteHistory();
+    private final NoteHistory bodyHistory = new NoteHistory();
+    /** Set while undo/redo writes into a field, so restoring a state is not recorded as an edit. */
+    private boolean restoring;
 
     private Runnable onClose;
     private Runnable onChanged;
@@ -152,6 +157,50 @@ public final class NotepadView extends LinearLayout {
         }));
         noteScreen.addView(noteTools, wide());
 
+        // A second row rather than a longer first one: nine links do not fit across a phone, and
+        // the one that must always be reachable is Close.
+        LinearLayout noteEdits = row(context);
+        // The editing set, on the selection when there is one and on the whole field when there
+        // is not: the keyboard's own edit keys reach the app underneath, not this panel.
+        noteEdits.addView(toolButton(context, "Cp", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                copySelection(false);
+            }
+        }));
+        noteEdits.addView(toolButton(context, "Cut", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                copySelection(true);
+            }
+        }));
+        noteEdits.addView(toolButton(context, "Paste", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pasteClipboard();
+            }
+        }));
+        noteEdits.addView(toolButton(context, "Del", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deleteBackward();
+            }
+        }));
+        noteEdits.addView(toolButton(context, "Un", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                undoEdit();
+            }
+        }));
+        noteEdits.addView(toolButton(context, "Re", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redoEdit();
+            }
+        }));
+        noteEdits.addView(spacer(context));
+        noteScreen.addView(noteEdits, wide());
+
         // The first line: the stamp, which cannot be edited, and the title, which can.
         LinearLayout firstLine = row(context);
         stampLabel = new TextView(context);
@@ -202,6 +251,7 @@ public final class NotepadView extends LinearLayout {
         int end = Math.max(start, target.getSelectionEnd());
         target.getText().replace(start, end, text);
         preeditLength = 0;
+        recordState();
         storeOpenNote();
     }
 
@@ -237,6 +287,7 @@ public final class NotepadView extends LinearLayout {
             editable.delete(start - 1, start);
         }
         preeditLength = 0;
+        recordState();
         storeOpenNote();
     }
 
@@ -258,6 +309,104 @@ public final class NotepadView extends LinearLayout {
 
     private EditText focusedField() {
         return titleField.hasFocus() ? titleField : bodyField;
+    }
+
+    private NoteHistory historyFor(EditText field) {
+        return field == titleField ? titleHistory : bodyHistory;
+    }
+
+    /** Remembers what the focused field says now, so undo has somewhere to go back to. */
+    private void recordState() {
+        if (restoring) {
+            return;
+        }
+        EditText target = focusedField();
+        historyFor(target).record(
+            target.getText().toString(), Math.max(0, target.getSelectionStart()));
+    }
+
+    /** Starts both histories at what the note says as it opens. */
+    private void resetHistories() {
+        titleHistory.reset();
+        bodyHistory.reset();
+        titleHistory.record(titleField.getText().toString(), 0);
+        bodyHistory.record(bodyField.getText().toString(), 0);
+    }
+
+    /**
+     * Copies the selection, or the whole field when nothing is selected — which is what "copy the
+     * body" means when the cursor is just sitting in it. Cutting is the same, and then removes it.
+     */
+    private void copySelection(boolean cut) {
+        EditText target = focusedField();
+        Editable editable = target.getText();
+        int start = Math.max(0, target.getSelectionStart());
+        int end = Math.max(start, target.getSelectionEnd());
+        if (start == end) {
+            start = 0;
+            end = editable.length();
+        }
+        if (end <= start) {
+            return;
+        }
+        CharSequence taken = editable.subSequence(start, end);
+        android.content.ClipboardManager clipboard = clipboard();
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("note", taken));
+        }
+        if (cut) {
+            editable.delete(start, end);
+            preeditLength = 0;
+            recordState();
+            storeOpenNote();
+        }
+    }
+
+    /** Puts the clipboard in at the cursor, replacing the selection if there is one. */
+    private void pasteClipboard() {
+        android.content.ClipboardManager clipboard = clipboard();
+        if (clipboard == null || !clipboard.hasPrimaryClip()) {
+            return;
+        }
+        android.content.ClipData clip = clipboard.getPrimaryClip();
+        if (clip == null || clip.getItemCount() == 0) {
+            return;
+        }
+        CharSequence text = clip.getItemAt(0).coerceToText(getContext());
+        if (text == null || text.length() == 0) {
+            return;
+        }
+        type(text.toString());
+    }
+
+    private android.content.ClipboardManager clipboard() {
+        return (android.content.ClipboardManager)
+            getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+    }
+
+    private void undoEdit() {
+        applySnapshot(historyFor(focusedField()).undo());
+    }
+
+    private void redoEdit() {
+        applySnapshot(historyFor(focusedField()).redo());
+    }
+
+    /** Puts a remembered state back without recording it as a new edit. */
+    private void applySnapshot(NoteHistory.Snapshot snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+        EditText target = focusedField();
+        restoring = true;
+        try {
+            target.setText(snapshot.text());
+            target.setSelection(Math.min(snapshot.cursor(), target.getText().length()));
+        } finally {
+            restoring = false;
+        }
+        preeditLength = 0;
+        storeOpenNote();
     }
 
     // ---- the list ----
@@ -310,6 +459,8 @@ public final class NotepadView extends LinearLayout {
         bodyField.requestFocus();
         bodyField.setSelection(bodyField.getText().length());
         preeditLength = 0;
+        // A different note is a different history: undo must not walk back into another note.
+        resetHistories();
         refresh();
     }
 

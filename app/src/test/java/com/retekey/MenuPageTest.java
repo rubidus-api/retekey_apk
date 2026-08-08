@@ -111,10 +111,10 @@ public final class MenuPageTest {
     }
 
     @Test
-    public void theBottomRowReturnsToLetters() {
-        SoftwareKeySpec returnKey = menu.rows().get(3).get(5);
-        assertEquals("ABC", returnKey.label());
-        assertEquals(ControlKey.PREVIOUS_LAYER, returnKey.control());
+    public void theBottomRowOpensTheCodePointEntry() {
+        SoftwareKeySpec padKey = menu.rows().get(3).get(5);
+        assertEquals("Uni", padKey.label());
+        assertEquals(ControlKey.UNICODE_INPUT, padKey.control());
         assertEquals(ControlKey.MENU_LAYER,
             menu.findById("touch.layout.toggle").longPressControl());
     }

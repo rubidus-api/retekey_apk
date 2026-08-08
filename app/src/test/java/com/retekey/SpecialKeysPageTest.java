@@ -108,13 +108,21 @@ public final class SpecialKeysPageTest {
     }
 
     @Test
-    public void theReturnKeyGoesBackToLetters() {
-        assertEquals(
-            ControlKey.PREVIOUS_LAYER,
-            NUMBERS.findById("touch.layer.letters").control()
-        );
+    public void theCellBesideSpaceFinishesEachKeypad() {
+        // It used to be a way back to the letters, which the layout key beside it already does.
+        assertEquals("0", NUMBERS.rows().get(3).get(5).label());
+        assertEquals("Del", ARROWS.rows().get(3).get(5).label());
+        assertEquals("F10", FUNCTIONS.rows().get(3).get(5).label());
         assertEquals(ControlKey.NUMLOCK, NUMBERS.findById("touch.numpad.numlock").control());
         assertEquals(ControlKey.FUNCTION_LOCK, NUMBERS.findById("touch.numpad.fnlock").control());
+    }
+
+    @Test
+    public void theArithmeticKeysHoldTheirOtherHalf() {
+        assertEquals(Arrays.asList("*"), NUMBERS.findById("touch.sym.plus").longPressTexts());
+        assertEquals(Arrays.asList("/"), NUMBERS.findById("touch.sym.minus").longPressTexts());
+        assertEquals(Arrays.asList(","), NUMBERS.findById("touch.sym.period").longPressTexts());
+        assertEquals(Arrays.asList("_"), NUMBERS.findById("touch.sym.e").longPressTexts());
     }
 
     private static RawKey raw(KeyboardLayout layout, String id) {

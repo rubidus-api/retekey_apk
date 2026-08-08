@@ -591,10 +591,14 @@ public final class KeyboardLayouts {
 
     private static KeyboardLayout buildSpecialChars() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        // Each symbol holds the digit it shares a key with on a physical keyboard, so the row
+        // reads as the number row it is and a digit is a long press away without changing page.
         rows.add(KeyboardLayout.row(
-            text("bang", "!"), text("at", "@"), text("hash", "#"), text("dollar", "$"),
-            text("percent", "%"), text("caret", "^"), text("amp", "&"), text("star", "*"),
-            text("lparen", "("), text("rparen", ")")
+            text("bang", "!").withLongPress("1"), text("at", "@").withLongPress("2"),
+            text("hash", "#").withLongPress("3"), text("dollar", "$").withLongPress("4"),
+            text("percent", "%").withLongPress("5"), text("caret", "^").withLongPress("6"),
+            text("amp", "&").withLongPress("7"), text("star", "*").withLongPress("8"),
+            text("lparen", "(").withLongPress("9"), text("rparen", ")").withLongPress("0")
         ));
         rows.add(KeyboardLayout.row(
             text("backslash", "\\"), text("pipe", "|"), text("slash", "/"),
@@ -604,7 +608,8 @@ public final class KeyboardLayouts {
         ));
         rows.add(KeyboardLayout.row(
             shiftKey(false),
-            text("semicolon", ";"), text("colon", ":"),
+            // The two marks that punctuate a clause hold the two that end one.
+            text("semicolon", ";").withLongPress(","), text("colon", ":").withLongPress("."),
             text("backtick", "`"),
             text("apostrophe", "'").withLongPress("="),
             text("quote", "\"").withLongPress("÷"),
@@ -615,7 +620,8 @@ public final class KeyboardLayouts {
             text("underscore", "_").withLongPress("-"),
             enterKey()
         ));
-        rows.add(bottomRow(vacatedCell("layer")));
+        // The cell beside space was empty; Escape is the key this page had nowhere else to put.
+        rows.add(bottomRow(rawKey("chars.esc", "Esc", RawKey.ESCAPE)));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_CHARS, false, COLUMNS, rows);
     }
 
@@ -642,7 +648,7 @@ public final class KeyboardLayouts {
                 rawKey("search", "Fnd", RawKey.SEARCH), disabled("back", "Back"),
                 fnRawKey(6), fnRawKey(7), fnRawKey(8), enterKey()
             ));
-            rows.add(bottomRow(returnToLettersKey()));
+            rows.add(bottomRow(padLayerCell(mode)));
             return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_KEYS, false, COLUMNS, rows);
         }
 
@@ -662,12 +668,30 @@ public final class KeyboardLayouts {
             fnKey(), padCell(mode, 3), padCell(mode, 4), padCell(mode, 5), backspaceKey()
         ));
         rows.add(KeyboardLayout.row(
-            shiftKey(false), text("e", "e"),
-            text("plus", "+"), text("minus", "-"), text("equals", "="), text("period", "."),
+            shiftKey(false), text("e", "e").withLongPress("_"),
+            // The other half of each pair, where a keypad would have had room for both.
+            text("plus", "+").withLongPress("*"), text("minus", "-").withLongPress("/"),
+            text("equals", "="), text("period", ".").withLongPress(","),
             padCell(mode, 6), padCell(mode, 7), padCell(mode, 8), enterKey()
         ));
-        rows.add(bottomRow(returnToLettersKey()));
+        rows.add(bottomRow(padLayerCell(mode)));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_KEYS, false, COLUMNS, rows);
+    }
+
+    /**
+     * The cell beside space on the pad page. It used to be a way back to the letters, which the
+     * layout key beside it already does; it now finishes each mode's own keypad — the zero the
+     * digits are missing, the tenth function key, the forward delete the arrows want.
+     */
+    private static SoftwareKeySpec padLayerCell(NumpadMode mode) {
+        switch (mode) {
+            case FUNCTIONS:
+                return rawKey("pad.f10", "F10", RawKey.F10);
+            case ARROWS:
+                return rawKey("pad.del", "Del", RawKey.FORWARD_DELETE);
+            default:
+                return digit("pad.0", "0");
+        }
     }
 
     /** One keypad cell: a digit, or an arrow when Num is on. */
@@ -727,7 +751,9 @@ public final class KeyboardLayouts {
             menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),
             menuControl("settings", "Set", ControlKey.OPEN_SETTINGS)
         ));
-        rows.add(bottomRow(returnToLettersKey()));
+        // The menu page reaches the letters with the layout key beside it, so this cell says
+        // what the menu alone can start: the code-point entry.
+        rows.add(bottomRow(menuControl("unicode.pad", "Uni", ControlKey.UNICODE_INPUT)));
         return KeyboardLayout.of(KeyboardLayoutId.MENU, false, COLUMNS, rows);
     }
 
@@ -756,10 +782,6 @@ public final class KeyboardLayouts {
             specialCharsKey(),
             layoutToggleKey()
         );
-    }
-
-    private static SoftwareKeySpec returnToLettersKey() {
-        return SoftwareKeySpec.control("touch.layer.letters", "ABC", ControlKey.PREVIOUS_LAYER);
     }
 
     /** The in-page return key ("영문자" position); distinct id from the shared bottom-row one. */

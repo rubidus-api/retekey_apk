@@ -1,0 +1,15 @@
+Long presses where a physical keyboard has the other half of the key.
+On the symbols page each of !@#$%^&*() holds its digit, ; holds a comma
+and : a full stop; on the keypad page + holds *, - holds /, . holds a
+comma and e holds an underscore. Escape now sits beside the space bar
+on the symbols page.
+
+The cell beside space on the keypad page was a way back to the letters,
+which the layout key beside it already does; it now finishes each mode
+instead - the keypad's zero, the tenth function key, forward delete.
+On the menu page that same cell opens the code-point entry.
+
+The notepad's note screen grew a second row of links: Cp, Cut, Paste,
+Del, Un, Re, on the selection or on the whole field. Undo is the
+notepad's own history, so it behaves the same on every Android it runs
+on rather than only from API 23.
