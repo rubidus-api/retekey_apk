@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
@@ -736,7 +737,7 @@ public final class ReteKeyboardView extends View {
         if (SPACE_KEY_ID.equals(key.stableKeyId())) {
             // The space bar says what it is by its shape, the way a space bar always has. A word
             // there is both the longest label on the keyboard and the least necessary one.
-            drawSpaceBar(canvas, l, t, r, b);
+            drawSpaceMark(canvas, l, t, r, b);
         } else {
             String label = labelOf(key);
             fitLabel(label, right - left, bottom - top);
@@ -778,14 +779,33 @@ public final class ReteKeyboardView extends View {
         }
     }
 
-    /** The space bar's shape: a low, wide, rounded bar across the middle of the key. */
-    private void drawSpaceBar(Canvas canvas, float l, float t, float r, float b) {
-        float width = (r - l) * 0.42f;
-        float height = Math.max(2.0f, (b - t) * 0.06f);
+    /**
+     * The space key's mark: the open box that has meant "one space" on printed listings and in
+     * type samples for as long as there have been either — a box with its top side missing. Drawn
+     * rather than typed, because the character for it (U+2423) is missing from the fonts on the
+     * older devices this keyboard is built to run on, and a key that draws nothing is worse than
+     * one that draws a word.
+     */
+    private void drawSpaceMark(Canvas canvas, float l, float t, float r, float b) {
+        float width = Math.min((r - l) * 0.30f, (b - t) * 0.62f);
+        float height = width * 0.52f;
         float cx = (l + r) * 0.5f;
         float cy = (t + b) * 0.5f;
-        Compat.drawRoundRect(canvas, cx - width * 0.5f, cy - height * 0.5f,
-            cx + width * 0.5f, cy + height * 0.5f, height * 0.5f, paint);
+        float left = cx - width * 0.5f;
+        float right = cx + width * 0.5f;
+        float top = cy - height * 0.5f;
+        float bottom = cy + height * 0.5f;
+        float stroke = Math.max(2.0f, height * 0.16f);
+        Paint.Style style = paint.getStyle();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(stroke);
+        Path box = new Path();
+        box.moveTo(left, top);
+        box.lineTo(left, bottom);
+        box.lineTo(right, bottom);
+        box.lineTo(right, top);
+        canvas.drawPath(box, paint);
+        paint.setStyle(style);
     }
 
     /**
@@ -831,7 +851,7 @@ public final class ReteKeyboardView extends View {
     /** Sizes {@link #paint} so {@code label} fits a cell of the given size, tracking cell size. */
     private void fitLabel(String label, int cellWidth, int cellHeight) {
         float cap = cellHeight * KeyLabelFit.HEIGHT_RATIO;
-        float minSize = 10.0f * getResources().getDisplayMetrics().density;
+        float minSize = 8.5f * getResources().getDisplayMetrics().density;
         paint.setTextSize(cap);
         float measured = paint.measureText(label);
         float size = KeyLabelFit.fitSize(

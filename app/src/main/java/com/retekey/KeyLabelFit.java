@@ -10,8 +10,12 @@ package com.retekey;
 final class KeyLabelFit {
     /** Fraction of a cell's height used as the upper bound on the label's text size. */
     static final float HEIGHT_RATIO = 0.40f;
-    /** Fraction of a cell's width the label is allowed to occupy before it shrinks. */
-    static final float WIDTH_RATIO = 0.86f;
+    /**
+     * Fraction of a cell's width the label is allowed to occupy before it shrinks. Wide enough
+     * that a word — Undo, Paste, Manage — sits inside the key at a readable size rather than
+     * being cut to initials nobody can expand.
+     */
+    static final float WIDTH_RATIO = 0.90f;
 
     private KeyLabelFit() {
     }

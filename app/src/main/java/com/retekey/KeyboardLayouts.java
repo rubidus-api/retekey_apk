@@ -650,36 +650,36 @@ public final class KeyboardLayouts {
         // centre, copy/cut/paste down the near edge, the jump keys around them, and settings in
         // the corner where a thumb reaches without looking.
         rows.add(KeyboardLayout.row(
-            menuControl("undo", "Und", ControlKey.UNDO),
-            menuControl("redo", "Red", ControlKey.REDO),
-            menuControl("date", "Dat", ControlKey.INSERT_DATE),
-            menuDisabled("emoji", "Emo"),
-            menuDisabled("clipboard", "Clp"),
-            menuControl("copy", "Cpy", ControlKey.COPY),
+            menuControl("undo", "Undo", ControlKey.UNDO),
+            menuControl("redo", "Redo", ControlKey.REDO),
+            menuControl("date", "Date", ControlKey.INSERT_DATE),
+            menuDisabled("emoji", "Emoji"),
+            menuDisabled("clipboard", "Clip"),
+            menuControl("copy", "Copy", ControlKey.COPY),
             menuRaw("cursor.home", "Home", RawKey.HOME),
             menuRaw("cursor.up", "↑", RawKey.UP),
             menuRaw("cursor.pageup", "PgUp", RawKey.PAGE_UP),
             menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
-            menuControl("height.down", "Sz−", ControlKey.HEIGHT_DOWN),
-            menuControl("height.up", "Sz+", ControlKey.HEIGHT_UP),
-            menuControl("switchime", "IME", ControlKey.SWITCH_IME),
-            menuControl("manageime", "Mng", ControlKey.MANAGE_IME),
+            menuControl("height.down", "Size−", ControlKey.HEIGHT_DOWN),
+            menuControl("height.up", "Size+", ControlKey.HEIGHT_UP),
+            menuControl("switchime", "Switch", ControlKey.SWITCH_IME),
+            menuControl("manageime", "Manage", ControlKey.MANAGE_IME),
             menuControl("floating", "Flt", ControlKey.FLOATING_TOGGLE),
             menuControl("cut", "Cut", ControlKey.CUT),
             menuRaw("cursor.left", "←", RawKey.LEFT),
-            menuControl("selectall", "All", ControlKey.SELECT_ALL),
+            menuControl("selectall", "SelA", ControlKey.SELECT_ALL),
             menuRaw("cursor.right", "→", RawKey.RIGHT),
             menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
-            menuDisabled("onehand.left", "1Hd"),
-            menuDisabled("onehand.full", "Ful"),
-            menuDisabled("theme", "Thm"),
+            menuDisabled("onehand.left", "1Hand"),
+            menuDisabled("onehand.full", "Full"),
+            menuDisabled("theme", "Theme"),
             menuDisabled("custom1", "★1"),
             menuDisabled("custom2", "★2"),
-            menuControl("paste", "Pst", ControlKey.PASTE),
+            menuControl("paste", "Paste", ControlKey.PASTE),
             menuRaw("cursor.end", "End", RawKey.END),
             menuRaw("cursor.down", "↓", RawKey.DOWN),
             menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),

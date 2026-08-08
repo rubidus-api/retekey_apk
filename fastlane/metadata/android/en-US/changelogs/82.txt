@@ -4,6 +4,7 @@ toward it. A key held down wears the same colours as the popup that
 shows each keystroke — accent behind, background-coloured letters — with
 its label outlined, so armed and held cannot be read as one.
 
-Keys read in English everywhere except the Korean layouts themselves:
-the menu page is Dat, Emo, Clp, Cpy, Cut, Pst, All, Set, IME, Mng, Flt,
-Thm, Sz−/Sz+. The layout key says >qw for QWERTY.
+The space key shows the open box that has always meant one space. Keys
+read in English outside the Korean layouts, in words that shrink to fit
+the key: Undo, Redo, Copy, Cut, Paste, SelA, Date, Clip, Switch,
+Manage, Flt, Theme, Size−/Size+. The layout key says >qw for QWERTY.

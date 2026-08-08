@@ -208,21 +208,21 @@ keyboard itself.
 
 | | Key | Does |
 |---|---|---|
-| Und | undo | undo the last edit |
-| Red | redo | redo it |
-| Dat | date | insert the current date and time as text |
-| Emo | emoji | *not built yet — drawn muted* |
-| Clp | clipboard | *not built yet* |
-| Cpy | copy | copy the selection |
+| Undo | undo | undo the last edit |
+| Redo | redo | redo it |
+| Date | date | insert the current date and time as text |
+| Emoji | emoji | *not built yet — drawn muted* |
+| Clip | clipboard | *not built yet* |
+| Copy | copy | copy the selection |
 | Cut | cut | cut the selection |
-| Pst | paste | paste the clipboard |
-| All | select all | select everything in the field |
-| Sz− / Sz+ | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
-| IME | switch keyboard | open the system input-method picker |
-| Mng | manage keyboards | open the system screen for enabling keyboards |
+| Paste | paste | paste the clipboard |
+| SelA | select all | select everything in the field |
+| Size− / Size+ | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
+| Switch | switch keyboard | open the system input-method picker |
+| Manage | manage keyboards | open the system screen for enabling keyboards |
 | Flt | floating | turn the floating panel on or off |
-| 1Hd / Ful | one-handed | *not built yet* |
-| Thm | theme | *not built yet* |
+| 1Hand / Full | one-handed | *not built yet* |
+| Theme | theme | *not built yet* |
 | ★1 / ★2 | custom | *not built yet* |
 | Set | settings | open ReteKey's own settings |
 | ← ↑ → ↓ | arrows | move the cursor; they repeat when held |
