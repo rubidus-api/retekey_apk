@@ -1,0 +1,6 @@
+Pictures, brought up to date. The floating keyboard and the store's
+screenshots were captures from before the keys were redrawn - before
+the hold hints moved inside the key faces, before the layout key named
+where it goes, before the space bar became a shape. They are drawn from
+the current code now, over a page of writing so a translucent panel
+reads as translucent.
