@@ -41,8 +41,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.92** —
-[retekey-0.1.92.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.92/retekey-0.1.92.apk)
+Current release: **v0.1.93** —
+[retekey-0.1.93.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.93/retekey-0.1.93.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -308,7 +308,11 @@ The list behaves like a file manager's details view:
 | **New** | start a note, stamped now |
 | **Del** / **DelAll** | delete the ticked notes, or every one |
 | **List** | back to the list from a note; **Close** puts the keyboard back |
-| **Cp Cut Paste Del Un Re** | the second row of links: copy, cut, paste, delete, undo, redo — on the selection, or on the whole field when nothing is selected. Undo is the notepad's own, so it works the same on Android 4 as on 16 |
+| **Cp Cut Paste Del Un Re** | copy, cut, paste, delete, undo, redo — on the selection, or on the whole field when nothing is selected. Undo is the notepad's own, so it works the same on Android 4 as on 16 |
+| pinch | two fingers set the text size on either screen, from 60% to 300%, and it is remembered |
+
+The links sit on one row and wrap onto a second only when the screen is too narrow for them all,
+rather than running off the edge.
 
 Notes are kept in the keyboard's own storage and written through on every change, because a
 keyboard can be torn down between two keystrokes.

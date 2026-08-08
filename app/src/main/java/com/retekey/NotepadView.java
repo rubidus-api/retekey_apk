@@ -54,6 +54,13 @@ public final class NotepadView extends LinearLayout {
     /** Set while undo/redo writes into a field, so restoring a state is not recorded as an edit. */
     private boolean restoring;
 
+    /** Text views that follow the pinch, with the size each was designed at. */
+    private final java.util.List<TextView> scaledViews = new java.util.ArrayList<>();
+    private final java.util.List<Float> scaledBases = new java.util.ArrayList<>();
+    private final android.view.ScaleGestureDetector pinch;
+    private int textPercent;
+    private int pinchStartPercent;
+
     private Runnable onClose;
     private Runnable onChanged;
     /**
@@ -68,6 +75,31 @@ public final class NotepadView extends LinearLayout {
         this.palette = KeyboardPalette.resolve(context);
         this.notes = initial == null ? NoteList.empty() : initial;
         setOrientation(VERTICAL);
+        textPercent = NotepadTextScale.clamp(prefs(context)
+            .getInt(TEXT_PERCENT_KEY, NotepadTextScale.DEFAULT_PERCENT));
+        // Two fingers set the text size, on both screens. One finger is left alone: it belongs to
+        // the list rows and to the cursor in the note.
+        pinch = new android.view.ScaleGestureDetector(context,
+            new android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                @Override
+                public boolean onScaleBegin(android.view.ScaleGestureDetector detector) {
+                    pinchStartPercent = textPercent;
+                    return true;
+                }
+
+                @Override
+                public boolean onScale(android.view.ScaleGestureDetector detector) {
+                    setTextPercent(
+                        NotepadTextScale.scaled(pinchStartPercent, detector.getScaleFactor()));
+                    return true;
+                }
+
+                @Override
+                public void onScaleEnd(android.view.ScaleGestureDetector detector) {
+                    // Written when the fingers lift rather than on every frame of the gesture.
+                    prefs(getContext()).edit().putInt(TEXT_PERCENT_KEY, textPercent).apply();
+                }
+            });
         // Translucent: the panel is over an app the user is often reading from.
         setBackgroundColor(withAlpha(palette.background, 0xE0));
 
@@ -133,21 +165,61 @@ public final class NotepadView extends LinearLayout {
         noteScreen.setOrientation(VERTICAL);
         noteScreen.setVisibility(GONE);
 
-        LinearLayout noteTools = row(context);
-        noteTools.addView(toolButton(context, "List", new OnClickListener() {
+        // One row of links, wrapping onto a second when the screen is too narrow for them all.
+        // Close comes last because it is where the row ends, not because it is least used.
+        FlowRow noteLinks = new FlowRow(context);
+        noteLinks.addView(toolButton(context, "List", new OnClickListener() {
             @Override
             public void onClick(View v) {
                 showList();
             }
         }));
-        noteTools.addView(toolButton(context, "SelA", new OnClickListener() {
+        noteLinks.addView(toolButton(context, "SelA", new OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectBody();
             }
         }));
-        noteTools.addView(spacer(context));
-        noteTools.addView(toolButton(context, "Close", new OnClickListener() {
+
+        // The editing set, on the selection when there is one and on the whole field when there
+        // is not: the keyboard's own edit keys reach the app underneath, not this panel.
+        noteLinks.addView(toolButton(context, "Cp", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                copySelection(false);
+            }
+        }));
+        noteLinks.addView(toolButton(context, "Cut", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                copySelection(true);
+            }
+        }));
+        noteLinks.addView(toolButton(context, "Paste", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pasteClipboard();
+            }
+        }));
+        noteLinks.addView(toolButton(context, "Del", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deleteBackward();
+            }
+        }));
+        noteLinks.addView(toolButton(context, "Un", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                undoEdit();
+            }
+        }));
+        noteLinks.addView(toolButton(context, "Re", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redoEdit();
+            }
+        }));
+                noteLinks.addView(toolButton(context, "Close", new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (onClose != null) {
@@ -155,65 +227,24 @@ public final class NotepadView extends LinearLayout {
                 }
             }
         }));
-        noteScreen.addView(noteTools, wide());
-
-        // A second row rather than a longer first one: nine links do not fit across a phone, and
-        // the one that must always be reachable is Close.
-        LinearLayout noteEdits = row(context);
-        // The editing set, on the selection when there is one and on the whole field when there
-        // is not: the keyboard's own edit keys reach the app underneath, not this panel.
-        noteEdits.addView(toolButton(context, "Cp", new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                copySelection(false);
-            }
-        }));
-        noteEdits.addView(toolButton(context, "Cut", new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                copySelection(true);
-            }
-        }));
-        noteEdits.addView(toolButton(context, "Paste", new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pasteClipboard();
-            }
-        }));
-        noteEdits.addView(toolButton(context, "Del", new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                deleteBackward();
-            }
-        }));
-        noteEdits.addView(toolButton(context, "Un", new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                undoEdit();
-            }
-        }));
-        noteEdits.addView(toolButton(context, "Re", new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                redoEdit();
-            }
-        }));
-        noteEdits.addView(spacer(context));
-        noteScreen.addView(noteEdits, wide());
+        noteScreen.addView(noteLinks, wide());
 
         // The first line: the stamp, which cannot be edited, and the title, which can.
         LinearLayout firstLine = row(context);
         stampLabel = new TextView(context);
         stampLabel.setTextColor(palette.keyText);
         stampLabel.setTypeface(android.graphics.Typeface.MONOSPACE);
+        scaleText(stampLabel, 12f);
         firstLine.addView(stampLabel, cell(dp(140)));
         titleField = field(context, "title");
         titleField.setSingleLine(true);
+        scaleText(titleField, 16f);
         firstLine.addView(titleField, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
         noteScreen.addView(firstLine, wide());
 
         bodyField = field(context, "");
         bodyField.setGravity(Gravity.TOP | Gravity.START);
+        scaleText(bodyField, 16f);
         ScrollView bodyScroller = new ScrollView(context);
         bodyScroller.addView(bodyField, new ScrollView.LayoutParams(
             LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
@@ -561,12 +592,13 @@ public final class NotepadView extends LinearLayout {
         stamp.setText(note.stamp());
         stamp.setTextColor(palette.keyTextMuted);
         stamp.setTypeface(android.graphics.Typeface.MONOSPACE);
-        stamp.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        scaleText(stamp, 12f);
         row.addView(stamp, cell(dp(120)));
 
         TextView title = new TextView(getContext());
         title.setText(note.title().isEmpty() ? "(untitled)" : note.title());
         title.setTextColor(palette.keyText);
+        scaleText(title, 14f);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         title.setOnClickListener(new OnClickListener() {
@@ -634,6 +666,52 @@ public final class NotepadView extends LinearLayout {
             edit.setShowSoftInputOnFocus(false);
         }
         return edit;
+    }
+
+    private static final String TEXT_PERCENT_KEY = "notepad_text_percent";
+
+    private static android.content.SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE);
+    }
+
+    /** Registers a text view to follow the pinch, and sizes it for where the pinch is now. */
+    private void scaleText(TextView view, float baseSp) {
+        // Rows are rebuilt whenever the list changes; forget the ones that went with the old ones.
+        for (int i = scaledViews.size() - 1; i >= 0; i--) {
+            if (scaledViews.get(i).getParent() == null && scaledViews.get(i) != view) {
+                scaledViews.remove(i);
+                scaledBases.remove(i);
+            }
+        }
+        scaledViews.add(view);
+        scaledBases.add(baseSp);
+        view.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+            NotepadTextScale.sizeOf(baseSp, textPercent));
+    }
+
+    private void setTextPercent(int percent) {
+        int clamped = NotepadTextScale.clamp(percent);
+        if (clamped == textPercent) {
+            return;
+        }
+        textPercent = clamped;
+        for (int i = 0; i < scaledViews.size(); i++) {
+            scaledViews.get(i).setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                NotepadTextScale.sizeOf(scaledBases.get(i), textPercent));
+        }
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(android.view.MotionEvent event) {
+        pinch.onTouchEvent(event);
+        // Only a second finger takes the gesture away from the children.
+        return event.getPointerCount() >= 2 || pinch.isInProgress();
+    }
+
+    @Override
+    public boolean onTouchEvent(android.view.MotionEvent event) {
+        pinch.onTouchEvent(event);
+        return true;
     }
 
     private View spacer(Context context) {

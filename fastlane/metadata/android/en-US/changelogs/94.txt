@@ -1,0 +1,7 @@
+The notepad's links are one row again - List, SelA, Cp, Cut, Paste,
+Del, Un, Re, Close - and when a screen is too narrow to hold them all
+they wrap onto a second row instead of running off the edge, which is
+what a plain row was doing.
+
+Two fingers now set the text size, on the list and in a note alike,
+between 60% and 300%. Where you leave it is where it stays.
