@@ -95,6 +95,8 @@ public final class ReteKeyboardView extends View {
 
     /** What the 12-key pages' own cells show: Hangul, digits, or the cursor cluster. */
     private PhoneOverlay phoneOverlay = PhoneOverlay.NONE;
+    /** Whether a code point is being typed, in which case the keys are the hex pad. */
+    private boolean unicodeEntry;
 
 
     /**
@@ -348,6 +350,11 @@ public final class ReteKeyboardView extends View {
 
     /** The layout currently drawn and hit-tested, including layer, shift, and keypad mode. */
     public KeyboardLayout layout() {
+        if (unicodeEntry) {
+            // While a code point is being typed the keys are the digits it is made of; anything
+            // else would be a key that cannot be pressed for the thing on screen.
+            return KeyboardLayouts.unicodeEntry();
+        }
         switch (page) {
             case SPECIAL_CHARS:
                 return KeyboardLayouts.specialChars();
@@ -684,7 +691,7 @@ public final class ReteKeyboardView extends View {
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + nextLayoutCaption() + "|" + numpadMode
-            + "|" + phoneOverlay + "|" + shiftLayer.isActive()
+            + "|" + phoneOverlay + "|" + unicodeEntry + "|" + shiftLayer.isActive()
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
             + KeyboardPalette.isNight(getContext());
     }
@@ -1093,7 +1100,8 @@ public final class ReteKeyboardView extends View {
 
     /** What the grid of cells depends on: the same keys in the same places means the same value. */
     private String gridSignature() {
-        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + phoneOverlay;
+        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + phoneOverlay
+            + "|" + unicodeEntry;
     }
 
     /** Keys that fire again while held: plain text/edit/raw keys, but not controls or layer keys. */
@@ -1472,6 +1480,17 @@ public final class ReteKeyboardView extends View {
         if (shiftLayer.consumeOneShot()) {
             invalidate();
         }
+    }
+
+    /** Shows or hides the hex pad the U+ entry types on. */
+    public void setUnicodeEntry(boolean active) {
+        if (unicodeEntry == active) {
+            return;
+        }
+        unicodeEntry = active;
+        cancelAllTouches();
+        requestLayout();
+        invalidate();
     }
 
     /** Opens the notepad panel, which the service owns. */

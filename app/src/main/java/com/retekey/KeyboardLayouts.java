@@ -74,6 +74,7 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
     private static final KeyboardLayout KEYS_FUNCTIONS = buildSpecialKeys(NumpadMode.FUNCTIONS);
     private static final KeyboardLayout MENU = buildMenu();
+    private static final KeyboardLayout UNICODE_ENTRY = buildUnicodeEntry();
     private static final KeyboardLayout CHEONJIIN_DIGITS = cheonjiin(PhoneOverlay.DIGITS);
     private static final KeyboardLayout CHEONJIIN_NAV = cheonjiin(PhoneOverlay.NAV);
     private static final KeyboardLayout NARATGEUL_DIGITS = naratgeul(PhoneOverlay.DIGITS);
@@ -124,6 +125,35 @@ public final class KeyboardLayouts {
             }
         }
         throw new IllegalArgumentException("not a 12-key layout: " + id);
+    }
+
+    /**
+     * The pad the keyboard shows while a code point is being typed: the sixteen hex digits, a
+     * backspace, an enter that commits, and an Esc that leaves. Without it the U+ key only worked
+     * with a hardware keyboard attached — the letters page has no A-F to press as digits, and the
+     * keypad page has no letters at all.
+     */
+    public static KeyboardLayout unicodeEntry() {
+        return UNICODE_ENTRY;
+    }
+
+    private static KeyboardLayout buildUnicodeEntry() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        rows.add(Arrays.asList(
+            digit("uni.1", "1"), digit("uni.2", "2"), digit("uni.3", "3"), digit("uni.4", "4"),
+            digit("uni.5", "5"), digit("uni.6", "6"), digit("uni.7", "7"), digit("uni.8", "8"),
+            digit("uni.9", "9"), digit("uni.0", "0")));
+        rows.add(Arrays.asList(
+            digit("uni.a", "A"), digit("uni.b", "B"), digit("uni.c", "C"), digit("uni.d", "D"),
+            digit("uni.e", "E"), digit("uni.f", "F"),
+            disabled("uni.gap1", " "), disabled("uni.gap2", " "),
+            backspaceKey().withColumnSpan(2)));
+        rows.add(Arrays.asList(
+            disabled("uni.gap3", " "), disabled("uni.gap4", " "), disabled("uni.gap5", " "),
+            disabled("uni.gap6", " "), disabled("uni.gap7", " "), disabled("uni.gap8", " "),
+            rawKey("uni.esc", "Esc", RawKey.ESCAPE).withColumnSpan(2),
+            enterKey().withColumnSpan(2)));
+        return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_CHARS, false, COLUMNS, rows);
     }
 
     public static KeyboardLayout specialChars() {

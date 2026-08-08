@@ -628,6 +628,9 @@ public class ReteKeyImeService extends InputMethodService {
         finishComposingInEditor();
         inputProcessor.reset();
         unicodeEntry = UnicodeEntry.empty();
+        if (keyboardView != null) {
+            keyboardView.setUnicodeEntry(true);
+        }
         showUnicodeEntry();
     }
 
@@ -735,6 +738,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     private void endUnicodeEntry() {
         unicodeEntry = null;
+        if (keyboardView != null) {
+            keyboardView.setUnicodeEntry(false);
+        }
         hideHanjaCandidatesIfShown();
     }
 
