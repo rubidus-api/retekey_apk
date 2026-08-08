@@ -1,1 +1,1 @@
-Korean keyboard with 천지인, 나랏글, 2-beolsik and Hanja. No network, no accounts.
+Hangul keyboard with Esc, Tab, Ctrl and F-keys. 470 KB, one permission.

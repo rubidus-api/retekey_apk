@@ -1,9 +1,17 @@
-A Hangul keyboard written in plain Java, with no third-party runtime dependencies, no account and no network. Its only permission is VIBRATE — a normal permission, never requested at runtime — and it is used for nothing but key-press feedback, which you can turn off. It types Korean and English, converts Hanja, and works the same on a phone from 2011 as on one from this year.
+A Hangul keyboard for developers and power users — for anyone who needs Esc, Tab, Ctrl chords, function and arrow keys on a phone, and a keyboard that behaves itself in a terminal.
+
+It is small and asks for almost nothing. The APK is about 470 KB, most of that the Hanja tables, written in plain Java with no third-party runtime dependencies; the Hanja tables are memory-mapped straight out of the APK, so they cost storage rather than memory. It declares a single permission, VIBRATE — an ordinary permission, never requested at runtime, driving nothing but the buzz under your finger, which you can turn down to zero. No network, no account, no analytics.
+
+And nothing is missing for it.
+
+The keys other keyboards leave out
+
+Esc, Tab, Ctrl, Alt, Meta, F1-F12, the arrows, Home and End, PgUp and PgDn, Ins, forward-delete and PrtSc, sent as real key events rather than as characters that look like them. Modifier chords the keyboard has no use for are handed to the app, so an editor's own shortcuts keep working, and a soft Ctrl plus a letter sends a genuine control code to a terminal.
 
 Layouts
 
 * 2-beolsik, the standard full Korean keyboard.
-* 천지인 and 나랏글, the two 12-key phone layouts. Both compose the whole of Hangul, including every compound final — 많, 삶, 앉 and the rest.
+* 천지인 and 나랏글, the two 12-key phone layouts. Both compose the whole of Hangul, including every compound final — 많, 삶, 앉 and the rest. Two keys in the spare column turn the twelve keys into the phone keypad's digits or into the cursor cluster.
 * QWERTY and Dvorak for English.
 * A symbols page, a keypad with arrows and function keys, and a menu page for edit commands.
 * The globe key walks the layouts you enabled, in the order you set.
@@ -14,7 +22,7 @@ Typing on twelve keys
 
 Hanja
 
-Conversion in both directions with 훈음 glosses, paging and number-key selection, from a candidate window the width of the keyboard. The tables are memory-mapped out of the APK, so they cost storage rather than memory.
+Conversion in both directions with 훈음 glosses, paging and number-key selection, from a candidate window the width of the keyboard.
 
 Physical keyboards
 
@@ -22,6 +30,7 @@ The on-screen keyboard hides itself when a hardware keyboard is attached, and ha
 
 Made to suit you
 
+* The keyboard's height is set as a share of the screen, from 1% to 50%.
 * Height, the layout list and its order, the floating panel and its opacity are remembered separately for a screen held upright and one held sideways.
 * Keys that can be held say so: an open ring in the corner while they are not, a filled disc while they are. Shift, Ctrl, Meta and Alt each arm for one key on a tap and lock on a hold.
 * A half-width floating panel you can place where you like, as see-through as you like.
