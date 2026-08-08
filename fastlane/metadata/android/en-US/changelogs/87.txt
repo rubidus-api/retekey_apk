@@ -1,0 +1,7 @@
+The U+ code-point entry is all in one place now: the pad shows the
+digits you have typed and the character they name along its top, rather
+than answering in a window of its own. Nothing is typed until OK — the
+code is a composition — so Cancel leaves at any point with the document
+untouched and the previous keyboard back.
+
+The README also gained pictures of the notepad.

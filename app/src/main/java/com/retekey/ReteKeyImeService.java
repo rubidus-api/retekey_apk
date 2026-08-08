@@ -628,7 +628,7 @@ public class ReteKeyImeService extends InputMethodService {
         finishComposingInEditor();
         inputProcessor.reset();
         unicodeEntry = UnicodeEntry.empty();
-        if (keyboardView != null) {
+        if (keyboardView != null && isInputViewShown()) {
             keyboardView.setUnicodeEntry(true);
         }
         showUnicodeEntry();
@@ -640,12 +640,27 @@ public class ReteKeyImeService extends InputMethodService {
      * the keys producing them, which is the scattered thing this replaced.
      */
     private void showUnicodeEntry() {
-        if (unicodeEntry == null || keyboardView == null) {
+        if (unicodeEntry == null) {
             return;
         }
         String character = unicodeEntry.character();
-        keyboardView.setUnicodePreview(
-            character == null ? unicodeEntry.display() : unicodeEntry.display() + "   " + character);
+        if (isInputViewShown() && keyboardView != null) {
+            keyboardView.setUnicodePreview(character == null
+                ? unicodeEntry.display()
+                : unicodeEntry.display() + "   " + character);
+            return;
+        }
+        // No keyboard on screen — a hardware keyboard is doing the typing, and the pad that would
+        // have shown the code is hidden with it. The candidate window is the one surface an IME
+        // can raise without one, so it carries the feedback in that case.
+        List<HanjaCandidatesView.Item> items = new ArrayList<>(1);
+        if (character != null) {
+            items.add(new HanjaCandidatesView.Item(character,
+                UnicodeEntry.label(unicodeEntry.codePoint())));
+        }
+        pendingFromSelection = false;
+        pendingDeleteLength = 0;
+        showHanjaCandidates(unicodeEntry.display(), items);
     }
 
     /** Feeds one character to the open entry. Returns false when the entry is not open. */
