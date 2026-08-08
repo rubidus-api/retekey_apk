@@ -49,7 +49,7 @@ public final class LetterLayouts {
         }
         switch (id) {
             case EN_QWERTY:
-                return "qt";
+                return "qw";
             case EN_DVORAK:
                 return "dv";
             case KO_DUBEOLSIK:

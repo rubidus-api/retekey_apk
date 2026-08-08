@@ -14,9 +14,13 @@ package com.retekey;
  */
 final class KeyPressTint {
     /** How far the pressed face moves toward white. */
-    static final float TOWARD_WHITE = 0.30f;
-    /** How far it moves toward the accent, so a face that is already white still changes. */
-    static final float TOWARD_ACCENT = 0.18f;
+    static final float TOWARD_WHITE = 0.28f;
+    /**
+     * How far it moves toward the accent. Well past a tint: a press has to be unmistakable at a
+     * glance on a key the finger is sitting on top of, and half the accent is what reads that way
+     * on both a pale face and a dark one.
+     */
+    static final float TOWARD_ACCENT = 0.42f;
 
     private KeyPressTint() {
     }

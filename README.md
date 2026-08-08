@@ -40,8 +40,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.80** —
-[retekey-0.1.80.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.80/retekey-0.1.80.apk)
+Current release: **v0.1.81** —
+[retekey-0.1.81.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.81/retekey-0.1.81.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -58,7 +58,7 @@ replaces the other. [More about the two builds](#android-version-support).
    box to type in, so you can do the whole thing without hunting through system settings.
 
 To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right. It is captioned with where it goes rather than where
-you are — `>qt`, `>dv`, `>2벌`, `>천`, `>나` — so you can see what the next press will give you.
+you are — `>qw`, `>dv`, `>2벌`, `>천`, `>나` — so you can see what the next press will give you.
 Hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
 in the settings.
 
@@ -210,19 +210,19 @@ keyboard itself.
 |---|---|---|
 | Und | undo | undo the last edit |
 | Red | redo | redo it |
-| 날짜 | date | insert the current date and time as text |
-| 이모 | emoji | *not built yet — drawn muted* |
-| 클립 | clipboard | *not built yet* |
+| Dat | date | insert the current date and time as text |
+| Emo | emoji | *not built yet — drawn muted* |
+| Clp | clipboard | *not built yet* |
 | Cpy | copy | copy the selection |
 | Cut | cut | cut the selection |
 | Pst | paste | paste the clipboard |
 | All | select all | select everything in the field |
-| 작게 / 크게 | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
-| 자판 | switch keyboard | open the system input-method picker |
-| 관리 | manage keyboards | open the system screen for enabling keyboards |
-| 띄움 | floating | turn the floating panel on or off |
-| 한손 / 전폭 | one-handed | *not built yet* |
-| 테마 | theme | *not built yet* |
+| Sz− / Sz+ | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
+| IME | switch keyboard | open the system input-method picker |
+| Mng | manage keyboards | open the system screen for enabling keyboards |
+| Flt | floating | turn the floating panel on or off |
+| 1Hd / Ful | one-handed | *not built yet* |
+| Thm | theme | *not built yet* |
 | ★1 / ★2 | custom | *not built yet* |
 | Set | settings | open ReteKey's own settings |
 | ← ↑ → ↓ | arrows | move the cursor; they repeat when held |

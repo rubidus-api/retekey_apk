@@ -1,0 +1,9 @@
+A key armed for one keystroke now takes the full accent colour instead
+of a pale wash you had to look for, and a pressed key goes further
+toward it. A key held down wears the same colours as the popup that
+shows each keystroke — accent behind, background-coloured letters — with
+its label outlined, so armed and held cannot be read as one.
+
+Keys read in English everywhere except the Korean layouts themselves:
+the menu page is Dat, Emo, Clp, Cpy, Cut, Pst, All, Set, IME, Mng, Flt,
+Thm, Sz−/Sz+. The layout key says >qw for QWERTY.

@@ -652,9 +652,9 @@ public final class KeyboardLayouts {
         rows.add(KeyboardLayout.row(
             menuControl("undo", "Und", ControlKey.UNDO),
             menuControl("redo", "Red", ControlKey.REDO),
-            menuControl("date", "날짜", ControlKey.INSERT_DATE),
-            menuDisabled("emoji", "이모"),
-            menuDisabled("clipboard", "클립"),
+            menuControl("date", "Dat", ControlKey.INSERT_DATE),
+            menuDisabled("emoji", "Emo"),
+            menuDisabled("clipboard", "Clp"),
             menuControl("copy", "Cpy", ControlKey.COPY),
             menuRaw("cursor.home", "Home", RawKey.HOME),
             menuRaw("cursor.up", "↑", RawKey.UP),
@@ -662,11 +662,11 @@ public final class KeyboardLayouts {
             menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
-            menuControl("height.down", "작게", ControlKey.HEIGHT_DOWN),
-            menuControl("height.up", "크게", ControlKey.HEIGHT_UP),
-            menuControl("switchime", "자판", ControlKey.SWITCH_IME),
-            menuControl("manageime", "관리", ControlKey.MANAGE_IME),
-            menuControl("floating", "띄움", ControlKey.FLOATING_TOGGLE),
+            menuControl("height.down", "Sz−", ControlKey.HEIGHT_DOWN),
+            menuControl("height.up", "Sz+", ControlKey.HEIGHT_UP),
+            menuControl("switchime", "IME", ControlKey.SWITCH_IME),
+            menuControl("manageime", "Mng", ControlKey.MANAGE_IME),
+            menuControl("floating", "Flt", ControlKey.FLOATING_TOGGLE),
             menuControl("cut", "Cut", ControlKey.CUT),
             menuRaw("cursor.left", "←", RawKey.LEFT),
             menuControl("selectall", "All", ControlKey.SELECT_ALL),
@@ -674,9 +674,9 @@ public final class KeyboardLayouts {
             menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
-            menuDisabled("onehand.left", "한손"),
-            menuDisabled("onehand.full", "전폭"),
-            menuDisabled("theme", "테마"),
+            menuDisabled("onehand.left", "1Hd"),
+            menuDisabled("onehand.full", "Ful"),
+            menuDisabled("theme", "Thm"),
             menuDisabled("custom1", "★1"),
             menuDisabled("custom2", "★2"),
             menuControl("paste", "Pst", ControlKey.PASTE),

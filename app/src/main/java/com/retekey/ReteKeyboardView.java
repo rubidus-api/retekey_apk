@@ -728,9 +728,10 @@ public final class ReteKeyboardView extends View {
         Compat.drawRoundRect(canvas, l, t, r, b, keyRadiusPx, paint);
         // The ink follows the fill, not the theme: a held key is painted strongly enough that the
         // ordinary label colour would sink into it.
-        int ink = key.enabled() || key.isControl()
-            ? palette.inkOn(fill)
-            : palette.keyTextMuted;
+        boolean latched = canBeHeld(key) && isHeld(key);
+        int ink = latched
+            ? palette.keyLatchedInk()
+            : key.enabled() || key.isControl() ? palette.inkOn(fill) : palette.keyTextMuted;
         paint.setColor(ink);
         if (SPACE_KEY_ID.equals(key.stableKeyId())) {
             // The space bar says what it is by its shape, the way a space bar always has. A word
@@ -739,7 +740,20 @@ public final class ReteKeyboardView extends View {
         } else {
             String label = labelOf(key);
             fitLabel(label, right - left, bottom - top);
-            canvas.drawText(label, (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
+            float x = (left + right) * 0.5f;
+            float y = top + (bottom - top) * 0.62f;
+            if (latched) {
+                // An outline around the label, in the face's own strong ink: a held key is the one
+                // state that has to carry across a glance, and the weight says so before the
+                // colour does.
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(Math.max(1.5f, (bottom - top) * 0.018f));
+                paint.setColor(palette.inkOn(fill));
+                canvas.drawText(label, x, y, paint);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(ink);
+            }
+            canvas.drawText(label, x, y, paint);
         }
         if (key.longPressTexts().size() == 1 || key.hasLongPressHint()) {
             // What a long press reaches, in small text in the top-right of the key's own face:
@@ -1604,7 +1618,7 @@ public final class ReteKeyboardView extends View {
                     return palette.keyLatchedFace();
                 }
                 if (shiftLayer.isActive()) {
-                    return palette.keyAccentSoft;
+                    return palette.keyAccent;
                 }
             }
             if (control == ControlKey.NUMLOCK && numpadMode == NumpadMode.NUMBERS) {
@@ -1619,7 +1633,7 @@ public final class ReteKeyboardView extends View {
                 return palette.keyLatchedFace();
             }
             if (modifierLatches.isActive(control)) {
-                return palette.keyAccentSoft;
+                return palette.keyAccent;
             }
         }
         if (tabHeld && TAB_KEY_ID.equals(key.stableKeyId())) {

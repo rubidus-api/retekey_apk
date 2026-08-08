@@ -77,12 +77,19 @@ final class KeyboardPalette {
      * it.
      */
     /**
-     * The face of a key that is latched down: the label colour, used as a background. Paired with
-     * {@link #inkOn(int)}, which answers with a light ink over it, this is a plain inversion of the
-     * key — the one state that has to be readable without looking for it.
+     * The face of a key that is latched down, and the ink over it: the same pairing the echo popup
+     * uses for every keystroke — the accent as a background, the keyboard's own background colour
+     * as the ink. Borrowing it means the strongest state a key can be in is painted in the one
+     * combination the user already reads several times a second, rather than in a private scheme
+     * they have to learn.
      */
     int keyLatchedFace() {
-        return keyText;
+        return keyAccent;
+    }
+
+    /** The ink over a latched face: the popup's text colour, so the two match exactly. */
+    int keyLatchedInk() {
+        return background;
     }
 
     int hintOn(int fill) {
