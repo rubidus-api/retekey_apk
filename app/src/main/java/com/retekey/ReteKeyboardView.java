@@ -680,18 +680,26 @@ public final class ReteKeyboardView extends View {
 
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
-        return page + "|" + letterLayoutId + "|" + numpadMode + "|" + phoneOverlay
-            + "|" + shiftLayer.isActive()
+        return page + "|" + letterLayoutId + "|" + nextLayoutCaption() + "|" + numpadMode
+            + "|" + phoneOverlay + "|" + shiftLayer.isActive()
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
             + KeyboardPalette.isNight(getContext());
+    }
+
+    /**
+     * What the layout-walking key says: an arrow and the layout one press away. The layout in use
+     * is already legible on the keys themselves; what the key has to answer is "and if I press
+     * you?" — so it names its destination, and re-reads it as the walk moves on.
+     */
+    private String nextLayoutCaption() {
+        return ">" + LetterLayouts.keyCapName(
+            LetterLayouts.next(letterOrder(), letterLayoutId));
     }
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
     private String labelOf(SoftwareKeySpec key) {
         if (LAYOUT_TOGGLE_KEY_ID.equals(key.stableKeyId())) {
-            // The key that walks the layouts says which one is showing, and changes with it. The
-            // bitmap cache is keyed on the layout id, so the label follows without asking.
-            return LetterLayouts.keyCapName(letterLayoutId);
+            return nextLayoutCaption();
         }
         return LegacyGlyphs.label(key.label(), android.os.Build.VERSION.SDK_INT);
     }

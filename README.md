@@ -57,8 +57,9 @@ replaces the other. [More about the two builds](#android-version-support).
 4. **Try it.** ReteKey's own launcher screen has a button for each of those two steps and a text
    box to type in, so you can do the whole thing without hunting through system settings.
 
-To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right — it is captioned with the layout you are on
-(한글, ABC, 천지, 나랏, DVK) — and hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
+To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right. It is captioned with where it goes rather than where
+you are — `>qt`, `>dv`, `>2벌`, `>천`, `>나` — so you can see what the next press will give you.
+Hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
 in the settings.
 
 ## What it looks like

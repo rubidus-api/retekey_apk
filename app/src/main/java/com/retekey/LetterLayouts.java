@@ -39,9 +39,9 @@ public final class LetterLayouts {
 
     /** Human-readable name for settings and for the toast shown when the globe key switches. */
     /**
-     * The name that fits on a key: what the layout-walking key says it is showing right now. A
-     * globe says "some language", which is the one thing the user already knows; the layout's own
-     * short name says which of the five they are on, and changes as the key walks them.
+     * The name that fits on a key. The layout-walking key is captioned with where it goes, not
+     * with where it is: a globe says "some language", and the layout you are on is already on the
+     * screen in front of you — what you cannot see is what the next press will give you.
      */
     public static String keyCapName(KeyboardLayoutId id) {
         if (id == null) {
@@ -49,15 +49,15 @@ public final class LetterLayouts {
         }
         switch (id) {
             case EN_QWERTY:
-                return "ABC";
+                return "qt";
             case EN_DVORAK:
-                return "DVK";
+                return "dv";
             case KO_DUBEOLSIK:
-                return "한글";
+                return "2벌";
             case KO_CHEONJIIN:
-                return "천지";
+                return "천";
             case KO_NARATGEUL:
-                return "나랏";
+                return "나";
             default:
                 return displayName(id);
         }

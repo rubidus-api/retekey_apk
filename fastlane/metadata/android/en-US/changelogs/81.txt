@@ -2,7 +2,7 @@ Keys read better. A pressed key brightens instead of being washed over,
 a key held down (Ctrl, Shift, Tab) inverts so it cannot be missed, and
 the small hold-hint now sits inside the key's face.
 
-The space bar is a bar rather than the word "space", the key that walks
-the layouts says which one you are on (한글 / ABC / 천지 / 나랏 / DVK),
-the menu page reads in words instead of pictographs, and no function
-key is longer than three characters.
+The space bar is a bar rather than the word "space". The key that walks
+the layouts shows where it goes rather than where you are — >qt, >dv,
+>2벌, >천, >나. The menu page reads in words instead of pictographs, and
+no function key is longer than three characters.
