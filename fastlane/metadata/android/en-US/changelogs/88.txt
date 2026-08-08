@@ -1,0 +1,13 @@
+The U+ code-point entry is a floating panel now, not a page of the
+keyboard. Opening it replaces the keyboard with a small draggable,
+resizable pad; closing it puts back whatever was there before, on the
+layout it was left on. Its close key ends the entry rather than turning
+floating off.
+
+How see-through it is comes from the floating keyboard's own opacity
+setting — one preference for panels that hover over your document —
+while its position and size are remembered separately.
+
+With a hardware keyboard the pad now comes up regardless: that case
+hides the on-screen keyboard, which used to leave the code you were
+typing with nothing showing it.
