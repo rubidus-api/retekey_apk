@@ -293,6 +293,10 @@ made and never edited, with the title beside it. Everything from the second line
 and **select all** takes the body alone — the line that names the note is not something anyone
 means to select.
 
+![The notepad's list](assets/notepad-list.png)
+
+![A note open for writing](assets/notepad-note.png)
+
 The list behaves like a file manager's details view:
 
 | | |

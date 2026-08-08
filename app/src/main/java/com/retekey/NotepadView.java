@@ -281,6 +281,17 @@ public final class NotepadView extends LinearLayout {
         refresh();
     }
 
+    /**
+     * Opens the first note, for the debug screenshot screen: the note screen is reached by tapping
+     * a row, and a picture has no finger. Package-private, and referenced only from the
+     * instrumentation source set.
+     */
+    void showPreviewNote() {
+        if (!notes.isEmpty()) {
+            open(notes.notes().get(0).stamp());
+        }
+    }
+
     /** Forgets any half-written syllable, e.g. when the panel changes screens. */
     public void endComposition() {
         preeditLength = 0;
