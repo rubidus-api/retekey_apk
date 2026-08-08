@@ -56,6 +56,10 @@ public class ReteKeyImeService extends InputMethodService {
     private final android.os.Handler mainHandler =
         new android.os.Handler(android.os.Looper.getMainLooper());
     private boolean floatingMode;
+    /** The notepad panel above the keyboard, or null when it is not open. */
+    private NotepadView notepad;
+    /** The notepad's own Hangul composer: what is typed there is not going through the editor. */
+    private final HangulComposer notepadComposer = new HangulComposer();
     /** The orientation the current input view was built for; a rotation rebuilds it. */
     private ScreenOrientation builtFor;
     private FloatingKeyboardBounds floatingBounds;
@@ -73,6 +77,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnManageIme(this::openKeyboardManagement);
         keyboardView.setOnHanja(this::handleHanja);
         keyboardView.setOnUnicodeInput(this::startUnicodeEntry);
+        keyboardView.setOnNotepad(this::toggleNotepad);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         keyboardView.setOnLayoutChanged(this::announceLayout);
         // The view can be created for the first time solely to host the candidate window; it must
@@ -80,6 +85,13 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setCollapsed(!floatingMode && candidatesWindowForced);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
+        if (notepad != null) {
+            // The notepad owns the window while it is open: the keyboard keeps its height at the
+            // bottom and the panel takes the rest of the screen.
+            floatingFrame = null;
+            NotepadView panel = buildNotepad();
+            return new NotepadFrame(this, panel, keyboardView);
+        }
         if (!floatingMode) {
             floatingFrame = null;
             return keyboardView;
@@ -511,6 +523,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
             return;
         }
+        if (consumeForNotepad(event)) {
+            return;
+        }
         hideHanjaCandidatesIfShown();
         // A single misbehaving editor must never crash the IME and make the keyboard vanish.
         try {
@@ -721,6 +736,94 @@ public class ReteKeyImeService extends InputMethodService {
     private void endUnicodeEntry() {
         unicodeEntry = null;
         hideHanjaCandidatesIfShown();
+    }
+
+    /** The menu's Memo key: opens the notepad over the app, or closes it again. */
+    private void toggleNotepad() {
+        if (notepad != null) {
+            closeNotepad();
+            return;
+        }
+        notepad = new NotepadView(this, NoteStore.load(this));
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    private void closeNotepad() {
+        flushNotepadComposition();
+        notepadComposer.reset();
+        if (notepad != null) {
+            NoteStore.save(this, notepad.notes());
+            notepad = null;
+        }
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    /** Wires a freshly built panel to its store and its way out. */
+    private NotepadView buildNotepad() {
+        final NotepadView panel = notepad;
+        panel.setOnClose(this::closeNotepad);
+        panel.setOnChanged(() -> NoteStore.save(this, panel.notes()));
+        return panel;
+    }
+
+    /**
+     * While a note is open the keys write into it rather than into the app behind. Everything the
+     * notepad does not claim — the layout keys, the menu, the height keys — still reaches the
+     * keyboard, because those are the keyboard's own controls rather than text.
+     */
+    private boolean consumeForNotepad(ProjectKeyEvent event) {
+        if (notepad == null || !notepad.isWriting()) {
+            return false;
+        }
+        SemanticInput input = event == null ? null : event.semanticInput();
+        if (input == null) {
+            return false;
+        }
+        switch (input.kind()) {
+            case JAMO: {
+                HangulComposer.Result result = notepadComposer.input(input.jamo());
+                notepad.typeComposed(result.commit(), result.preedit());
+                return true;
+            }
+            case TEXT:
+                flushNotepadComposition();
+                notepad.type(input.text());
+                return true;
+            case DELETE_BACKWARD: {
+                if (notepad.isComposing()) {
+                    // Inside a syllable, backspace takes it apart rather than deleting it whole.
+                    HangulComposer.Result result = notepadComposer.backspace();
+                    notepad.typeComposed("", result == null ? "" : result.preedit());
+                    return true;
+                }
+                notepadComposer.reset();
+                notepad.deleteBackward();
+                return true;
+            }
+            case PRIMARY_ACTION:
+                flushNotepadComposition();
+                notepad.newLine();
+                return true;
+            case FLUSH:
+                flushNotepadComposition();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /** Settles whatever syllable the notepad was building, so the next thing types after it. */
+    private void flushNotepadComposition() {
+        String flushed = notepadComposer.flush();
+        if (notepad == null) {
+            return;
+        }
+        if (!flushed.isEmpty()) {
+            notepad.typeComposed(flushed, "");
+        }
+        notepad.endComposition();
     }
 
     private void handleHanja() {

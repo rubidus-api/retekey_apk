@@ -24,6 +24,7 @@ and the special keys most keyboards leave out.
 - [Features](#features)
 - [Layout](#layout)
 - [Floating keyboard](#floating-keyboard)
+- [Notepad](#notepad)
 - [Hanja conversion](#hanja-conversion)
 - [Physical keyboards](#physical-keyboards)
 - [Settings](#settings)
@@ -40,8 +41,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.83** —
-[retekey-0.1.83.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.83/retekey-0.1.83.apk)
+Current release: **v0.1.84** —
+[retekey-0.1.84.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.84/retekey-0.1.84.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -100,6 +101,8 @@ never open the keypad page you will never see the parts you do not need.
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
   a window of its own that appears whichever keyboard you are using.
+- **Notepad** on a key: a translucent full-screen panel above the keyboard, with a list that sorts
+  and selects like a file manager and notes stamped the moment they are made.
 - **Floating keyboard** for a tablet in landscape: a translucent panel confined to one half of the
   screen, draggable, resizable, and mirrored to the other half with one key.
 - **Physical keyboard support**: user-assignable KO/EN and Hanja keys, modifier chords, and
@@ -260,6 +263,32 @@ right one. Everything outside the panel still belongs to the app — the keyboar
 there and the app is not resized to make room for it. The mode and the panel's placement are
 remembered, and a rotation rescales the panel instead of stranding it off-screen. How solid the
 panel is, is yours to set — the opacity slider in settings runs from barely-there to fully solid.
+
+## Notepad
+
+The menu page's **Memo** key opens a notepad above the keyboard. The window takes the whole screen
+while it is open, and everything above the keys is the note — translucent, so the app you are
+copying from is still readable behind it. What you type goes into the note rather than into that
+app, Hangul included: the notepad composes syllables itself.
+
+A note's **first line is its stamp and its title**: `20260713-1448`, written the moment the note is
+made and never edited, with the title beside it. Everything from the second line down is the body,
+and **select all** takes the body alone — the line that names the note is not something anyone
+means to select.
+
+The list behaves like a file manager's details view:
+
+| | |
+|---|---|
+| **Date** / **Title** | press a column to sort by it; press it again to turn the sort around (▲ ▼ shows which) |
+| checkbox | one per row, and one in the header that takes all of them or none |
+| ▲ ▼ | move a note up or down, for an order of your own |
+| **New** | start a note, stamped now |
+| **Del** / **DelAll** | delete the ticked notes, or every one |
+| **List** | back to the list from a note; **Close** puts the keyboard back |
+
+Notes are kept in the keyboard's own storage and written through on every change, because a
+keyboard can be torn down between two keystrokes.
 
 ## Hanja conversion
 

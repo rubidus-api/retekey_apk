@@ -68,7 +68,7 @@ public final class MenuPageTest {
     @Test
     public void thePlaceholderTilesStayDisabled() {
         for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
-            "touch.menu.custom2", "touch.menu.theme",
+            "touch.menu.theme",
             "touch.menu.onehand.left", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);
@@ -87,6 +87,16 @@ public final class MenuPageTest {
         assertTrue("Uni is a control", key.isControl());
         assertEquals(ControlKey.UNICODE_INPUT, key.control());
         assertEquals("Uni", key.label());
+    }
+
+    /** The other custom slot is the notepad. */
+    @Test
+    public void theNotepadTileIsAWorkingKey() {
+        SoftwareKeySpec key = menu.findById("touch.menu.notepad");
+        assertNotNull("Memo", key);
+        assertTrue("Memo is a control", key.isControl());
+        assertEquals(ControlKey.NOTEPAD, key.control());
+        assertEquals("Memo", key.label());
     }
 
     @Test

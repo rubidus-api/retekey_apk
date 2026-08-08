@@ -141,6 +141,7 @@ public final class ReteKeyboardView extends View {
     /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
     private Runnable onHanja;
     private Runnable onUnicodeInput;
+    private Runnable onNotepad;
     private Runnable onFloatingToggle;
     private Fn.Consumer<KeyboardLayoutId> onLayoutChanged;
     private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
@@ -1473,6 +1474,11 @@ public final class ReteKeyboardView extends View {
         }
     }
 
+    /** Opens the notepad panel, which the service owns. */
+    public void setOnNotepad(Runnable listener) {
+        this.onNotepad = listener;
+    }
+
     /** Opens the U+ code-point entry, which the service owns. */
     public void setOnUnicodeInput(Runnable listener) {
         this.onUnicodeInput = listener;
@@ -1547,6 +1553,11 @@ public final class ReteKeyboardView extends View {
             case PREVIOUS_LAYER:
                 page = Page.LETTERS;
                 shiftLayer.clear();
+                break;
+            case NOTEPAD:
+                if (onNotepad != null) {
+                    onNotepad.run();
+                }
                 break;
             case UNICODE_INPUT:
                 if (onUnicodeInput != null) {

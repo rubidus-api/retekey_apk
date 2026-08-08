@@ -1,0 +1,9 @@
+A notepad, on the menu page's Memo key. It opens above the keyboard and
+takes the rest of the screen, translucent, so the app you are copying
+from stays readable behind it — and what you type goes into the note.
+
+Each note's first line is the moment it was made (20260713-1448) and a
+title beside it; the body starts on the next line, and select-all takes
+the body alone. The list sorts by date or title in either direction,
+has a checkbox per row and one that takes all of them, arrows to make
+an order of your own, and delete-selected and delete-all.
