@@ -137,8 +137,15 @@ public final class KeyboardLayouts {
         return UNICODE_ENTRY;
     }
 
+    /** The id of the strip that shows the code being typed; the view fills in its text. */
+    public static final String UNICODE_DISPLAY_ID = "touch.uni.display";
+
     private static KeyboardLayout buildUnicodeEntry() {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        // The code and the character it names sit on the keyboard itself. A separate window for
+        // four characters of feedback put the answer somewhere else than the question.
+        rows.add(Arrays.asList(
+            SoftwareKeySpec.disabled(UNICODE_DISPLAY_ID, "U+").withColumnSpan(10)));
         rows.add(Arrays.asList(
             digit("uni.1", "1"), digit("uni.2", "2"), digit("uni.3", "3"), digit("uni.4", "4"),
             digit("uni.5", "5"), digit("uni.6", "6"), digit("uni.7", "7"), digit("uni.8", "8"),
@@ -146,13 +153,14 @@ public final class KeyboardLayouts {
         rows.add(Arrays.asList(
             digit("uni.a", "A"), digit("uni.b", "B"), digit("uni.c", "C"), digit("uni.d", "D"),
             digit("uni.e", "E"), digit("uni.f", "F"),
-            disabled("uni.gap1", " "), disabled("uni.gap2", " "),
-            backspaceKey().withColumnSpan(2)));
+            backspaceKey().withColumnSpan(2), disabled("uni.gap1", " ").withColumnSpan(2)));
         rows.add(Arrays.asList(
-            disabled("uni.gap3", " "), disabled("uni.gap4", " "), disabled("uni.gap5", " "),
-            disabled("uni.gap6", " "), disabled("uni.gap7", " "), disabled("uni.gap8", " "),
-            rawKey("uni.esc", "Esc", RawKey.ESCAPE).withColumnSpan(2),
-            enterKey().withColumnSpan(2)));
+            disabled("uni.gap2", " ").withColumnSpan(6),
+            // Cancel leaves without typing anything and gives the previous keyboard back; OK is
+            // the only thing that puts a character in the document.
+            rawKey("uni.cancel", "Cancel", RawKey.ESCAPE).withColumnSpan(2),
+            SoftwareKeySpec.enabled("touch.uni.ok", "OK", SemanticInput.primaryAction())
+                .withColumnSpan(2)));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_CHARS, false, COLUMNS, rows);
     }
 

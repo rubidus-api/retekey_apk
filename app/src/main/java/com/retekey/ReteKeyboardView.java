@@ -97,6 +97,8 @@ public final class ReteKeyboardView extends View {
     private PhoneOverlay phoneOverlay = PhoneOverlay.NONE;
     /** Whether a code point is being typed, in which case the keys are the hex pad. */
     private boolean unicodeEntry;
+    /** What the pad's top strip reads: the digits so far and the character they name. */
+    private String unicodePreview = "U+";
 
 
     /**
@@ -691,7 +693,8 @@ public final class ReteKeyboardView extends View {
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + nextLayoutCaption() + "|" + numpadMode
-            + "|" + phoneOverlay + "|" + unicodeEntry + "|" + shiftLayer.isActive()
+            + "|" + phoneOverlay + "|" + unicodeEntry + "|" + unicodePreview
+            + "|" + shiftLayer.isActive()
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
             + KeyboardPalette.isNight(getContext());
     }
@@ -715,6 +718,9 @@ public final class ReteKeyboardView extends View {
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
     private String labelOf(SoftwareKeySpec key) {
+        if (KeyboardLayouts.UNICODE_DISPLAY_ID.equals(key.stableKeyId())) {
+            return unicodePreview;
+        }
         if (LAYOUT_TOGGLE_KEY_ID.equals(key.stableKeyId())) {
             return nextLayoutCaption();
         }
@@ -1528,12 +1534,23 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
+    /** What the hex pad's strip shows: the code typed so far, and the character it names. */
+    public void setUnicodePreview(String text) {
+        if (unicodePreview.equals(text)) {
+            return;
+        }
+        unicodePreview = text;
+        invalidate();
+        requestLayout();
+    }
+
     /** Shows or hides the hex pad the U+ entry types on. */
     public void setUnicodeEntry(boolean active) {
         if (unicodeEntry == active) {
             return;
         }
         unicodeEntry = active;
+        unicodePreview = "U+";
         cancelAllTouches();
         requestLayout();
         invalidate();

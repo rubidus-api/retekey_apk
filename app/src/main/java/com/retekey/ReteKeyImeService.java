@@ -634,20 +634,18 @@ public class ReteKeyImeService extends InputMethodService {
         showUnicodeEntry();
     }
 
-    /** Shows what has been typed so far: the character when there is one, the digits either way. */
+    /**
+     * Shows what has been typed so far on the pad itself: the digits, and the character they name
+     * once they name one. A window of its own put four characters of feedback somewhere other than
+     * the keys producing them, which is the scattered thing this replaced.
+     */
     private void showUnicodeEntry() {
-        if (unicodeEntry == null) {
+        if (unicodeEntry == null || keyboardView == null) {
             return;
         }
         String character = unicodeEntry.character();
-        List<HanjaCandidatesView.Item> items = new ArrayList<>(1);
-        if (character != null) {
-            items.add(new HanjaCandidatesView.Item(character,
-                UnicodeEntry.label(unicodeEntry.codePoint())));
-        }
-        pendingFromSelection = false;
-        pendingDeleteLength = 0;
-        showHanjaCandidates(unicodeEntry.display(), items);
+        keyboardView.setUnicodePreview(
+            character == null ? unicodeEntry.display() : unicodeEntry.display() + "   " + character);
     }
 
     /** Feeds one character to the open entry. Returns false when the entry is not open. */
@@ -660,7 +658,11 @@ public class ReteKeyImeService extends InputMethodService {
         return true;
     }
 
-    /** Puts the character in the document and closes the entry; does nothing without one. */
+    /**
+     * Puts the character in the document and closes the entry; does nothing without one. Nothing
+     * is typed while the digits are being entered — the code is a composition, and only this
+     * finishes it — so Cancel can leave at any point with the document untouched.
+     */
     private void commitUnicodeEntry() {
         String character = unicodeEntry == null ? null : unicodeEntry.character();
         endUnicodeEntry();
