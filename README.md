@@ -65,14 +65,24 @@ in the settings.
 
 ## What it looks like
 
-Screencaps from an emulator running the release build on Android 10.
+The keyboards below are drawn by the keyboard's own rendering code, at the size a 480-pixel-wide
+screen gives it — the same pixels the app puts on a phone. (The Hanja window and the floating panel
+are separate windows, so those two are screencaps from a device.)
+
+![2-beolsik](assets/keyboard-korean.png)
+
+2-beolsik: raised keys, each with its hold alternate in the corner, a bar for the space key, and
+the layout key naming where it goes next.
+
+![The menu page](assets/keyboard-menu.png)
+
+The ☰ page: editing and cursor keys on the right, the keyboard's own controls on the left, and
+settings in the corner a thumb reaches without looking.
 
 | | |
 |---|---|
-| ![2-beolsik on Android 10](assets/keyboard-korean.png) | ![Hanja candidates on Android 10](assets/keyboard-hanja.png) |
-| 2-beolsik: raised keys, each with its hold alternate in the corner | the Hanja window: keyboard-wide, 훈음 beside each character, nine to a page |
-| ![The menu page on Android 10](assets/keyboard-menu.png) | ![The floating keyboard on Android 10](assets/keyboard-floating.png) |
-| the ☰ page: editing and cursor keys on the right, settings in the corner | the floating keyboard, translucent and confined to its half of the screen |
+| ![Hanja candidates](assets/keyboard-hanja.png) | ![The floating keyboard](assets/keyboard-floating.png) |
+| the Hanja window: keyboard-wide, 훈음 beside each character, nine to a page | the floating keyboard, translucent and confined to its half of the screen |
 
 Every layout, page and panel is shown in [Layout](#layout) below, and the older-Android build has
 [screenshots of its own](#the-legacy-build-on-android-44).
@@ -177,6 +187,13 @@ The five, as they are:
 **나랏글** — 획 and 쌍 on the bottom letter row, 漢 beside Tab:
 
 ![Naratgeul layout](assets/keyboard-naratgeul.png)
+
+The two cells beside Tab turn the twelve Hangul keys into the phone keypad's digits, or into the
+cursor cluster, and back again:
+
+![The 12-key digits overlay](assets/keyboard-cheonjiin-digits.png)
+
+![The 12-key cursor overlay](assets/keyboard-cheonjiin-nav.png)
 
 The `!#` key opens the special-characters page, where every key commits its symbol. Holding a key
 types its alternate immediately — there is no popup to aim at and nothing to drag to. Holding the
@@ -330,7 +347,11 @@ in the same candidate window as Hanja, and each one is glossed with its code poi
 has no reading and the number is what you would look it up by.
 
 For a character with no key and no consonant to reach it, the menu page's **Uni** key opens a code
-point entry: type hex digits and the character they name appears with its `U+` number beside it,
+point entry, and the keys become the digits it is made of:
+
+![The hex pad](assets/keyboard-unicode.png)
+
+ type hex digits and the character they name appears with its `U+` number beside it,
 Enter puts it in, Esc leaves. A physical key can be bound to the same thing in settings — none,
 one, or several, as with 한/영 and 한자.
 

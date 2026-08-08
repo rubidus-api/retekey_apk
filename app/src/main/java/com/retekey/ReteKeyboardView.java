@@ -1482,6 +1482,52 @@ public final class ReteKeyboardView extends View {
         }
     }
 
+    /**
+     * Puts the view into one named state so a picture can be taken of it. Used only by the debug
+     * build's screenshot screen: the README's images have to come from the drawing code itself
+     * rather than from a mock-up, and the emulator this project is developed on never gives an IME
+     * window a drawing surface, so photographing the real keyboard means drawing it into an
+     * ordinary window instead.
+     *
+     * <p>The spec is a colon-separated name — {@code letters:KO_DUBEOLSIK}, {@code chars},
+     * {@code keys:ARROWS}, {@code menu}, {@code unicode}, {@code phone:KO_CHEONJIIN:DIGITS} — so
+     * the debug screen can name every page without this class exposing its private state.
+     */
+    void showPreview(String spec) {
+        String[] parts = spec.split(":");
+        unicodeEntry = false;
+        phoneOverlay = PhoneOverlay.NONE;
+        switch (parts[0]) {
+            case "chars":
+                page = Page.SPECIAL_CHARS;
+                break;
+            case "keys":
+                page = Page.SPECIAL_KEYS;
+                numpadMode = parts.length > 1 ? NumpadMode.valueOf(parts[1]) : NumpadMode.NUMBERS;
+                break;
+            case "menu":
+                page = Page.MENU;
+                break;
+            case "unicode":
+                unicodeEntry = true;
+                break;
+            case "phone":
+                page = Page.LETTERS;
+                letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
+                phoneOverlay = parts.length > 2
+                    ? PhoneOverlay.valueOf(parts[2]) : PhoneOverlay.NONE;
+                break;
+            default:
+                page = Page.LETTERS;
+                if (parts.length > 1) {
+                    letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
+                }
+                break;
+        }
+        requestLayout();
+        invalidate();
+    }
+
     /** Shows or hides the hex pad the U+ entry types on. */
     public void setUnicodeEntry(boolean active) {
         if (unicodeEntry == active) {
