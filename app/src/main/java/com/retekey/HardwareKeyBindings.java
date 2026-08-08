@@ -16,6 +16,8 @@ import java.util.Objects;
 public final class HardwareKeyBindings {
     static final String KEY_HANYEONG = "hw_hanyeong_bindings";
     static final String KEY_HANJA = "hw_hanja_bindings";
+    /** Keys that open the U+ code-point entry. Like the others, none or several. */
+    static final String KEY_UNICODE = "hw_unicode_bindings";
 
     public static final int MOD_SHIFT = 1;
     public static final int MOD_CTRL = 2;

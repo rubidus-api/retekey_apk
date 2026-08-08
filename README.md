@@ -40,8 +40,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.81** —
-[retekey-0.1.81.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.81/retekey-0.1.81.apk)
+Current release: **v0.1.82** —
+[retekey-0.1.82.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.82/retekey-0.1.82.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -289,6 +289,19 @@ out of the APK and bisected per lookup, so they cost the Java heap nothing and t
 drop their pages under memory pressure. Parsing the same data into hash maps used to cost about
 2.6 MB of heap. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for provenance and licences.
 
+### Special characters, and any character at all
+
+A consonant on its own followed by the Hanja key opens the row of symbols that consonant has stood
+for since the KS X 1001 tables — ㅁ the general symbols, ㅅ the Greek alphabet, ㅇ the circled
+numbers, ㄹ the units, ㄷ the mathematics, ㄴ the brackets, and so on for all fourteen. They arrive
+in the same candidate window as Hanja, and each one is glossed with its code point, since a symbol
+has no reading and the number is what you would look it up by.
+
+For a character with no key and no consonant to reach it, the menu page's **Uni** key opens a code
+point entry: type hex digits and the character they name appears with its `U+` number beside it,
+Enter puts it in, Esc leaves. A physical key can be bound to the same thing in settings — none,
+one, or several, as with 한/영 and 한자.
+
 ## Physical keyboards
 
 With a Bluetooth or wired keyboard, letter keys are mapped to 2-beolsik jamo while Korean mode is
@@ -296,6 +309,8 @@ on. In settings you can assign **several physical keys per function**:
 
 - **KO/EN toggle** — for example `Shift+Space` *and* `Right Ctrl`.
 - **Hanja** — for example `F9` *and* `Right Alt`.
+- **Unicode entry** — opens the `U+` code point entry; hex digits build the character, Enter
+  commits it, Esc leaves.
 
 A binding may be a lone key or a modifier chord; a modifier pressed on its own registers as itself.
 Modifier chords the IME does not claim are passed through, so application shortcuts keep working,

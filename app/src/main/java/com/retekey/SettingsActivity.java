@@ -37,6 +37,7 @@ public final class SettingsActivity extends Activity {
     private TextView captureStatus;
     private LinearLayout hanyeongList;
     private LinearLayout hanjaList;
+    private LinearLayout unicodeList;
     private LinearLayout layoutList;
 
     @Override
@@ -481,11 +482,15 @@ public final class SettingsActivity extends Activity {
             HardwareKeyBindings.KEY_HANYEONG);
         hanjaList = addBindingGroup(root, R.string.settings_hw_hanja,
             HardwareKeyBindings.KEY_HANJA);
+        unicodeList = addBindingGroup(root, R.string.settings_hw_unicode,
+            HardwareKeyBindings.KEY_UNICODE);
 
         root.addView(sectionHint(R.string.settings_hw_hanja_note));
+        root.addView(sectionHint(R.string.settings_hw_unicode_note));
 
         refreshBindings(HardwareKeyBindings.KEY_HANYEONG);
         refreshBindings(HardwareKeyBindings.KEY_HANJA);
+        refreshBindings(HardwareKeyBindings.KEY_UNICODE);
     }
 
     private LinearLayout addBindingGroup(LinearLayout root, int titleRes, String prefKey) {
@@ -507,8 +512,8 @@ public final class SettingsActivity extends Activity {
     }
 
     private void refreshBindings(String prefKey) {
-        LinearLayout list = prefKey.equals(HardwareKeyBindings.KEY_HANYEONG)
-            ? hanyeongList : hanjaList;
+        LinearLayout list = prefKey.equals(HardwareKeyBindings.KEY_HANYEONG) ? hanyeongList
+            : prefKey.equals(HardwareKeyBindings.KEY_UNICODE) ? unicodeList : hanjaList;
         list.removeAllViews();
         List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
         if (bindings.isEmpty()) {

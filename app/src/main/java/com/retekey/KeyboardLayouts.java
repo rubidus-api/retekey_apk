@@ -677,7 +677,7 @@ public final class KeyboardLayouts {
             menuDisabled("onehand.left", "1Hand"),
             menuDisabled("onehand.full", "Full"),
             menuDisabled("theme", "Theme"),
-            menuDisabled("custom1", "★1"),
+            menuControl("unicode", "Uni", ControlKey.UNICODE_INPUT),
             menuDisabled("custom2", "★2"),
             menuControl("paste", "Paste", ControlKey.PASTE),
             menuRaw("cursor.end", "End", RawKey.END),

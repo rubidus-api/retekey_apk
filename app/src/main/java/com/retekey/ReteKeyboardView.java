@@ -140,6 +140,7 @@ public final class ReteKeyboardView extends View {
     private Runnable onManageIme;
     /** Invoked when the 한자 key is tapped; the host converts the reading to Hanja. */
     private Runnable onHanja;
+    private Runnable onUnicodeInput;
     private Runnable onFloatingToggle;
     private Fn.Consumer<KeyboardLayoutId> onLayoutChanged;
     private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
@@ -688,13 +689,20 @@ public final class ReteKeyboardView extends View {
     }
 
     /**
-     * What the layout-walking key says: an arrow and the layout one press away. The layout in use
-     * is already legible on the keys themselves; what the key has to answer is "and if I press
-     * you?" — so it names its destination, and re-reads it as the walk moves on.
+     * What the layout-walking key says: an arrow and the layout it would land you on. The layout
+     * in use is already legible on the keys themselves; what the key has to answer is "and if I
+     * press you?".
+     *
+     * <p>The answer is not the same on every page. From the letters the key walks to the next
+     * layout; from the symbols, keypad or menu pages the same key is the way back, and it returns
+     * the layout you left rather than advancing past it. Naming the next one there was a caption
+     * for a press that never happens — the key was right and the label was wrong.
      */
     private String nextLayoutCaption() {
-        return ">" + LetterLayouts.keyCapName(
-            LetterLayouts.next(letterOrder(), letterLayoutId));
+        KeyboardLayoutId destination = page == Page.LETTERS
+            ? LetterLayouts.next(letterOrder(), letterLayoutId)
+            : letterLayoutId;
+        return ">" + LetterLayouts.keyCapName(destination);
     }
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
@@ -1465,6 +1473,11 @@ public final class ReteKeyboardView extends View {
         }
     }
 
+    /** Opens the U+ code-point entry, which the service owns. */
+    public void setOnUnicodeInput(Runnable listener) {
+        this.onUnicodeInput = listener;
+    }
+
     private void runEditCommand(int contextMenuId) {
         if (onEditCommand != null) {
             onEditCommand.accept(contextMenuId);
@@ -1534,6 +1547,11 @@ public final class ReteKeyboardView extends View {
             case PREVIOUS_LAYER:
                 page = Page.LETTERS;
                 shiftLayer.clear();
+                break;
+            case UNICODE_INPUT:
+                if (onUnicodeInput != null) {
+                    onUnicodeInput.run();
+                }
                 break;
             case PHONE_DIGITS:
                 togglePhoneOverlay(PhoneOverlay.DIGITS);

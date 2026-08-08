@@ -1,0 +1,11 @@
+Type a consonant on its own and press the Hanja key: the symbols that
+consonant has stood for since the KS X 1001 tables appear — ㅁ the
+general symbols, ㅅ the Greek alphabet, ㅇ the circled numbers, ㄹ the
+units. Each is glossed with its Unicode code point.
+
+New Uni key on the menu page, and a bindable physical key to match:
+type a code point in hex and the character it names goes in.
+
+Also: the layout key now names the right destination on the symbols,
+keypad and menu pages, where pressing it returns the layout you left
+rather than walking to the next one.

@@ -47,6 +47,8 @@ public enum ControlKey {
     MANAGE_IME,
     /** Convert the selected or preceding Hangul reading to Hanja through the host. */
     HANJA,
+    /** Start typing a character by its code point (U+…), through the host. */
+    UNICODE_INPUT,
     /** Toggle a 12-key page's cells between Hangul and the phone keypad's digits. */
     PHONE_DIGITS,
     /** Toggle a 12-key page's cells between Hangul and the arrow/Home/End/PgUp/PgDn cluster. */

@@ -38,6 +38,9 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean hardwareKoreanMode;
     private List<HardwareKeyBindings.Binding> hanyeongBindings = java.util.Collections.emptyList();
     private List<HardwareKeyBindings.Binding> hanjaBindings = java.util.Collections.emptyList();
+    private List<HardwareKeyBindings.Binding> unicodeBindings = java.util.Collections.emptyList();
+    /** The code point being typed on the U+ key, or null when that entry is not open. */
+    private UnicodeEntry unicodeEntry;
     private Toast functionToast;
     private static final int HANJA_LOOKBEHIND = 8;
     private HanjaCandidatesWindow hanjaWindow;
@@ -69,6 +72,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnSwitchIme(this::showImePicker);
         keyboardView.setOnManageIme(this::openKeyboardManagement);
         keyboardView.setOnHanja(this::handleHanja);
+        keyboardView.setOnUnicodeInput(this::startUnicodeEntry);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         keyboardView.setOnLayoutChanged(this::announceLayout);
         // The view can be created for the first time solely to host the candidate window; it must
@@ -199,6 +203,9 @@ public class ReteKeyImeService extends InputMethodService {
         }
         if (isBoundFunctionKey(keyCode, event)) {
             // A held/repeating bound key: swallow the extra downs so the app sees nothing.
+            return true;
+        }
+        if (unicodeEntry != null && handleUnicodeKey(keyCode, event)) {
             return true;
         }
         if (hanjaCandidatesShown && handleHanjaSelectionKey(keyCode)) {
@@ -501,6 +508,9 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void dispatchSoftwareInput(ProjectKeyEvent event) {
+        if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
+            return;
+        }
         hideHanjaCandidatesIfShown();
         // A single misbehaving editor must never crash the IME and make the keyboard vanish.
         try {
@@ -537,6 +547,8 @@ public class ReteKeyImeService extends InputMethodService {
             prefs.getString(HardwareKeyBindings.KEY_HANYEONG, ""));
         hanjaBindings = HardwareKeyBindings.parse(
             prefs.getString(HardwareKeyBindings.KEY_HANJA, ""));
+        unicodeBindings = HardwareKeyBindings.parse(
+            prefs.getString(HardwareKeyBindings.KEY_UNICODE, ""));
         // A physical key held down repeats on the platform's own clock; only the user's on/off
         // choice can carry over from the soft keyboard's auto-repeat setting.
         dispatcher.setHardwareRepeatEnabled(
@@ -555,7 +567,8 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean isBoundFunctionKey(int keyCode, KeyEvent event) {
         int mods = pressedMods(event);
         return HardwareKeyBindings.matches(hanyeongBindings, keyCode, mods)
-            || HardwareKeyBindings.matches(hanjaBindings, keyCode, mods);
+            || HardwareKeyBindings.matches(hanjaBindings, keyCode, mods)
+            || HardwareKeyBindings.matches(unicodeBindings, keyCode, mods);
     }
 
     /** Runs the 한/영 or 한자 action for a matching physical key; returns true when it acted. */
@@ -563,6 +576,10 @@ public class ReteKeyImeService extends InputMethodService {
         int mods = pressedMods(event);
         if (HardwareKeyBindings.matches(hanyeongBindings, keyCode, mods)) {
             toggleHardwareKorean();
+            return true;
+        }
+        if (HardwareKeyBindings.matches(unicodeBindings, keyCode, mods)) {
+            startUnicodeEntry();
             return true;
         }
         if (HardwareKeyBindings.matches(hanjaBindings, keyCode, mods)) {
@@ -587,6 +604,125 @@ public class ReteKeyImeService extends InputMethodService {
      * reading immediately before the cursor. Candidates are offered in the candidates strip; the
      * key is a no-op when nothing converts.
      */
+    /**
+     * Opens the code-point entry: type hex digits and the character they name appears as the one
+     * candidate, with its U+ number beside it. Enter or the candidate commits it, Esc leaves.
+     * Reached from the menu's Uni key or from a physical key the user has bound to it.
+     */
+    private void startUnicodeEntry() {
+        finishComposingInEditor();
+        inputProcessor.reset();
+        unicodeEntry = UnicodeEntry.empty();
+        showUnicodeEntry();
+    }
+
+    /** Shows what has been typed so far: the character when there is one, the digits either way. */
+    private void showUnicodeEntry() {
+        if (unicodeEntry == null) {
+            return;
+        }
+        String character = unicodeEntry.character();
+        List<HanjaCandidatesView.Item> items = new ArrayList<>(1);
+        if (character != null) {
+            items.add(new HanjaCandidatesView.Item(character,
+                UnicodeEntry.label(unicodeEntry.codePoint())));
+        }
+        pendingFromSelection = false;
+        pendingDeleteLength = 0;
+        showHanjaCandidates(unicodeEntry.display(), items);
+    }
+
+    /** Feeds one character to the open entry. Returns false when the entry is not open. */
+    private boolean feedUnicodeEntry(char typed) {
+        if (unicodeEntry == null || !UnicodeEntry.isHexDigit(typed)) {
+            return false;
+        }
+        unicodeEntry = unicodeEntry.append(typed);
+        showUnicodeEntry();
+        return true;
+    }
+
+    /** Puts the character in the document and closes the entry; does nothing without one. */
+    private void commitUnicodeEntry() {
+        String character = unicodeEntry == null ? null : unicodeEntry.character();
+        endUnicodeEntry();
+        if (character == null) {
+            return;
+        }
+        dispatchSoftwareInput(
+            ProjectKeyEvent.softwareDown("touch.menu.unicode", SemanticInput.text(character)));
+    }
+
+    /**
+     * A physical key while the code-point entry is open. Hex digits build it, backspace takes one
+     * back, Enter commits and Esc leaves — and the digits are claimed here rather than by the
+     * candidate window's number keys, which would otherwise swallow 1 to 9.
+     */
+    private boolean handleUnicodeKey(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_SPACE:
+                commitUnicodeEntry();
+                return true;
+            case KeyEvent.KEYCODE_ESCAPE:
+                endUnicodeEntry();
+                return true;
+            case KeyEvent.KEYCODE_DEL:
+                unicodeEntry = unicodeEntry.backspace();
+                showUnicodeEntry();
+                return true;
+            default:
+                break;
+        }
+        int unicodeChar = event == null ? 0 : event.getUnicodeChar(0);
+        return unicodeChar > 0 && feedUnicodeEntry((char) unicodeChar);
+    }
+
+    /**
+     * An on-screen key while the entry is open. The same four answers as a physical key, so the
+     * Uni key works with no hardware keyboard attached: the letters and the keypad both type hex.
+     */
+    private boolean consumeForUnicodeEntry(ProjectKeyEvent event) {
+        SemanticInput input = event == null ? null : event.semanticInput();
+        if (input == null) {
+            return false;
+        }
+        switch (input.kind()) {
+            case TEXT: {
+                String text = input.text();
+                if (text.length() == 1 && UnicodeEntry.isHexDigit(text.charAt(0))) {
+                    return feedUnicodeEntry(text.charAt(0));
+                }
+                if (" ".equals(text)) {
+                    commitUnicodeEntry();
+                    return true;
+                }
+                return false;
+            }
+            case DELETE_BACKWARD:
+                unicodeEntry = unicodeEntry.backspace();
+                showUnicodeEntry();
+                return true;
+            case PRIMARY_ACTION:
+                commitUnicodeEntry();
+                return true;
+            case RAW_KEY:
+                if (input.rawKey() == RawKey.ESCAPE) {
+                    endUnicodeEntry();
+                    return true;
+                }
+                return false;
+            default:
+                return false;
+        }
+    }
+
+    private void endUnicodeEntry() {
+        unicodeEntry = null;
+        hideHanjaCandidatesIfShown();
+    }
+
     private void handleHanja() {
         InputConnection ic = getCurrentInputConnection();
         if (ic == null) {
@@ -618,7 +754,15 @@ public class ReteKeyImeService extends InputMethodService {
         }
         String text = before.toString();
         int lastCodePoint = text.codePointBefore(text.length());
-        if (HanjaTable.isHangul(lastCodePoint)) {
+        if (lastCodePoint <= 0xFFFF && SpecialCharTable.hasCandidates((char) lastCodePoint)) {
+            // A consonant on its own, then the Hanja key: the special characters that consonant
+            // has stood for since the KS X 1001 tables. ㅁ the general symbols, ㅅ the Greek
+            // alphabet, ㅇ the circled numbers — the convention every Korean IME has carried.
+            pendingFromSelection = false;
+            pendingDeleteLength = 1;
+            showHanjaCandidates(String.valueOf((char) lastCodePoint),
+                codePointItems(SpecialCharTable.candidatesFor((char) lastCodePoint)));
+        } else if (HanjaTable.isHangul(lastCodePoint)) {
             HanjaTable.Match match = dictionary.longestSuffixMatch(text, HANJA_LOOKBEHIND);
             if (match == null) {
                 hideHanjaCandidatesIfShown();
@@ -673,6 +817,19 @@ public class ReteKeyImeService extends InputMethodService {
         List<HanjaCandidatesView.Item> items = new ArrayList<>(hanja.size());
         for (String candidate : hanja) {
             items.add(new HanjaCandidatesView.Item(candidate, dictionary.gloss(candidate)));
+        }
+        return items;
+    }
+
+    /**
+     * Candidates glossed with their code point. A symbol has no reading to show beside it, and
+     * the number is the one thing about it worth knowing — it is what you would look it up by,
+     * and what you would type it by on the Unicode key.
+     */
+    private List<HanjaCandidatesView.Item> codePointItems(List<String> characters) {
+        List<HanjaCandidatesView.Item> items = new ArrayList<>(characters.size());
+        for (String character : characters) {
+            items.add(new HanjaCandidatesView.Item(character, UnicodeEntry.labelOf(character)));
         }
         return items;
     }

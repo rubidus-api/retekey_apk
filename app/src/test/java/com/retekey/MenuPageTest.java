@@ -68,13 +68,25 @@ public final class MenuPageTest {
     @Test
     public void thePlaceholderTilesStayDisabled() {
         for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
-            "touch.menu.custom1", "touch.menu.custom2", "touch.menu.theme",
+            "touch.menu.custom2", "touch.menu.theme",
             "touch.menu.onehand.left", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);
             assertFalse(id + " stays disabled", key.enabled());
             assertFalse(id + " is not a control yet", key.isControl());
         }
+    }
+
+    /** One of the two custom slots is a working key now: U+ code-point entry. */
+    @Test
+    public void theUnicodeTileIsAWorkingKey() {
+        SoftwareKeySpec key = menu.findById("touch.menu.unicode");
+        assertNotNull("Uni", key);
+        // A control key carries a command rather than a semantic input, which is what
+        // enabled() reports — so being a control is the whole of being a working key here.
+        assertTrue("Uni is a control", key.isControl());
+        assertEquals(ControlKey.UNICODE_INPUT, key.control());
+        assertEquals("Uni", key.label());
     }
 
     @Test

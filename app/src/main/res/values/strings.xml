@@ -46,6 +46,8 @@
     <string name="settings_hw_capture">Press a key…  (a modifier alone registers itself; tap the screen to cancel)</string>
     <string name="settings_hw_none">No keys registered</string>
     <string name="settings_hw_remove">✕</string>
+    <string name="settings_hw_unicode">Unicode entry keys</string>
+    <string name="settings_hw_unicode_note">A registered Unicode key opens U+ entry: type the hex digits and Enter puts the character in. The menu page\'s Uni key does the same with no hardware keyboard attached.</string>
     <string name="settings_hw_hanja_note">A registered Hanja key converts the selection, or the reading before the cursor, to Hanja.</string>
 
     <string name="mode_korean">한글</string>

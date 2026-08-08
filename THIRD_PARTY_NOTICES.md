@@ -76,6 +76,12 @@ of a preedit overlay), reversible compound backspace, and no-loss behavior are
 ReteKey's own; the transition design and the jamo/combination tables are derived
 from Jamotong.
 
+The consonant special-character rows (`SpecialCharTable`) — the symbols a
+consonant reaches when the Hanja key follows it, the convention Korean IMEs have
+carried since KS X 1001 — are ported from the same project's
+`src/special_char.c`. The U+ code-point entry (`UnicodeEntry`) follows the
+design of its `src/code_input.c`; the code is ReteKey's own.
+
 - Project: Jamotong (https://github.com/rubidus-api/jamotong_ime)
 - Derived from revision: 90d6eb5ea60d54d320e42656da8b703432bb6d9f
 - License: MIT
