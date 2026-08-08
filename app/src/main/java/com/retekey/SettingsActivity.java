@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -268,6 +269,8 @@ public final class SettingsActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
+        // A row of its own height, so the names and the arrows do not sit on top of one another.
+        row.setMinimumHeight(dp(ROW_HEIGHT_DP));
 
         CheckBox enabled = new CheckBox(this);
         enabled.setText(LetterLayouts.displayName(id));
@@ -277,16 +280,46 @@ public final class SettingsActivity extends Activity {
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         if (on) {
-            row.addView(moveButton("▲", id, -1, order.indexOf(id) > 0));
-            row.addView(moveButton("▼", id, 1, order.indexOf(id) < order.size() - 1));
+            row.addView(moveButton("▲", id, -1, order.indexOf(id) > 0), moveButtonParams(true));
+            row.addView(moveButton("▼", id, 1, order.indexOf(id) < order.size() - 1),
+                moveButtonParams(false));
         }
         return row;
     }
 
+    /** How tall a layout row is, and how big the arrow beside it is: a comfortable touch target. */
+    private static final int ROW_HEIGHT_DP = 48;
+    private static final int MOVE_BUTTON_DP = 44;
+
+    /**
+     * A square for the arrow, with air around it. A default Button is a slab: it carries a 64dp
+     * minimum width, its own padding and a background with built-in insets, which for a single
+     * glyph comes out both oversized and hard to tell apart from its neighbour. The size here is
+     * still above the 48dp touch target once the margins are counted, so it is no harder to hit.
+     */
+    private LinearLayout.LayoutParams moveButtonParams(boolean first) {
+        LinearLayout.LayoutParams params =
+            new LinearLayout.LayoutParams(dp(MOVE_BUTTON_DP), dp(MOVE_BUTTON_DP));
+        params.leftMargin = dp(first ? 8 : 4);
+        params.rightMargin = first ? 0 : dp(4);
+        return params;
+    }
+
     private Button moveButton(String glyph, KeyboardLayoutId id, int delta, boolean usable) {
-        Button button = new Button(this);
+        // Borderless: the theme's own flat button, so the arrow reads as an arrow rather than as a
+        // second slab beside the layout's name, and still lights up under a finger.
+        Button button = new Button(this, null, android.R.attr.borderlessButtonStyle);
         button.setText(glyph);
         button.setEnabled(usable);
+        button.setAllCaps(false);
+        // A default Button reserves 64dp of width and its own padding; neither fits one glyph.
+        button.setMinimumWidth(0);
+        button.setMinimumHeight(0);
+        button.setMinWidth(0);
+        button.setMinHeight(0);
+        button.setPadding(0, 0, 0, 0);
+        button.setGravity(Gravity.CENTER);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         button.setOnClickListener(view -> moveLayout(id, delta));
         return button;
     }

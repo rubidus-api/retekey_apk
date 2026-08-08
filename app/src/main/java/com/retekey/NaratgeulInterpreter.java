@@ -156,16 +156,26 @@ public final class NaratgeulInterpreter {
      * Applies a transformation to the consonant just typed. With nothing to act on, or a consonant
      * the table has no entry for, the press does nothing rather than typing a stray letter.
      */
-    private List<SemanticInput> transform(java.util.function.IntUnaryOperator table) {
+    private List<SemanticInput> transform(Chain table) {
         if (lastConsonant < 0) {
             return Collections.emptyList();
         }
-        int next = table.applyAsInt(lastConsonant);
+        int next = table.next(lastConsonant);
         if (next < 0) {
             return Collections.emptyList();
         }
         lastConsonant = next;
         return replaceWith(SemanticInput.jamo(SemanticJamo.contextualConsonant(next)));
+    }
+
+    /**
+     * One step along a transformation chain. Declared here rather than borrowed from
+     * {@code java.util.function}: that package is API 24, and this keyboard runs from API 14, so
+     * a method reference to it would fail to verify on the very devices the legacy build exists
+     * for. A one-method interface of our own is desugared into those builds for free.
+     */
+    private interface Chain {
+        int next(int cho);
     }
 
     private static List<SemanticInput> addOf(SemanticInput input) {

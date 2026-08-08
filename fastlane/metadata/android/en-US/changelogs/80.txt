@@ -1,0 +1,6 @@
+The up/down arrows in the settings' layout list are a proper size and
+shape now, with room between them, instead of two oversized slabs.
+
+Fixes a real one for older Android: on the Android 4-and-up build, the
+나랏글 획/쌍 keys used a class that only exists from Android 7, so they
+could not work there. They do now.
