@@ -1,0 +1,7 @@
+Documentation: exactly what the Android 4 build does with the notepad
+and with direct code-point entry, which is "all of it" - spelled out
+feature by feature, with the two things that do differ (the floating
+bar says its glyphs in words below API 21, and a character your device
+has no glyph for shows as a box while still being the character that
+was typed). Verified by drawing the real views with the legacy APK on
+an Android 4.4.2 image; those two pictures are in the README.

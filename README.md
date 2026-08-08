@@ -41,8 +41,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.91** —
-[retekey-0.1.91.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.91/retekey-0.1.91.apk)
+Current release: **v0.1.92** —
+[retekey-0.1.92.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.92/retekey-0.1.92.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -66,8 +66,8 @@ in the settings.
 ## What it looks like
 
 The keyboards below are drawn by the keyboard's own rendering code, at the size a 480-pixel-wide
-screen gives it — the same pixels the app puts on a phone. (The Hanja window and the floating panel
-are separate windows, so those two are screencaps from a device.)
+screen gives it — the same pixels the app puts on a phone. The floating panels are drawn over a
+page of writing, because a panel you can see through has nothing to show against a blank ground.
 
 ![2-beolsik](assets/keyboard-korean.png)
 
@@ -431,10 +431,53 @@ codebase:
 | Shadows | the Hanja window has no drop shadow — `PopupWindow.setElevation` is API 21 | below API 21 |
 | Theme | the screens use the platform's own DeviceDefault rather than Material | below API 21 |
 
+| Panel bar | the floating panel's bar says `Menu` `<` `>` `X` `Size` in words where the modern build draws ☰ ‹ › ✕ ⇲ — the glyph font those come from arrives with API 21 | below API 21 |
+
 Everything else — the five layouts, the 2-beolsik and 12-key composers, Hanja conversion, the
 floating keyboard, physical keyboards, auto-repeat, theming — is the same code on both. The app
 uses no `java.time`, no `java.util.function`, and no library desugaring, which is why the legacy
 APK is *smaller* than the modern one rather than larger.
+
+#### The notepad and the code-point entry, on old Android
+
+Both work in full on the legacy build, and this is worth spelling out because both are the kind of
+feature that usually needs a newer platform.
+
+**The notepad (Memo)** — every part of it: the list with its sortable columns, the checkboxes and
+the header one that takes all of them, the ▲▼ reordering, delete and delete-all, the forced stamp
+line and the title beside it, writing Hangul into the note through the keyboard's own composer, and
+the second row of editing links (`Cp` `Cut` `Paste` `Del` `Un` `Re`). Nothing in it is gated on a
+version. Two details are worth naming:
+
+- **Undo and redo are the notepad's own.** `TextView`'s built-in undo is API 23, which the legacy
+  build cannot use, so the notepad keeps a history of its own — the same sixty steps, the same
+  behaviour, from Android 4.0 upward.
+- **The clipboard** goes through `ClipboardManager.setPrimaryClip`, which has been there since
+  API 11, so copy, cut and paste move text between the notepad and other apps exactly as on a new
+  phone.
+
+The one difference is invisible: the note fields ask the system not to raise a keyboard over them
+(`setShowSoftInputOnFocus`, API 21). Below that the call is skipped — and nothing happens anyway,
+because an IME window holds no system focus for a keyboard to be raised into.
+
+**Direct code-point entry (Uni)** — works in full: the floating pad, up to six hex digits, `OK`
+committing and `Cancel` leaving with the document untouched, the same from a hardware keyboard.
+Codes above U+FFFF are inserted correctly as surrogate pairs; whether you then *see* the character
+is the device font's business, and an Android 4.4 phone has no glyph for most emoji or for the
+later CJK extensions, so it will show a box while holding the right character. Paste it somewhere
+with a fuller font and it is there. The pad's own labels are all ASCII, so they draw everywhere.
+
+**Hanja conversion** is the same code on both builds too, including the floating candidate panel.
+
+The two pictures below are the real views drawn by the legacy APK on an Android 4.4.2 image — the
+notepad with both rows of links, and the code-point pad in its floating frame. They also show the
+two limitations named above: the panel bar reads `Menu < X Size` in words, and the character beside
+`U+2318` is missing because that font has no glyph for it, though the code point itself is what
+gets typed.
+
+| | |
+|---|---|
+| ![The notepad on Android 4.4](assets/legacy-notepad.png) | ![The code-point pad on Android 4.4](assets/legacy-unicode.png) |
 
 Android 4.0 is where it stops, and the reason is structural rather than stubborn. Below API 11
 there is no `InputMethodSubtype` (so no 한/영 mode), no `KeyEvent.isCtrlPressed` or F-key codes (so
