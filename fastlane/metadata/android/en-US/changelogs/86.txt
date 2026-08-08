@@ -1,0 +1,6 @@
+The U+ code-point entry can be typed into without a hardware keyboard:
+while it is open the keys become the sixteen hex digits, with a
+backspace, an Esc that leaves and an Enter that commits.
+
+The README's pictures were redrawn from the keyboard's own rendering
+code, so they show the keys as they are now.
