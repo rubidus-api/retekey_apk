@@ -72,6 +72,8 @@ public final class FloatingKeyboardSettings {
      * see-through a floating panel is, is one preference about floating panels.
      */
     public static final String UNICODE_PREFIX = "unicode_";
+    /** The Hanja candidate list's own geometry: a wider, shorter panel than either keyboard. */
+    public static final String HANJA_PREFIX = "hanja_";
 
     public static void store(SharedPreferences prefs, FloatingKeyboardBounds bounds) {
         store(prefs, "", bounds);

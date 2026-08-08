@@ -43,16 +43,13 @@ public class ReteKeyImeService extends InputMethodService {
     private UnicodeEntry unicodeEntry;
     private Toast functionToast;
     private static final int HANJA_LOOKBEHIND = 8;
-    private HanjaCandidatesWindow hanjaWindow;
+    /** The candidate list while it is up, living in a floating panel of its own. */
+    private HanjaCandidatesView hanjaView;
     private String pendingReading;
     private List<HanjaCandidatesView.Item> pendingCandidates;
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
     private boolean hanjaCandidatesShown;
-    // Set when the candidate window had to bring the IME window into existence because no
-    // on-screen keyboard was up — the external-keyboard case.
-    private boolean candidatesWindowForced;
-    private int candidateWindowAttempts;
     private final android.os.Handler mainHandler =
         new android.os.Handler(android.os.Looper.getMainLooper());
     private boolean floatingMode;
@@ -64,6 +61,9 @@ public class ReteKeyImeService extends InputMethodService {
     private ScreenOrientation builtFor;
     private FloatingKeyboardBounds floatingBounds;
     private FloatingKeyboardBounds unicodeBounds;
+    private FloatingKeyboardBounds hanjaBounds;
+    /** True while the candidate list is the floating panel, in place of the keyboard. */
+    private boolean hanjaFloating;
     private FloatingKeyboardFrame floatingFrame;
     /** True while the code-point pad is the floating panel, in place of the keyboard. */
     private boolean unicodeFloating;
@@ -73,7 +73,8 @@ public class ReteKeyImeService extends InputMethodService {
         builtFor = OrientedPrefs.current(this);
         // The code-point pad floats whatever the keyboard is doing: it is not a page of the
         // keyboard but a small panel of its own, and it replaces the keyboard while it is open.
-        floatingMode = unicodeFloating || FloatingKeyboardSettings.isEnabled(viewPrefs(), builtFor);
+        floatingMode = unicodeFloating || hanjaFloating
+            || FloatingKeyboardSettings.isEnabled(viewPrefs(), builtFor);
         keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
         keyboardView.setOnOpenSettings(this::openSettings);
         keyboardView.setOnEditCommand(this::performEditCommand);
@@ -85,9 +86,6 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnNotepad(this::toggleNotepad);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         keyboardView.setOnLayoutChanged(this::announceLayout);
-        // The view can be created for the first time solely to host the candidate window; it must
-        // come up collapsed rather than as a keyboard nobody asked for.
-        keyboardView.setCollapsed(!floatingMode && candidatesWindowForced);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
         if (notepad != null) {
@@ -106,6 +104,25 @@ public class ReteKeyImeService extends InputMethodService {
         // hovering over your document should be is a single preference, not one per panel.
         floatingFrame.setOpacityPercent(
             FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
+        if (hanjaFloating) {
+            hanjaView = new HanjaCandidatesView(this);
+            hanjaView.setOnPick(this::commitHanja);
+            hanjaView.setOnDismiss(this::hideHanjaCandidates);
+            hanjaView.show(pendingReading, pendingCandidates);
+            floatingFrame = new FloatingKeyboardFrame(this, hanjaView);
+            floatingFrame.setOpacityPercent(
+                FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
+            if (hanjaBounds == null) {
+                hanjaBounds = FloatingKeyboardSettings.load(
+                    viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX);
+            }
+            floatingFrame.setOnClose(this::hideHanjaCandidates);
+            floatingFrame.setOnBoundsChanged(this::onHanjaBoundsChanged);
+            if (hanjaBounds != null) {
+                floatingFrame.setBounds(hanjaBounds);
+            }
+            return floatingFrame;
+        }
         if (unicodeFloating) {
             keyboardView.setUnicodeEntry(true);
             if (unicodeBounds == null) {
@@ -174,6 +191,12 @@ public class ReteKeyImeService extends InputMethodService {
     private void onFloatingBoundsChanged(FloatingKeyboardBounds bounds) {
         floatingBounds = bounds;
         FloatingKeyboardSettings.store(viewPrefs(), bounds);
+    }
+
+    /** The candidate list is its own shape too, and is put where reading it is comfortable. */
+    private void onHanjaBoundsChanged(FloatingKeyboardBounds bounds) {
+        hanjaBounds = bounds;
+        FloatingKeyboardSettings.store(viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX, bounds);
     }
 
     /** The code-point pad is a different size and belongs elsewhere, so it remembers its own place. */
@@ -530,8 +553,9 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public boolean onEvaluateInputViewShown() {
         super.onEvaluateInputViewShown();
-        if (candidatesWindowForced) {
-            // The one-pixel input view is what gives the candidate window a window to live on.
+        if (hanjaFloating) {
+            // The candidates are a panel of this IME's own now, so they need the window shown even
+            // when a hardware keyboard would otherwise keep the keyboard hidden.
             return true;
         }
         if (unicodeFloating) {
@@ -1023,97 +1047,17 @@ public class ReteKeyImeService extends InputMethodService {
         pendingReading = reading;
         pendingCandidates = candidates;
         hanjaCandidatesShown = true;
-        if (showCandidateWindow()) {
+        if (hanjaFloating && hanjaView != null) {
+            // Already up: a new reading is new contents, not a new panel — rebuilding would make
+            // it jump and lose the place the user dragged it to.
+            hanjaView.show(reading, candidates);
             return;
         }
-        // Nothing of this IME is on screen — an external keyboard is doing the typing — so there is
-        // no window to attach a popup to. Bring one up, one pixel tall, and try again once it is.
-        candidatesWindowForced = true;
-        if (keyboardView != null) {
-            keyboardView.setCollapsed(true);
-        }
+        // The candidates are a floating panel like the code-point pad: they belong over the
+        // document rather than in a popup pinned to a keyboard that may not even be on screen.
+        hanjaFloating = true;
+        setInputView(onCreateInputView());
         updateInputViewShown();
-        showSelfForCandidates();
-        candidateWindowAttempts = 0;
-        retryCandidateWindow();
-    }
-
-    /**
-     * Brings this IME's own window up so the candidate window has something to attach to.
-     * {@code requestShowSelf} is API 28; {@code showWindow} has been there since the beginning and
-     * does the same job from inside the service.
-     */
-    @SuppressWarnings("deprecation")
-    private void showSelfForCandidates() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            requestShowSelf(0);
-        } else {
-            showWindow(true);
-        }
-    }
-
-    /** Shows the candidate window if this IME already has a window to attach it to. */
-    private boolean showCandidateWindow() {
-        View anchor = anchorView();
-        if (anchor == null || anchor.getWindowToken() == null) {
-            return false;
-        }
-        if (hanjaWindow == null) {
-            hanjaWindow = new HanjaCandidatesWindow(this, this::commitHanja, this::hideHanjaCandidates);
-        }
-        int[] frame = keyboardFrameOnScreen();
-        hanjaWindow.show(anchor, pendingReading, pendingCandidates, frame[0], frame[1], frame[2]);
-        return true;
-    }
-
-    private static final int CANDIDATE_WINDOW_ATTEMPTS = 20;
-    private static final long CANDIDATE_WINDOW_RETRY_MS = 50;
-
-    /** Waits for the just-requested window to be attached, then shows the candidates on it. */
-    private void retryCandidateWindow() {
-        mainHandler.postDelayed(() -> {
-            if (!hanjaCandidatesShown) {
-                return;
-            }
-            if (showCandidateWindow()) {
-                return;
-            }
-            if (++candidateWindowAttempts < CANDIDATE_WINDOW_ATTEMPTS) {
-                retryCandidateWindow();
-            } else {
-                // The window never arrived; do not leave a claim standing for a panel that is not
-                // going to appear.
-                hideHanjaCandidates();
-            }
-        }, CANDIDATE_WINDOW_RETRY_MS);
-    }
-
-    /** Any attached view of this IME; the candidate window only needs its window token. */
-    private View anchorView() {
-        return floatingFrame != null ? floatingFrame : keyboardView;
-    }
-
-    /**
-     * Where on screen the keyboard is, as {@code {left, width, top}}, so the candidate window can
-     * span it and sit above it. A top of 0 means nothing is on screen to sit above — an external
-     * keyboard is doing the typing — and the panel falls back to the foot of the screen at full
-     * width.
-     */
-    private int[] keyboardFrameOnScreen() {
-        int screenWidth = getResources().getDisplayMetrics().widthPixels;
-        int[] location = new int[2];
-        if (floatingMode && floatingFrame != null) {
-            floatingFrame.getLocationOnScreen(location);
-            android.graphics.Rect panel = floatingFrame.panelBounds();
-            return new int[] {
-                location[0] + panel.left, panel.width(), location[1] + panel.top
-            };
-        }
-        if (keyboardView == null || keyboardView.getHeight() <= 0 || !keyboardView.isShown()) {
-            return new int[] {0, screenWidth, 0};
-        }
-        keyboardView.getLocationOnScreen(location);
-        return new int[] {location[0], keyboardView.getWidth(), location[1]};
     }
 
     /**
@@ -1148,18 +1092,14 @@ public class ReteKeyImeService extends InputMethodService {
         pendingReading = null;
         pendingCandidates = null;
         hanjaCandidatesShown = false;
-        if (hanjaWindow != null) {
-            hanjaWindow.hide();
+        if (!hanjaFloating) {
+            return;
         }
-        if (candidatesWindowForced) {
-            // A window brought up only to carry the candidates goes away with them.
-            candidatesWindowForced = false;
-            if (keyboardView != null) {
-                keyboardView.setCollapsed(false);
-            }
-            updateInputViewShown();
-            requestHideSelf(0);
-        }
+        hanjaFloating = false;
+        hanjaView = null;
+        // Back to whatever was there before, on the layout it was left on.
+        setInputView(onCreateInputView());
+        updateInputViewShown();
     }
 
     /**
@@ -1167,22 +1107,22 @@ public class ReteKeyImeService extends InputMethodService {
      * turn the page, and Escape dismisses. Returns true when the key was used for the strip.
      */
     private boolean handleHanjaSelectionKey(int keyCode) {
-        if (hanjaWindow == null) {
+        if (hanjaView == null) {
             return false;
         }
         int number = digitFromKeyCode(keyCode);
         if (number >= 1) {
-            hanjaWindow.selectByNumber(number);
+            hanjaView.selectByNumber(number);
             return true;
         }
         switch (keyCode) {
             case KeyEvent.KEYCODE_DPAD_RIGHT:
             case KeyEvent.KEYCODE_PAGE_DOWN:
-                hanjaWindow.nextPage();
+                hanjaView.nextPage();
                 return true;
             case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_PAGE_UP:
-                hanjaWindow.prevPage();
+                hanjaView.prevPage();
                 return true;
             case KeyEvent.KEYCODE_ESCAPE:
                 hideHanjaCandidates();

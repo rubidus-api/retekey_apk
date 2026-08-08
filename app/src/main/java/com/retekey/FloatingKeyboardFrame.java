@@ -11,8 +11,10 @@ import android.view.View;
 import android.view.ViewGroup;
 
 /**
- * The floating half-screen keyboard: a translucent panel that the user drags around one half of the
- * screen, resizes, sends to the other half, or closes.
+ * A floating half-screen panel: translucent, dragged around one half of the screen, resized, sent
+ * to the other half, or closed. It started as the floating keyboard and carries whatever is handed
+ * to it — the keyboard, the code-point pad, the Hanja candidates — because all three want the same
+ * frame: something small over the document with a bar to move it by.
  *
  * <p>The frame itself fills the whole IME window and draws nothing outside the panel, so the
  * service can hand the window manager a touchable region that is exactly the panel — everything
@@ -42,7 +44,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     private int panelAlpha =
         FloatingKeyboardSettings.alphaOf(FloatingKeyboardSettings.DEFAULT_OPACITY_PERCENT);
 
-    private final ReteKeyboardView keyboardView;
+    private final View panel;
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF panelRect = new RectF();
@@ -63,15 +65,15 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     private float dragAnchorX;
     private float dragAnchorY;
 
-    public FloatingKeyboardFrame(Context context, ReteKeyboardView keyboardView) {
+    public FloatingKeyboardFrame(Context context, View panel) {
         super(context);
-        this.keyboardView = keyboardView;
+        this.panel = panel;
         this.palette = KeyboardPalette.resolve(context);
         setWillNotDraw(false);
         // The keyboard paints its own opaque background, so the translucency has to be applied to
         // the whole child rather than to the panel behind it.
-        keyboardView.setAlpha(panelAlpha / 255.0f);
-        addView(keyboardView);
+        panel.setAlpha(panelAlpha / 255.0f);
+        addView(panel);
     }
 
     public void setOnClose(OnClose listener) {
@@ -119,7 +121,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         }
         ensureBounds(width, height);
         int keyboardHeight = Math.max(0, bounds.height() - barHeightPx());
-        keyboardView.measure(
+        panel.measure(
             MeasureSpec.makeMeasureSpec(bounds.width(), MeasureSpec.EXACTLY),
             MeasureSpec.makeMeasureSpec(keyboardHeight, MeasureSpec.EXACTLY)
         );
@@ -130,7 +132,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         ensureBounds(r - l, b - t);
         int top = bounds.top() + barHeightPx();
-        keyboardView.layout(bounds.left(), top, bounds.right(), bounds.bottom());
+        panel.layout(bounds.left(), top, bounds.right(), bounds.bottom());
         layoutBarCells();
     }
 
@@ -290,7 +292,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
             return;
         }
         panelAlpha = alpha;
-        keyboardView.setAlpha(panelAlpha / 255.0f);
+        panel.setAlpha(panelAlpha / 255.0f);
         invalidate();
     }
 
@@ -309,8 +311,8 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         return false;
     }
 
-    /** The keyboard this frame carries, so the host can keep wiring its callbacks as before. */
-    public View keyboard() {
-        return keyboardView;
+    /** Whatever this frame carries, so the host can keep wiring its callbacks as before. */
+    public View panel() {
+        return panel;
     }
 }

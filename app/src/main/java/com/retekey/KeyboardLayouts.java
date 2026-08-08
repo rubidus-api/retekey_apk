@@ -150,15 +150,19 @@ public final class KeyboardLayouts {
             digit("uni.1", "1"), digit("uni.2", "2"), digit("uni.3", "3"), digit("uni.4", "4"),
             digit("uni.5", "5"), digit("uni.6", "6"), digit("uni.7", "7"), digit("uni.8", "8"),
             digit("uni.9", "9"), digit("uni.0", "0")));
+        // Everything else on one row: the six letters a hex code can also use, and the three ways
+        // the entry ends. Two rows of keys is the whole pad — it was three, half of them the empty
+        // cells left over from spacing a keyboard's worth of grid around sixteen digits.
         rows.add(Arrays.asList(
             digit("uni.a", "A"), digit("uni.b", "B"), digit("uni.c", "C"), digit("uni.d", "D"),
             digit("uni.e", "E"), digit("uni.f", "F"),
-            backspaceKey().withColumnSpan(2), disabled("uni.gap1", " ").withColumnSpan(2)));
-        rows.add(Arrays.asList(
-            disabled("uni.gap2", " ").withColumnSpan(6),
+            // Named rather than drawn here: this pad says OK and Cancel in words, and a lone glyph
+            // between them reads as a different kind of thing than it is.
+            SoftwareKeySpec.enabled("touch.edit.backspace", "Bksp", SemanticInput.deleteBackward()),
             // Cancel leaves without typing anything and gives the previous keyboard back; OK is
             // the only thing that puts a character in the document.
-            rawKey("uni.cancel", "Cancel", RawKey.ESCAPE).withColumnSpan(2),
+            rawKey("uni.cancel", "Cancel", RawKey.ESCAPE),
+            // The one key that puts a character in the document gets the width to say so.
             SoftwareKeySpec.enabled("touch.uni.ok", "OK", SemanticInput.primaryAction())
                 .withColumnSpan(2)));
         return KeyboardLayout.of(KeyboardLayoutId.SPECIAL_CHARS, false, COLUMNS, rows);

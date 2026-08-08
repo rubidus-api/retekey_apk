@@ -41,8 +41,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.88** —
-[retekey-0.1.88.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.88/retekey-0.1.88.apk)
+Current release: **v0.1.89** —
+[retekey-0.1.89.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.89/retekey-0.1.89.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -81,7 +81,7 @@ settings in the corner a thumb reaches without looking.
 
 | | |
 |---|---|
-| ![Hanja candidates](assets/keyboard-hanja.png) | ![The floating keyboard](assets/keyboard-floating.png) |
+| ![Hanja candidates](assets/keyboard-hanja-floating.png) | ![The floating keyboard](assets/keyboard-floating.png) |
 | the Hanja window: keyboard-wide, 훈음 beside each character, nine to a page | the floating keyboard, translucent and confined to its half of the screen |
 
 Every layout, page and panel is shown in [Layout](#layout) below, and the older-Android build has
@@ -321,21 +321,18 @@ Korean to Hanja:
   longest match, so `학교` becomes `學校` rather than converting `교` alone.
 - Pressing it on **Hanja** converts back to its reading, including whole Hanja words.
 
-Candidates appear in a window of their own, spanning the keyboard's full width, in a paged grid of
-nine. Each 훈음 gloss sits beside its character (家 집 가) and wraps onto a second line when the
-column is narrow. The window is not part of the keyboard, so it appears the same way for the
-on-screen keyboard, an external keyboard with no keyboard on screen at all, and the floating panel;
-it keeps one size while it is up, so a short last page does not resize it. Tap a candidate, or
-press its number key **1**–**9**; `‹`/`›` in the header — or `←`/`→` and `PageUp`/`PageDown` on a
-keyboard — turn the page, and **✕** leaves without converting, as `Esc` does. What you typed stays
-as you typed it: it is a way out, not an undo.
+Candidates appear in a floating panel of their own, in a paged grid of nine, with each 훈음 gloss
+beside its character (家 집 가), wrapping onto a second line when the column is narrow. Drag the
+panel by its bar, resize it, and it is as see-through as your floating keyboard's opacity setting
+says — it is the same frame. It replaces the keyboard while it is up and gives it back afterwards,
+and it comes up the same way when an external keyboard is doing the typing with no keyboard on
+screen at all.
 
-![Hanja candidates](assets/keyboard-hanja.png)
+![Hanja candidates](assets/keyboard-hanja-floating.png)
 
-> **Known limitation.** On a device with an on-screen navigation bar the panel's last row can end up
-> over it. The candidates are visible and the number keys still pick them, but that row may not take
-> a tap. The panel is a child of the keyboard's window and used to be clipped to it — losing the row
-> entirely — which is fixed; placing it clear of the system bars is not.
+Tap a candidate, or press its number key **1**–**9**; `‹`/`›` in the header — or `←`/`→` and
+`PageUp`/`PageDown` on a keyboard — turn the page, and **✕** leaves without converting, as `Esc`
+does. What you typed stays as you typed it: it is a way out, not an undo.
 
 The dictionary is bundled and searched where it lies: the tables are sorted files, memory-mapped
 out of the APK and bisected per lookup, so they cost the Java heap nothing and the kernel is free to
@@ -357,7 +354,8 @@ see-through as your floating keyboard's opacity setting says:
 ![The code-point pad](assets/keyboard-unicode-floating.png)
 
 Type hex digits, up to six of them, so everything to U+10FFFF is within reach; the code and the
-character it names are shown along the top. Nothing is typed until **OK**, because the code is a
+character it names are shown along the top. The pad is two rows: the digits, then **A**–**F** with
+**Bksp**, **Cancel** and **OK** beside them. Nothing is typed until **OK**, because the code is a
 composition — so **Cancel**, or the panel's ✕, leaves at any point with the document untouched and
 the previous keyboard back on the layout you left it. With a hardware keyboard the panel comes up
 just the same, and the digits, backspace, Enter and Esc all work from the physical keys. A physical

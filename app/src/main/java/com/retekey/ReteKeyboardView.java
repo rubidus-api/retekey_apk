@@ -168,7 +168,6 @@ public final class ReteKeyboardView extends View {
         flashLabel = null;
         invalidate();
     };
-    private boolean collapsed;
     /**
      * The height multiplier for the orientation being drawn. NaN until it is first needed: the
      * default depends on the screen and on how many rows the layout has, neither of which the
@@ -312,28 +311,9 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
-    /**
-     * Collapses the keyboard to nothing without hiding the IME window, so the Hanja candidate strip
-     * can be on screen on its own while a hardware keyboard is doing the typing.
-     */
-    public void setCollapsed(boolean collapsed) {
-        if (this.collapsed == collapsed) {
-            return;
-        }
-        this.collapsed = collapsed;
-        requestLayout();
-        invalidate();
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        if (collapsed) {
-            // One pixel, not zero: the IME window has to exist for the Hanja candidate window to
-            // have something to attach to, and a zero-height window is not laid out at all.
-            setMeasuredDimension(width, 1);
-            return;
-        }
         int desired = KeyboardHeightPercent.heightPx(heightPercent(), screenHeightPx());
         int height;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {

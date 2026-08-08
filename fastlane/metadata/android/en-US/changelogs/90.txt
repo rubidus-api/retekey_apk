@@ -1,0 +1,10 @@
+Hanja conversion floats too. The candidates used to be a popup pinned
+to the keyboard, which meant a dance to bring a window into existence
+when an external keyboard was typing, and a last row that a navigation
+bar could sit on. They are a floating panel now, in the same frame as
+the keyboard and the code-point pad: drag it, resize it, and it is as
+see-through as the floating keyboard's opacity setting says.
+
+The code-point pad is two rows instead of three: the digits, then A-F
+with Bksp, Cancel and OK beside them. The row and a half of empty cells
+that padded a keyboard-shaped grid around sixteen digits is gone.
