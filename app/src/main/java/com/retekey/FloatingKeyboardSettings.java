@@ -65,41 +65,59 @@ public final class FloatingKeyboardSettings {
         OrientedPrefs.putInt(prefs, KEY_OPACITY, orientation, clampOpacity(percent));
     }
 
+    /**
+     * The prefix for a panel that floats on its own terms. The Unicode pad is a floating panel too,
+     * and it is not the keyboard: it is a different size and belongs somewhere else on screen, so
+     * it keeps its own geometry under this prefix. Opacity is deliberately not prefixed — how
+     * see-through a floating panel is, is one preference about floating panels.
+     */
+    public static final String UNICODE_PREFIX = "unicode_";
+
     public static void store(SharedPreferences prefs, FloatingKeyboardBounds bounds) {
+        store(prefs, "", bounds);
+    }
+
+    public static void store(SharedPreferences prefs, String prefix, FloatingKeyboardBounds bounds) {
         if (prefs == null || bounds == null) {
             return;
         }
+        String p = prefix == null ? "" : prefix;
         prefs.edit()
-            .putBoolean(KEY_SIDE_LEFT, bounds.isLeft())
-            .putInt(KEY_LEFT, bounds.left())
-            .putInt(KEY_TOP, bounds.top())
-            .putInt(KEY_WIDTH, bounds.width())
-            .putInt(KEY_HEIGHT, bounds.height())
-            .putInt(KEY_SCREEN_WIDTH, bounds.screenWidth())
-            .putInt(KEY_SCREEN_HEIGHT, bounds.screenHeight())
+            .putBoolean(p + KEY_SIDE_LEFT, bounds.isLeft())
+            .putInt(p + KEY_LEFT, bounds.left())
+            .putInt(p + KEY_TOP, bounds.top())
+            .putInt(p + KEY_WIDTH, bounds.width())
+            .putInt(p + KEY_HEIGHT, bounds.height())
+            .putInt(p + KEY_SCREEN_WIDTH, bounds.screenWidth())
+            .putInt(p + KEY_SCREEN_HEIGHT, bounds.screenHeight())
             .apply();
     }
 
     /** The stored panel, or {@code null} when the user has never placed one. */
     public static FloatingKeyboardBounds load(SharedPreferences prefs) {
+        return load(prefs, "");
+    }
+
+    public static FloatingKeyboardBounds load(SharedPreferences prefs, String prefix) {
         if (prefs == null) {
             return null;
         }
-        int screenWidth = prefs.getInt(KEY_SCREEN_WIDTH, 0);
-        int screenHeight = prefs.getInt(KEY_SCREEN_HEIGHT, 0);
-        int width = prefs.getInt(KEY_WIDTH, 0);
-        int height = prefs.getInt(KEY_HEIGHT, 0);
+        String p = prefix == null ? "" : prefix;
+        int screenWidth = prefs.getInt(p + KEY_SCREEN_WIDTH, 0);
+        int screenHeight = prefs.getInt(p + KEY_SCREEN_HEIGHT, 0);
+        int width = prefs.getInt(p + KEY_WIDTH, 0);
+        int height = prefs.getInt(p + KEY_HEIGHT, 0);
         if (screenWidth <= 0 || screenHeight <= 0 || width <= 0 || height <= 0) {
             return null;
         }
         return FloatingKeyboardBounds.of(
             screenWidth,
             screenHeight,
-            prefs.getBoolean(KEY_SIDE_LEFT, false)
+            prefs.getBoolean(p + KEY_SIDE_LEFT, false)
                 ? FloatingKeyboardBounds.Side.LEFT
                 : FloatingKeyboardBounds.Side.RIGHT,
-            prefs.getInt(KEY_LEFT, 0),
-            prefs.getInt(KEY_TOP, 0),
+            prefs.getInt(p + KEY_LEFT, 0),
+            prefs.getInt(p + KEY_TOP, 0),
             width,
             height
         );

@@ -40,4 +40,16 @@ public final class FloatingKeyboardSettingsTest {
                 FloatingKeyboardSettings.opacityPercent(null, orientation));
         }
     }
+
+    @Test
+    public void thePadFloatsWithItsOwnPlaceButTheSameSeeThroughness() {
+        // Geometry is per-panel: the code-point pad is a different size and sits elsewhere.
+        assertTrue("the pad's own slot", FloatingKeyboardSettings.UNICODE_PREFIX.length() > 0);
+        assertEquals(null, FloatingKeyboardSettings.load(null,
+            FloatingKeyboardSettings.UNICODE_PREFIX));
+        // Opacity is not: one preference answers how see-through a floating panel is.
+        assertTrue("opacity is unprefixed",
+            !FloatingKeyboardSettings.KEY_OPACITY.startsWith(
+                FloatingKeyboardSettings.UNICODE_PREFIX));
+    }
 }

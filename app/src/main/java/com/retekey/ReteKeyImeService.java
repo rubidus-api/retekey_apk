@@ -63,12 +63,17 @@ public class ReteKeyImeService extends InputMethodService {
     /** The orientation the current input view was built for; a rotation rebuilds it. */
     private ScreenOrientation builtFor;
     private FloatingKeyboardBounds floatingBounds;
+    private FloatingKeyboardBounds unicodeBounds;
     private FloatingKeyboardFrame floatingFrame;
+    /** True while the code-point pad is the floating panel, in place of the keyboard. */
+    private boolean unicodeFloating;
 
     @Override
     public View onCreateInputView() {
         builtFor = OrientedPrefs.current(this);
-        floatingMode = FloatingKeyboardSettings.isEnabled(viewPrefs(), builtFor);
+        // The code-point pad floats whatever the keyboard is doing: it is not a page of the
+        // keyboard but a small panel of its own, and it replaces the keyboard while it is open.
+        floatingMode = unicodeFloating || FloatingKeyboardSettings.isEnabled(viewPrefs(), builtFor);
         keyboardView = new ReteKeyboardView(this, this::dispatchSoftwareInput);
         keyboardView.setOnOpenSettings(this::openSettings);
         keyboardView.setOnEditCommand(this::performEditCommand);
@@ -96,11 +101,28 @@ public class ReteKeyImeService extends InputMethodService {
             floatingFrame = null;
             return keyboardView;
         }
+        floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
+        // One opacity for floating panels, whichever panel it is: how see-through something
+        // hovering over your document should be is a single preference, not one per panel.
+        floatingFrame.setOpacityPercent(
+            FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
+        if (unicodeFloating) {
+            keyboardView.setUnicodeEntry(true);
+            if (unicodeBounds == null) {
+                unicodeBounds = FloatingKeyboardSettings.load(
+                    viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX);
+            }
+            // The pad's ✕ is the way out of the entry, not a way to turn the floating keyboard off.
+            floatingFrame.setOnClose(this::endUnicodeEntry);
+            floatingFrame.setOnBoundsChanged(this::onUnicodeBoundsChanged);
+            if (unicodeBounds != null) {
+                floatingFrame.setBounds(unicodeBounds);
+            }
+            return floatingFrame;
+        }
         if (floatingBounds == null) {
             floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
         }
-        floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
-        floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         floatingFrame.setOnClose(this::leaveFloatingMode);
         floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
         if (floatingBounds != null) {
@@ -152,6 +174,13 @@ public class ReteKeyImeService extends InputMethodService {
     private void onFloatingBoundsChanged(FloatingKeyboardBounds bounds) {
         floatingBounds = bounds;
         FloatingKeyboardSettings.store(viewPrefs(), bounds);
+    }
+
+    /** The code-point pad is a different size and belongs elsewhere, so it remembers its own place. */
+    private void onUnicodeBoundsChanged(FloatingKeyboardBounds bounds) {
+        unicodeBounds = bounds;
+        FloatingKeyboardSettings.store(
+            viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX, bounds);
     }
 
     /** Opens ReteKey's settings screen from the menu's 설정 tile, hiding the keyboard behind it. */
@@ -505,6 +534,12 @@ public class ReteKeyImeService extends InputMethodService {
             // The one-pixel input view is what gives the candidate window a window to live on.
             return true;
         }
+        if (unicodeFloating) {
+            // A hardware keyboard normally hides the on-screen keyboard, and it can go on typing
+            // the digits — but then nothing would show the code being built. The pad is the
+            // feedback, so it comes up regardless of what is typing into it.
+            return true;
+        }
         // Hide the on-screen keyboard when a hardware keyboard is usable; input still passes
         // through the service. The mode will be user-configurable once settings land (RFC-0007).
         return SoftKeyboardVisibilityPolicy.shouldShow(
@@ -628,9 +663,9 @@ public class ReteKeyImeService extends InputMethodService {
         finishComposingInEditor();
         inputProcessor.reset();
         unicodeEntry = UnicodeEntry.empty();
-        if (keyboardView != null && isInputViewShown()) {
-            keyboardView.setUnicodeEntry(true);
-        }
+        unicodeFloating = true;
+        setInputView(onCreateInputView());
+        updateInputViewShown();
         showUnicodeEntry();
     }
 
@@ -643,24 +678,13 @@ public class ReteKeyImeService extends InputMethodService {
         if (unicodeEntry == null) {
             return;
         }
-        String character = unicodeEntry.character();
-        if (isInputViewShown() && keyboardView != null) {
-            keyboardView.setUnicodePreview(character == null
-                ? unicodeEntry.display()
-                : unicodeEntry.display() + "   " + character);
+        if (keyboardView == null) {
             return;
         }
-        // No keyboard on screen — a hardware keyboard is doing the typing, and the pad that would
-        // have shown the code is hidden with it. The candidate window is the one surface an IME
-        // can raise without one, so it carries the feedback in that case.
-        List<HanjaCandidatesView.Item> items = new ArrayList<>(1);
-        if (character != null) {
-            items.add(new HanjaCandidatesView.Item(character,
-                UnicodeEntry.label(unicodeEntry.codePoint())));
-        }
-        pendingFromSelection = false;
-        pendingDeleteLength = 0;
-        showHanjaCandidates(unicodeEntry.display(), items);
+        String character = unicodeEntry.character();
+        keyboardView.setUnicodePreview(character == null
+            ? unicodeEntry.display()
+            : unicodeEntry.display() + "   " + character);
     }
 
     /** Feeds one character to the open entry. Returns false when the entry is not open. */
@@ -755,10 +779,18 @@ public class ReteKeyImeService extends InputMethodService {
 
     private void endUnicodeEntry() {
         unicodeEntry = null;
-        if (keyboardView != null) {
-            keyboardView.setUnicodeEntry(false);
-        }
         hideHanjaCandidatesIfShown();
+        if (!unicodeFloating) {
+            if (keyboardView != null) {
+                keyboardView.setUnicodeEntry(false);
+            }
+            return;
+        }
+        // Rebuilding puts back whatever was there before: the docked keyboard, or the user's own
+        // floating one, on the layout it was left on.
+        unicodeFloating = false;
+        setInputView(onCreateInputView());
+        updateInputViewShown();
     }
 
     /** The menu's Memo key: opens the notepad over the app, or closes it again. */
