@@ -588,7 +588,7 @@ public final class KeyboardLayouts {
                 numKey(), fnRawKey(0), fnRawKey(1), fnRawKey(2), rawKey("f10", "F10", RawKey.F10)
             ));
             rows.add(KeyboardLayout.row(
-                disabled("brightup", "Bright+"), disabled("brightdown", "Bright−"),
+                disabled("brightup", "Br+"), disabled("brightdown", "Br−"),
                 disabled("volup", "Vol+"), disabled("voldown", "Vol-"),
                 disabled("mute", "Mute"),
                 fnKey(), fnRawKey(3), fnRawKey(4), fnRawKey(5), backspaceKey()
@@ -597,7 +597,7 @@ public final class KeyboardLayouts {
                 shiftKey(false),
                 disabled("prevtrack", "Prev"), disabled("playpause", "Play"),
                 disabled("nexttrack", "Next"),
-                rawKey("search", "Search", RawKey.SEARCH), disabled("back", "Back"),
+                rawKey("search", "Fnd", RawKey.SEARCH), disabled("back", "Back"),
                 fnRawKey(6), fnRawKey(7), fnRawKey(8), enterKey()
             ));
             rows.add(bottomRow(returnToLettersKey()));
@@ -605,9 +605,9 @@ public final class KeyboardLayouts {
         }
 
         rows.add(KeyboardLayout.row(
-            rawKey("esc", "Esc", RawKey.ESCAPE), rawKey("prtsc", "PrtSc", RawKey.PRINT_SCREEN),
-            rawKey("scrlk", "ScrLk", RawKey.SCROLL_LOCK), rawKey("pause", "Pause", RawKey.BREAK),
-            SoftwareKeySpec.control("touch.key.hanja", "Hanja", ControlKey.HANJA), numKey(),
+            rawKey("esc", "Esc", RawKey.ESCAPE), rawKey("prtsc", "Prt", RawKey.PRINT_SCREEN),
+            rawKey("scrlk", "Scr", RawKey.SCROLL_LOCK), rawKey("pause", "Brk", RawKey.BREAK),
+            SoftwareKeySpec.control("touch.key.hanja", "漢", ControlKey.HANJA), numKey(),
             padCell(mode, 0), padCell(mode, 1), padCell(mode, 2),
             // Number mode needs a 0 to type; the arrow/navigation mode keeps forward-delete here.
             mode == NumpadMode.NUMBERS
@@ -615,7 +615,7 @@ public final class KeyboardLayouts {
                 : rawKey("del", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
-            disabled("ralt", "RAlt"), disabled("rctrl", "RCtrl"), disabled("rshift", "RShft"),
+            disabled("ralt", "RAlt"), disabled("rctrl", "RCt"), disabled("rshift", "RSh"),
             rawKey("menu", "Menu", RawKey.MENU), disabled("lang", "Lang"),
             fnKey(), padCell(mode, 3), padCell(mode, 4), padCell(mode, 5), backspaceKey()
         ));
@@ -650,36 +650,36 @@ public final class KeyboardLayouts {
         // centre, copy/cut/paste down the near edge, the jump keys around them, and settings in
         // the corner where a thumb reaches without looking.
         rows.add(KeyboardLayout.row(
-            menuControl("undo", "↶", ControlKey.UNDO),
-            menuControl("redo", "↷", ControlKey.REDO),
-            menuControl("date", "📅", ControlKey.INSERT_DATE),
-            menuDisabled("emoji", "☺"),
-            menuDisabled("clipboard", "🗒"),
-            menuControl("copy", "⧉", ControlKey.COPY),
+            menuControl("undo", "Und", ControlKey.UNDO),
+            menuControl("redo", "Red", ControlKey.REDO),
+            menuControl("date", "날짜", ControlKey.INSERT_DATE),
+            menuDisabled("emoji", "이모"),
+            menuDisabled("clipboard", "클립"),
+            menuControl("copy", "Cpy", ControlKey.COPY),
             menuRaw("cursor.home", "Home", RawKey.HOME),
             menuRaw("cursor.up", "↑", RawKey.UP),
             menuRaw("cursor.pageup", "PgUp", RawKey.PAGE_UP),
             menuRaw("cursor.insert", "Ins", RawKey.INSERT)
         ));
         rows.add(KeyboardLayout.row(
-            menuControl("height.down", "size−", ControlKey.HEIGHT_DOWN),
-            menuControl("height.up", "size+", ControlKey.HEIGHT_UP),
-            menuControl("switchime", "⌨↔", ControlKey.SWITCH_IME),
-            menuControl("manageime", "⌨⚙", ControlKey.MANAGE_IME),
-            menuControl("floating", "❐", ControlKey.FLOATING_TOGGLE),
-            menuControl("cut", "✂", ControlKey.CUT),
+            menuControl("height.down", "작게", ControlKey.HEIGHT_DOWN),
+            menuControl("height.up", "크게", ControlKey.HEIGHT_UP),
+            menuControl("switchime", "자판", ControlKey.SWITCH_IME),
+            menuControl("manageime", "관리", ControlKey.MANAGE_IME),
+            menuControl("floating", "띄움", ControlKey.FLOATING_TOGGLE),
+            menuControl("cut", "Cut", ControlKey.CUT),
             menuRaw("cursor.left", "←", RawKey.LEFT),
-            menuControl("selectall", "⬚A", ControlKey.SELECT_ALL),
+            menuControl("selectall", "All", ControlKey.SELECT_ALL),
             menuRaw("cursor.right", "→", RawKey.RIGHT),
             menuRaw("cursor.delete", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
-            menuDisabled("onehand.left", "◀|"),
-            menuDisabled("onehand.full", "|↔|"),
-            menuDisabled("theme", "◐"),
+            menuDisabled("onehand.left", "한손"),
+            menuDisabled("onehand.full", "전폭"),
+            menuDisabled("theme", "테마"),
             menuDisabled("custom1", "★1"),
             menuDisabled("custom2", "★2"),
-            menuControl("paste", "📋", ControlKey.PASTE),
+            menuControl("paste", "Pst", ControlKey.PASTE),
             menuRaw("cursor.end", "End", RawKey.END),
             menuRaw("cursor.down", "↓", RawKey.DOWN),
             menuRaw("cursor.pagedown", "PgDn", RawKey.PAGE_DOWN),

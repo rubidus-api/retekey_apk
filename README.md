@@ -40,8 +40,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.79** —
-[retekey-0.1.79.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.79/retekey-0.1.79.apk)
+Current release: **v0.1.80** —
+[retekey-0.1.80.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.80/retekey-0.1.80.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -57,8 +57,8 @@ replaces the other. [More about the two builds](#android-version-support).
 4. **Try it.** ReteKey's own launcher screen has a button for each of those two steps and a text
    box to type in, so you can do the whole thing without hunting through system settings.
 
-To move between Korean, English and the 12-key layouts afterwards, tap the 🌐 key on the keyboard;
-hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
+To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right — it is captioned with the layout you are on
+(한글, ABC, 천지, 나랏, DVK) — and hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
 in the settings.
 
 ## What it looks like
@@ -82,7 +82,7 @@ editing a config file over ssh, running a command in Termux, moving through a lo
 the arrow keys, or pasting into a terminal that does not behave like a chat box.
 
 So the keys that usually go missing are here — **Esc, Tab, Ctrl, Alt, Meta, F1–F12, arrows,
-Home/End, PgUp/PgDn, Ins, forward-delete, PrtSc** — sending real key events rather than typing
+Home/End, PgUp/PgDn, Ins, forward-delete, PrtSc (`Prt`)** — sending real key events rather than typing
 characters that look like them. Modifier chords the keyboard has no use for are handed to the app,
 so an editor's own shortcuts keep working, and a soft `Ctrl` plus a letter sends a genuine control
 code to a terminal.
@@ -93,8 +93,8 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Five layouts** — 2-beolsik, QWERTY, Dvorak, and the 12-key 천지인 and 나랏글 phone modes. A 🌐
-  key walks the ones you enabled, in the order you set; holding it opens the menu.
+- **Five layouts** — 2-beolsik, QWERTY, Dvorak, and the 12-key 천지인 and 나랏글 phone modes. The layout key
+  walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
@@ -116,14 +116,14 @@ never open the keypad page you will never see the parts you do not need.
 
 The touch layout is one orthogonal ten-column grid with equal keys and no staggered rows. The
 bottom row is the same on every page of the full-size layouts:
-`Ctrl · Meta · Alt · Tab · space · !# · 🌐`, with space three columns wide. The menu and the keypad
-page do not have keys of their own — they are opened by holding 🌐 and `!#`, which say so with a
+`Ctrl · Meta · Alt · Tab · space · !# · 한글`, with space three columns wide. The menu and the keypad
+page do not have keys of their own — they are opened by holding the layout key and `!#`, which say so with a
 small `m` and `p` in the corner. One cell is left over beside `!#`. Each layout puts what its own users reach for
 there: 漢 for Hanja on 2-beolsik, `Esc` on QWERTY and Dvorak — a real
 `KEYCODE_ESCAPE`, for vi over ssh — and nothing on the rest. The two 12-key pages keep the same frame in
 a different shape: the modifiers own the leftmost column, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
-with `!#` and 🌐 closing the bottom row. The cell beside Tab carries 漢 on both of them, which
+with `!#` and the layout key closing the bottom row. The cell beside Tab carries 漢 on both of them, which
 converts on a tap. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
 phone keypad's digits on them, **이동** the cursor cluster (arrows, Home/End, PgUp/PgDn, Ins, Esc,
 Del); the same key puts the Hangul back. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.,` and
@@ -140,7 +140,7 @@ Five letter layouts share that grid:
 | **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **다음** key — starts the next letter |
 | **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
-The 🌐 key walks the layouts you ticked in settings, in the order you put them there, naming each
+The layout key — captioned with the layout it is showing (한글, ABC, 천지, 나랏, DVK) — walks the layouts you ticked in settings, in the order you put them there, naming each
 one as it arrives. Holding it runs the Hanja conversion.
 
 Holding a letter key types a character instead of repeating it. The alternates come in three groups
@@ -182,7 +182,7 @@ period types a comma, and holding `_` types `-`, the pair a physical keyboard pu
 
 **Holding `!#`** opens the special-keys page: a right-hand keypad plus the special keys. It opens
 with `Num` **on**, showing digits — num lock means digits here as it does on any keyboard. The
-digits and `+ - = .` commit text; `Esc`, `PrtSc`, `ScrLk`, `Pause` and `Menu` send key events:
+digits and `+ - = .` commit text; `Esc`, `Prt`, `Scr`, `Brk` and `Menu` send key events:
 
 ![Special keys page, digits](assets/keyboard-keys.png)
 
@@ -198,7 +198,7 @@ have no Android key code), the media keys and Back stay muted:
 
 ### The menu page
 
-**Holding 🌐** opens it. The right half is the editing hand — copy, cut and paste down its near
+**Holding the layout key** opens it. The right half is the editing hand — copy, cut and paste down its near
 edge, the arrows in a cross with select-all at their centre, the jump keys around them, and
 settings in the corner a thumb reaches without looking. The left half is everything about the
 keyboard itself.
@@ -207,21 +207,21 @@ keyboard itself.
 
 | | Key | Does |
 |---|---|---|
-| ↶ | undo | undo the last edit |
-| ↷ | redo | redo it |
-| 📅 | date | insert the current date and time as text |
-| ☺ | emoji | *not built yet — drawn muted* |
-| 🗒 | clipboard | *not built yet* |
-| ⧉ | copy | copy the selection |
-| ✂ | cut | cut the selection |
-| 📋 | paste | paste the clipboard |
-| ⬚A | select all | select everything in the field |
-| size− / size+ | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
-| ⌨↔ | switch keyboard | open the system input-method picker |
-| ⌨⚙ | manage keyboards | open the system screen for enabling keyboards |
-| ❐ | floating | turn the floating panel on or off |
-| ◀\| / \|↔\| | one-handed | *not built yet* |
-| ◐ | theme | *not built yet* |
+| Und | undo | undo the last edit |
+| Red | redo | redo it |
+| 날짜 | date | insert the current date and time as text |
+| 이모 | emoji | *not built yet — drawn muted* |
+| 클립 | clipboard | *not built yet* |
+| Cpy | copy | copy the selection |
+| Cut | cut | cut the selection |
+| Pst | paste | paste the clipboard |
+| All | select all | select everything in the field |
+| 작게 / 크게 | height | shrink or grow the keyboard by two percentage points a press, remembered per orientation |
+| 자판 | switch keyboard | open the system input-method picker |
+| 관리 | manage keyboards | open the system screen for enabling keyboards |
+| 띄움 | floating | turn the floating panel on or off |
+| 한손 / 전폭 | one-handed | *not built yet* |
+| 테마 | theme | *not built yet* |
 | ★1 / ★2 | custom | *not built yet* |
 | Set | settings | open ReteKey's own settings |
 | ← ↑ → ↓ | arrows | move the cursor; they repeat when held |

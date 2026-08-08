@@ -28,6 +28,10 @@ public final class ReteKeyboardView extends View {
 
     /** The Tab key's stable id, which the hold latch paints and addresses its events to. */
     private static final String TAB_KEY_ID = "touch.edit.tab";
+    /** The space bar, which is drawn as a bar rather than labelled with a word. */
+    private static final String SPACE_KEY_ID = "touch.text.space";
+    /** The key that walks the letter layouts; it is captioned with the one it is showing. */
+    private static final String LAYOUT_TOGGLE_KEY_ID = "touch.layout.toggle";
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final InputSink sink;
@@ -562,11 +566,11 @@ public final class ReteKeyboardView extends View {
             int startColumn = layout.startColumn(touch.row, touch.key);
             int left = layout.columnEdge(startColumn, width);
             int right = layout.columnEdge(startColumn + key.columnSpan(), width);
-            int tint = palette.pressTint;
-            paint.setColor(Color.argb(Math.round(feedback.visualIntensity() * 150.0f),
-                Color.red(tint), Color.green(tint), Color.blue(tint)));
-            Compat.drawRoundRect(canvas, left + keyGapPx, top + keyGapPx, right - keyGapPx,
-                bottom - keyGapPx, keyRadiusPx, paint);
+            // Redraw the whole key in its pressed shade: the face lifts toward white and a little
+            // toward the accent, and the label is painted again on top of it, so the key reads as
+            // brighter rather than as covered over.
+            drawKey(canvas, key, left, top, right, bottom,
+                KeyPressTint.pressed(keyFillColor(key), palette.pressTint));
         }
     }
 
@@ -684,12 +688,27 @@ public final class ReteKeyboardView extends View {
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
     private String labelOf(SoftwareKeySpec key) {
+        if (LAYOUT_TOGGLE_KEY_ID.equals(key.stableKeyId())) {
+            // The key that walks the layouts says which one is showing, and changes with it. The
+            // bitmap cache is keyed on the layout id, so the label follows without asking.
+            return LetterLayouts.keyCapName(letterLayoutId);
+        }
         return LegacyGlyphs.label(key.label(), android.os.Build.VERSION.SDK_INT);
     }
 
     /** Draws one raised, rounded key with its label and long-press hint into the cache canvas. */
     private void drawKey(Canvas canvas, SoftwareKeySpec key,
             int left, int top, int right, int bottom) {
+        drawKey(canvas, key, left, top, right, bottom, keyFillColor(key));
+    }
+
+    /**
+     * One key, in the given face colour. The colour is a parameter so a pressed key can be redrawn
+     * whole — face, label and corner mark — in its brighter shade, rather than washed over with a
+     * translucent sheet that takes the label down with it.
+     */
+    private void drawKey(Canvas canvas, SoftwareKeySpec key,
+            int left, int top, int right, int bottom, int fill) {
         float l = left + keyGapPx;
         float t = top + keyGapPx;
         float r = right - keyGapPx;
@@ -697,34 +716,54 @@ public final class ReteKeyboardView extends View {
         // A darker lip just below the face makes the key look raised.
         paint.setColor(palette.keyShadow);
         Compat.drawRoundRect(canvas, l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, paint);
-        int fill = keyFillColor(key);
         paint.setColor(fill);
         Compat.drawRoundRect(canvas, l, t, r, b, keyRadiusPx, paint);
         // The ink follows the fill, not the theme: a held key is painted strongly enough that the
         // ordinary label colour would sink into it.
-        paint.setColor(key.enabled() || key.isControl()
+        int ink = key.enabled() || key.isControl()
             ? palette.inkOn(fill)
-            : palette.keyTextMuted);
-        String label = labelOf(key);
-        fitLabel(label, right - left, bottom - top);
-        canvas.drawText(label, (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
+            : palette.keyTextMuted;
+        paint.setColor(ink);
+        if (SPACE_KEY_ID.equals(key.stableKeyId())) {
+            // The space bar says what it is by its shape, the way a space bar always has. A word
+            // there is both the longest label on the keyboard and the least necessary one.
+            drawSpaceBar(canvas, l, t, r, b);
+        } else {
+            String label = labelOf(key);
+            fitLabel(label, right - left, bottom - top);
+            canvas.drawText(label, (left + right) * 0.5f, top + (bottom - top) * 0.62f, paint);
+        }
         if (key.longPressTexts().size() == 1 || key.hasLongPressHint()) {
-            // What a long press reaches, in small text at the top-right corner: the alternate
-            // character for a key that types one, or a letter naming the page for a key that
-            // opens one.
+            // What a long press reaches, in small text in the top-right of the key's own face:
+            // the alternate character for a key that types one, or a letter naming the page for a
+            // key that opens one. Inset from the face, not from the cell — drawn against the cell
+            // it sat on the very edge and read as if it had slipped out of the key.
             String corner = key.hasLongPressHint()
                 ? key.longPressHint()
                 : key.longPressTexts().get(0);
-            paint.setColor(palette.hint);
-            float hint = (bottom - top) * 0.22f;
+            float hint = (bottom - top) * 0.20f;
+            float inset = hint * 0.45f;
+            paint.setColor(palette.hintOn(fill));
             paint.setTextSize(hint);
-            canvas.drawText(corner, right - hint * 0.75f, top + hint * 1.15f, paint);
+            paint.setTextAlign(Paint.Align.RIGHT);
+            canvas.drawText(corner, r - inset, t + inset + hint * 0.85f, paint);
+            paint.setTextAlign(Paint.Align.CENTER);
         } else if (canBeHeld(key)) {
-            drawLatchMark(canvas, right, top, isHeld(key));
+            drawLatchMark(canvas, r, t, isHeld(key), palette.hintOn(fill));
         } else if (key.hasLongPress() || key.hasLongPressControl()) {
-            paint.setColor(palette.hint);
-            canvas.drawCircle(right - 10.0f, top + 10.0f, 3.0f, paint);
+            paint.setColor(palette.hintOn(fill));
+            canvas.drawCircle(r - keyRadiusPx, t + keyRadiusPx, 3.0f, paint);
         }
+    }
+
+    /** The space bar's shape: a low, wide, rounded bar across the middle of the key. */
+    private void drawSpaceBar(Canvas canvas, float l, float t, float r, float b) {
+        float width = (r - l) * 0.42f;
+        float height = Math.max(2.0f, (b - t) * 0.06f);
+        float cx = (l + r) * 0.5f;
+        float cy = (t + b) * 0.5f;
+        Compat.drawRoundRect(canvas, cx - width * 0.5f, cy - height * 0.5f,
+            cx + width * 0.5f, cy + height * 0.5f, height * 0.5f, paint);
     }
 
     /**
@@ -733,10 +772,10 @@ public final class ReteKeyboardView extends View {
      * key is — the background colour says the same thing, and a mark says it again for anyone the
      * colour does not reach.
      */
-    private void drawLatchMark(Canvas canvas, int right, int top, boolean locked) {
+    private void drawLatchMark(Canvas canvas, float right, float top, boolean locked, int ink) {
         float cx = right - 11.0f;
         float cy = top + 11.0f;
-        paint.setColor(palette.hint);
+        paint.setColor(ink);
         if (locked) {
             paint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(cx, cy, 4.0f, paint);
@@ -1542,12 +1581,19 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
+    /**
+     * A key's face. A key that is <em>held</em> — locked down until it is pressed again, rather
+     * than armed for the next keystroke — is drawn inverted: the face takes the ink colour and the
+     * label takes the face's, which is the strongest thing a two-colour key can say and reads at a
+     * glance from across the keyboard. Armed-for-one-key keeps the softer accent, so the two
+     * states cannot be mistaken for each other.
+     */
     private int keyFillColor(SoftwareKeySpec key) {
         if (key.isControl()) {
             ControlKey control = key.control();
             if (control == ControlKey.SHIFT) {
                 if (shiftLayer.isLocked()) {
-                    return palette.keyAccent;
+                    return palette.keyLatchedFace();
                 }
                 if (shiftLayer.isActive()) {
                     return palette.keyAccentSoft;
@@ -1562,14 +1608,15 @@ public final class ReteKeyboardView extends View {
                 return palette.keyAccent;
             }
             if (modifierLatches.isLocked(control)) {
-                return palette.keyAccent;
+                return palette.keyLatchedFace();
             }
             if (modifierLatches.isActive(control)) {
                 return palette.keyAccentSoft;
             }
         }
         if (tabHeld && TAB_KEY_ID.equals(key.stableKeyId())) {
-            return palette.keyAccent;
+            // Tab latched down is held, not armed, so it inverts like the modifiers do.
+            return palette.keyLatchedFace();
         }
         if (!key.enabled() && !key.isControl()) {
             return palette.keyDisabled;

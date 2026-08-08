@@ -21,25 +21,10 @@ public final class LegacyGlyphs {
 
     static {
         WORDS.put("☰", "Menu");
-        WORDS.put("🌐", "Lang");   // 🌐
-        WORDS.put("⧉", "Copy");
-        WORDS.put("✂", "Cut");
-        WORDS.put("📋", "Paste");  // 📋
-        WORDS.put("↶", "Undo");
-        WORDS.put("↷", "Redo");
-        WORDS.put("📅", "Date");   // 📅
-        WORDS.put("⬚A", "All");
-        // The settings key says Set on every version now, so no glyph needs replacing.
-        WORDS.put("❐", "Float");
-        WORDS.put("◐", "Theme");
-        WORDS.put("☺", "Emoji");
-        WORDS.put("🗒", "Clip");   // 🗒
-        WORDS.put("◀|", "1-Hand");
-        WORDS.put("|↔|", "Full");
+        // The menu page and the layout key say their names in words on every version now, so
+        // only the handful of glyphs still in use need an entry here.
         WORDS.put("★1", "C1");
         WORDS.put("★2", "C2");
-        WORDS.put("⌨↔", "Switch");
-        WORDS.put("⌨⚙", "Manage");
         WORDS.put("▷", ">|");
         WORDS.put("⇲", "Size");
         WORDS.put("✕", "X");

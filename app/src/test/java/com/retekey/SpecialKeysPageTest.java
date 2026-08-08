@@ -20,11 +20,11 @@ public final class SpecialKeysPageTest {
     public void theBaseKeypadLayoutMatchesTheSpec() {
         assertEquals(KeyboardLayoutId.SPECIAL_KEYS, NUMBERS.id());
         assertEquals(
-            Arrays.asList("Esc", "PrtSc", "ScrLk", "Pause", "Hanja", "Num", "7", "8", "9", "0"),
+            Arrays.asList("Esc", "Prt", "Scr", "Brk", "漢", "Num", "7", "8", "9", "0"),
             labels(NUMBERS, 0)
         );
         assertEquals(
-            Arrays.asList("RAlt", "RCtrl", "RShft", "Menu", "Lang", "Fn", "4", "5", "6", "⌫"),
+            Arrays.asList("RAlt", "RCt", "RSh", "Menu", "Lang", "Fn", "4", "5", "6", "⌫"),
             labels(NUMBERS, 1)
         );
         assertEquals(
@@ -59,7 +59,7 @@ public final class SpecialKeysPageTest {
         assertNotNull(hanja);
         assertTrue("Hanja converts the reading", hanja.isControl());
         assertEquals(ControlKey.HANJA, hanja.control());
-        assertEquals("Hanja", hanja.label());
+        assertEquals("漢", hanja.label());
     }
 
     @Test
@@ -91,11 +91,11 @@ public final class SpecialKeysPageTest {
             labels(FUNCTIONS, 0)
         );
         assertEquals(
-            Arrays.asList("Bright+", "Bright−", "Vol+", "Vol-", "Mute", "Fn", "F4", "F5", "F6", "⌫"),
+            Arrays.asList("Br+", "Br−", "Vol+", "Vol-", "Mute", "Fn", "F4", "F5", "F6", "⌫"),
             labels(FUNCTIONS, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", "Prev", "Play", "Next", "Search", "Back", "F1", "F2", "F3", "⏎"),
+            Arrays.asList("⇧", "Prev", "Play", "Next", "Fnd", "Back", "F1", "F2", "F3", "⏎"),
             labels(FUNCTIONS, 2)
         );
         // F1-F12 send key events; F13-F15 have no Android keycode, so they stay disabled.

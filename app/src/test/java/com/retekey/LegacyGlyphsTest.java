@@ -17,7 +17,7 @@ public final class LegacyGlyphsTest {
     @Test
     public void anOldDeviceGetsAWordInstead() {
         assertEquals("Menu", LegacyGlyphs.label("☰", LegacyGlyphs.GLYPHS_FROM - 1));
-        assertEquals("Copy", LegacyGlyphs.label("⧉", 19));
+        assertEquals("Bksp", LegacyGlyphs.label("⌫", 19));
         assertEquals("Bksp", LegacyGlyphs.label("⌫", 14));
         assertEquals("Shift", LegacyGlyphs.label("⇧", 14));
     }

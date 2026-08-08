@@ -70,6 +70,28 @@ final class KeyboardPalette {
         return fillWantsDarkInk == ordinaryInkIsDark ? keyTextInverse : keyText;
     }
 
+    /**
+     * The colour for the small corner marks on a key filled with {@code fill}: the hint colour
+     * where the face is the ordinary one, and the face's own ink softened where it is not. A
+     * latched key is painted in the ink colour itself, and the fixed hint colour disappears into
+     * it.
+     */
+    /**
+     * The face of a key that is latched down: the label colour, used as a background. Paired with
+     * {@link #inkOn(int)}, which answers with a light ink over it, this is a plain inversion of the
+     * key — the one state that has to be readable without looking for it.
+     */
+    int keyLatchedFace() {
+        return keyText;
+    }
+
+    int hintOn(int fill) {
+        if (fill == keyFace || fill == keyDisabled) {
+            return hint;
+        }
+        return KeyPressTint.mix(inkOn(fill), fill, 0.35f);
+    }
+
     static boolean isNight(Context context) {
         return (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
             == Configuration.UI_MODE_NIGHT_YES;
