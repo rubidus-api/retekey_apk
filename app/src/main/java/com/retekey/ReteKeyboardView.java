@@ -752,9 +752,14 @@ public final class ReteKeyboardView extends View {
         // The ink follows the fill, not the theme: a held key is painted strongly enough that the
         // ordinary label colour would sink into it.
         boolean latched = canBeHeld(key) && isHeld(key);
+        // The code-point strip is not a key you cannot press: it is the readout, and the one thing
+        // on that pad worth reading. Muting it the way an unusable key is muted hid it.
+        boolean readout = KeyboardLayouts.UNICODE_DISPLAY_ID.equals(key.stableKeyId());
         int ink = latched
             ? palette.keyLatchedInk()
-            : key.enabled() || key.isControl() ? palette.inkOn(fill) : palette.keyTextMuted;
+            : key.enabled() || key.isControl() || readout
+                ? palette.inkOn(fill)
+                : palette.keyTextMuted;
         paint.setColor(ink);
         if (SPACE_KEY_ID.equals(key.stableKeyId())) {
             // The space bar says what it is by its shape, the way a space bar always has. A word
@@ -1516,6 +1521,9 @@ public final class ReteKeyboardView extends View {
                 break;
             case "unicode":
                 unicodeEntry = true;
+                // A picture of an empty pad says nothing about what it is for, so it is shown
+                // mid-entry, on a character no keyboard hands you.
+                unicodePreview = parts.length > 1 ? parts[1] : "U+2318   \u2318";
                 break;
             case "phone":
                 page = Page.LETTERS;

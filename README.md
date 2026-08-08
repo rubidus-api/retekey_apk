@@ -41,8 +41,8 @@ and the special keys most keyboards leave out.
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.87** —
-[retekey-0.1.87.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.87/retekey-0.1.87.apk)
+Current release: **v0.1.88** —
+[retekey-0.1.88.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.88/retekey-0.1.88.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support).
@@ -351,13 +351,17 @@ in the same candidate window as Hanja, and each one is glossed with its code poi
 has no reading and the number is what you would look it up by.
 
 For a character with no key and no consonant to reach it, the menu page's **Uni** key opens a code
-point entry, and the keys become the digits it is made of:
+point entry. It is a floating panel over what you are writing — drag it, resize it, and it is as
+see-through as your floating keyboard's opacity setting says:
 
-![The hex pad](assets/keyboard-unicode.png)
+![The code-point pad](assets/keyboard-unicode-floating.png)
 
- type hex digits and the character they name appears with its `U+` number beside it,
-Enter puts it in, Esc leaves. A physical key can be bound to the same thing in settings — none,
-one, or several, as with 한/영 and 한자.
+Type hex digits, up to six of them, so everything to U+10FFFF is within reach; the code and the
+character it names are shown along the top. Nothing is typed until **OK**, because the code is a
+composition — so **Cancel**, or the panel's ✕, leaves at any point with the document untouched and
+the previous keyboard back on the layout you left it. With a hardware keyboard the panel comes up
+just the same, and the digits, backspace, Enter and Esc all work from the physical keys. A physical
+key can be bound to the entry itself in settings — none, one, or several, as with 한/영 and 한자.
 
 ## Physical keyboards
 

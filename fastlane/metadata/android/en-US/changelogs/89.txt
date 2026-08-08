@@ -1,0 +1,7 @@
+The code point you are typing is readable now. On the floating pad the
+strip that shows it was painted like a key you cannot press, which is
+what it is made of but not what it is: it is the readout, and the one
+thing on that pad worth reading.
+
+The README shows the pad as it now appears — a panel floating over the
+document rather than a keyboard-wide slab of hex digits.
