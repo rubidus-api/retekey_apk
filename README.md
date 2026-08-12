@@ -36,6 +36,16 @@ and the special keys most keyboards leave out.
 
 ## Download
 
+**ReteKey is on F-Droid.** If you have the F-Droid client, that is the easiest way to get it and to
+keep it updated:
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="70">](https://f-droid.org/packages/com.retekey/)
+
+F-Droid builds the app from this source on its own servers and checks the result against the APK
+published here before shipping it, so what you install is what this repository builds.
+
+Or take an APK directly:
+
 **[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp;
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
@@ -45,7 +55,8 @@ Current release: **v0.1.93** —
 [retekey-0.1.93.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.93/retekey-0.1.93.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
-replaces the other. [More about the two builds](#android-version-support).
+replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
+Android 9+ build; the Android 4.0 one lives on the releases page.
 
 ### Setting it up, step by step
 

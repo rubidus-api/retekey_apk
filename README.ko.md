@@ -36,6 +36,16 @@
 
 ## 내려받기
 
+**ReteKey는 F-Droid에 등록되어 있습니다.** F-Droid 클라이언트를 쓰신다면 그쪽이 설치도 갱신도 가장
+편합니다.
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="F-Droid에서 받기" height="70">](https://f-droid.org/packages/com.retekey/)
+
+F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 여기 게시된 APK와 대조하고 나서야
+배포합니다. 그러니 설치하시는 것은 이 저장소가 빌드해 내는 바로 그것입니다.
+
+APK를 바로 받으실 수도 있습니다.
+
 **[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
 &nbsp;·&nbsp;
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
@@ -45,7 +55,8 @@
 [retekey-0.1.93.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.93/retekey-0.1.93.apk)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
-다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다.
+다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
+안드로이드 9 이상 빌드가 올라가며, 안드로이드 4.0 빌드는 릴리즈 페이지에 있습니다.
 
 ### 처음 쓰실 때, 차근차근
 
