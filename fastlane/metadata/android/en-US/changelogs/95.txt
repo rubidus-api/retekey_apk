@@ -1,0 +1,6 @@
+The key-click volume setting works now. It was asking the platform to
+play its own keypress sound at a given volume, and plenty of devices -
+Samsung's among them - ignore that volume and use the system's touch
+sound level instead, so the slider appeared to do nothing. The click is
+the keyboard's own sample now, played by the keyboard, so the number
+you set is the volume you get. Turning it to zero still silences it.

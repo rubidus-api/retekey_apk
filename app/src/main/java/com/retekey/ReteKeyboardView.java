@@ -368,6 +368,7 @@ public final class ReteKeyboardView extends View {
             baseBitmap.recycle();
             baseBitmap = null;
         }
+        feedback.release();
         super.onDetachedFromWindow();
     }
 
