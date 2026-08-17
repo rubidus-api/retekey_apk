@@ -1,0 +1,12 @@
+The action bar's second set of slots.
+
+Clip opens a list of what was cut and copied through the bar: tap to
+paste, star to pin, and Clear to forget the rest. Nothing is recorded
+from a password or other sensitive field, twenty unpinned clips are
+kept, and it never leaves the app's own storage.
+
+Sym goes to the symbols page from wherever you are, and Memo raises the
+notepad.
+
+The bar now rides on the floating keyboard too, where reaching for the
+menu page cost the most.

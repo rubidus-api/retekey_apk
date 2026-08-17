@@ -67,6 +67,10 @@ public class ReteKeyImeService extends InputMethodService {
     private FloatingKeyboardFrame floatingFrame;
     /** True while the code-point pad is the floating panel, in place of the keyboard. */
     private boolean unicodeFloating;
+    /** The clipboard panel while it is open, or null. */
+    private ClipboardPanelView clipboardPanel;
+    /** What the keyboard remembers of what was cut and copied through it. */
+    private ClipHistory clips = ClipHistory.empty();
 
     @Override
     public View onCreateInputView() {
@@ -96,6 +100,11 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnLayoutChanged(this::announceLayout);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
+        if (clipboardPanel != null) {
+            // The clipboard owns the window while it is open, the way the notepad does.
+            floatingFrame = null;
+            return new PanelFrame(this, buildClipboardPanel(), keyboardView);
+        }
         if (notepad != null) {
             // The notepad owns the window while it is open: the keyboard keeps its height at the
             // bottom and the panel takes the rest of the screen.
@@ -107,7 +116,9 @@ public class ReteKeyImeService extends InputMethodService {
             floatingFrame = null;
             return withActionBar(keyboardView);
         }
-        floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
+        // The bar rides on the floating panel too: it is part of the keyboard, not part of being
+        // docked, and a floating keyboard is where reaching for the menu page costs most.
+        floatingFrame = new FloatingKeyboardFrame(this, withActionBar(keyboardView));
         // One opacity for floating panels, whichever panel it is: how see-through something
         // hovering over your document should be is a single preference, not one per panel.
         floatingFrame.setOpacityPercent(
@@ -197,12 +208,25 @@ public class ReteKeyImeService extends InputMethodService {
                     break;
                 case CUT:
                     performEditCommand(android.R.id.cut);
+                    rememberClipSoon();
                     break;
                 case COPY:
                     performEditCommand(android.R.id.copy);
+                    rememberClipSoon();
                     break;
                 case PASTE:
                     performEditCommand(android.R.id.paste);
+                    break;
+                case CLIPBOARD:
+                    toggleClipboardPanel();
+                    break;
+                case SYMBOLS:
+                    if (keyboardView != null) {
+                        keyboardView.showSpecialChars();
+                    }
+                    break;
+                case NOTEPAD:
+                    toggleNotepad();
                     break;
                 default:
                     RawKey key = action.rawKey();
@@ -243,6 +267,104 @@ public class ReteKeyImeService extends InputMethodService {
         int cursor = bounds.selectionEnd();
         inputConnection.setSelection(
             Math.max(0, cursor - word.before), cursor + word.after);
+    }
+
+    /**
+     * Reads what the cut or copy just put on the system clipboard, and remembers it.
+     *
+     * <p>A moment later, not at once: {@code performContextMenuAction} is a request to the editor,
+     * and the clipboard is only what the editor made of it once it has acted. Nothing is remembered
+     * from a password or otherwise sensitive field — a clipboard list is exactly the sort of place
+     * those must not survive in.
+     */
+    private void rememberClipSoon() {
+        if (editorProfile.capabilities().isSensitive()) {
+            return;
+        }
+        mainHandler.postDelayed(this::rememberCurrentClip, CLIP_READ_DELAY_MS);
+    }
+
+    private void rememberCurrentClip() {
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager == null || !manager.hasPrimaryClip()) {
+                return;
+            }
+            android.content.ClipData data = manager.getPrimaryClip();
+            if (data == null || data.getItemCount() == 0) {
+                return;
+            }
+            CharSequence text = data.getItemAt(0).coerceToText(this);
+            ClipHistory updated = clips.record(text, editorProfile.capabilities().isSensitive());
+            if (updated != clips) {
+                clips = updated;
+                ClipStore.save(this, clips);
+            }
+        } catch (RuntimeException ignored) {
+            // Reading the clipboard is best-effort: a ROM that refuses must not break Copy.
+        }
+    }
+
+    /** How long the editor is given to act on a cut or copy before the clipboard is read. */
+    private static final int CLIP_READ_DELAY_MS = 120;
+
+    /** Opens the clipboard list, or closes it if it is already open. */
+    private void toggleClipboardPanel() {
+        if (clipboardPanel != null) {
+            closeClipboardPanel();
+            return;
+        }
+        clips = ClipStore.load(this);
+        clipboardPanel = new ClipboardPanelView(this);
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    private void closeClipboardPanel() {
+        clipboardPanel = null;
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    private ClipboardPanelView buildClipboardPanel() {
+        final ClipboardPanelView panel = clipboardPanel;
+        panel.setListener(new ClipboardPanelView.Listener() {
+            @Override
+            public void onPaste(String text) {
+                dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                    "touch.bar.clip.paste", SemanticInput.text(text)));
+                closeClipboardPanel();
+            }
+
+            @Override
+            public void onPin(String text, boolean pinned) {
+                clips = clips.setPinned(text, pinned);
+                ClipStore.save(ReteKeyImeService.this, clips);
+                panel.show(clips.clips());
+            }
+
+            @Override
+            public void onForget(String text) {
+                clips = clips.remove(text);
+                ClipStore.save(ReteKeyImeService.this, clips);
+                panel.show(clips.clips());
+            }
+
+            @Override
+            public void onClearAll() {
+                clips = clips.clearUnpinned();
+                ClipStore.save(ReteKeyImeService.this, clips);
+                panel.show(clips.clips());
+            }
+
+            @Override
+            public void onClose() {
+                closeClipboardPanel();
+            }
+        });
+        panel.show(clips.clips());
+        return panel;
     }
 
     /** How far either side of the cursor a word is looked for. Longer than any word worth one. */

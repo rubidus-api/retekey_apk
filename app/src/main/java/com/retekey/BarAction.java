@@ -24,7 +24,13 @@ enum BarAction {
     HOME("home", "Home"),
     END("end", "End"),
     PAGE_UP("pgup", "PgUp"),
-    PAGE_DOWN("pgdn", "PgDn");
+    PAGE_DOWN("pgdn", "PgDn"),
+    /** The clipboard list the keyboard keeps of what was cut and copied through it. */
+    CLIPBOARD("clip", "Clip"),
+    /** The symbols page, from wherever you are. */
+    SYMBOLS("symbols", "Sym"),
+    /** Raises the notepad. */
+    NOTEPAD("memo", "Memo");
 
     private final String stored;
     private final String label;

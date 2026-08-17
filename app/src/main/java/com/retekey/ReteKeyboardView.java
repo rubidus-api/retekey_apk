@@ -1480,6 +1480,16 @@ public final class ReteKeyboardView extends View {
     }
 
     /**
+     * Shows the symbols page, for the action bar's Sym slot. The `!#` key does the same thing from
+     * the keyboard itself; this is the same door with a different handle.
+     */
+    public void showSpecialChars() {
+        page = Page.SPECIAL_CHARS;
+        shiftLayer.clear();
+        invalidate();
+    }
+
+    /**
      * Puts the view into one named state so a picture can be taken of it. Used only by the debug
      * build's screenshot screen: the README's images have to come from the drawing code itself
      * rather than from a mock-up, and the emulator this project is developed on never gives an IME

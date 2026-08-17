@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.97** —
-[retekey-0.1.97.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.97/retekey-0.1.97.apk)
+Current release: **v0.1.98** —
+[retekey-0.1.98.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.98/retekey-0.1.98.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -440,12 +440,32 @@ Stage one carries the things that need nothing remembered:
 | **Cut** / **Copy** / **Paste** | the editor's own three |
 | **← → ↑ ↓** | move the cursor |
 | **Home** / **End** / **PgUp** / **PgDn** | jump |
+| **Clip** | the clipboard list, below |
+| **Sym** | the symbols page, from wherever you are |
+| **Memo** | raises the notepad |
 
-The clipboard list, a symbol panel, modifier chords such as Ctrl+B, and macros are the stages after
-this one. The bar shows on the docked keyboard; the floating panel does not carry it yet.
+Modifier chords such as Ctrl+B, slots you fill yourself, and macros are the stages after this one.
 
 **Word** needs the editor to say where the cursor is. A few — some terminals — never do, and there
 the button does nothing rather than selecting the wrong thing.
+
+### The clipboard list
+
+![The clipboard list over the keyboard](assets/keyboard-clipboard.png)
+
+**Clip** opens what the keyboard remembers of what was cut and copied *through its own bar*. Tap a
+clip to paste it; ☆ pins it so it is never aged out; ✕ forgets one and **Clear** forgets all the
+unpinned ones.
+
+What it will not do matters as much as what it will:
+
+- **Nothing is recorded from a password or other sensitive field.** Those must not survive the
+  keystroke, and a clipboard list is exactly where they would.
+- Twenty unpinned clips are kept, newest first; pinned ones do not count towards that.
+- Copying the same thing twice moves it up rather than storing it twice.
+- A clip longer than 4000 characters is truncated: this is for pasting a line back, not for storing
+  a document.
+- It lives in the app's own private storage, and nothing is sent anywhere.
 
 ## Theming
 

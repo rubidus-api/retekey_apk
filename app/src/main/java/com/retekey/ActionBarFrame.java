@@ -32,4 +32,26 @@ final class ActionBarFrame extends LinearLayout {
     ReteKeyboardView keyboard() {
         return keyboard;
     }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.EXACTLY) {
+            // Docked: the frame is as tall as the bar plus whatever height the keyboard asks for.
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
+        }
+        // Floating: the panel's frame hands down an exact height, and the two children have to
+        // divide it. The bar keeps its own height and the keyboard takes the rest, rather than the
+        // keyboard asking for its usual share of the screen and being clipped by the bar.
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = MeasureSpec.getSize(heightMeasureSpec);
+        int bandForBar = Math.min(bar.barHeightPx(), height);
+        bar.measure(
+            MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+            MeasureSpec.makeMeasureSpec(bandForBar, MeasureSpec.EXACTLY));
+        keyboard.measure(
+            MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+            MeasureSpec.makeMeasureSpec(height - bandForBar, MeasureSpec.EXACTLY));
+        setMeasuredDimension(width, height);
+    }
 }
