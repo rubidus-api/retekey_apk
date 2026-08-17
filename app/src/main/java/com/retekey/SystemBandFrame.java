@@ -45,12 +45,33 @@ final class SystemBandFrame extends FrameLayout {
         super.onAttachedToWindow();
         // A listener only fires when the insets change, and they may have settled before this view
         // existed. Ask once on the way in, where the platform can be asked at all.
-        if (Build.VERSION.SDK_INT >= SystemBarInsets.ANY_INSETS_SDK) {
-            int current = WindowInsetsWatcher.currentBand(this);
-            if (current >= 0) {
-                setBand(current);
-            }
+        refreshBand();
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        if (visibility == VISIBLE) {
+            // The answer is only true of the moment it was taken. An input view built while the
+            // keyboard was off screen — which is what happens when a setting is changed from the
+            // settings screen — reads the insets of whatever *was* on screen, and on a phone whose
+            // navigation bar is visible in an app but not under a keyboard, that is a band this
+            // keyboard does not need. Ask again now that this window is the one being shown.
+            refreshBand();
         }
+    }
+
+    /** Re-reads the insets and applies them, where the platform has any to read. */
+    void refreshBand() {
+        if (Build.VERSION.SDK_INT < SystemBarInsets.ANY_INSETS_SDK) {
+            return;
+        }
+        int current = WindowInsetsWatcher.currentBand(this);
+        if (current >= 0) {
+            setBand(current);
+        }
+        // API 20-22 have no getRootWindowInsets; asking for a dispatch is the only way to be told.
+        requestApplyInsets();
     }
 
     /** The reserved band in pixels; zero when the system takes nothing at the bottom. */

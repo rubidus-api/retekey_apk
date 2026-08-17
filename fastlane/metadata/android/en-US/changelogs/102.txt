@@ -1,0 +1,10 @@
+Fixes a gap that appeared under the keyboard after switching the action
+bar on or off.
+
+The strip kept for the system's own bottom buttons is measured from the
+window's insets, and switching that setting rebuilds the keyboard while
+the settings screen - not the keyboard - is the thing on screen. The
+measurement taken then belonged to the settings screen, and it stuck.
+
+The keyboard now measures again whenever its own window becomes visible,
+so the answer is always about the window it is actually about.

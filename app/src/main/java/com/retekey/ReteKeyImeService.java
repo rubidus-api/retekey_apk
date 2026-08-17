@@ -88,6 +88,8 @@ public class ReteKeyImeService extends InputMethodService {
     private ClipboardPanelView clipboardPanel;
     /** Whether the input view now on screen was built with the action bar. */
     private boolean builtWithBar;
+    /** The frame that reserves the system's bottom band, so it can be asked to measure again. */
+    private SystemBandFrame bandFrame;
     /** What the keyboard remembers of what was cut and copied through it. */
     private ClipHistory clips = ClipHistory.empty();
     /**
@@ -102,7 +104,8 @@ public class ReteKeyImeService extends InputMethodService {
         // Everything the IME shows goes inside the band frame, which keeps the system's own bottom
         // buttons — hide keyboard, switch keyboard — off the keys. Issue #1: without it the bottom
         // row is drawn underneath them and cannot be pressed at all.
-        return new SystemBandFrame(this, buildInputView());
+        bandFrame = new SystemBandFrame(this, buildInputView());
+        return bandFrame;
     }
 
     private View buildInputView() {
@@ -749,6 +752,12 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onStartInputView(EditorInfo info, boolean restarting) {
         super.onStartInputView(info, restarting);
+        if (bandFrame != null) {
+            // The band was possibly measured while this window was not the one on screen — every
+            // rebuild from the settings screen is such a moment — and the insets that mattered then
+            // were the settings screen's, not the keyboard's.
+            bandFrame.refreshBand();
+        }
         // A safety net for the same problem: if the bar was switched on while this view was off
         // screen, the listener may have fired when there was nothing to rebuild.
         boolean wanted = viewPrefs().getBoolean(
