@@ -807,7 +807,11 @@ public final class ReteKeyboardView extends View {
             canvas.drawText(corner, r - inset, t + inset + hint * 0.85f, paint);
             paint.setTextAlign(Paint.Align.CENTER);
         } else if (canBeHeld(key)) {
-            drawLatchMark(canvas, r, t, isHeld(key), palette.hintOn(fill));
+            // Nothing in the corner. Ctrl, Meta, Alt and Tab used to carry a ring that filled in
+            // when they latched; the face itself now says it — armed keys take the soft accent and
+            // held ones are drawn inverted — and a second mark saying the same thing was one mark
+            // too many. The branch stays so these keys do not fall through to the hold dot below:
+            // that they can be held is what the fill is already telling you.
         } else if (key.hasLongPress() || key.hasLongPressControl()) {
             paint.setColor(palette.hintOn(fill));
             canvas.drawCircle(r - keyRadiusPx, t + keyRadiusPx, 3.0f, paint);
@@ -841,27 +845,6 @@ public final class ReteKeyboardView extends View {
         box.lineTo(right, top);
         canvas.drawPath(box, paint);
         paint.setStyle(style);
-    }
-
-    /**
-     * The corner mark on a key that can be held without a finger on it: an open ring while it is
-     * not, a filled disc while it is. The two read as one shape in two states, which is what the
-     * key is — the background colour says the same thing, and a mark says it again for anyone the
-     * colour does not reach.
-     */
-    private void drawLatchMark(Canvas canvas, float right, float top, boolean locked, int ink) {
-        float cx = right - 11.0f;
-        float cy = top + 11.0f;
-        paint.setColor(ink);
-        if (locked) {
-            paint.setStyle(Paint.Style.FILL);
-            canvas.drawCircle(cx, cy, 4.0f, paint);
-            return;
-        }
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.5f);
-        canvas.drawCircle(cx, cy, 3.5f, paint);
-        paint.setStyle(Paint.Style.FILL);
     }
 
     /** Whether holding this key keeps it down: Shift, the three modifiers, and Tab. */

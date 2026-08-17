@@ -1,0 +1,6 @@
+The little ring in the corner of Ctrl, Meta, Alt, Tab and Shift is gone.
+
+It filled in when the key latched, from a time when the key face said
+nothing about it. The face says it now - an armed key takes the soft
+accent and a held one is drawn inverted - so the ring was saying the
+same thing a second time.
