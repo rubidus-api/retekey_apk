@@ -215,13 +215,22 @@ public final class KeyboardLayoutTest {
     @Test
     public void everyFullSizePageGivesSpaceThreeColumns() {
         // Letters, symbols, keypad and menu all close with the same bottom row, so space is the
-        // same width on all of them. The 12-key pages have their own, narrower one.
+        // same width on all of them. The 12-key pages — the two Hangul pads and the Arrows and
+        // Keypad layouts built on their frame — have their own, narrower one.
+        List<KeyboardLayoutId> pads = Arrays.asList(
+            KeyboardLayoutId.KO_CHEONJIIN, KeyboardLayoutId.KO_NARATGEUL,
+            KeyboardLayoutId.PAD_ARROWS, KeyboardLayoutId.PAD_KEYPAD);
         List<KeyboardLayout> fullSize = new ArrayList<>();
         for (KeyboardLayoutId id : KeyboardLayoutId.values()) {
-            if (id == KeyboardLayoutId.KO_CHEONJIIN || id == KeyboardLayoutId.KO_NARATGEUL) {
+            if (pads.contains(id)) {
                 continue;
             }
             fullSize.add(KeyboardLayouts.of(id, false));
+        }
+        for (KeyboardLayoutId id : pads) {
+            SoftwareKeySpec padSpace = KeyboardLayouts.of(id, false).findById("touch.text.space");
+            assertNotNull(String.valueOf(id), padSpace);
+            assertEquals("a pad's space is two columns", 2, padSpace.columnSpan());
         }
         fullSize.add(KeyboardLayouts.specialChars());
         fullSize.add(KeyboardLayouts.menu());

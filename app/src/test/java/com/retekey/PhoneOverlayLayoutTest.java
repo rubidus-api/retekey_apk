@@ -1,6 +1,7 @@
 package com.retekey;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 
 import java.util.ArrayList;
@@ -9,7 +10,7 @@ import java.util.List;
 import org.junit.Test;
 
 /**
- * The 12-key overlays: 123 turns the pad's own cells into the phone keypad's digits, 이동 into
+ * The 12-key overlays: 123 turns the pad's own cells into the phone keypad's digits, Move into
  * the cursor cluster. Only the twelve pad cells change; the frame — modifiers, backspace, space,
  * enter, 한자, the page keys, and the two toggles themselves — stays exactly where it was.
  */
@@ -45,12 +46,13 @@ public final class PhoneOverlayLayoutTest {
             for (PhoneOverlay overlay : PhoneOverlay.values()) {
                 KeyboardLayout layout = KeyboardLayouts.phone(id, overlay);
                 assertEquals("123", layout.rows().get(0).get(1).label());
-                assertEquals("이동", layout.rows().get(1).get(1).label());
+                assertEquals("Move", layout.rows().get(1).get(1).label());
                 List<SoftwareKeySpec> top = layout.rows().get(0);
                 assertEquals("⌫", top.get(top.size() - 1).label());
                 List<SoftwareKeySpec> second = layout.rows().get(1);
                 assertEquals("space", second.get(second.size() - 1).label());
-                assertEquals("漢", layout.rows().get(3).get(1).label());
+                assertFalse("the cell 漢 left stays empty",
+                    layout.rows().get(3).get(1).enabled());
             }
         }
     }

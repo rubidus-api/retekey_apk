@@ -9,6 +9,10 @@ public enum KeyboardLayoutId {
     KO_CHEONJIIN,
     /** Korean 12-key with a consonant block and stroke/tense transformation keys. */
     KO_NARATGEUL,
+    /** The cursor cluster on a 12-key pad, as a layout of its own rather than an overlay. */
+    PAD_ARROWS,
+    /** The phone keypad's digits on a 12-key pad, as a layout of its own. */
+    PAD_KEYPAD,
     /** The special-characters page (reached by holding the period). */
     SPECIAL_CHARS,
     /** The special-keys page: keypad plus the special/function keys (reached by the pad key). */

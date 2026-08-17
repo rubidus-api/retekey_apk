@@ -69,6 +69,10 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout DVORAK_SHIFTED = dvorak(true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
+    private static final KeyboardLayout PAD_ARROWS_LAYOUT =
+        padLayout(KeyboardLayoutId.PAD_ARROWS, false);
+    private static final KeyboardLayout PAD_KEYPAD_LAYOUT =
+        padLayout(KeyboardLayoutId.PAD_KEYPAD, true);
     private static final KeyboardLayout CHARS = buildSpecialChars();
     private static final KeyboardLayout KEYS_NUMBERS = buildSpecialKeys(NumpadMode.NUMBERS);
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
@@ -98,11 +102,58 @@ public final class KeyboardLayouts {
                 return CHEONJIIN;
             case KO_NARATGEUL:
                 return NARATGEUL;
+            case PAD_ARROWS:
+                return PAD_ARROWS_LAYOUT;
+            case PAD_KEYPAD:
+                return PAD_KEYPAD_LAYOUT;
             case SPECIAL_CHARS:
                 return CHARS;
             default:
                 return KEYS_NUMBERS;
         }
+    }
+
+    /**
+     * The keypad and the cursor cluster as layouts in their own right, on 나랏글's frame.
+     *
+     * <p>They exist as overlays already — a toggle in a Hangul pad's left column swaps the twelve
+     * cells and swaps back — which is right for a glance at the arrows mid-word and wrong for
+     * sitting in a number pad for a while: an overlay is reachable only from a Hangul pad, and it
+     * is a mode on top of a layout rather than a layout. These are stops on the globe key, off
+     * unless the user turns them on.
+     */
+    private static KeyboardLayout padLayout(KeyboardLayoutId id, boolean digits) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        rows.add(phoneRow(0, phoneGap("pad0", 1),
+            padLayoutCell(digits, 0), padLayoutCell(digits, 1), padLayoutCell(digits, 2),
+            backspaceKey().withColumnSpan(2)));
+        rows.add(phoneRow(1, phoneGap("pad1", 1),
+            padLayoutCell(digits, 3), padLayoutCell(digits, 4), padLayoutCell(digits, 5),
+            phoneSpaceKey()));
+        rows.add(phoneRow(2, phoneGap("pad2", 1),
+            padLayoutCell(digits, 6), padLayoutCell(digits, 7), padLayoutCell(digits, 8),
+            letterPeriodKey(),
+            enterKey()));
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("pad3", 1),
+            padLayoutCell(digits, 9), padLayoutCell(digits, 10), padLayoutCell(digits, 11));
+        bottom.addAll(phoneBottomPageKeys());
+        rows.add(bottom);
+        return KeyboardLayout.of(id, false, COLUMNS, rows);
+    }
+
+    /**
+     * One cell of those two layouts. The keypad's digits type with a tap and hold the same
+     * calculator character the Hangul pads hold in that place, so a hold means the same thing
+     * wherever the user is; the cursor cluster is the one the overlay already draws, so the two
+     * can never disagree about where ← is.
+     */
+    private static SoftwareKeySpec padLayoutCell(boolean digits, int cell) {
+        if (digits) {
+            return digit("pad.num." + cell, PadHolds.digit(cell))
+                .withColumnSpan(2)
+                .withLongPress(PadHolds.symbol(cell));
+        }
+        return overlayPadCell(PhoneOverlay.NAV, cell);
     }
 
     /** A 12-key page under an overlay: its cells as digits or the cursor cluster. */
@@ -249,11 +300,6 @@ public final class KeyboardLayouts {
         }
     }
 
-    /** 한자 conversion, beside Tab on both 12-key pages. A tap runs it; there is no hold. */
-    private static SoftwareKeySpec phoneHanjaKey() {
-        return SoftwareKeySpec.control("touch.phone.hanja", "漢", ControlKey.HANJA);
-    }
-
     /**
      * Tab. A tap types one, chording with whatever modifier is armed; a hold latches it down and
      * leaves it there until the next hold lets it up, which is the only way to hold a key on a
@@ -276,10 +322,10 @@ public final class KeyboardLayouts {
             "touch.phone.overlay.digits", "123", ControlKey.PHONE_DIGITS);
     }
 
-    /** 이동: shows the cursor cluster on the pad's own keys; pressed again, the Hangul. */
+    /** Move: shows the cursor cluster on the pad's own keys; pressed again, the Hangul. */
     private static SoftwareKeySpec phoneNavToggleKey() {
         return SoftwareKeySpec.control(
-            "touch.phone.overlay.nav", "이동", ControlKey.PHONE_NAV);
+            "touch.phone.overlay.nav", "Move", ControlKey.PHONE_NAV);
     }
 
     /**
@@ -364,7 +410,7 @@ public final class KeyboardLayouts {
      */
     private static SoftwareKeySpec commitKey() {
         return SoftwareKeySpec
-            .enabled("touch.phone.commit", "다음", SemanticInput.flush());
+            .enabled("touch.phone.commit", "Next", SemanticInput.flush());
     }
 
     /**
@@ -404,26 +450,29 @@ public final class KeyboardLayouts {
     private static KeyboardLayout cheonjiin(PhoneOverlay overlay) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
-            padCell(overlay, 0, cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", "1")),
-            padCell(overlay, 1, cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", "2")),
-            padCell(overlay, 2, cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", "3")),
+            padCell(overlay, 0, cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", PadHolds.symbol(0))),
+            padCell(overlay, 1, cheonjiinKey(CheonjiinInterpreter.Key.DOT, "ㆍ", PadHolds.symbol(1))),
+            padCell(overlay, 2, cheonjiinKey(CheonjiinInterpreter.Key.EU, "ㅡ", PadHolds.symbol(2))),
             backspaceKey().withColumnSpan(2)));
         rows.add(phoneRow(1, phoneNavToggleKey(),
-            padCell(overlay, 3, cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", "4")),
-            padCell(overlay, 4, cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", "5")),
-            padCell(overlay, 5, cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", "6")),
+            padCell(overlay, 3, cheonjiinKey(CheonjiinInterpreter.Key.GIYEOK, "ㄱㅋ", PadHolds.symbol(3))),
+            padCell(overlay, 4, cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", PadHolds.symbol(4))),
+            padCell(overlay, 5, cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", PadHolds.symbol(5))),
             phoneSpaceKey()));
         rows.add(phoneRow(2, commitKey(),
-            padCell(overlay, 6, cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", "7")),
-            padCell(overlay, 7, cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", "8")),
-            padCell(overlay, 8, cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", "9")),
+            padCell(overlay, 6, cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", PadHolds.symbol(6))),
+            padCell(overlay, 7, cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", PadHolds.symbol(7))),
+            padCell(overlay, 8, cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", PadHolds.symbol(8))),
             letterPeriodKey(),
             enterKey()));
-        // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it and 한자 beside Tab.
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(),
-            padCell(overlay, 9, phoneCycleKey("period", ".,")),
-            padCell(overlay, 10, cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", "0")),
-            padCell(overlay, 11, phoneCycleKey("exclaim", "!?")));
+        // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it. The cell beside Tab is empty:
+        // 漢 used to sit there and moved off the pads, since holding the layout key converts and
+        // the menu page has its own entry — a cell pressed once a month among cells pressed once a
+        // second.
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
+            padCell(overlay, 9, phoneCycleKey("period", ".,").withLongPress(PadHolds.symbol(9))),
+            padCell(overlay, 10, cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", PadHolds.symbol(10))),
+            padCell(overlay, 11, phoneCycleKey("exclaim", "!?").withLongPress(PadHolds.symbol(11))));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);
@@ -440,25 +489,25 @@ public final class KeyboardLayouts {
     private static KeyboardLayout naratgeul(PhoneOverlay overlay) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
-            padCell(overlay, 0, naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, "1")),
-            padCell(overlay, 1, naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2, "2")),
-            padCell(overlay, 2, naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2, "3")),
+            padCell(overlay, 0, naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, PadHolds.symbol(0))),
+            padCell(overlay, 1, naratgeulKey(NaratgeulInterpreter.Key.NIEUN, "ㄴ", 2, PadHolds.symbol(1))),
+            padCell(overlay, 2, naratgeulKey(NaratgeulInterpreter.Key.A, "ㅏ", 2, PadHolds.symbol(2))),
             backspaceKey().withColumnSpan(2)));
         rows.add(phoneRow(1, phoneNavToggleKey(),
-            padCell(overlay, 3, naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2, "4")),
-            padCell(overlay, 4, naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, "5")),
-            padCell(overlay, 5, naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, "6")),
+            padCell(overlay, 3, naratgeulKey(NaratgeulInterpreter.Key.RIEUL, "ㄹ", 2, PadHolds.symbol(3))),
+            padCell(overlay, 4, naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, PadHolds.symbol(4))),
+            padCell(overlay, 5, naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, PadHolds.symbol(5))),
             phoneSpaceKey()));
         rows.add(phoneRow(2, phoneGap("r2", 1),
-            padCell(overlay, 6, naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, "7")),
-            padCell(overlay, 7, naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, "8")),
-            padCell(overlay, 8, naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, "9")),
+            padCell(overlay, 6, naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, PadHolds.symbol(6))),
+            padCell(overlay, 7, naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, PadHolds.symbol(7))),
+            padCell(overlay, 8, naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, PadHolds.symbol(8))),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(),
-            padCell(overlay, 9, naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, "*")),
-            padCell(overlay, 10, naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, "0")),
-            padCell(overlay, 11, naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, "#")));
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneGap("r3", 1),
+            padCell(overlay, 9, naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, PadHolds.symbol(9))),
+            padCell(overlay, 10, naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, PadHolds.symbol(10))),
+            padCell(overlay, 11, naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, PadHolds.symbol(11))));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);
