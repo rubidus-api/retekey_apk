@@ -70,6 +70,13 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public View onCreateInputView() {
+        // Everything the IME shows goes inside the band frame, which keeps the system's own bottom
+        // buttons — hide keyboard, switch keyboard — off the keys. Issue #1: without it the bottom
+        // row is drawn underneath them and cannot be pressed at all.
+        return new SystemBandFrame(this, buildInputView());
+    }
+
+    private View buildInputView() {
         builtFor = OrientedPrefs.current(this);
         // The code-point pad floats whatever the keyboard is doing: it is not a page of the
         // keyboard but a small panel of its own, and it replaces the keyboard while it is open.

@@ -33,6 +33,7 @@ was paid for in this project.
   - [11.1 Caching the static image](#111-caching-the-static-image)
   - [11.2 Touch: from finger to keystroke](#112-touch-from-finger-to-keystroke)
 - [12. Theming](#12-theming)
+- [12a. The window the keyboard lives in](#12a-the-window-the-keyboard-lives-in)
 - [13. Settings and persistence](#13-settings-and-persistence)
 - [14. Testing and verification](#14-testing-and-verification)
 - [15. Anti-patterns, with the failures that taught them](#15-anti-patterns-with-the-failures-that-taught-them)
@@ -917,6 +918,40 @@ Rules that came out of building it:
   `super.onCreate`, and `recreate()` when the choice changes.
 - **An activity that was only paused keeps the old theme.** The screen the user came from is still
   alive when they return; compare the mode it was built with in `onResume` and recreate if it moved.
+
+
+## 12a. The window the keyboard lives in
+
+An IME window is a `Dialog` (`SoftInputWindow`), and it is not padded for the system's own furniture
+the way an activity is. Most ROMs draw two buttons under an open keyboard — hide the keyboard, and
+switch keyboard — and an app that targets a recent SDK is drawn edge to edge, so the window reaches
+the physical bottom of the screen and those buttons sit on top of the bottom key row.
+
+**This is not cosmetic.** The system takes the touch first, so the keys underneath cannot be pressed
+at all. ReteKey shipped that way until a user reported it: the `!#` and layout keys were unreachable
+on One UI.
+
+```java
+// Reserve the band the system takes taps in, as padding under the keys.
+int band = Build.VERSION.SDK_INT >= 29
+    ? insets.getTappableElementInsets().bottom     // 0 under gesture navigation
+    : insets.getSystemWindowInsetBottom();         // API 20-28
+setPadding(0, 0, 0, band);
+```
+
+Rules:
+
+- Reserve the **tappable-element** inset, not the navigation bar's. Under gesture navigation the bar
+  reports a height for its handle while nothing there takes a tap; padding by the bar would throw
+  away a strip of keyboard for nothing.
+- Add the band **below** the keys rather than taking it out of them, or a user who turns the buttons
+  on finds their keyboard has silently shrunk.
+- Ask once on attach as well as listening for changes: the insets may have settled before the input
+  view existed, and a listener only fires on a change.
+- Do not consume the insets — other views in the window are entitled to the same answer.
+- Clamp what you apply. A wrong inset arriving mid-resize would otherwise leave no keys at all.
+- Keep every `WindowInsets` reference in one class if the app still runs on API 14–19, where the
+  type does not exist.
 
 
 ## 13. Settings and persistence
