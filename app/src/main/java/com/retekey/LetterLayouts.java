@@ -25,7 +25,9 @@ public final class LetterLayouts {
         KeyboardLayoutId.EN_QWERTY,
         KeyboardLayoutId.EN_DVORAK,
         KeyboardLayoutId.KO_CHEONJIIN,
-        KeyboardLayoutId.KO_NARATGEUL
+        KeyboardLayoutId.KO_NARATGEUL,
+        KeyboardLayoutId.PAD_ARROWS,
+        KeyboardLayoutId.PAD_KEYPAD
     );
 
     /** What a user gets before touching settings: the two full keyboards. */
@@ -53,11 +55,15 @@ public final class LetterLayouts {
             case EN_DVORAK:
                 return "dv";
             case KO_DUBEOLSIK:
-                return "2벌";
+                return "2b";
             case KO_CHEONJIIN:
-                return "천";
+                return "cj";
             case KO_NARATGEUL:
-                return "나";
+                return "ng";
+            case PAD_ARROWS:
+                return "arw";
+            case PAD_KEYPAD:
+                return "num";
             default:
                 return displayName(id);
         }
@@ -73,11 +79,15 @@ public final class LetterLayouts {
             case EN_DVORAK:
                 return "Dvorak";
             case KO_DUBEOLSIK:
-                return "두벌식";
+                return "2beolsik(2벌식)";
             case KO_CHEONJIIN:
-                return "천지인";
+                return "Cheonjiin(천지인)";
             case KO_NARATGEUL:
-                return "나랏글";
+                return "Naratgeul(나랏글)";
+            case PAD_ARROWS:
+                return "Arrows(화살표)";
+            case PAD_KEYPAD:
+                return "Keypad(키패드)";
             default:
                 return id.name();
         }
