@@ -20,6 +20,14 @@
     <string name="settings_bar_label">Action bar</string>
     <string name="settings_bar_hint">A strip above the keys for the things that are not letters: selecting, the clipboard, moving the cursor. Tick the ones you want and order them with ▲ ▼; the bar scrolls sideways if they do not all fit.</string>
     <string name="settings_bar_enabled">Show the action bar</string>
+    <string name="settings_band_label">Space for the system\'s buttons</string>
+    <string name="settings_band_hint">Many phones draw hide-keyboard and switch-keyboard buttons under an open keyboard, and a keyboard that ignores them puts its bottom row where it cannot be pressed. Automatic keeps that strip only where the system is actually using it.</string>
+    <string name="settings_band_auto">Automatic</string>
+    <string name="settings_band_always">Always</string>
+    <string name="settings_band_never">Never</string>
+    <string name="settings_physical_label">Type as a physical keyboard (experimental)</string>
+    <string name="settings_physical_hint">Some apps take key events and nothing else — remote-desktop clients pass them to the far side, and some games and terminals read them directly — and they ignore a soft keyboard\'s. With this on, ReteKey sends its keys the way a physical keyboard does, and types the characters a US keyboard has keys for as those keys. Korean has no key to be pressed on, so it is still sent as text and the far side needs its own input method for it. The floating keyboard is the one to use here, so the app keeps its own layout.</string>
+    <string name="settings_physical_enabled">Send keys as a physical keyboard</string>
     <string name="settings_theme_label">Colour scheme</string>
     <string name="settings_theme_hint">Light or dark, for the keyboard and for these screens. On Android 12 and later the colours are taken from the system\'s own palette, so the keyboard matches the wallpaper theme you have set.</string>
     <string name="settings_theme_system">System</string>

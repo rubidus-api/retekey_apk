@@ -1,0 +1,20 @@
+Fixes a translucency bug from 0.1.96: the frame added for the system's
+bottom buttons painted the whole window, so the floating keyboard, the
+Hanja and code-point panels and the notepad all stopped being
+see-through. Only the reserved strip is painted now.
+
+The notepad's bottom row was pushed off the screen by the same frame,
+where it was invisible but still pressable. It measures itself against
+what is left now.
+
+The bottom strip is smarter: nothing is reserved on a phone that draws
+no keyboard buttons down there, and settings can force it always or
+never - and shows what your phone actually reports.
+
+The 123 keypad on the 12-key layouts is the Keypad layout's own cells
+now, holds and all, instead of a second set that held nothing.
+
+New, off by default: Type as a physical keyboard. It sends keys the way
+a physical keyboard does, for remote-desktop clients and other apps that
+ignore soft-keyboard input. Korean has no key to be pressed on and is
+still sent as text.

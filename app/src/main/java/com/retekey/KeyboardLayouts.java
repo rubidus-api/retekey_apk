@@ -148,12 +148,20 @@ public final class KeyboardLayouts {
      * can never disagree about where ← is.
      */
     private static SoftwareKeySpec padLayoutCell(boolean digits, int cell) {
-        if (digits) {
-            return digit("pad.num." + cell, PadHolds.digit(cell))
-                .withColumnSpan(2)
-                .withLongPress(PadHolds.symbol(cell));
-        }
-        return overlayPadCell(PhoneOverlay.NAV, cell);
+        return digits ? keypadCell(cell) : overlayPadCell(PhoneOverlay.NAV, cell);
+    }
+
+    /**
+     * One keypad cell: the digit on a tap and the calculator character on a hold.
+     *
+     * <p>There is one of these rather than two. The 123 overlay and the Keypad layout are the same
+     * pad reached two ways, and a cell that held nothing under the overlay while its twin held `+`
+     * was a difference with no reason behind it.
+     */
+    private static SoftwareKeySpec keypadCell(int cell) {
+        return digit("pad.num." + cell, PadHolds.digit(cell))
+            .withColumnSpan(2)
+            .withLongPress(PadHolds.symbol(cell));
     }
 
     /** A 12-key page under an overlay: its cells as digits or the cursor cluster. */
@@ -350,8 +358,7 @@ public final class KeyboardLayouts {
      */
     private static SoftwareKeySpec overlayPadCell(PhoneOverlay overlay, int cell) {
         if (overlay == PhoneOverlay.DIGITS) {
-            String[] digits = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"};
-            return digit("phone." + digits[cell], digits[cell]).withColumnSpan(2);
+            return keypadCell(cell);
         }
         String[] labels = {
             "Home", "↑", "PgUp", "←", "Ins", "→", "End", "↓", "PgDn", "Esc", "Del", ""

@@ -32,19 +32,60 @@ final class SystemBarInsets {
     private SystemBarInsets() {
     }
 
+    /** What the user asked for: work it out, always keep a band, or never keep one. */
+    enum Mode {
+        AUTOMATIC,
+        ALWAYS,
+        NEVER;
+
+        static final String PREF_KEY = "system_band_mode";
+
+        String stored() {
+            return name().toLowerCase(java.util.Locale.US);
+        }
+
+        static Mode parse(String value) {
+            for (Mode mode : values()) {
+                if (mode.stored().equals(value)) {
+                    return mode;
+                }
+            }
+            return AUTOMATIC;
+        }
+    }
+
     /**
      * The band to reserve.
      *
+     * <p>Automatic asks two questions rather than one. The tappable-element inset says how much of
+     * the bottom the system takes touches in, and the navigation bar's says how much furniture is
+     * actually down there; the band is the smaller of the two, and nothing at all where the
+     * navigation bar is not showing. A phone that draws no keyboard buttons over the IME — several
+     * Samsung ROMs let you turn them off — therefore gives up no keyboard height, while the
+     * three-button device from issue #1 still gets its band.
+     *
      * @param sdkInt the running platform's API level
      * @param tappableBottom the tappable-element bottom inset, or 0 where the platform has none
-     * @param systemWindowBottom the system-window bottom inset
+     * @param navigationBottom the navigation-bar bottom inset
+     * @param navigationVisible whether the navigation bar is showing at all
+     * @param systemWindowBottom the system-window bottom inset, the only answer below API 29
      */
-    static int bandPx(int sdkInt, int tappableBottom, int systemWindowBottom) {
-        if (sdkInt < ANY_INSETS_SDK) {
+    static int bandPx(int sdkInt, int tappableBottom, int navigationBottom,
+            boolean navigationVisible, int systemWindowBottom, Mode mode) {
+        if (sdkInt < ANY_INSETS_SDK || mode == Mode.NEVER) {
             return 0;
         }
-        int band = sdkInt >= TAPPABLE_INSETS_SDK ? tappableBottom : systemWindowBottom;
-        return Math.max(0, band);
+        if (sdkInt < TAPPABLE_INSETS_SDK) {
+            // Before tappable-element insets there is one number and no way to tell what is in it.
+            return Math.max(0, systemWindowBottom);
+        }
+        if (mode == Mode.ALWAYS) {
+            return Math.max(0, Math.max(tappableBottom, navigationBottom));
+        }
+        if (!navigationVisible) {
+            return 0;
+        }
+        return Math.max(0, Math.min(tappableBottom, navigationBottom));
     }
 
     /**

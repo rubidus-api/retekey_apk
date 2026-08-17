@@ -79,6 +79,9 @@ public class ReteKeyImeService extends InputMethodService {
             if (ActionBarSlots.KEY_ENABLED.equals(key) || ActionBarSlots.KEY_SLOTS.equals(key)) {
                 rebuildInputView();
             }
+            if (PhysicalKeyMode.KEY_ENABLED.equals(key)) {
+                reloadPhysicalKeyMode();
+            }
         };
 
     /** The clipboard panel while it is open, or null. */
@@ -87,6 +90,12 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean builtWithBar;
     /** What the keyboard remembers of what was cut and copied through it. */
     private ClipHistory clips = ClipHistory.empty();
+    /**
+     * Whether keys are sent as a physical keyboard's rather than as text (RFC-0010, experiment 1).
+     * Off unless the user turned it on: it is for the apps that refuse soft-keyboard input, and it
+     * cannot carry Hangul, which has no key to be pressed on.
+     */
+    private boolean physicalKeyMode;
 
     @Override
     public View onCreateInputView() {
@@ -115,6 +124,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnThemeCycle(this::cycleTheme);
         keyboardView.setOnLayoutChanged(this::announceLayout);
         reloadHardwareBindings();
+        reloadPhysicalKeyMode();
         HanjaDictionary.preload(this);
         if (clipboardPanel != null) {
             // The clipboard owns the window while it is open, the way the notepad does.
@@ -875,9 +885,40 @@ public class ReteKeyImeService extends InputMethodService {
             && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
     }
 
+    /**
+     * The same character as a key press, while the physical-keyboard mode is on.
+     *
+     * <p>Typing is normally text handed to the editor, which is what an editor wants and what a
+     * remote-desktop client or a game cannot use. Where the character is one a US keyboard has a
+     * key for, it is sent as that key instead — with Shift where the key needs it. Hangul is not
+     * one of those: it has no key code, so it goes on being committed as text, and the far side
+     * needs its own input method for it.
+     *
+     * @return the keystroke to send instead, or null to leave the event alone
+     */
+    private ProjectKeyEvent asPhysicalKeystroke(ProjectKeyEvent event) {
+        SemanticInput input = event.semanticInput();
+        if (input == null || input.kind() != SemanticInput.Kind.TEXT) {
+            return null;
+        }
+        AsciiKeyStrokes.Stroke stroke = AsciiKeyStrokes.ofText(input.text());
+        if (stroke == null) {
+            return null;
+        }
+        java.util.Set<KeyModifier> modifiers = stroke.shifted
+            ? java.util.Collections.singleton(KeyModifier.SHIFT)
+            : java.util.Collections.<KeyModifier>emptySet();
+        return ProjectKeyEvent.softwareDown(
+            event.stableKeyId(), SemanticInput.rawKey(stroke.key, modifiers));
+    }
+
     private void dispatchSoftwareInput(ProjectKeyEvent event) {
         if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
             return;
+        }
+        ProjectKeyEvent asKeystroke = physicalKeyMode ? asPhysicalKeystroke(event) : null;
+        if (asKeystroke != null) {
+            event = asKeystroke;
         }
         if (consumeForNotepad(event)) {
             return;
@@ -912,6 +953,12 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /** Re-reads the user's physical-key shortcuts for 한/영 and 한자 from preferences. */
+    /** Re-reads the physical-keyboard experiment's switch. */
+    private void reloadPhysicalKeyMode() {
+        physicalKeyMode = viewPrefs().getBoolean(
+            PhysicalKeyMode.KEY_ENABLED, PhysicalKeyMode.DEFAULT_ENABLED);
+    }
+
     private void reloadHardwareBindings() {
         SharedPreferences prefs = getSharedPreferences("retekey_view", MODE_PRIVATE);
         hanyeongBindings = HardwareKeyBindings.parse(
@@ -1513,12 +1560,12 @@ public class ReteKeyImeService extends InputMethodService {
 
     private EditorEndpoint currentEndpoint() {
         InputConnection inputConnection = getCurrentInputConnection();
-        return inputConnection == null
-            ? null
-            : EditorEndpoint.of(
-                sessionController.generation(),
-                new InputConnectionEditorBridge(inputConnection)
-            );
+        if (inputConnection == null) {
+            return null;
+        }
+        InputConnectionEditorBridge bridge = new InputConnectionEditorBridge(inputConnection);
+        bridge.setHardwareDisguise(physicalKeyMode);
+        return EditorEndpoint.of(sessionController.generation(), bridge);
     }
 
     private boolean usesRawKeyCompatibility() {

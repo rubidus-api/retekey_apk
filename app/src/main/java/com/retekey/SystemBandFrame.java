@@ -1,6 +1,8 @@
 package com.retekey;
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.os.Build;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -19,11 +21,19 @@ import android.widget.FrameLayout;
  */
 final class SystemBandFrame extends FrameLayout {
     private int band;
+    private final Paint bandPaint = new Paint();
 
     SystemBandFrame(Context context, View content) {
         super(context);
-        setBackgroundColor(KeyboardPalette.resolve(context).background);
+        // No background of its own. This frame wraps *everything* the IME shows, and a colour here
+        // would sit behind the floating keyboard and the Hanja and code-point panels — which are
+        // translucent on purpose, so that the app underneath stays readable. Painting the whole
+        // window opaque took that away; only the reserved band is painted now, and only when there
+        // is one.
+        bandPaint.setColor(KeyboardPalette.resolve(context).background);
+        setWillNotDraw(false);
         addView(content, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        tellTheChildWhatIsNotItsToFill();
         if (Build.VERSION.SDK_INT >= SystemBarInsets.ANY_INSETS_SDK) {
             setFitsSystemWindows(false);
             WindowInsetsWatcher.attach(this, this::setBand);
@@ -48,12 +58,45 @@ final class SystemBandFrame extends FrameLayout {
         return band;
     }
 
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        int reserved = getPaddingBottom();
+        if (reserved <= 0 || isFloating()) {
+            return;
+        }
+        // The strip the system's buttons sit over, in the keyboard's own colour so it reads as part
+        // of the keyboard rather than as a gap under it.
+        canvas.drawRect(0, getHeight() - reserved, getWidth(), getHeight(), bandPaint);
+    }
+
+    /**
+     * Whether what is inside is a floating panel. A floating keyboard covers the app rather than
+     * pushing it, and painting anything behind it — even a strip — would show through the panel's
+     * own translucency as a block of colour.
+     */
+    private boolean isFloating() {
+        return getChildCount() > 0 && getChildAt(0) instanceof FloatingKeyboardFrame;
+    }
+
     private void setBand(int px) {
         if (px == band) {
             return;
         }
         band = px;
+        tellTheChildWhatIsNotItsToFill();
         requestLayout();
+    }
+
+    /**
+     * A child that measures itself to the whole screen has to know how much of the screen this
+     * frame has already given away, or it comes out a band too tall and loses its bottom row off
+     * the edge of the window.
+     */
+    private void tellTheChildWhatIsNotItsToFill() {
+        if (getChildCount() > 0 && getChildAt(0) instanceof BottomReserving) {
+            ((BottomReserving) getChildAt(0)).setBottomReserved(band);
+        }
     }
 
     @Override

@@ -73,6 +73,26 @@ public final class PadLayoutsTest {
         assertEquals("num", LetterLayouts.keyCapName(KeyboardLayoutId.PAD_KEYPAD));
     }
 
+    @Test
+    public void theDigitsOverlayIsTheKeypadLayoutsOwnCells() {
+        // The 123 overlay and the Keypad layout are the same pad reached two ways: same digits,
+        // same holds, same key ids. A cell that held nothing under the overlay while its twin held
+        // "+" was a difference with nothing behind it.
+        for (KeyboardLayoutId id
+                : Arrays.asList(KeyboardLayoutId.KO_CHEONJIIN, KeyboardLayoutId.KO_NARATGEUL)) {
+            KeyboardLayout overlaid = KeyboardLayouts.phone(id, PhoneOverlay.DIGITS);
+            for (int cell = 0; cell < 12; cell++) {
+                SoftwareKeySpec fromOverlay = overlaid.findById("touch.sym.pad.num." + cell);
+                SoftwareKeySpec fromLayout = KEYPAD.findById("touch.sym.pad.num." + cell);
+                assertEquals("cell " + cell, fromLayout.label(), fromOverlay.label());
+                assertEquals("cell " + cell,
+                    fromLayout.longPressTexts(), fromOverlay.longPressTexts());
+                assertEquals("cell " + cell,
+                    fromLayout.semanticInput().text(), fromOverlay.semanticInput().text());
+            }
+        }
+    }
+
     /** The three pad cells of a row: the two-column keys between the frame's edges. */
     private static List<String> padLabels(KeyboardLayout layout, int row) {
         List<String> labels = new ArrayList<>(3);

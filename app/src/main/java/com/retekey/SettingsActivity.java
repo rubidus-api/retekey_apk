@@ -71,6 +71,8 @@ public final class SettingsActivity extends Activity {
         }
 
         addThemeControls(root);
+        addSystemBandControls(root);
+        addPhysicalKeyControls(root);
         addOrientationControls(root);
 
         root.addView(sectionHeader(R.string.settings_height_label));
@@ -122,6 +124,59 @@ public final class SettingsActivity extends Activity {
         scroller.addView(root);
         setContentView(scroller);
         applyPercent(currentPercent());
+    }
+
+    /**
+     * How much room the system's own bottom buttons get. Automatic works it out from the insets,
+     * which is right on most phones and wrong on some; the other two are there because the owner of
+     * a phone can see what is under their keyboard and this screen cannot.
+     */
+    private void addSystemBandControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_band_label));
+        root.addView(sectionHint(R.string.settings_band_hint));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.addView(bandButton(SystemBarInsets.Mode.AUTOMATIC, R.string.settings_band_auto));
+        row.addView(bandButton(SystemBarInsets.Mode.ALWAYS, R.string.settings_band_always));
+        row.addView(bandButton(SystemBarInsets.Mode.NEVER, R.string.settings_band_never));
+        root.addView(row, matchWidth());
+
+        // What this phone actually reported, measured inside the keyboard's own window — the only
+        // place it can be measured, and not a place a settings screen can reach.
+        TextView measured = new TextView(this);
+        measured.setText(SystemBandSettings.lastSeen(this));
+        Compat.setTextAppearance(measured, android.R.style.TextAppearance_DeviceDefault_Small);
+        measured.setPadding(0, dp(8), 0, 0);
+        root.addView(measured, matchWidth());
+    }
+
+    private Button bandButton(SystemBarInsets.Mode mode, int titleRes) {
+        SystemBarInsets.Mode current = SystemBandSettings.mode(this);
+        Button button = new Button(this);
+        String title = getString(titleRes);
+        button.setText(current == mode ? "● " + title : title);
+        button.setAllCaps(false);
+        button.setEnabled(current != mode);
+        button.setOnClickListener(view -> {
+            SystemBandSettings.setMode(this, mode);
+            recreate();
+        });
+        button.setLayoutParams(new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        return button;
+    }
+
+    /** RFC-0010's first experiment, with its cost written next to it. */
+    private void addPhysicalKeyControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_physical_label));
+        root.addView(sectionHint(R.string.settings_physical_hint));
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText(R.string.settings_physical_enabled);
+        enabled.setChecked(prefs().getBoolean(
+            PhysicalKeyMode.KEY_ENABLED, PhysicalKeyMode.DEFAULT_ENABLED));
+        enabled.setOnCheckedChangeListener((b, checked) ->
+            prefs().edit().putBoolean(PhysicalKeyMode.KEY_ENABLED, checked).apply());
+        root.addView(enabled);
     }
 
     /**

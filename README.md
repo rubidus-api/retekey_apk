@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.99** —
-[retekey-0.1.99.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.99/retekey-0.1.99.apk)
+Current release: **v0.1.100** —
+[retekey-0.1.100.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.100/retekey-0.1.100.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -125,7 +125,9 @@ never open the keypad page you will never see the parts you do not need.
 - **An action bar**, if you want one — a strip above the keys for selecting a word, select all,
   cut/copy/paste and the arrows, in the order you choose. Off until you turn it on.
 - **Out of the system's way** — the hide-keyboard and switch-keyboard buttons many ROMs draw at the
-  bottom of the screen keep their band, so no key of ours is stranded underneath them.
+  bottom of the screen keep their band, so no key of ours is stranded underneath them. Where the
+  system draws nothing there, nothing is reserved; settings can force it either way, and shows what
+  your phone actually reports.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
@@ -470,6 +472,21 @@ What it will not do matters as much as what it will:
 - A clip longer than 4000 characters is truncated: this is for pasting a line back, not for storing
   a document.
 - It lives in the app's own private storage, and nothing is sent anywhere.
+
+## Typing as a physical keyboard (experimental)
+
+Some apps take key events and nothing else. A remote-desktop client passes them to the far side; some
+games and terminals read them directly; and all of them ignore what a soft keyboard sends, because
+the system marks it as coming from software.
+
+**Settings → Type as a physical keyboard** sends the keys the way a physical keyboard does — no
+soft-keyboard flag, a real keyboard's device id, and the characters a US keyboard has keys for typed
+as those keys rather than as text. Use the floating keyboard with it, so the app keeps its own layout
+underneath.
+
+It is off by default and called an experiment for two honest reasons: whether it works is a question
+about the app on the other side rather than about this keyboard, and **Korean has no key to be
+pressed on** — Hangul is still sent as text, so the far side needs its own input method for it.
 
 ## Theming
 

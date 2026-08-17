@@ -9,8 +9,19 @@ import java.util.Objects;
 public final class InputConnectionEditorBridge implements EditorBridge {
     private static final int RAW_KEY_FLAGS =
         KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE;
+    /**
+     * The same event with nothing on it that says "a keyboard drew this on a screen". Apps that
+     * refuse soft-keyboard input — remote-desktop clients, some games — are usually looking at
+     * exactly {@code FLAG_SOFT_KEYBOARD} and at a device id of {@code VIRTUAL_KEYBOARD}
+     * (see RFC-0010).
+     */
+    private static final int HARDWARE_KEY_FLAGS = 0;
 
     private final InputConnection inputConnection;
+    /** Whether raw keys are dressed as a physical keyboard's. Off unless the user asked for it. */
+    private boolean hardwareDisguise;
+    /** The device id to claim; resolved once, from a real keyboard where the device has one. */
+    private int hardwareDeviceId = -1;
     private long rawKeyDownTime;
 
     public InputConnectionEditorBridge(InputConnection inputConnection) {
@@ -93,17 +104,29 @@ public final class InputConnectionEditorBridge implements EditorBridge {
                 ? KeyEvent.ACTION_DOWN
                 : KeyEvent.ACTION_UP;
             int metaState = metaStateFor(key.modifiers());
-            KeyEvent event = new KeyEvent(
-                downTime,
-                eventTime,
-                action,
-                keyCodeFor(key.key()),
-                0,
-                metaState,
-                KeyCharacterMap.VIRTUAL_KEYBOARD,
-                0,
-                RAW_KEY_FLAGS
-            );
+            KeyEvent event = hardwareDisguise
+                ? new KeyEvent(
+                    downTime,
+                    eventTime,
+                    action,
+                    keyCodeFor(key.key()),
+                    0,
+                    metaState,
+                    hardwareDeviceId(),
+                    0,
+                    HARDWARE_KEY_FLAGS,
+                    android.view.InputDevice.SOURCE_KEYBOARD)
+                : new KeyEvent(
+                    downTime,
+                    eventTime,
+                    action,
+                    keyCodeFor(key.key()),
+                    0,
+                    metaState,
+                    KeyCharacterMap.VIRTUAL_KEYBOARD,
+                    0,
+                    RAW_KEY_FLAGS
+                );
             boolean result = inputConnection.sendKeyEvent(event);
             if (key.action() == RawEditorKey.Action.UP) {
                 rawKeyDownTime = 0;
@@ -115,6 +138,46 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             }
             return EditorCallResult.runtimeFailure();
         }
+    }
+
+    /** Turns the physical-keyboard disguise on or off for the keys sent through this bridge. */
+    public void setHardwareDisguise(boolean disguise) {
+        this.hardwareDisguise = disguise;
+    }
+
+    /**
+     * A device id that is not {@code VIRTUAL_KEYBOARD}. A real alphabetic keyboard's id where the
+     * device has one attached — the most convincing answer — and otherwise the lowest id the device
+     * reports, since anything is more hardware-looking than -1.
+     */
+    private int hardwareDeviceId() {
+        if (hardwareDeviceId >= 0) {
+            return hardwareDeviceId;
+        }
+        hardwareDeviceId = 0;
+        try {
+            for (int id : android.view.InputDevice.getDeviceIds()) {
+                android.view.InputDevice device = android.view.InputDevice.getDevice(id);
+                if (device == null || id < 0) {
+                    continue;
+                }
+                boolean isKeyboard = (device.getSources() & android.view.InputDevice.SOURCE_KEYBOARD)
+                    == android.view.InputDevice.SOURCE_KEYBOARD;
+                // isVirtual() is API 16; below it there is nothing to exclude, and a device that
+                // reports an alphabetic keyboard is the best answer available either way.
+                boolean virtual = android.os.Build.VERSION.SDK_INT
+                    >= android.os.Build.VERSION_CODES.JELLY_BEAN && device.isVirtual();
+                if (isKeyboard
+                    && device.getKeyboardType() == android.view.InputDevice.KEYBOARD_TYPE_ALPHABETIC
+                    && !virtual) {
+                    hardwareDeviceId = id;
+                    break;
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // No device list to read; 0 is still not the virtual keyboard's -1.
+        }
+        return hardwareDeviceId;
     }
 
     static int metaStateFor(java.util.Set<KeyModifier> modifiers) {
@@ -173,7 +236,24 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case F10: return KeyEvent.KEYCODE_F10;
             case F11: return KeyEvent.KEYCODE_F11;
             case F12: return KeyEvent.KEYCODE_F12;
+            case SPACE: return KeyEvent.KEYCODE_SPACE;
+            case MINUS: return KeyEvent.KEYCODE_MINUS;
+            case EQUALS: return KeyEvent.KEYCODE_EQUALS;
+            case LEFT_BRACKET: return KeyEvent.KEYCODE_LEFT_BRACKET;
+            case RIGHT_BRACKET: return KeyEvent.KEYCODE_RIGHT_BRACKET;
+            case BACKSLASH: return KeyEvent.KEYCODE_BACKSLASH;
+            case SEMICOLON: return KeyEvent.KEYCODE_SEMICOLON;
+            case APOSTROPHE: return KeyEvent.KEYCODE_APOSTROPHE;
+            case GRAVE: return KeyEvent.KEYCODE_GRAVE;
+            case COMMA: return KeyEvent.KEYCODE_COMMA;
+            case PERIOD: return KeyEvent.KEYCODE_PERIOD;
+            case SLASH: return KeyEvent.KEYCODE_SLASH;
             default:
+                if (key.ordinal() >= RawKey.DIGIT_0.ordinal()
+                    && key.ordinal() <= RawKey.DIGIT_9.ordinal()) {
+                    // 0..9 are contiguous in both enums, so map by offset from zero.
+                    return KeyEvent.KEYCODE_0 + (key.ordinal() - RawKey.DIGIT_0.ordinal());
+                }
                 if (key.ordinal() >= RawKey.A.ordinal() && key.ordinal() <= RawKey.Z.ordinal()) {
                     // A..Z are contiguous in both enums, so map by offset from A.
                     return KeyEvent.KEYCODE_A + (key.ordinal() - RawKey.A.ordinal());

@@ -19,7 +19,8 @@ final class ActionBarFrame extends LinearLayout {
         this.bar = bar;
         this.keyboard = keyboard;
         setOrientation(VERTICAL);
-        setBackgroundColor(KeyboardPalette.resolve(context).background);
+        // No background: the bar and the keyboard each paint their own, and a colour here would
+        // sit behind a floating panel and cancel the translucency it exists for.
         addView(bar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         addView(keyboard, new LayoutParams(
             LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));

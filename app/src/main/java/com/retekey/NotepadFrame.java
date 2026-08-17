@@ -13,9 +13,19 @@ import android.widget.LinearLayout;
  * the bottom, unchanged, because the notepad is a place to put what you type rather than a
  * different way of typing it.
  */
-final class NotepadFrame extends LinearLayout {
+final class NotepadFrame extends LinearLayout implements BottomReserving {
     private final NotepadView notepad;
     private final ReteKeyboardView keyboard;
+    private int bottomReserved;
+
+    @Override
+    public void setBottomReserved(int px) {
+        if (px == bottomReserved) {
+            return;
+        }
+        bottomReserved = px;
+        requestLayout();
+    }
 
     NotepadFrame(Context context, NotepadView notepad, ReteKeyboardView keyboard) {
         super(context);
@@ -38,9 +48,9 @@ final class NotepadFrame extends LinearLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // The window is the screen: the notepad takes whatever the keyboard does not.
-        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels - bottomReserved;
         super.onMeasure(widthMeasureSpec,
-            MeasureSpec.makeMeasureSpec(screenHeight, MeasureSpec.EXACTLY));
+            MeasureSpec.makeMeasureSpec(Math.max(0, screenHeight), MeasureSpec.EXACTLY));
     }
 
     /** Whether a touch at this point is on the notepad's own area rather than the keyboard's. */

@@ -30,7 +30,7 @@ final class WindowInsetsWatcher {
     /** Starts watching {@code view}. Call only when the platform has insets at all. */
     static void attach(View view, BandListener listener) {
         view.setOnApplyWindowInsetsListener((v, insets) -> {
-            listener.onBand(bandOf(insets));
+            listener.onBand(bandOf(v, insets));
             // Not consumed: other views in the window are entitled to the same answer.
             return v.onApplyWindowInsets(insets);
         });
@@ -42,14 +42,32 @@ final class WindowInsetsWatcher {
             return -1;
         }
         WindowInsets insets = view.getRootWindowInsets();
-        return insets == null ? -1 : bandOf(insets);
+        return insets == null ? -1 : bandOf(view, insets);
     }
 
-    private static int bandOf(WindowInsets insets) {
-        int tappable = Build.VERSION.SDK_INT >= SystemBarInsets.TAPPABLE_INSETS_SDK
-            ? insets.getTappableElementInsets().bottom
-            : 0;
-        return SystemBarInsets.bandPx(
-            Build.VERSION.SDK_INT, tappable, insets.getSystemWindowInsetBottom());
+    private static int bandOf(View view, WindowInsets insets) {
+        int tappable = 0;
+        int navigation = 0;
+        boolean navigationVisible = true;
+        if (Build.VERSION.SDK_INT >= SystemBarInsets.TAPPABLE_INSETS_SDK) {
+            tappable = insets.getTappableElementInsets().bottom;
+            navigation = insets.getSystemWindowInsetBottom();
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            navigation = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+            navigationVisible = insets.isVisible(WindowInsets.Type.navigationBars());
+        }
+        int band = SystemBarInsets.bandPx(
+            Build.VERSION.SDK_INT,
+            tappable,
+            navigation,
+            navigationVisible,
+            insets.getSystemWindowInsetBottom(),
+            SystemBandSettings.mode(view.getContext()));
+        // What the phone actually reported, so the settings screen can show it rather than leaving
+        // the user to guess why their keyboard has a gap under it — or has none.
+        SystemBandSettings.remember(
+            view.getContext(), tappable, navigation, navigationVisible, band);
+        return band;
     }
 }

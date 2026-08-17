@@ -29,5 +29,22 @@ public enum RawKey {
     // Letter keys, for modifier chords such as Ctrl+B in a terminal. They must stay contiguous
     // and in A..Z order: the bridge maps them to KEYCODE_A..KEYCODE_Z by offset.
     A, B, C, D, E, F, G, H, I, J, K, L, M,
-    N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+    N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+    // Digits and the punctuation a US keyboard has keys for. They exist for the same reason the
+    // letters do: so a character can be typed as a key rather than as text, for the apps that only
+    // take key events (see RFC-0010). They must stay contiguous and in 0..9 order.
+    DIGIT_0, DIGIT_1, DIGIT_2, DIGIT_3, DIGIT_4,
+    DIGIT_5, DIGIT_6, DIGIT_7, DIGIT_8, DIGIT_9,
+    SPACE,
+    MINUS,
+    EQUALS,
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+    BACKSLASH,
+    SEMICOLON,
+    APOSTROPHE,
+    GRAVE,
+    COMMA,
+    PERIOD,
+    SLASH
 }
