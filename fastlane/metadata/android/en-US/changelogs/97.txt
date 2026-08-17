@@ -1,0 +1,18 @@
+Fixes issue #1: on ROMs that draw hide-keyboard and switch-keyboard
+buttons at the bottom of the screen, ReteKey drew its bottom row
+underneath them, and those keys could not be pressed at all. The band
+the system takes taps in is now left alone - and only in the navigation
+modes that actually use it, so gesture navigation loses no height.
+
+Two new layouts, off until you turn them on in settings: Arrows and
+Keypad, on the 12-key frame.
+
+Holding a 12-key pad now types a calculator's characters rather than the
+digit: + ( ) - = % / e ^ across the pad, $ under the last vowel, ! and @
+either side. The digits are still a tap away under 123 and on the new
+Keypad layout.
+
+Key captions and layout names are in English with the Hangul alongside -
+2beolsik(2벌식), Cheonjiin(천지인), Naratgeul(나랏글) - and the pads say
+Move and Next. The 漢 key leaves the 12-key pads; holding the layout key
+still converts, as does the menu page.

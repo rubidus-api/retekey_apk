@@ -11,7 +11,7 @@ straight out of the APK rather than loaded into memory. It declares **one permis
 an ordinary permission that is never requested at runtime and does nothing but the buzz under your
 finger, which you can turn down to zero. No network, no account, no analytics.
 
-And nothing is missing for it: 천지인, 나랏글 and 2-beolsik, Hanja conversion, physical keyboards,
+And nothing is missing for it: Cheonjiin(천지인), Naratgeul(나랏글) and 2beolsik(2벌식), Hanja conversion, physical keyboards,
 and the special keys most keyboards leave out.
 
 > This English README is the canonical version; the Korean one is its translation.
@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.95** —
-[retekey-0.1.95.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.95/retekey-0.1.95.apk)
+Current release: **v0.1.96** —
+[retekey-0.1.96.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.96/retekey-0.1.96.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -70,7 +70,7 @@ Android 9+ build; the Android 4.0 one lives on the releases page.
    box to type in, so you can do the whole thing without hunting through system settings.
 
 To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right. It is captioned with where it goes rather than where
-you are — `>qw`, `>dv`, `>2벌`, `>천`, `>나` — so you can see what the next press will give you.
+you are — `>qw`, `>dv`, `>2b`, `>cj`, `>ng`, `>arw`, `>num` — so you can see what the next press will give you.
 Hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
 in the settings.
 
@@ -116,8 +116,11 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Five layouts** — 2-beolsik, QWERTY, Dvorak, and the 12-key 천지인 and 나랏글 phone modes. The layout key
-  walks the ones you enabled, in the order you set; holding it opens the menu.
+- **Seven layouts** — 2beolsik(2벌식), QWERTY, Dvorak, the 12-key Cheonjiin(천지인) and
+  Naratgeul(나랏글) phone modes, and Arrows(화살표) and Keypad(키패드) on the same 12-key frame. The
+  layout key walks the ones you enabled, in the order you set; holding it opens the menu.
+- **Out of the system's way** — the hide-keyboard and switch-keyboard buttons many ROMs draw at the
+  bottom of the screen keep their band, so no key of ours is stranded underneath them.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
@@ -148,25 +151,29 @@ there: 漢 for Hanja on 2-beolsik, `Esc` on QWERTY and Dvorak — a real
 `KEYCODE_ESCAPE`, for vi over ssh — and nothing on the rest. The two 12-key pages keep the same frame in
 a different shape: the modifiers own the leftmost column, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
-with `!#` and the layout key closing the bottom row. The cell beside Tab carries 漢 on both of them, which
-converts on a tap. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
-phone keypad's digits on them, **이동** the cursor cluster (arrows, Home/End, PgUp/PgDn, Ins, Esc,
-Del); the same key puts the Hangul back. 천지인 puts 다음 beside Alt and flanks ㅇㅁ with `.,` and
+with `!#` and the layout key closing the bottom row. The cell beside Tab is empty on both of
+them. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
+phone keypad's digits on them, **Move** the cursor cluster (arrows, Home/End, PgUp/PgDn, Ins, Esc,
+Del); the same key puts the Hangul back. 천지인 puts Next beside Alt and flanks ㅇㅁ with `.,` and
 `!?`, which work the way the Hangul keys around them do: tapping moves through the characters on the
 face, and dragging left or right picks the one written on that side.
 
-Five letter layouts share that grid:
+Seven letter layouts share that grid:
 
 | Layout | Shape |
 |---|---|
-| **두벌식** | the standard Korean full keyboard |
+| **2beolsik(2벌식)** | the standard Korean full keyboard |
 | **QWERTY** | English |
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
-| **천지인** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **다음** key — starts the next letter |
-| **나랏글** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
+| **Cheonjiin(천지인)** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do, and hold a calculator's characters rather than its digits — `+ ( ) - = % / e ^` across the pad, `$` under ㅇㅁ, `!` and `@` either side. Two taps of one key in a row are one cycle, so a pause — or the **Next** key — starts the next letter |
+| **Naratgeul(나랏글)** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, and hold the same calculator set the other pad does: `+ ( ) - = % / e ^`, `$` under ㅡ, `!` and `@` either side. The digits themselves are a tap away under **123**, or on the Keypad layout |
 
-The layout key — captioned with the layout it is showing (한글, ABC, 천지, 나랏, DVK) — walks the layouts you ticked in settings, in the order you put them there, naming each
-one as it arrives. Holding it runs the Hanja conversion.
+| **Arrows(화살표)** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. Off until you turn it on in settings |
+| **Keypad(키패드)** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold. Off until you turn it on in settings |
+
+The layout key — captioned with the layout it goes to next (`>2b`, `>qw`, `>dv`, `>cj`, `>ng`,
+`>arw`, `>num`) — walks the layouts you ticked in settings, in the order you put them there, naming
+each one as it arrives. Holding it runs the Hanja conversion.
 
 Holding a letter key types a character instead of repeating it. The alternates come in three groups
 — `1234567890`, `!@#$%^&*;` and `_-:='"?` — one to a row. Their sizes are 10/9/7, which is QWERTY's
@@ -177,9 +184,9 @@ and the arrows have no alternate and keep repeating when held.
 A physical keyboard is not affected by any of this: it keeps its own layout, and the on-screen
 choice only changes what the on-screen keys do.
 
-The five, as they are:
+The layouts, as they are:
 
-**두벌식** — 漢 beside `!#` converts what you just typed:
+**2beolsik(2벌식)** — 漢 beside `!#` converts what you just typed:
 
 ![2-beolsik layout](assets/keyboard-korean.png)
 
@@ -191,13 +198,21 @@ The five, as they are:
 
 ![Dvorak layout](assets/keyboard-dvorak.png)
 
-**천지인** — 다음 beside Alt, 漢 beside Tab, and `.,` `!?` either side of ㅇㅁ:
+**Cheonjiin(천지인)** — Next beside Alt, and `.,` `!?` either side of ㅇㅁ:
 
 ![Cheonjiin layout](assets/keyboard-cheonjiin.png)
 
-**나랏글** — 획 and 쌍 on the bottom letter row, 漢 beside Tab:
+**Naratgeul(나랏글)** — 획 and 쌍 on the bottom letter row:
 
 ![Naratgeul layout](assets/keyboard-naratgeul.png)
+
+**Arrows(화살표)** — the cursor cluster as a layout of its own:
+
+![Arrows layout](assets/keyboard-arrows.png)
+
+**Keypad(키패드)** — the digits on a tap, the calculator set on hold:
+
+![Keypad layout](assets/keyboard-keypad.png)
 
 The two cells beside Tab turn the twelve Hangul keys into the phone keypad's digits, or into the
 cursor cluster, and back again:
