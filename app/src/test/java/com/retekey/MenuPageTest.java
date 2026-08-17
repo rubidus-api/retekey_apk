@@ -68,13 +68,21 @@ public final class MenuPageTest {
     @Test
     public void thePlaceholderTilesStayDisabled() {
         for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
-            "touch.menu.theme",
             "touch.menu.onehand.left", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);
             assertFalse(id + " stays disabled", key.enabled());
             assertFalse(id + " is not a control yet", key.isControl());
         }
+    }
+
+    /** The Theme tile walks the colour scheme: system, light, dark. */
+    @Test
+    public void theThemeTileIsAWorkingKey() {
+        SoftwareKeySpec key = menu.findById("touch.menu.theme");
+        assertNotNull("Theme", key);
+        assertTrue("Theme is a control key", key.isControl());
+        assertEquals(ControlKey.THEME_CYCLE, key.control());
     }
 
     /** One of the two custom slots is a working key now: U+ code-point entry. */

@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.94** —
-[retekey-0.1.94.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.94/retekey-0.1.94.apk)
+Current release: **v0.1.95** —
+[retekey-0.1.95.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.95/retekey-0.1.95.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -135,7 +135,7 @@ never open the keypad page you will never see the parts you do not need.
   sound, each independently adjustable.
 - **Hold a key to type its alternate** straight away: no popup, no drag. The letter pages hold
   `1234567890` on the top row, `!@#$%^&*;` on the middle one, and `_-:='"?` on the bottom one.
-- **Follows the system theme** — light/dark, and the Material You palette on Android 12+.
+- **Light, dark, or the system's own** — your choice, with the Material You palette on Android 12+.
 
 ## Layout
 
@@ -254,7 +254,7 @@ keyboard itself.
 | Manage | manage keyboards | open the system screen for enabling keyboards |
 | Flt | floating | turn the floating panel on or off |
 | 1Hand / Full | one-handed | *not built yet* |
-| Theme | theme | *not built yet* |
+| Theme | theme | walk the colour scheme: system → light → dark |
 | ★1 / ★2 | custom | *not built yet* |
 | Set | settings | open ReteKey's own settings |
 | ← ↑ → ↓ | arrows | move the cursor; they repeat when held |
@@ -397,6 +397,7 @@ run select-all/copy/paste/undo.
 
 The settings screen uses stock controls only and follows the system theme:
 
+- **Colour scheme** — System, Light, or Dark. System is the default and follows the device; the other two hold whichever you pick, for the keyboard and for the app's own screens alike. On Android 12+ the colours themselves still come from the system's Material You palette.
 - **Which screen these settings are for** — height, the layouts and their order, and the floating keyboard are **remembered separately for portrait and landscape.** Pick which one you are setting at the top of the screen, without having to turn the device to reach it.
 - **Keyboard height** — how much of the screen's height the keyboard takes, from 1% to 50%. The number on the slider is the number on the screen: 25% is a quarter of it. A keyboard set before this was a percentage keeps exactly the size it had.
 - **Floating keyboard** — whether to use it on this screen, and how solid it is (1–100%).
@@ -410,14 +411,17 @@ A **Back to main screen** button at the top returns to the app's main screen at 
 
 The keyboard resolves its colours from the device theme rather than hardcoding them:
 
-- The system light/dark mode is honoured (`Configuration.UI_MODE_NIGHT_MASK`).
+- The user's own choice comes first: **System, Light or Dark**, set in the settings screen or by
+  the menu page's **Theme** key, which walks the three in turn.
+- Left on System, the device's light/dark mode is honoured (`Configuration.UI_MODE_NIGHT_MASK`).
 - Colours are assigned by Material role — background as surface, keys as an elevated surface,
   labels as on-surface, active keys as primary, and the press effect as a primary state layer.
 - On Android 12+ the user's **Material You** palette is used, so the keyboard matches their theme;
   older versions fall back to a tuned light/dark palette.
 
 The keys, the long-press popup, the Hanja candidate window, and the floating panel all share
-one palette.
+one palette. The launcher and settings screens follow the same choice through the platform's own
+DeviceDefault themes, so a forced light or dark applies to the whole app.
 
 ## Android version support
 

@@ -1,0 +1,9 @@
+Pick the colour scheme: System, Light or Dark. System still follows the
+device, as before; the other two hold what you choose whatever the phone
+is set to, and apply to the keyboard and to the app's own screens alike.
+On Android 12 and later the colours themselves are still taken from the
+system's own palette, so a forced dark keyboard still matches your
+wallpaper theme.
+
+It is in Settings at the top, and on the menu page the Theme key - which
+did nothing until now - walks the three in turn.

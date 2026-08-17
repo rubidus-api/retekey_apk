@@ -42,6 +42,9 @@ public final class SettingsActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Before any view exists: the theme is what the stock controls below take their colours
+        // from, and it is only ever different from the manifest's when the user has picked one.
+        ScreenTheme.apply(this);
         super.onCreate(savedInstanceState);
         setTitle(R.string.settings_title);
         editing = OrientedPrefs.current(this);
@@ -66,6 +69,7 @@ public final class SettingsActivity extends Activity {
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        addThemeControls(root);
         addOrientationControls(root);
 
         root.addView(sectionHeader(R.string.settings_height_label));
@@ -116,6 +120,42 @@ public final class SettingsActivity extends Activity {
         scroller.addView(root);
         setContentView(scroller);
         applyPercent(currentPercent());
+    }
+
+    /**
+     * Picks light, dark, or whatever the device is set to. The keyboard reads the same preference
+     * and repaints on its next appearance; this screen has to be built again to change its own
+     * theme, which {@link #recreate()} does with the scroll position and the whole state reset —
+     * acceptable for a setting that is by definition about how the screen looks.
+     */
+    private void addThemeControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_theme_label));
+        root.addView(sectionHint(R.string.settings_theme_hint));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.addView(themeButton(ThemeMode.SYSTEM, R.string.settings_theme_system));
+        row.addView(themeButton(ThemeMode.LIGHT, R.string.settings_theme_light));
+        row.addView(themeButton(ThemeMode.DARK, R.string.settings_theme_dark));
+        root.addView(row, matchWidth());
+    }
+
+    private Button themeButton(ThemeMode mode, int titleRes) {
+        ThemeMode current = ScreenTheme.mode(this);
+        Button button = new Button(this);
+        String title = getString(titleRes);
+        // Marked in the label, for the same reason the orientation buttons are: this screen
+        // hardcodes no colour, so the mark has to survive any theme.
+        button.setText(current == mode ? "● " + title : title);
+        button.setAllCaps(false);
+        button.setEnabled(current != mode);
+        button.setOnClickListener(view -> {
+            ScreenTheme.setMode(this, mode);
+            recreate();
+        });
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        button.setLayoutParams(params);
+        return button;
     }
 
     /**

@@ -887,6 +887,38 @@ Rules:
   switch rebuilds the keyboard.
 - Use one palette for every surface you draw: keys, long-press popup, candidate strip.
 
+### Letting the user override the system
+
+Following the system is the right default, not the whole answer: a user who keeps their phone in
+light mode may still want a dark keyboard, and there is nowhere else for them to ask for it. The
+override is one stored word — `system`, `light`, `dark` — read in exactly two places:
+
+```java
+enum ThemeMode { SYSTEM, LIGHT, DARK;
+    boolean night(boolean systemNight) { ... }   // only SYSTEM consults the device
+}
+
+static boolean isNight(Context context) {        // the palette's one question
+    return ScreenTheme.mode(context).night(systemNight(context));
+}
+```
+
+Rules that came out of building it:
+
+- **Store the word, not the ordinal.** An ordinal renames everyone's stored choice the day a mode
+  is inserted in the middle of the enum; an unknown word can fall back to `SYSTEM`, which is what
+  every version before the setting existed did.
+- **The keyboard needs no new plumbing.** It already re-reads preferences on change and already has
+  the theme in its draw-cache key; put the mode in that key too, and a switch repaints by itself.
+- **Your own activities are the awkward half.** They are made of stock views and take their colours
+  from the activity theme, not from your palette. `createConfigurationContext` is API 17 and
+  `DayNight` is API 29, so on an app that reaches further down, pick the theme resource instead —
+  the day/night one for `SYSTEM`, a fixed light or dark parent otherwise — in `onCreate` **before**
+  `super.onCreate`, and `recreate()` when the choice changes.
+- **An activity that was only paused keeps the old theme.** The screen the user came from is still
+  alive when they return; compare the mode it was built with in `onResume` and recreate if it moved.
+
+
 ## 13. Settings and persistence
 
 The settings screen is an ordinary `Activity` named in `method.xml`. The only structural point is

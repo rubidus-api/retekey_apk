@@ -742,7 +742,7 @@ public final class KeyboardLayouts {
         rows.add(KeyboardLayout.row(
             menuDisabled("onehand.left", "1Hand"),
             menuDisabled("onehand.full", "Full"),
-            menuDisabled("theme", "Theme"),
+            menuControl("theme", "Theme", ControlKey.THEME_CYCLE),
             menuControl("unicode", "Uni", ControlKey.UNICODE_INPUT),
             menuControl("notepad", "Memo", ControlKey.NOTEPAD),
             menuControl("paste", "Paste", ControlKey.PASTE),

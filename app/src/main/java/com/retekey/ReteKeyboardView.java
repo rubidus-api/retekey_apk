@@ -147,6 +147,7 @@ public final class ReteKeyboardView extends View {
     private Runnable onUnicodeInput;
     private Runnable onNotepad;
     private Runnable onFloatingToggle;
+    private Runnable onThemeCycle;
     private Fn.Consumer<KeyboardLayoutId> onLayoutChanged;
     private final CheonjiinInterpreter cheonjiin = new CheonjiinInterpreter();
     private final NaratgeulInterpreter naratgeul = new NaratgeulInterpreter();
@@ -227,6 +228,10 @@ public final class ReteKeyboardView extends View {
     /** Sets the handler the 한자 key runs to convert the reading before the cursor to Hanja. */
     public void setOnHanja(Runnable handler) {
         this.onHanja = handler;
+    }
+
+    public void setOnThemeCycle(Runnable handler) {
+        this.onThemeCycle = handler;
     }
 
     public void setOnFloatingToggle(Runnable handler) {
@@ -677,7 +682,7 @@ public final class ReteKeyboardView extends View {
             + "|" + phoneOverlay + "|" + unicodeEntry + "|" + unicodePreview
             + "|" + shiftLayer.isActive()
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
-            + KeyboardPalette.isNight(getContext());
+            + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext());
     }
 
     /**
@@ -1705,6 +1710,11 @@ public final class ReteKeyboardView extends View {
             case FLOATING_TOGGLE:
                 if (onFloatingToggle != null) {
                     onFloatingToggle.run();
+                }
+                break;
+            case THEME_CYCLE:
+                if (onThemeCycle != null) {
+                    onThemeCycle.run();
                 }
                 break;
             case CTRL:

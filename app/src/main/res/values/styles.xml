@@ -13,4 +13,11 @@
       resource qualifier is the same result and works everywhere.
     -->
     <style name="ReteScreenTheme" parent="@android:style/Theme.DeviceDefault.Light" />
+
+    <!--
+      The two fixed halves, for a user who has asked for light or dark whatever the device is set
+      to. They have no -night variant on purpose: that is what "fixed" means here.
+    -->
+    <style name="ReteScreenThemeLight" parent="@android:style/Theme.DeviceDefault.Light" />
+    <style name="ReteScreenThemeDark" parent="@android:style/Theme.DeviceDefault" />
 </resources>

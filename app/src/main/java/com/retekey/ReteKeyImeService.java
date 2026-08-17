@@ -85,6 +85,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnUnicodeInput(this::startUnicodeEntry);
         keyboardView.setOnNotepad(this::toggleNotepad);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
+        keyboardView.setOnThemeCycle(this::cycleTheme);
         keyboardView.setOnLayoutChanged(this::announceLayout);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
@@ -168,6 +169,32 @@ public class ReteKeyImeService extends InputMethodService {
 
     private SharedPreferences viewPrefs() {
         return getSharedPreferences("retekey_view", MODE_PRIVATE);
+    }
+
+    /**
+     * The menu page's Theme key: system → light → dark → system. The keyboard repaints itself off
+     * the preference change; the toast is how the user knows which of the three they landed on,
+     * since two of them can look identical on a device that is already set that way.
+     */
+    private void cycleTheme() {
+        ThemeMode[] modes = ThemeMode.values();
+        ThemeMode next = modes[(ScreenTheme.mode(this).ordinal() + 1) % modes.length];
+        ScreenTheme.setMode(this, next);
+        showFunctionToast(getString(themeLabel(next)));
+        // No rebuild: the keyboard's own preference listener repaints it, which keeps the user on
+        // the menu page they pressed the key from. The frames around it — the floating panel, the
+        // candidate strip — resolve the palette when they are next created.
+    }
+
+    private static int themeLabel(ThemeMode mode) {
+        switch (mode) {
+            case LIGHT:
+                return R.string.settings_theme_light;
+            case DARK:
+                return R.string.settings_theme_dark;
+            default:
+                return R.string.settings_theme_system;
+        }
     }
 
     /** Flips the floating half-screen keyboard on or off and rebuilds the input view in place. */

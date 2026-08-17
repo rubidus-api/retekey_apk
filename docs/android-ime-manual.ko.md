@@ -872,6 +872,37 @@ static KeyboardPalette resolve(Context context) {
   그려지게 할 것.
 - 그리는 모든 표면에 하나의 팔레트를 쓸 것: 키, 롱프레스 팝업, 후보 막대.
 
+### 사용자가 시스템을 덮어쓰게 하기
+
+시스템을 따르는 것은 옳은 기본값이지만 답의 전부는 아니다. 기기를 라이트로 쓰면서 키보드만 어둡게 쓰고
+싶은 사용자가 있고, 그가 그렇게 요청할 곳은 여기밖에 없다. 덮어쓰기는 저장된 낱말 하나 — `system`,
+`light`, `dark` — 이며 읽는 곳은 정확히 두 군데다.
+
+```java
+enum ThemeMode { SYSTEM, LIGHT, DARK;
+    boolean night(boolean systemNight) { ... }   // SYSTEM 만 기기 설정을 묻는다
+}
+
+static boolean isNight(Context context) {        // 팔레트가 던지는 유일한 질문
+    return ScreenTheme.mode(context).night(systemNight(context));
+}
+```
+
+만들면서 나온 규칙:
+
+- **서수가 아니라 낱말로 저장할 것.** 서수는 열거형 중간에 모드가 하나 끼어드는 날 모든 사용자의 저장된
+  선택을 조용히 바꿔 버린다. 알 수 없는 낱말은 `SYSTEM`으로 되돌리면 되고, 그것이 이 설정이 없던 시절의
+  동작 그대로다.
+- **키보드에는 새 배관이 필요 없다.** 이미 설정 변경을 다시 읽고, 이미 그리기 캐시 키에 테마가 들어
+  있다. 그 키에 모드까지 넣으면 전환은 스스로 다시 그려진다.
+- **까다로운 쪽은 자기 액티비티다.** 기본 위젯으로 만들어진 화면은 팔레트가 아니라 액티비티 테마에서
+  색을 가져온다. `createConfigurationContext`는 API 17, `DayNight`는 API 29이므로 더 낮은 곳까지
+  내려가는 앱이라면 테마 리소스를 고르는 편이 낫다 — `SYSTEM`이면 데이·나이트 테마, 아니면 고정된
+  라이트/다크 부모를 `onCreate`에서 `super.onCreate` **앞에** 지정하고, 선택이 바뀌면 `recreate()` 한다.
+- **잠시 멈춰 있던 액티비티는 옛 테마를 그대로 쓴다.** 사용자가 떠나온 화면은 아직 살아 있으므로,
+  `onResume`에서 만들어질 때의 모드와 비교해 달라졌으면 다시 만들 것.
+
+
 ## 13. 설정과 영속화
 
 설정 화면은 `method.xml`에 이름을 적는 평범한 `Activity`다. 구조적으로 유일한 요점은 **서비스와 액티비티가

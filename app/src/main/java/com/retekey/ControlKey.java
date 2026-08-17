@@ -57,6 +57,8 @@ public enum ControlKey {
     PHONE_NAV,
     /** Turn the floating half-screen keyboard on or off through the host. */
     FLOATING_TOGGLE,
+    /** Walk the colour scheme — system, light, dark — through the host. */
+    THEME_CYCLE,
     /**
      * Latching modifiers. Their armed state is view-local; it feeds the raw-key action so a
      * subsequent raw key becomes a chord.

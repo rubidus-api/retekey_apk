@@ -99,7 +99,16 @@ final class KeyboardPalette {
         return KeyPressTint.mix(inkOn(fill), fill, 0.35f);
     }
 
+    /**
+     * Whether the keyboard is painted dark: the user's own choice where they made one, and the
+     * device's light/dark setting where they left it on {@link ThemeMode#SYSTEM}.
+     */
     static boolean isNight(Context context) {
+        return ScreenTheme.mode(context).night(systemNight(context));
+    }
+
+    /** What the device itself is set to, ignoring the app's own setting. */
+    static boolean systemNight(Context context) {
         return (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
             == Configuration.UI_MODE_NIGHT_YES;
     }

@@ -21,9 +21,14 @@ import android.widget.TextView;
  */
 public final class PreviewActivity extends Activity {
     private EditText field;
+    /** The colour scheme these views were made under, so a change made elsewhere is noticed. */
+    private ThemeMode builtWith;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // The user's colour-scheme choice, applied before any view is made from it.
+        ScreenTheme.apply(this);
+        builtWith = ScreenTheme.mode(this);
         super.onCreate(savedInstanceState);
         getWindow().setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
@@ -121,6 +126,12 @@ public final class PreviewActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Coming back from the settings screen after a colour-scheme change: this screen was kept
+        // rather than recreated, so it is still wearing the old theme and has to be built again.
+        if (builtWith != ScreenTheme.mode(this)) {
+            recreate();
+            return;
+        }
         field.requestFocus();
         InputMethodManager imm = Compat.systemService(this, Context.INPUT_METHOD_SERVICE, InputMethodManager.class);
         if (imm != null) {
