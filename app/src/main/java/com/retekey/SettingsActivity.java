@@ -177,6 +177,16 @@ public final class SettingsActivity extends Activity {
         enabled.setOnCheckedChangeListener((b, checked) ->
             prefs().edit().putBoolean(PhysicalKeyMode.KEY_ENABLED, checked).apply());
         root.addView(enabled);
+
+        CheckBox keepShown = new CheckBox(this);
+        keepShown.setText(R.string.settings_keep_shown);
+        keepShown.setChecked(prefs().getBoolean(
+            SoftKeyboardVisibilityPolicy.KEY_ALWAYS_SHOW,
+            SoftKeyboardVisibilityPolicy.DEFAULT_ALWAYS_SHOW));
+        keepShown.setOnCheckedChangeListener((b, checked) -> prefs().edit()
+            .putBoolean(SoftKeyboardVisibilityPolicy.KEY_ALWAYS_SHOW, checked).apply());
+        root.addView(keepShown);
+        root.addView(sectionHint(R.string.settings_keep_shown_note));
     }
 
     /**

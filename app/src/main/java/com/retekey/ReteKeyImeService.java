@@ -82,6 +82,14 @@ public class ReteKeyImeService extends InputMethodService {
             if (PhysicalKeyMode.KEY_ENABLED.equals(key)) {
                 reloadPhysicalKeyMode();
             }
+            if (SoftKeyboardVisibilityPolicy.KEY_ALWAYS_SHOW.equals(key)) {
+                reloadSoftKeyboardMode();
+                try {
+                    updateInputViewShown();
+                } catch (RuntimeException ignored) {
+                    // Nothing on screen to update; the next session reads the new mode anyway.
+                }
+            }
         };
 
     /** The clipboard panel while it is open, or null. */
@@ -128,6 +136,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnLayoutChanged(this::announceLayout);
         reloadHardwareBindings();
         reloadPhysicalKeyMode();
+        reloadSoftKeyboardMode();
         HanjaDictionary.preload(this);
         if (clipboardPanel != null) {
             // The clipboard owns the window while it is open, the way the notepad does.
@@ -966,6 +975,19 @@ public class ReteKeyImeService extends InputMethodService {
     private void reloadPhysicalKeyMode() {
         physicalKeyMode = viewPrefs().getBoolean(
             PhysicalKeyMode.KEY_ENABLED, PhysicalKeyMode.DEFAULT_ENABLED);
+    }
+
+    /**
+     * Re-reads whether the on-screen keyboard stays up with a hardware keyboard attached.
+     *
+     * <p>It matters most in the physical-keyboard mode: the point there is to have the keys on
+     * screen while the app on the other side thinks it is being typed at by hardware, and the
+     * default — hide the soft keyboard when a real one is around — takes exactly that away.
+     */
+    private void reloadSoftKeyboardMode() {
+        softKeyboardMode = SoftKeyboardVisibilityPolicy.modeOf(viewPrefs().getBoolean(
+            SoftKeyboardVisibilityPolicy.KEY_ALWAYS_SHOW,
+            SoftKeyboardVisibilityPolicy.DEFAULT_ALWAYS_SHOW));
     }
 
     private void reloadHardwareBindings() {

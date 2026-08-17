@@ -28,6 +28,8 @@
     <string name="settings_physical_label">Type as a physical keyboard (experimental)</string>
     <string name="settings_physical_hint">Some apps take key events and nothing else — remote-desktop clients pass them to the far side, and some games and terminals read them directly — and they ignore a soft keyboard\'s. With this on, ReteKey sends its keys the way a physical keyboard does, and types the characters a US keyboard has keys for as those keys. Korean has no key to be pressed on, so it is still sent as text and the far side needs its own input method for it. The floating keyboard is the one to use here, so the app keeps its own layout.</string>
     <string name="settings_physical_enabled">Send keys as a physical keyboard</string>
+    <string name="settings_keep_shown">Keep the keyboard on screen</string>
+    <string name="settings_keep_shown_note">Normally the on-screen keyboard hides while a hardware or Bluetooth keyboard is attached. With this on it stays up — which is what the mode above wants, since its whole point is to have keys on screen for an app that believes it is being typed at by hardware. It cannot conjure the keyboard into an app that never asks for one: no app, no editor, nothing to show it over.</string>
     <string name="settings_theme_label">Colour scheme</string>
     <string name="settings_theme_hint">Light or dark, for the keyboard and for these screens. On Android 12 and later the colours are taken from the system\'s own palette, so the keyboard matches the wallpaper theme you have set.</string>
     <string name="settings_theme_system">System</string>

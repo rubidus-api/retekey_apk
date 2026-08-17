@@ -7,6 +7,15 @@ package com.retekey;
  * way, so hiding the soft view does not stop typing.
  */
 public final class SoftKeyboardVisibilityPolicy {
+    /** The preference behind {@link Mode#ALWAYS_SHOW}. */
+    public static final String KEY_ALWAYS_SHOW = "keyboard_always_shown";
+    public static final boolean DEFAULT_ALWAYS_SHOW = false;
+
+    /** The mode a stored flag means. */
+    public static Mode modeOf(boolean alwaysShow) {
+        return alwaysShow ? Mode.ALWAYS_SHOW : Mode.HIDE_WHEN_HARDWARE;
+    }
+
     public enum Mode {
         /** Hide the on-screen keyboard while a hardware keyboard is usable. */
         HIDE_WHEN_HARDWARE,

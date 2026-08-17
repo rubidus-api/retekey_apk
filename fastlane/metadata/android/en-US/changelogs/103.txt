@@ -1,0 +1,11 @@
+New option beside the physical-keyboard mode: Keep the keyboard on
+screen.
+
+The on-screen keyboard normally hides while a hardware or Bluetooth
+keyboard is attached. With this on it stays up, which is what that mode
+wants - its point is to have keys on screen for an app that believes
+hardware is typing at it.
+
+It cannot conjure the keyboard into an app that never asks for input:
+an IME runs when an app starts input, and where there is no editor there
+is nothing to show it over.

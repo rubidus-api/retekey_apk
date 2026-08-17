@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.101** —
-[retekey-0.1.101.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.101/retekey-0.1.101.apk)
+Current release: **v0.1.102** —
+[retekey-0.1.102.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.102/retekey-0.1.102.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -484,7 +484,13 @@ soft-keyboard flag, a real keyboard's device id, and the characters a US keyboar
 as those keys rather than as text. Use the floating keyboard with it, so the app keeps its own layout
 underneath.
 
-It is off by default and called an experiment for two honest reasons: whether it works is a question
+Beside it is **Keep the keyboard on screen**. Normally the on-screen keyboard hides while a hardware
+or Bluetooth keyboard is attached; with this on it stays up, which is what the mode above wants —
+the whole point is to have keys on screen for an app that believes hardware is typing at it. One
+limit worth stating plainly: it cannot conjure the keyboard into an app that never asks for one. An
+IME runs when an app starts input; where there is no editor there is nothing to show it over.
+
+The mode is off by default and called an experiment for two honest reasons: whether it works is a question
 about the app on the other side rather than about this keyboard, and **Korean has no key to be
 pressed on** — Hangul is still sent as text, so the far side needs its own input method for it.
 
