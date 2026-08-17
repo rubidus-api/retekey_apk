@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.96** —
-[retekey-0.1.96.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.96/retekey-0.1.96.apk)
+Current release: **v0.1.97** —
+[retekey-0.1.97.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.97/retekey-0.1.97.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -119,6 +119,8 @@ never open the keypad page you will never see the parts you do not need.
 - **Seven layouts** — 2beolsik(2벌식), QWERTY, Dvorak, the 12-key Cheonjiin(천지인) and
   Naratgeul(나랏글) phone modes, and Arrows(화살표) and Keypad(키패드) on the same 12-key frame. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
+- **An action bar**, if you want one — a strip above the keys for selecting a word, select all,
+  cut/copy/paste and the arrows, in the order you choose. Off until you turn it on.
 - **Out of the system's way** — the hide-keyboard and switch-keyboard buttons many ROMs draw at the
   bottom of the screen keep their band, so no key of ours is stranded underneath them.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
@@ -421,6 +423,29 @@ The settings screen uses stock controls only and follows the system theme:
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.
 
 A **Back to main screen** button at the top returns to the app's main screen at any time.
+
+## The action bar
+
+Off by default; turn it on under **Action bar** in settings, tick what it should carry, and order it
+with ▲ ▼. It sits above the keys and scrolls sideways when the list is longer than the screen.
+
+![The action bar above the keyboard](assets/keyboard-actionbar.png)
+
+Stage one carries the things that need nothing remembered:
+
+| Slot | What it does |
+|---|---|
+| **Word** | selects the word around the cursor — the run between spaces or punctuation, in Korean as in English |
+| **All** | select all |
+| **Cut** / **Copy** / **Paste** | the editor's own three |
+| **← → ↑ ↓** | move the cursor |
+| **Home** / **End** / **PgUp** / **PgDn** | jump |
+
+The clipboard list, a symbol panel, modifier chords such as Ctrl+B, and macros are the stages after
+this one. The bar shows on the docked keyboard; the floating panel does not carry it yet.
+
+**Word** needs the editor to say where the cursor is. A few — some terminals — never do, and there
+the button does nothing rather than selecting the wrong thing.
 
 ## Theming
 

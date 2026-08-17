@@ -1,0 +1,11 @@
+A strip above the keys, if you want one. Turn it on under Action bar in
+settings, tick what it should carry and order it with the arrows.
+
+The first set is the things that need nothing remembered: select the word
+around the cursor, select all, cut, copy, paste, and the cursor keys. The
+clipboard list, a symbol panel, modifier chords and macros come in later
+releases.
+
+Selecting a word works from the text either side of the cursor, so it
+treats Korean the same as English. Editors that never say where the
+cursor is - some terminals - get nothing rather than a wrong selection.

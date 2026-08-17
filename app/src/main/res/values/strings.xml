@@ -17,6 +17,9 @@
     <string name="settings_height_label">Keyboard height</string>
     <string name="settings_height_hint">How much of the screen\'s height the keyboard takes, from 1% to 50%. The menu page\'s size keys move it too, two points at a time.</string>
     <string name="settings_height_value">%1$d%% of the screen height</string>
+    <string name="settings_bar_label">Action bar</string>
+    <string name="settings_bar_hint">A strip above the keys for the things that are not letters: selecting, the clipboard, moving the cursor. Tick the ones you want and order them with ▲ ▼; the bar scrolls sideways if they do not all fit.</string>
+    <string name="settings_bar_enabled">Show the action bar</string>
     <string name="settings_theme_label">Colour scheme</string>
     <string name="settings_theme_hint">Light or dark, for the keyboard and for these screens. On Android 12 and later the colours are taken from the system\'s own palette, so the keyboard matches the wallpaper theme you have set.</string>
     <string name="settings_theme_system">System</string>

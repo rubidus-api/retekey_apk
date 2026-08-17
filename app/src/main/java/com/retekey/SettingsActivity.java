@@ -39,6 +39,7 @@ public final class SettingsActivity extends Activity {
     private LinearLayout hanjaList;
     private LinearLayout unicodeList;
     private LinearLayout layoutList;
+    private LinearLayout barList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +102,7 @@ public final class SettingsActivity extends Activity {
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
 
         addLayoutControls(root);
+        addActionBarControls(root);
         addFloatingControls(root);
         addRepeatControls(root);
         addHardwareControls(root);
@@ -120,6 +122,111 @@ public final class SettingsActivity extends Activity {
         scroller.addView(root);
         setContentView(scroller);
         applyPercent(currentPercent());
+    }
+
+    /**
+     * The action bar: whether there is one, and what is on it. The rows behave like the layout
+     * rows above — a tick to carry an action, arrows to move it — because they are the same kind of
+     * list, and a settings screen with two kinds of orderable list would be a settings screen with
+     * one too many ideas in it.
+     */
+    private void addActionBarControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_bar_label));
+        root.addView(sectionHint(R.string.settings_bar_hint));
+
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText(R.string.settings_bar_enabled);
+        enabled.setChecked(prefs().getBoolean(
+            ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED));
+        enabled.setOnCheckedChangeListener((b, checked) ->
+            prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, checked).apply());
+        root.addView(enabled);
+
+        barList = new LinearLayout(this);
+        barList.setOrientation(LinearLayout.VERTICAL);
+        root.addView(barList, matchWidth());
+        refreshBarList();
+    }
+
+    private void refreshBarList() {
+        barList.removeAllViews();
+        List<BarAction> slots = barSlots();
+        for (BarAction action : slots) {
+            barList.addView(barRow(action, slots, true), matchWidth());
+        }
+        for (BarAction action : BarAction.values()) {
+            if (!slots.contains(action)) {
+                barList.addView(barRow(action, slots, false), matchWidth());
+            }
+        }
+    }
+
+    private LinearLayout barRow(BarAction action, List<BarAction> slots, boolean on) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(dp(ROW_HEIGHT_DP));
+
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText(action.label());
+        enabled.setChecked(on);
+        enabled.setOnClickListener(view -> toggleBarSlot(action));
+        row.addView(enabled, new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        if (on) {
+            row.addView(barMoveButton("▲", action, -1, slots.indexOf(action) > 0),
+                moveButtonParams(true));
+            row.addView(barMoveButton("▼", action, 1, slots.indexOf(action) < slots.size() - 1),
+                moveButtonParams(false));
+        }
+        return row;
+    }
+
+    private Button barMoveButton(String glyph, BarAction action, int delta, boolean usable) {
+        Button button = glyphButton(glyph, usable);
+        button.setOnClickListener(view -> moveBarSlot(action, delta));
+        return button;
+    }
+
+    private void toggleBarSlot(BarAction action) {
+        List<BarAction> slots = new ArrayList<>(barSlots());
+        if (slots.contains(action)) {
+            slots.remove(action);
+        } else {
+            slots.add(action);
+        }
+        storeBarSlots(slots);
+    }
+
+    private void moveBarSlot(BarAction action, int delta) {
+        List<BarAction> slots = new ArrayList<>(barSlots());
+        int from = slots.indexOf(action);
+        int to = from + delta;
+        if (from < 0 || to < 0 || to >= slots.size()) {
+            return;
+        }
+        slots.remove(from);
+        slots.add(to, action);
+        storeBarSlots(slots);
+    }
+
+    private void storeBarSlots(List<BarAction> slots) {
+        // An empty list would read back as the default on the next parse, which would look like
+        // the ticks came back by themselves; store the emptiness as the bar being off instead.
+        if (slots.isEmpty()) {
+            prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, false).apply();
+        }
+        prefs().edit().putString(ActionBarSlots.KEY_SLOTS, ActionBarSlots.format(slots)).apply();
+        refreshBarList();
+    }
+
+    private List<BarAction> barSlots() {
+        String stored = prefs().getString(ActionBarSlots.KEY_SLOTS, null);
+        if (stored != null && stored.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return ActionBarSlots.parse(stored);
     }
 
     /**
@@ -347,6 +454,13 @@ public final class SettingsActivity extends Activity {
     }
 
     private Button moveButton(String glyph, KeyboardLayoutId id, int delta, boolean usable) {
+        Button button = glyphButton(glyph, usable);
+        button.setOnClickListener(view -> moveLayout(id, delta));
+        return button;
+    }
+
+    /** A single-glyph borderless button, sized to a touch target without a Button's slab. */
+    private Button glyphButton(String glyph, boolean usable) {
         // Borderless: the theme's own flat button, so the arrow reads as an arrow rather than as a
         // second slab beside the layout's name, and still lights up under a finger.
         Button button = new Button(this, null, android.R.attr.borderlessButtonStyle);
@@ -361,7 +475,6 @@ public final class SettingsActivity extends Activity {
         button.setPadding(0, 0, 0, 0);
         button.setGravity(Gravity.CENTER);
         button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        button.setOnClickListener(view -> moveLayout(id, delta));
         return button;
     }
 

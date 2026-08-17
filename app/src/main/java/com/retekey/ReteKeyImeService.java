@@ -105,7 +105,7 @@ public class ReteKeyImeService extends InputMethodService {
         }
         if (!floatingMode) {
             floatingFrame = null;
-            return keyboardView;
+            return withActionBar(keyboardView);
         }
         floatingFrame = new FloatingKeyboardFrame(this, keyboardView);
         // One opacity for floating panels, whichever panel it is: how see-through something
@@ -168,6 +168,85 @@ public class ReteKeyImeService extends InputMethodService {
         setInputView(onCreateInputView());
         updateInputViewShown();
     }
+
+    /**
+     * The keyboard with the action bar above it, when the user has asked for one. The bar is a
+     * strip of the actions that are not letters — selection, the clipboard, cursor movement — kept
+     * visible while typing instead of behind a page change.
+     */
+    private View withActionBar(ReteKeyboardView keyboard) {
+        if (!viewPrefs().getBoolean(
+                ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED)) {
+            return keyboard;
+        }
+        ActionBarView bar = new ActionBarView(this);
+        bar.setSlots(ActionBarSlots.parse(viewPrefs().getString(ActionBarSlots.KEY_SLOTS, null)));
+        bar.setListener(this::performBarAction);
+        return new ActionBarFrame(this, bar, keyboard);
+    }
+
+    /** One press on the action bar. */
+    private void performBarAction(BarAction action) {
+        try {
+            switch (action) {
+                case SELECT_WORD:
+                    selectWordAroundCursor();
+                    break;
+                case SELECT_ALL:
+                    performEditCommand(android.R.id.selectAll);
+                    break;
+                case CUT:
+                    performEditCommand(android.R.id.cut);
+                    break;
+                case COPY:
+                    performEditCommand(android.R.id.copy);
+                    break;
+                case PASTE:
+                    performEditCommand(android.R.id.paste);
+                    break;
+                default:
+                    RawKey key = action.rawKey();
+                    if (key != null) {
+                        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                            "touch.bar." + action.stored(), SemanticInput.rawKey(key)));
+                    }
+                    break;
+            }
+        } catch (RuntimeException ignored) {
+            // A bar press must never crash the keyboard, whatever the editor does with it.
+        }
+    }
+
+    /**
+     * Selects the word the cursor is in. There is no context-menu id for it, so the keyboard reads
+     * the text either side, asks {@link WordBoundary} where the word ends, and sets the selection
+     * itself. Where the editor will not say where the cursor is, or there is no word touching it,
+     * nothing happens — which is better than selecting the wrong thing.
+     */
+    private void selectWordAroundCursor() {
+        InputConnection inputConnection = getCurrentInputConnection();
+        if (inputConnection == null) {
+            return;
+        }
+        CharSequence before = inputConnection.getTextBeforeCursor(WORD_LOOKAROUND, 0);
+        CharSequence after = inputConnection.getTextAfterCursor(WORD_LOOKAROUND, 0);
+        WordBoundary word = WordBoundary.of(before, after);
+        if (word.isEmpty()) {
+            return;
+        }
+        EditorBounds bounds = sessionController.workingBounds();
+        if (!bounds.hasSelection()) {
+            // A terminal that never reports where the cursor is cannot be given an absolute
+            // selection, and guessing one would select somewhere else entirely.
+            return;
+        }
+        int cursor = bounds.selectionEnd();
+        inputConnection.setSelection(
+            Math.max(0, cursor - word.before), cursor + word.after);
+    }
+
+    /** How far either side of the cursor a word is looked for. Longer than any word worth one. */
+    private static final int WORD_LOOKAROUND = 64;
 
     /** Names the layout the globe key just moved to, so a five-way cycle is not a guessing game. */
     private void announceLayout(KeyboardLayoutId id) {
