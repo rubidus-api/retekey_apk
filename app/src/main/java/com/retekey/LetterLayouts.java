@@ -85,9 +85,9 @@ public final class LetterLayouts {
             case KO_NARATGEUL:
                 return "Naratgeul(나랏글)";
             case PAD_ARROWS:
-                return "Arrows(화살표)";
+                return "Arrows";
             case PAD_KEYPAD:
-                return "Keypad(키패드)";
+                return "Keypad";
             default:
                 return id.name();
         }

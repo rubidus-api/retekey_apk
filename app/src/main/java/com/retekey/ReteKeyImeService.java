@@ -67,8 +67,24 @@ public class ReteKeyImeService extends InputMethodService {
     private FloatingKeyboardFrame floatingFrame;
     /** True while the code-point pad is the floating panel, in place of the keyboard. */
     private boolean unicodeFloating;
+    /**
+     * Rebuilds the input view when the action bar is turned on or off, or its slots change.
+     *
+     * <p>The framework builds the input view once and keeps it: without this, ticking "Show the
+     * action bar" in settings did nothing visible until the keyboard happened to be rebuilt for
+     * some other reason — a rotation, a restart — which is exactly what it looked like on a Note 20.
+     */
+    private final SharedPreferences.OnSharedPreferenceChangeListener barPrefsListener =
+        (changed, key) -> {
+            if (ActionBarSlots.KEY_ENABLED.equals(key) || ActionBarSlots.KEY_SLOTS.equals(key)) {
+                rebuildInputView();
+            }
+        };
+
     /** The clipboard panel while it is open, or null. */
     private ClipboardPanelView clipboardPanel;
+    /** Whether the input view now on screen was built with the action bar. */
+    private boolean builtWithBar;
     /** What the keyboard remembers of what was cut and copied through it. */
     private ClipHistory clips = ClipHistory.empty();
 
@@ -186,8 +202,9 @@ public class ReteKeyImeService extends InputMethodService {
      * visible while typing instead of behind a page change.
      */
     private View withActionBar(ReteKeyboardView keyboard) {
-        if (!viewPrefs().getBoolean(
-                ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED)) {
+        builtWithBar = viewPrefs().getBoolean(
+            ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED);
+        if (!builtWithBar) {
             return keyboard;
         }
         ActionBarView bar = new ActionBarView(this);
@@ -608,6 +625,12 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onStartInput(EditorInfo attribute, boolean restarting) {
         super.onStartInput(attribute, restarting);
+        if (keyboardView != null) {
+            // A field that takes a phone number or an amount opens on the keypad, the way other
+            // keyboards answer one; the layout key walks the user's own list from there.
+            keyboardView.setNumericField(
+                attribute != null && NumericFieldPolicy.wantsKeypad(attribute.inputType));
+        }
         dispatcher.reset();
         inputProcessor.reset();
         editorProfile = AndroidEditorProfileClassifier.classify(
@@ -683,7 +706,46 @@ public class ReteKeyImeService extends InputMethodService {
     public void onDestroy() {
         dispatcher.reset();
         finishSession();
+        try {
+            viewPrefs().unregisterOnSharedPreferenceChangeListener(barPrefsListener);
+        } catch (RuntimeException ignored) {
+            // Never registered, or the preferences are already gone; nothing to unhook.
+        }
         super.onDestroy();
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Held for the life of the service: the registration in SharedPreferences is weak, and a
+        // listener that is collected is a setting that appears not to work.
+        viewPrefs().registerOnSharedPreferenceChangeListener(barPrefsListener);
+    }
+
+    /**
+     * Puts a freshly built input view on screen. The framework keeps the one it was given, so any
+     * change to what the view is made of — the action bar arriving, the clipboard opening — has to
+     * be pushed rather than waited for.
+     */
+    private void rebuildInputView() {
+        try {
+            setInputView(onCreateInputView());
+            updateInputViewShown();
+        } catch (RuntimeException ignored) {
+            // Rebuilding while the window is going away must not take the keyboard with it.
+        }
+    }
+
+    @Override
+    public void onStartInputView(EditorInfo info, boolean restarting) {
+        super.onStartInputView(info, restarting);
+        // A safety net for the same problem: if the bar was switched on while this view was off
+        // screen, the listener may have fired when there was nothing to rebuild.
+        boolean wanted = viewPrefs().getBoolean(
+            ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED);
+        if (wanted != builtWithBar && clipboardPanel == null && notepad == null) {
+            rebuildInputView();
+        }
     }
 
     @Override

@@ -47,29 +47,44 @@ public final class PhonePagesTest {
     @Test
     public void theSecondColumnCarriesTheOverlayToggles() {
         // The once-empty cells now hold the overlay toggles: 123 shows the keypad digits on the
-        // pad's own keys, Move the cursor cluster. 천지인 keeps Next in the Alt row; the Tab-row
-        // cell is empty since 漢 left the pads.
+        // pad's own keys, Move the cursor cluster. 천지인 keeps Next in the Alt row, and both
+        // pages keep 漢 in the Tab row.
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
             assertEquals("row 0", "123", layout.rows().get(0).get(1).label());
             assertTrue(layout.rows().get(0).get(1).isControl());
             assertEquals("row 1", "Move", layout.rows().get(1).get(1).label());
             assertTrue(layout.rows().get(1).get(1).isControl());
-            assertFalse("the Tab-row cell is empty", layout.rows().get(3).get(1).enabled());
+            assertEquals("漢 has the Tab-row cell", "漢",
+                layout.rows().get(3).get(1).label());
         }
         assertFalse("나랏글 keeps its Alt-row cell empty", NARATGEUL.rows().get(2).get(1).enabled());
         assertTrue("천지인 puts Next there", CHEONJIIN.rows().get(2).get(1).enabled());
     }
 
     @Test
-    public void hanjaHasLeftThePads() {
-        // It is reached by holding the layout key and from the menu page. A cell pressed once a
-        // month does not belong among cells pressed once a second.
+    public void hanjaSitsBesideTabWhileHangulIsBeingTyped() {
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
-            assertEquals("Tab", layout.rows().get(3).get(0).label());
-            for (List<SoftwareKeySpec> row : layout.rows()) {
-                for (SoftwareKeySpec key : row) {
-                    assertFalse("no 漢 on the pads", ControlKey.HANJA.equals(key.control()));
-                }
+            List<SoftwareKeySpec> bottom = layout.rows().get(3);
+            assertEquals("Tab", bottom.get(0).label());
+            SoftwareKeySpec hanja = bottom.get(1);
+            assertEquals("漢", hanja.label());
+            assertEquals(ControlKey.HANJA, hanja.control());
+            assertEquals("a tap runs it; there is no hold", 1, hanja.columnSpan());
+            assertFalse(hanja.hasLongPressControl());
+        }
+    }
+
+    @Test
+    public void hanjaIsNotOfferedWhileAnOverlayCoversThePad() {
+        // Under the keypad or the cursor cluster there is no reading in front of the cursor to
+        // convert, so the cell is blank rather than a key that cannot work.
+        for (KeyboardLayoutId id
+                : Arrays.asList(KeyboardLayoutId.KO_CHEONJIIN, KeyboardLayoutId.KO_NARATGEUL)) {
+            for (PhoneOverlay overlay : Arrays.asList(PhoneOverlay.DIGITS, PhoneOverlay.NAV)) {
+                SoftwareKeySpec cell =
+                    KeyboardLayouts.phone(id, overlay).rows().get(3).get(1);
+                assertFalse(id + " " + overlay, cell.enabled());
+                assertFalse(id + " " + overlay, cell.isControl());
             }
         }
     }
@@ -131,11 +146,9 @@ public final class PhonePagesTest {
 
         assertEquals(".,", period.label());
         assertEquals("!?", exclaim.label());
-        assertEquals("* holds what the keypad's * cell holds",
-            Arrays.asList("!"), period.longPressTexts());
-        assertEquals("# holds what the keypad's # cell holds",
-            Arrays.asList("@"), exclaim.longPressTexts());
         for (SoftwareKeySpec key : Arrays.asList(period, exclaim)) {
+            assertTrue("both characters are on the face, not under a hold",
+                key.longPressTexts().isEmpty());
             assertFalse(key.hasLongPressControl());
             assertEquals(2, key.columnSpan());
             assertEquals("the tap types the first of them",
@@ -153,13 +166,14 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void naratgeulHoldsTheCalculatorSet() {
-        // The digits are a tap away under the 123 overlay and on the Keypad layout; what a hold is
-        // good for is arithmetic without leaving the letters.
-        assertEquals(Arrays.asList("+", "(", ")"), holds(NARATGEUL, 0));
-        assertEquals(Arrays.asList("-", "=", "%"), holds(NARATGEUL, 1));
-        assertEquals(Arrays.asList("/", "e", "^"), holds(NARATGEUL, 2));
-        assertEquals(Arrays.asList("!", "$", "@"), holds(NARATGEUL, 3));
+    public void naratgeulHoldsAPhoneKeypad() {
+        // The twelve keys sit where a phone keypad's do, so they hold what a phone keypad holds.
+        // The calculator set lives on the Keypad layout, which is a pad rather than a way of
+        // writing Hangul.
+        assertEquals(Arrays.asList("1", "2", "3"), holds(NARATGEUL, 0));
+        assertEquals(Arrays.asList("4", "5", "6"), holds(NARATGEUL, 1));
+        assertEquals(Arrays.asList("7", "8", "9"), holds(NARATGEUL, 2));
+        assertEquals(Arrays.asList("*", "0", "#"), holds(NARATGEUL, 3));
     }
 
     /** The alternates of a row's Hangul and transform keys, in order. */

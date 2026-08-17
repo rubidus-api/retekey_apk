@@ -1,0 +1,19 @@
+Corrections to the last two releases, from the owner's own use.
+
+The 12-key pads hold digits again, the way they always did; the
+calculator characters stay on the Keypad layout, which is a pad rather
+than a way of writing Hangul.
+
+The 漢 key is back on both 12-key pads while Hangul is being typed. It
+was only ever meant to leave the keypad and cursor-cluster overlays,
+where there is no reading in front of the cursor to convert.
+
+A field that takes numbers - a phone number, an amount, a PIN, a date -
+now opens on the 12-key Keypad.
+
+The action bar appears as soon as it is switched on, instead of waiting
+for the keyboard to be rebuilt for some other reason.
+
+Arrows and Keypad are named in English alone, and the layouts setting no
+longer talks about a globe key this keyboard does not have or a Hanja
+hold it never had.

@@ -129,6 +129,8 @@ public final class ReteKeyboardView extends View {
     private final int keyShadowPx;
 
     private KeyboardLayoutId letterLayoutId = KeyboardLayoutId.KO_DUBEOLSIK;
+    /** Whether the editor now focused takes numbers, in which case the keypad is what is shown. */
+    private boolean numericField;
     private Page page = Page.LETTERS;
     private NumpadMode numpadMode = NumpadMode.NUMBERS;
 
@@ -247,6 +249,26 @@ public final class ReteKeyboardView extends View {
     private java.util.List<KeyboardLayoutId> letterOrder() {
         return LetterLayouts.parse(
             OrientedPrefs.getString(prefs(), LetterLayouts.KEY_ORDER, orientation(), null));
+    }
+
+    /**
+     * Opens on the keypad for a field that takes numbers, and returns to the user's own layout for
+     * the next field that does not. Nothing is stored: this is what the editor asked for, not a
+     * choice the user made, and it must not survive the field it was made for.
+     */
+    public void setNumericField(boolean numeric) {
+        if (numeric == numericField) {
+            // Nothing to do, and nothing to disturb: moving between two ordinary fields must not
+            // put the user back on the letters page they had left on purpose.
+            return;
+        }
+        numericField = numeric;
+        letterLayoutId = numeric ? KeyboardLayoutId.PAD_KEYPAD : restoreLetterLayout();
+        page = Page.LETTERS;
+        phoneOverlay = PhoneOverlay.NONE;
+        shiftLayer.clear();
+        requestLayout();
+        invalidate();
     }
 
     /** Re-reads the layout order and lands on a layout that is still enabled. */
