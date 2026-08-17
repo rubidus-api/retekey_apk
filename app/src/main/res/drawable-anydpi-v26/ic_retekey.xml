@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher icon from API 26 on. The -v26 qualifier keeps it away from the legacy flavour's
+     API 14 floor, which cannot read an adaptive icon and would end up with no icon at all; those
+     devices keep the single vector in res/drawable/. The monochrome layer is the themed icon
+     Android 13 asks for: the system tints it and supplies the colour behind, so there the key caps
+     are holes rather than white. All three come from ic_retekey.xml via scripts/make-icon-layers.py. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_retekey_background" />
+    <foreground android:drawable="@drawable/ic_retekey_foreground" />
+    <monochrome android:drawable="@drawable/ic_retekey_monochrome" />
+</adaptive-icon>

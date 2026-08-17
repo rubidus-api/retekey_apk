@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The plate the icon is drawn on. The adaptive icon's background layer is this colour rather
+         than a picture: the launcher masks that layer to its own shape, and a flat colour is the
+         one thing that survives every shape unharmed. -->
+    <color name="ic_retekey_background">#263238</color>
+</resources>
