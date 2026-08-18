@@ -1,0 +1,12 @@
+Removes two experiments that did not work.
+
+Typing as a physical keyboard did not make remote-desktop-style apps
+take the keys, and keeping the keyboard on screen did not help where it
+was meant to. The reason is structural: an IME exists only while an app
+has started input, and what we send reaches the app through the
+input-method path whatever we stamp on the event.
+
+Everything else about hardware keys stays exactly as it was - the arrow
+and function keys, Escape and Tab, the Ctrl/Alt/Meta chords sent as real
+key events, the registered hardware shortcuts, and the physical-keyboard
+Hangul mapping.

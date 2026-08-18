@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.103** —
-[retekey-0.1.103.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.103/retekey-0.1.103.apk)
+Current release: **v0.1.104** —
+[retekey-0.1.104.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.104/retekey-0.1.104.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -472,27 +472,6 @@ What it will not do matters as much as what it will:
 - A clip longer than 4000 characters is truncated: this is for pasting a line back, not for storing
   a document.
 - It lives in the app's own private storage, and nothing is sent anywhere.
-
-## Typing as a physical keyboard (experimental)
-
-Some apps take key events and nothing else. A remote-desktop client passes them to the far side; some
-games and terminals read them directly; and all of them ignore what a soft keyboard sends, because
-the system marks it as coming from software.
-
-**Settings → Type as a physical keyboard** sends the keys the way a physical keyboard does — no
-soft-keyboard flag, a real keyboard's device id, and the characters a US keyboard has keys for typed
-as those keys rather than as text. Use the floating keyboard with it, so the app keeps its own layout
-underneath.
-
-Beside it is **Keep the keyboard on screen**. Normally the on-screen keyboard hides while a hardware
-or Bluetooth keyboard is attached; with this on it stays up, which is what the mode above wants —
-the whole point is to have keys on screen for an app that believes hardware is typing at it. One
-limit worth stating plainly: it cannot conjure the keyboard into an app that never asks for one. An
-IME runs when an app starts input; where there is no editor there is nothing to show it over.
-
-The mode is off by default and called an experiment for two honest reasons: whether it works is a question
-about the app on the other side rather than about this keyboard, and **Korean has no key to be
-pressed on** — Hangul is still sent as text, so the far side needs its own input method for it.
 
 ## Theming
 

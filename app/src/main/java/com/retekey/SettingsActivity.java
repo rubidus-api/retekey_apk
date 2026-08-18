@@ -72,7 +72,6 @@ public final class SettingsActivity extends Activity {
 
         addThemeControls(root);
         addSystemBandControls(root);
-        addPhysicalKeyControls(root);
         addOrientationControls(root);
 
         root.addView(sectionHeader(R.string.settings_height_label));
@@ -164,29 +163,6 @@ public final class SettingsActivity extends Activity {
         button.setLayoutParams(new LinearLayout.LayoutParams(
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         return button;
-    }
-
-    /** RFC-0010's first experiment, with its cost written next to it. */
-    private void addPhysicalKeyControls(LinearLayout root) {
-        root.addView(sectionHeader(R.string.settings_physical_label));
-        root.addView(sectionHint(R.string.settings_physical_hint));
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText(R.string.settings_physical_enabled);
-        enabled.setChecked(prefs().getBoolean(
-            PhysicalKeyMode.KEY_ENABLED, PhysicalKeyMode.DEFAULT_ENABLED));
-        enabled.setOnCheckedChangeListener((b, checked) ->
-            prefs().edit().putBoolean(PhysicalKeyMode.KEY_ENABLED, checked).apply());
-        root.addView(enabled);
-
-        CheckBox keepShown = new CheckBox(this);
-        keepShown.setText(R.string.settings_keep_shown);
-        keepShown.setChecked(prefs().getBoolean(
-            SoftKeyboardVisibilityPolicy.KEY_ALWAYS_SHOW,
-            SoftKeyboardVisibilityPolicy.DEFAULT_ALWAYS_SHOW));
-        keepShown.setOnCheckedChangeListener((b, checked) -> prefs().edit()
-            .putBoolean(SoftKeyboardVisibilityPolicy.KEY_ALWAYS_SHOW, checked).apply());
-        root.addView(keepShown);
-        root.addView(sectionHint(R.string.settings_keep_shown_note));
     }
 
     /**

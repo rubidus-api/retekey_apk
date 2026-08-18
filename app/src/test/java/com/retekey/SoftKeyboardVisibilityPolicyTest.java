@@ -27,15 +27,4 @@ public final class SoftKeyboardVisibilityPolicyTest {
     public void aNullModeIsRejected() {
         SoftKeyboardVisibilityPolicy.shouldShow(true, null);
     }
-
-    @Test
-    public void theStoredFlagIsTheMode() {
-        // The setting is a checkbox — "keep the keyboard on screen" — and this is the only place
-        // that turns it into a mode, so a false default keeps the behaviour every version had.
-        assertEquals(SoftKeyboardVisibilityPolicy.Mode.ALWAYS_SHOW,
-            SoftKeyboardVisibilityPolicy.modeOf(true));
-        assertEquals(SoftKeyboardVisibilityPolicy.Mode.HIDE_WHEN_HARDWARE,
-            SoftKeyboardVisibilityPolicy.modeOf(false));
-        assertFalse(SoftKeyboardVisibilityPolicy.DEFAULT_ALWAYS_SHOW);
-    }
 }
