@@ -57,17 +57,63 @@ final class WindowInsetsWatcher {
             navigation = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
             navigationVisible = insets.isVisible(WindowInsets.Type.navigationBars());
         }
+        int overlap = overlapWithNavigationBar(view, navigation);
         int band = SystemBarInsets.bandPx(
             Build.VERSION.SDK_INT,
             tappable,
             navigation,
             navigationVisible,
             insets.getSystemWindowInsetBottom(),
+            overlap,
             SystemBandSettings.mode(view.getContext()));
         // What the phone actually reported, so the settings screen can show it rather than leaving
         // the user to guess why their keyboard has a gap under it — or has none.
         SystemBandSettings.remember(
-            view.getContext(), tappable, navigation, navigationVisible, band);
+            view.getContext(), tappable, navigation, navigationVisible, overlap, band);
         return band;
+    }
+
+    /**
+     * How far this window reaches into the navigation bar, in pixels.
+     *
+     * <p>The insets describe the screen; this describes us. The window's bottom edge in screen
+     * coordinates against the top of the bar is the whole question: a window the framework has
+     * already lifted above the bar overlaps it by nothing and needs no band, however tall the bar
+     * is, while a window drawn edge to edge overlaps it by the bar's full height.
+     *
+     * @return the overlap, or {@link SystemBarInsets#OVERLAP_UNKNOWN} before the view has a size
+     */
+    private static int overlapWithNavigationBar(View view, int navigationBottom) {
+        if (view.getHeight() <= 0 || view.getWindowToken() == null) {
+            return SystemBarInsets.OVERLAP_UNKNOWN;
+        }
+        int screenHeight = realScreenHeight(view);
+        if (screenHeight <= 0) {
+            return SystemBarInsets.OVERLAP_UNKNOWN;
+        }
+        int[] location = new int[2];
+        view.getLocationOnScreen(location);
+        int windowBottom = location[1] + view.getHeight();
+        int furnitureTop = screenHeight - navigationBottom;
+        return Math.max(0, windowBottom - furnitureTop);
+    }
+
+    /** The display's real height, system furniture included — not the app area's. */
+    private static int realScreenHeight(View view) {
+        try {
+            android.view.WindowManager windows = (android.view.WindowManager)
+                view.getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
+            if (windows == null) {
+                return 0;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                return windows.getMaximumWindowMetrics().getBounds().height();
+            }
+            android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+            windows.getDefaultDisplay().getRealMetrics(metrics);
+            return metrics.heightPixels;
+        } catch (RuntimeException unavailable) {
+            return 0;
+        }
     }
 }

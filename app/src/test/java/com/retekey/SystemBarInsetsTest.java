@@ -6,10 +6,18 @@ import org.junit.Test;
 
 /** Issue #1: the system's bottom buttons must not sit on top of the bottom key row. */
 public final class SystemBarInsetsTest {
+    /** Automatic, with the window measured as reaching right into the bar. */
     private static int auto(int sdk, int tappable, int navigation, boolean navVisible,
             int systemWindow) {
         return SystemBarInsets.bandPx(sdk, tappable, navigation, navVisible, systemWindow,
-            SystemBarInsets.Mode.AUTOMATIC);
+            navigation, SystemBarInsets.Mode.AUTOMATIC);
+    }
+
+    /** Automatic, with the overlap given explicitly. */
+    private static int auto(int sdk, int tappable, int navigation, boolean navVisible,
+            int systemWindow, int overlap) {
+        return SystemBarInsets.bandPx(sdk, tappable, navigation, navVisible, systemWindow,
+            overlap, SystemBarInsets.Mode.AUTOMATIC);
     }
 
     @Test
@@ -42,11 +50,34 @@ public final class SystemBarInsetsTest {
     }
 
     @Test
+    public void aWindowTheFrameworkAlreadyLiftedNeedsNoBand() {
+        // The Note 20 case: the bar is there, it takes taps, and none of it is over the keyboard's
+        // own window — the framework placed the window above it. Reserving here is giving up a
+        // strip of keyboard for furniture that is not on top of it.
+        assertEquals(0, auto(33, 126, 126, true, 126, 0));
+    }
+
+    @Test
+    public void aWindowDrawnIntoTheBarReservesWhatIsActuallyOverIt() {
+        // Issue #1: the window reaches the physical bottom, so the whole bar is over the keys.
+        assertEquals(126, auto(33, 126, 126, true, 126, 126));
+        // Half in, half out: only the part over the window is ours to give up.
+        assertEquals(60, auto(33, 126, 126, true, 126, 60));
+    }
+
+    @Test
+    public void beforeTheWindowHasASizeTheInsetsAreAllThereIs() {
+        assertEquals(126, auto(33, 126, 126, true, 126, SystemBarInsets.OVERLAP_UNKNOWN));
+    }
+
+    @Test
     public void theUserCanOverrideBothWays() {
-        assertEquals("always keeps a band even where nothing is showing",
-            126, SystemBarInsets.bandPx(33, 126, 126, false, 126, SystemBarInsets.Mode.ALWAYS));
-        assertEquals("never keeps one even in three-button navigation",
-            0, SystemBarInsets.bandPx(33, 126, 126, true, 126, SystemBarInsets.Mode.NEVER));
+        assertEquals("always keeps a band even where nothing overlaps",
+            126, SystemBarInsets.bandPx(33, 126, 126, false, 126, 0,
+                SystemBarInsets.Mode.ALWAYS));
+        assertEquals("never keeps one even where the whole bar is over the keys",
+            0, SystemBarInsets.bandPx(33, 126, 126, true, 126, 126,
+                SystemBarInsets.Mode.NEVER));
     }
 
     @Test

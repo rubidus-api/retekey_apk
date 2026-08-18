@@ -29,6 +29,9 @@ final class SystemBarInsets {
      */
     private static final int MAX_SHARE_DENOMINATOR = 4;
 
+    /** Passed as {@code overlapPx} when the window has not been laid out and cannot be measured. */
+    static final int OVERLAP_UNKNOWN = -1;
+
     private SystemBarInsets() {
     }
 
@@ -57,21 +60,28 @@ final class SystemBarInsets {
     /**
      * The band to reserve.
      *
-     * <p>Automatic asks two questions rather than one. The tappable-element inset says how much of
-     * the bottom the system takes touches in, and the navigation bar's says how much furniture is
-     * actually down there; the band is the smaller of the two, and nothing at all where the
-     * navigation bar is not showing. A phone that draws no keyboard buttons over the IME — several
-     * Samsung ROMs let you turn them off — therefore gives up no keyboard height, while the
-     * three-button device from issue #1 still gets its band.
+     * <p>Automatic asks three questions, and the third is the one that matters. The insets say how
+     * much of the bottom the system takes touches in and how tall its furniture is — but they say
+     * that about the screen, not about this window. Whether any of it is over <em>us</em> is a
+     * matter of geometry: this window's own bottom against the top of the navigation bar.
+     *
+     * <p>That is what separates the two phones this has been wrong on. On the reported device the
+     * IME window reaches the physical bottom of the screen and the system's keyboard buttons sit on
+     * our keys, so the overlap is the bar's height. On a phone where the framework has already put
+     * the window above the bar, the overlap is zero, and reserving anything there gives up a strip
+     * of keyboard for furniture that is not over it. Read from the insets alone the two look
+     * identical; measured, they do not.
      *
      * @param sdkInt the running platform's API level
      * @param tappableBottom the tappable-element bottom inset, or 0 where the platform has none
      * @param navigationBottom the navigation-bar bottom inset
      * @param navigationVisible whether the navigation bar is showing at all
      * @param systemWindowBottom the system-window bottom inset, the only answer below API 29
+     * @param overlapPx how far this window reaches into the navigation bar, or
+     *     {@link #OVERLAP_UNKNOWN} before it has been laid out and can be measured
      */
     static int bandPx(int sdkInt, int tappableBottom, int navigationBottom,
-            boolean navigationVisible, int systemWindowBottom, Mode mode) {
+            boolean navigationVisible, int systemWindowBottom, int overlapPx, Mode mode) {
         if (sdkInt < ANY_INSETS_SDK || mode == Mode.NEVER) {
             return 0;
         }
@@ -85,7 +95,12 @@ final class SystemBarInsets {
         if (!navigationVisible) {
             return 0;
         }
-        return Math.max(0, Math.min(tappableBottom, navigationBottom));
+        int band = Math.min(tappableBottom, navigationBottom);
+        if (overlapPx != OVERLAP_UNKNOWN) {
+            // Only the part actually over this window is ours to give up.
+            band = Math.min(band, overlapPx);
+        }
+        return Math.max(0, band);
     }
 
     /**

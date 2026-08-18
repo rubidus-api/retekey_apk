@@ -21,6 +21,8 @@ import android.widget.FrameLayout;
  */
 final class SystemBandFrame extends FrameLayout {
     private int band;
+    /** Whether the band has been worked out with this window's own geometry, not insets alone. */
+    private boolean measuredWithGeometry;
     private final Paint bandPaint = new Paint();
 
     SystemBandFrame(Context context, View content) {
@@ -52,12 +54,25 @@ final class SystemBandFrame extends FrameLayout {
     protected void onWindowVisibilityChanged(int visibility) {
         super.onWindowVisibilityChanged(visibility);
         if (visibility == VISIBLE) {
+            measuredWithGeometry = false;
             // The answer is only true of the moment it was taken. An input view built while the
             // keyboard was off screen — which is what happens when a setting is changed from the
             // settings screen — reads the insets of whatever *was* on screen, and on a phone whose
             // navigation bar is visible in an app but not under a keyboard, that is a band this
             // keyboard does not need. Ask again now that this window is the one being shown.
             refreshBand();
+        }
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (!measuredWithGeometry && getHeight() > 0) {
+            // The first answer is taken before this window has a size, so it cannot include how far
+            // the window reaches into the navigation bar — the question that decides whether there
+            // is anything to reserve at all. Ask once more now that there is a geometry to measure.
+            measuredWithGeometry = true;
+            post(this::refreshBand);
         }
     }
 

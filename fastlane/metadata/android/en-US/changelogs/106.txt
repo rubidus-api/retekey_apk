@@ -1,0 +1,11 @@
+Automatic now measures whether the system's bottom buttons are actually
+over the keyboard, instead of guessing from the insets.
+
+The insets describe the screen, not this window. Two phones can report
+the same navigation bar while one draws the keyboard underneath it and
+the other has already placed the keyboard above it - and the second was
+losing a strip of keyboard for furniture that was not on top of it.
+
+The keyboard now compares its own bottom edge against the top of the
+navigation bar and reserves only what is genuinely over it. Nothing over
+it, nothing reserved.

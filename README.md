@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.104** —
-[retekey-0.1.104.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.104/retekey-0.1.104.apk)
+Current release: **v0.1.105** —
+[retekey-0.1.105.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.105/retekey-0.1.105.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -125,9 +125,10 @@ never open the keypad page you will never see the parts you do not need.
 - **An action bar**, if you want one — a strip above the keys for selecting a word, select all,
   cut/copy/paste and the arrows, in the order you choose. Off until you turn it on.
 - **Out of the system's way** — the hide-keyboard and switch-keyboard buttons many ROMs draw at the
-  bottom of the screen keep their band, so no key of ours is stranded underneath them. Where the
-  system draws nothing there, nothing is reserved; settings can force it either way, and shows what
-  your phone actually reports.
+  bottom of the screen keep their band, so no key of ours is stranded underneath them. Only what is genuinely over the
+  keyboard is reserved — the keyboard measures its own bottom edge against the bar rather than
+  trusting the insets, since two phones can report the same bar and place the keyboard differently.
+  Settings can force it either way, and shows what your phone reports and what it measured.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
