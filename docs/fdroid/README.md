@@ -16,3 +16,17 @@ possible because a clean clone builds byte-identically — `vcsInfo { include = 
 disabled `dependenciesInfo` block in `app/build.gradle` are what make it so, by keeping the
 builder's git checkout and an opaque Google-encrypted blob out of the APK. It also means the
 signing key must be kept: losing it ends the ability to update the app.
+
+## How this file is kept
+
+`com.retekey.yml` is a **verbatim copy of what fdroiddata holds**, not a file we author. The app was
+merged into fdroiddata on 2026-08-09, and since then their `checkupdates` bot adds a `Builds:` entry
+and moves `CurrentVersion` on its own — `UpdateCheckMode: Tags` with `AutoUpdateMode: Version` means
+**pushing a `v*` tag is the submission**. It takes the newest tag when it runs, so intermediate
+versions are skipped rather than built.
+
+So: do not hand-edit or bump this file per release. Refresh it when you want to see what F-Droid
+currently has:
+
+    curl -s https://gitlab.com/fdroid/fdroiddata/-/raw/master/metadata/com.retekey.yml \
+      > docs/fdroid/com.retekey.yml
