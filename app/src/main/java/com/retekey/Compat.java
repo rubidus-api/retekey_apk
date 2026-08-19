@@ -119,6 +119,19 @@ public final class Compat {
     /** UTF-8 without {@code StandardCharsets}, which is API 19. */
     public static final Charset UTF_8 = Charset.forName("UTF-8");
 
+    /**
+     * Picks a view up for a drag. {@code startDragAndDrop} is API 24 and {@code startDrag} — the
+     * same thing under its old name — has been there since API 11, which is below this app's floor.
+     */
+    @SuppressWarnings("deprecation")
+    public static void startDrag(android.view.View view, android.view.View.DragShadowBuilder shadow) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            view.startDragAndDrop(null, shadow, null, 0);
+        } else {
+            view.startDrag(null, shadow, null, 0);
+        }
+    }
+
     /** {@code getSystemService(Class)} is API 23; the name-based form has always been there. */
     @SuppressWarnings("unchecked")
     public static <T> T systemService(Context context, String name, Class<T> type) {

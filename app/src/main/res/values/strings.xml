@@ -18,8 +18,9 @@
     <string name="settings_height_hint">How much of the screen\'s height the keyboard takes, from 1% to 50%. The menu page\'s size keys move it too, two points at a time.</string>
     <string name="settings_height_value">%1$d%% of the screen height</string>
     <string name="settings_bar_label">Action bar</string>
-    <string name="settings_bar_hint">A strip above the keys for the things that are not letters: selecting, the clipboard, moving the cursor. Tick the ones you want and order them with ▲ ▼; the bar scrolls sideways if they do not all fit.</string>
+    <string name="settings_bar_hint">A strip above the keys for the things that are not letters: selecting, the clipboard, moving the cursor. Tick the ones you want, then drag a row by its ≡ handle — or nudge it with ▲ ▼ — to order them. The bar scrolls sideways if they do not all fit.</string>
     <string name="settings_bar_enabled">Show the action bar</string>
+    <string name="settings_bar_reset">Default order</string>
     <string name="settings_band_label">Space for the system\'s buttons</string>
     <string name="settings_band_hint">Many phones draw hide-keyboard and switch-keyboard buttons under an open keyboard, and a keyboard that ignores them puts its bottom row where it cannot be pressed. Automatic keeps that strip only where the system is actually using it.</string>
     <string name="settings_band_auto">Automatic</string>

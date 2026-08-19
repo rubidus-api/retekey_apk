@@ -1,0 +1,6 @@
+The action bar's slots can be dragged into order now: press the handle
+at the left of a row and drop it where you want it. The arrows are still
+there for a precise nudge.
+
+There is also a Default order button, for a list that has been
+rearranged into something worse than it started as.

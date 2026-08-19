@@ -40,6 +40,8 @@ public final class SettingsActivity extends Activity {
     private LinearLayout unicodeList;
     private LinearLayout layoutList;
     private LinearLayout barList;
+    /** The slot a finger is carrying, while a row is being dragged to a new place. */
+    private BarAction draggingSlot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -187,6 +189,15 @@ public final class SettingsActivity extends Activity {
         barList.setOrientation(LinearLayout.VERTICAL);
         root.addView(barList, matchWidth());
         refreshBarList();
+
+        Button reset = new Button(this);
+        reset.setText(R.string.settings_bar_reset);
+        reset.setAllCaps(false);
+        reset.setOnClickListener(view -> resetBarSlots());
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.END;
+        root.addView(reset, params);
     }
 
     private void refreshBarList() {
@@ -208,6 +219,14 @@ public final class SettingsActivity extends Activity {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setMinimumHeight(dp(ROW_HEIGHT_DP));
 
+        if (on) {
+            // Press the handle and drag the row where you want it. The arrows below still work —
+            // they are the precise way, and the way that does not need a steady finger — but
+            // reordering seven slots two taps at a time is not what anyone wants to do twice.
+            row.addView(barDragHandle(action), moveButtonParams(true));
+            row.setOnDragListener(barDropListener(action));
+        }
+
         CheckBox enabled = new CheckBox(this);
         enabled.setText(action.label());
         enabled.setChecked(on);
@@ -222,6 +241,51 @@ public final class SettingsActivity extends Activity {
                 moveButtonParams(false));
         }
         return row;
+    }
+
+    /** The grip: touching it picks the row up. */
+    private Button barDragHandle(BarAction action) {
+        Button handle = glyphButton("≡", true);
+        handle.setOnTouchListener((view, event) -> {
+            if (event.getActionMasked() != android.view.MotionEvent.ACTION_DOWN) {
+                return false;
+            }
+            draggingSlot = action;
+            Compat.startDrag(view, new View.DragShadowBuilder(view));
+            return true;
+        });
+        return handle;
+    }
+
+    /** A row as a place to drop on: the dragged slot lands where this one was. */
+    private View.OnDragListener barDropListener(BarAction target) {
+        return (view, event) -> {
+            switch (event.getAction()) {
+                case android.view.DragEvent.ACTION_DRAG_STARTED:
+                case android.view.DragEvent.ACTION_DRAG_ENTERED:
+                case android.view.DragEvent.ACTION_DRAG_LOCATION:
+                case android.view.DragEvent.ACTION_DRAG_EXITED:
+                    return draggingSlot != null;
+                case android.view.DragEvent.ACTION_DROP:
+                    dropBarSlot(target);
+                    return true;
+                case android.view.DragEvent.ACTION_DRAG_ENDED:
+                    draggingSlot = null;
+                    return true;
+                default:
+                    return false;
+            }
+        };
+    }
+
+    private void dropBarSlot(BarAction target) {
+        if (draggingSlot == null || draggingSlot == target) {
+            return;
+        }
+        List<BarAction> slots = barSlots();
+        storeBarSlots(new ArrayList<>(ActionBarSlots.moved(
+            slots, slots.indexOf(draggingSlot), slots.indexOf(target))));
+        draggingSlot = null;
     }
 
     private Button barMoveButton(String glyph, BarAction action, int delta, boolean usable) {
@@ -241,15 +305,14 @@ public final class SettingsActivity extends Activity {
     }
 
     private void moveBarSlot(BarAction action, int delta) {
-        List<BarAction> slots = new ArrayList<>(barSlots());
+        List<BarAction> slots = barSlots();
         int from = slots.indexOf(action);
-        int to = from + delta;
-        if (from < 0 || to < 0 || to >= slots.size()) {
-            return;
-        }
-        slots.remove(from);
-        slots.add(to, action);
-        storeBarSlots(slots);
+        storeBarSlots(new ArrayList<>(ActionBarSlots.moved(slots, from, from + delta)));
+    }
+
+    /** Puts the bar back to the slots it ships with, for a list that has been rearranged into a mess. */
+    private void resetBarSlots() {
+        storeBarSlots(new ArrayList<>(ActionBarSlots.DEFAULT));
     }
 
     private void storeBarSlots(List<BarAction> slots) {

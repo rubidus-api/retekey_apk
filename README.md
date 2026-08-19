@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.105** —
-[retekey-0.1.105.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.105/retekey-0.1.105.apk)
+Current release: **v0.1.106** —
+[retekey-0.1.106.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.106/retekey-0.1.106.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -433,8 +433,9 @@ A **Back to main screen** button at the top returns to the app's main screen at 
 
 ## The action bar
 
-Off by default; turn it on under **Action bar** in settings, tick what it should carry, and order it
-with ▲ ▼. It sits above the keys and scrolls sideways when the list is longer than the screen.
+Off by default; turn it on under **Action bar** in settings and tick what it should carry. Order it
+by dragging a row by its **≡** handle, or nudge one with **▲ ▼**; **Default order** puts the shipped
+order back. It sits above the keys and scrolls sideways when the list is longer than the screen.
 
 ![The action bar above the keyboard](assets/keyboard-actionbar.png)
 

@@ -51,8 +51,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.105** —
-[retekey-0.1.105.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.105/retekey-0.1.105.apk)
+현재 릴리즈: **v0.1.106** —
+[retekey-0.1.106.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.106/retekey-0.1.106.apk)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -429,8 +429,9 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 
 ## 상단 동작 바
 
-기본은 꺼져 있습니다. 설정의 **Action bar**에서 켜시고, 올릴 항목을 체크한 뒤 ▲ ▼로 순서를 정하십시오.
-키 위에 놓이며, 항목이 화면보다 길면 옆으로 밀어 볼 수 있습니다.
+기본은 꺼져 있습니다. 설정의 **Action bar**에서 켜시고 올릴 항목을 체크하십시오. 순서는 줄 왼쪽의
+**≡** 손잡이를 잡고 끌어 옮기시거나 **▲ ▼**로 한 칸씩 미시면 되고, **Default order** 버튼을 누르면
+처음 순서로 돌아갑니다. 키 위에 놓이며, 항목이 화면보다 길면 옆으로 밀어 볼 수 있습니다.
 
 ![키보드 위의 동작 바](assets/keyboard-actionbar.png)
 

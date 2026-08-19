@@ -50,6 +50,20 @@ final class ActionBarSlots {
         return slots.isEmpty() ? DEFAULT : new ArrayList<>(slots);
     }
 
+    /**
+     * The list with the item at {@code from} put down at {@code to}, or the same list where either
+     * index is not one of its own. Shared by the arrows and by dragging, so a slot cannot end up
+     * somewhere different depending on how it was moved.
+     */
+    static List<BarAction> moved(List<BarAction> slots, int from, int to) {
+        if (from == to || from < 0 || to < 0 || from >= slots.size() || to >= slots.size()) {
+            return slots;
+        }
+        List<BarAction> next = new ArrayList<>(slots);
+        next.add(to, next.remove(from));
+        return next;
+    }
+
     /** The stored form of a bar. */
     static String format(List<BarAction> slots) {
         StringBuilder out = new StringBuilder();
