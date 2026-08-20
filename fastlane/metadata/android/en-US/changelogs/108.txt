@@ -1,0 +1,17 @@
+Automatic no longer leaves the keyboard under the system's buttons in
+gesture navigation.
+
+It was reserving the smaller of two insets, and on a phone in gesture
+navigation those two describe different things: the tappable inset is
+the gesture bar's own bounding box, while the navigation bar's inset is
+the whole zone the hide-keyboard and switch-keyboard buttons live in.
+Taking the smaller lifted the keyboard clear of the gesture bar and left
+it under the buttons.
+
+The navigation bar is the furniture, so that is the number Automatic
+uses now - still capped by how much of it is actually over the keyboard's
+own window, which is what keeps it at nothing on phones that place the
+keyboard above the bar already.
+
+Reported with measurements from two phones and several navigation
+settings. Thank you.

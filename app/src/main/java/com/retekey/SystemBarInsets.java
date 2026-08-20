@@ -60,17 +60,18 @@ final class SystemBarInsets {
     /**
      * The band to reserve.
      *
-     * <p>Automatic asks three questions, and the third is the one that matters. The insets say how
-     * much of the bottom the system takes touches in and how tall its furniture is — but they say
-     * that about the screen, not about this window. Whether any of it is over <em>us</em> is a
-     * matter of geometry: this window's own bottom against the top of the navigation bar.
+     * <p>Automatic asks two things: how tall the system's bottom furniture is, and how much of it is
+     * over <em>this window</em>. The second is geometry — the window's own bottom against the top of
+     * the navigation bar — and it is what lets the answer be nothing at all on a phone where the
+     * framework has already placed the keyboard above the bar.
      *
-     * <p>That is what separates the two phones this has been wrong on. On the reported device the
-     * IME window reaches the physical bottom of the screen and the system's keyboard buttons sit on
-     * our keys, so the overlap is the bar's height. On a phone where the framework has already put
-     * the window above the bar, the overlap is zero, and reserving anything there gives up a strip
-     * of keyboard for furniture that is not over it. Read from the insets alone the two look
-     * identical; measured, they do not.
+     * <p>The first used to be read as the smaller of the navigation-bar and tappable-element insets,
+     * and that was wrong. Measured on a Galaxy A56 in gesture navigation (issue #1, 2026-08-19): the
+     * tappable inset is 42px — the gesture bar's own bounding box — while the navigation-bar inset is
+     * 135px, the whole zone the hide-keyboard and switch-keyboard buttons live in. Taking the smaller
+     * lifted the keyboard clear of the gesture bar and left it under the buttons, which is the bug in
+     * a milder form. **The navigation bar is the furniture; the tappable inset describes something
+     * else.** It has no part in this answer any more.
      *
      * @param sdkInt the running platform's API level
      * @param tappableBottom the tappable-element bottom inset, or 0 where the platform has none
@@ -95,7 +96,7 @@ final class SystemBarInsets {
         if (!navigationVisible) {
             return 0;
         }
-        int band = Math.min(tappableBottom, navigationBottom);
+        int band = navigationBottom;
         if (overlapPx != OVERLAP_UNKNOWN) {
             // Only the part actually over this window is ours to give up.
             band = Math.min(band, overlapPx);

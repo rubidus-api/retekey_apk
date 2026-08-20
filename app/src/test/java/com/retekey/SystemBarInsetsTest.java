@@ -28,9 +28,18 @@ public final class SystemBarInsetsTest {
     }
 
     @Test
-    public void gestureNavigationReservesNothing() {
-        // The navigation bar still reports a height for its handle, but nothing there takes a tap.
-        assertEquals(0, auto(33, 0, 48, true, 48));
+    public void gestureNavigationWithKeyboardButtonsReservesTheWholeZone() {
+        // Measured on a Galaxy A56, One UI 8.5, gesture navigation (issue #1): the tappable inset is
+        // the gesture bar's bounding box, 42px, and the navigation-bar inset is the whole zone the
+        // hide-keyboard and switch-keyboard buttons live in, 135px. Reserving the smaller lifted the
+        // keyboard clear of the gesture bar and left it under the buttons.
+        assertEquals(135, auto(33, 42, 135, true, 135));
+    }
+
+    @Test
+    public void threeButtonNavigationIsTheSameNumberTwice() {
+        // Same phone in three-button navigation: both insets are the zone, so nothing to choose.
+        assertEquals(135, auto(33, 135, 135, true, 135));
     }
 
     @Test
@@ -42,11 +51,12 @@ public final class SystemBarInsetsTest {
     }
 
     @Test
-    public void theBandIsNeverMoreThanTheFurnitureItIsFor() {
-        // A ROM that reports a large tappable inset and a small bar — or the reverse — gets the
-        // smaller of the two rather than the more alarming one.
-        assertEquals(48, auto(33, 126, 48, true, 126));
-        assertEquals(48, auto(33, 48, 126, true, 126));
+    public void theTappableInsetHasNoSayInIt() {
+        // Whatever it reports, the furniture is the navigation bar's height — capped by how much of
+        // it is over this window, which is the term that can still answer zero.
+        assertEquals(135, auto(33, 0, 135, true, 135));
+        assertEquals(135, auto(33, 999, 135, true, 135));
+        assertEquals(0, auto(33, 42, 135, true, 135, 0));
     }
 
     @Test
