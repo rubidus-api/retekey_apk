@@ -54,6 +54,16 @@ public final class SpecialKeysPageTest {
     }
 
     @Test
+    public void everyArithmeticKeyHoldsItsPair() {
+        // The row pairs each key with the other half of what a keypad would have had room for:
+        // + holds *, - holds /, . holds a comma. "=" was the one holding nothing.
+        assertEquals(Arrays.asList("*"), findByLabel(NUMBERS, "+").longPressTexts());
+        assertEquals(Arrays.asList("/"), findByLabel(NUMBERS, "-").longPressTexts());
+        assertEquals(Arrays.asList(","), findByLabel(NUMBERS, ".").longPressTexts());
+        assertEquals(Arrays.asList(":"), findByLabel(NUMBERS, "=").longPressTexts());
+    }
+
+    @Test
     public void hanjaKeyIsAnEnabledControl() {
         SoftwareKeySpec hanja = NUMBERS.findById("touch.key.hanja");
         assertNotNull(hanja);

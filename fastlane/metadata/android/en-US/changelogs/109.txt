@@ -1,0 +1,19 @@
+The action bar has a screen of its own now - Action bar settings, from
+the app's main screen or from the button in settings. It outgrew being a
+section on a page that was already long.
+
+Two kinds of slot are yours to make. Text types whatever you wrote, and
+holding it repeats. A key combination - modifiers plus a key, Ctrl+B or
+Esc on its own - sends it once on a tap, and holding presses the key and
+leaves it down until you press the slot again, which is how Shift stays
+held for a selection.
+
+The themed launcher icon is fixed. A themed home screen paints whatever
+is opaque in the icon with its dark colour and fills the rest with its
+light accent, so the old layer - a solid plate with the keys punched out
+of it - came out inverted, and the lettering inside it turned into
+blobs. The keys are the opaque mark now, inside a thin outline, and the
+lettering is left out at a size where it was four pixels tall.
+
+Also: on the special-keys page, "=" holds ":" - it was the one key in
+that row with nothing under it.

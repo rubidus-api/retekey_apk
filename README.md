@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.107** —
-[retekey-0.1.107.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.107/retekey-0.1.107.apk)
+Current release: **v0.1.108** —
+[retekey-0.1.108.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.108/retekey-0.1.108.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -433,9 +433,11 @@ A **Back to main screen** button at the top returns to the app's main screen at 
 
 ## The action bar
 
-Off by default; turn it on under **Action bar** in settings and tick what it should carry. Order it
-by dragging a row by its **≡** handle, or nudge one with **▲ ▼**; **Default order** puts the shipped
-order back. It sits above the keys and scrolls sideways when the list is longer than the screen.
+Off by default. It has a screen of its own — **Action bar settings**, from the app's main screen or
+from the button in settings — where you turn it on and decide what it carries. Drag a row by its
+**≡** handle to order it, nudge one with **▲ ▼**, take one off with **✕**, and **Default order** puts
+the shipped bar back. It sits above the keys and scrolls sideways when the list is longer than the
+screen.
 
 ![The action bar above the keyboard](assets/keyboard-actionbar.png)
 
@@ -452,7 +454,18 @@ Stage one carries the things that need nothing remembered:
 | **Sym** | the symbols page, from wherever you are |
 | **Memo** | raises the notepad |
 
-Modifier chords such as Ctrl+B, slots you fill yourself, and macros are the stages after this one.
+Two kinds of slot are yours to make:
+
+- **Text** — anything you type into the box: a signature, an address, a command you keep retyping. A
+  tap types it, and **holding it repeats**, the way holding a key does.
+- **Key combination** — modifiers plus a key: Ctrl+B, Alt+F4, Esc on its own. A tap sends it once,
+  and **holding presses the key and leaves it down** until you press the slot again, which is how
+  Shift stays held for a selection.
+
+Give either one a label and that is what the bar says; leave it blank and it shows the text itself,
+or the combination's name.
+
+Macros are the stage after this one.
 
 **Word** needs the editor to say where the cursor is. A few — some terminals — never do, and there
 the button does nothing rather than selecting the wrong thing.

@@ -737,7 +737,9 @@ public final class KeyboardLayouts {
             shiftKey(false), text("e", "e").withLongPress("_"),
             // The other half of each pair, where a keypad would have had room for both.
             text("plus", "+").withLongPress("*"), text("minus", "-").withLongPress("/"),
-            text("equals", "="), text("period", ".").withLongPress(","),
+            // "=" was the only key in this row holding nothing; a colon is what shares a key with
+            // it on a full keyboard, and it is what a time or a ratio needs.
+            text("equals", "=").withLongPress(":"), text("period", ".").withLongPress(","),
             padCell(mode, 6), padCell(mode, 7), padCell(mode, 8), enterKey()
         ));
         rows.add(bottomRow(padLayerCell(mode)));
