@@ -73,6 +73,8 @@ public final class PreviewActivity extends Activity {
         addDivider(list);
         addListItem(list, R.string.preview_open_settings, this::openSettings);
         addDivider(list);
+        addListItem(list, R.string.preview_open_bar_settings, this::openActionBarSettings);
+        addDivider(list);
 
         setContentView(root);
     }
@@ -112,6 +114,11 @@ public final class PreviewActivity extends Activity {
 
     private void openSettings(View view) {
         startActivity(new Intent(this, SettingsActivity.class));
+    }
+
+    /** The action bar's own screen, which is long enough to deserve its own way in. */
+    private void openActionBarSettings(View view) {
+        startActivity(new Intent(this, ActionBarSettingsActivity.class));
     }
 
     /** Opens the system screen for enabling/disabling installed keyboards. */

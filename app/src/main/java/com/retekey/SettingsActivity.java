@@ -39,9 +39,6 @@ public final class SettingsActivity extends Activity {
     private LinearLayout hanjaList;
     private LinearLayout unicodeList;
     private LinearLayout layoutList;
-    private LinearLayout barList;
-    /** The slot a finger is carrying, while a row is being dragged to a new place. */
-    private BarAction draggingSlot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,169 +165,24 @@ public final class SettingsActivity extends Activity {
     }
 
     /**
-     * The action bar: whether there is one, and what is on it. The rows behave like the layout
-     * rows above — a tick to carry an action, arrows to move it — because they are the same kind of
-     * list, and a settings screen with two kinds of orderable list would be a settings screen with
-     * one too many ideas in it.
+     * The action bar has a screen of its own. What it carries — built-in actions, text the user
+     * wrote, key combinations they assembled — is a list with its own editing, and putting all of
+     * that on a screen that is already long made both harder to read.
      */
     private void addActionBarControls(LinearLayout root) {
         root.addView(sectionHeader(R.string.settings_bar_label));
         root.addView(sectionHint(R.string.settings_bar_hint));
-
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText(R.string.settings_bar_enabled);
-        enabled.setChecked(prefs().getBoolean(
-            ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED));
-        enabled.setOnCheckedChangeListener((b, checked) ->
-            prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, checked).apply());
-        root.addView(enabled);
-
-        barList = new LinearLayout(this);
-        barList.setOrientation(LinearLayout.VERTICAL);
-        root.addView(barList, matchWidth());
-        refreshBarList();
-
-        Button reset = new Button(this);
-        reset.setText(R.string.settings_bar_reset);
-        reset.setAllCaps(false);
-        reset.setOnClickListener(view -> resetBarSlots());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.END;
-        root.addView(reset, params);
-    }
-
-    private void refreshBarList() {
-        barList.removeAllViews();
-        List<BarAction> slots = barSlots();
-        for (BarAction action : slots) {
-            barList.addView(barRow(action, slots, true), matchWidth());
-        }
-        for (BarAction action : BarAction.values()) {
-            if (!slots.contains(action)) {
-                barList.addView(barRow(action, slots, false), matchWidth());
+        Button open = new Button(this);
+        open.setText(R.string.settings_bar_open);
+        open.setAllCaps(false);
+        open.setOnClickListener(view -> {
+            try {
+                startActivity(new android.content.Intent(this, ActionBarSettingsActivity.class));
+            } catch (RuntimeException ignored) {
+                // Nothing to open; the button is the only way in, so failing silently is enough.
             }
-        }
-    }
-
-    private LinearLayout barRow(BarAction action, List<BarAction> slots, boolean on) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setMinimumHeight(dp(ROW_HEIGHT_DP));
-
-        if (on) {
-            // Press the handle and drag the row where you want it. The arrows below still work —
-            // they are the precise way, and the way that does not need a steady finger — but
-            // reordering seven slots two taps at a time is not what anyone wants to do twice.
-            row.addView(barDragHandle(action), moveButtonParams(true));
-            row.setOnDragListener(barDropListener(action));
-        }
-
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText(action.label());
-        enabled.setChecked(on);
-        enabled.setOnClickListener(view -> toggleBarSlot(action));
-        row.addView(enabled, new LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        if (on) {
-            row.addView(barMoveButton("▲", action, -1, slots.indexOf(action) > 0),
-                moveButtonParams(true));
-            row.addView(barMoveButton("▼", action, 1, slots.indexOf(action) < slots.size() - 1),
-                moveButtonParams(false));
-        }
-        return row;
-    }
-
-    /** The grip: touching it picks the row up. */
-    private Button barDragHandle(BarAction action) {
-        Button handle = glyphButton("≡", true);
-        handle.setOnTouchListener((view, event) -> {
-            if (event.getActionMasked() != android.view.MotionEvent.ACTION_DOWN) {
-                return false;
-            }
-            draggingSlot = action;
-            Compat.startDrag(view, new View.DragShadowBuilder(view));
-            return true;
         });
-        return handle;
-    }
-
-    /** A row as a place to drop on: the dragged slot lands where this one was. */
-    private View.OnDragListener barDropListener(BarAction target) {
-        return (view, event) -> {
-            switch (event.getAction()) {
-                case android.view.DragEvent.ACTION_DRAG_STARTED:
-                case android.view.DragEvent.ACTION_DRAG_ENTERED:
-                case android.view.DragEvent.ACTION_DRAG_LOCATION:
-                case android.view.DragEvent.ACTION_DRAG_EXITED:
-                    return draggingSlot != null;
-                case android.view.DragEvent.ACTION_DROP:
-                    dropBarSlot(target);
-                    return true;
-                case android.view.DragEvent.ACTION_DRAG_ENDED:
-                    draggingSlot = null;
-                    return true;
-                default:
-                    return false;
-            }
-        };
-    }
-
-    private void dropBarSlot(BarAction target) {
-        if (draggingSlot == null || draggingSlot == target) {
-            return;
-        }
-        List<BarAction> slots = barSlots();
-        storeBarSlots(new ArrayList<>(ActionBarSlots.moved(
-            slots, slots.indexOf(draggingSlot), slots.indexOf(target))));
-        draggingSlot = null;
-    }
-
-    private Button barMoveButton(String glyph, BarAction action, int delta, boolean usable) {
-        Button button = glyphButton(glyph, usable);
-        button.setOnClickListener(view -> moveBarSlot(action, delta));
-        return button;
-    }
-
-    private void toggleBarSlot(BarAction action) {
-        List<BarAction> slots = new ArrayList<>(barSlots());
-        if (slots.contains(action)) {
-            slots.remove(action);
-        } else {
-            slots.add(action);
-        }
-        storeBarSlots(slots);
-    }
-
-    private void moveBarSlot(BarAction action, int delta) {
-        List<BarAction> slots = barSlots();
-        int from = slots.indexOf(action);
-        storeBarSlots(new ArrayList<>(ActionBarSlots.moved(slots, from, from + delta)));
-    }
-
-    /** Puts the bar back to the slots it ships with, for a list that has been rearranged into a mess. */
-    private void resetBarSlots() {
-        storeBarSlots(new ArrayList<>(ActionBarSlots.DEFAULT));
-    }
-
-    private void storeBarSlots(List<BarAction> slots) {
-        // An empty list would read back as the default on the next parse, which would look like
-        // the ticks came back by themselves; store the emptiness as the bar being off instead.
-        if (slots.isEmpty()) {
-            prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, false).apply();
-        }
-        prefs().edit().putString(ActionBarSlots.KEY_SLOTS, ActionBarSlots.format(slots)).apply();
-        refreshBarList();
-    }
-
-    private List<BarAction> barSlots() {
-        String stored = prefs().getString(ActionBarSlots.KEY_SLOTS, null);
-        if (stored != null && stored.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return ActionBarSlots.parse(stored);
+        root.addView(open, matchWidth());
     }
 
     /**

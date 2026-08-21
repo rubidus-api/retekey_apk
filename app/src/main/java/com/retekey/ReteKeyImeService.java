@@ -212,11 +212,68 @@ public class ReteKeyImeService extends InputMethodService {
         }
         ActionBarView bar = new ActionBarView(this);
         bar.setSlots(ActionBarSlots.parse(viewPrefs().getString(ActionBarSlots.KEY_SLOTS, null)));
-        bar.setListener(this::performBarAction);
+        bar.setRepeatTimings(
+            KeyRepeatSettings.clampDelay(viewPrefs().getInt(
+                KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS)),
+            KeyRepeatSettings.clampInterval(viewPrefs().getInt(
+                KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS)));
+        bar.setListener(new ActionBarView.Listener() {
+            @Override
+            public void onAction(BarAction action) {
+                performBarAction(action);
+            }
+
+            @Override
+            public void onText(String text) {
+                typeBarText(text);
+            }
+
+            @Override
+            public void onChord(BarSlot slot) {
+                sendBarChord(slot, RawKeyPhase.TAP);
+            }
+
+            @Override
+            public void onChordLatch(BarSlot slot, boolean down) {
+                sendBarChord(slot, down ? RawKeyPhase.HOLD : RawKeyPhase.RELEASE);
+            }
+        });
         return new ActionBarFrame(this, bar, keyboard);
     }
 
     /** One press on the action bar. */
+    /** A text slot: what the user wrote, typed as if the keys had been pressed. */
+    private void typeBarText(String text) {
+        if (text == null || text.isEmpty()) {
+            return;
+        }
+        try {
+            dispatchSoftwareInput(
+                ProjectKeyEvent.softwareDown("touch.bar.text", SemanticInput.text(text)));
+        } catch (RuntimeException ignored) {
+            // A bar press must never crash the keyboard, whatever the editor does with it.
+        }
+    }
+
+    /**
+     * A chord slot: a key with modifiers held, sent once on a tap and left down on a hold.
+     *
+     * <p>A latched chord is two halves of one press separated by however long the user leaves it
+     * that way, which is what makes Shift+arrow selection or a held Ctrl possible from a screen.
+     */
+    private void sendBarChord(BarSlot slot, RawKeyPhase phase) {
+        if (slot == null || slot.key() == null) {
+            return;
+        }
+        try {
+            dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                "touch.bar.chord",
+                SemanticInput.rawKey(slot.key(), slot.modifiers(), phase)));
+        } catch (RuntimeException ignored) {
+            // As above: a chord the editor refuses must not take the keyboard with it.
+        }
+    }
+
     private void performBarAction(BarAction action) {
         try {
             switch (action) {

@@ -1,13 +1,18 @@
 package com.retekey;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The strip above the keys: the actions that are not letters, visible while you type.
@@ -16,13 +21,23 @@ import java.util.List;
  * and what none of those has is being reachable without hiding the text you are working on. The bar
  * costs the height of one short row and is never a mode.
  *
- * <p>It scrolls sideways when the slot list is longer than the screen, so a bar can be as long as
- * its owner wants without shrinking its buttons to nothing.
+ * <p>Three kinds of slot sit side by side, and holding one does something different for each:
+ * a built-in action does it once, text repeats while the finger is down the way a held key does,
+ * and a key combination latches — pressed and left down until the slot is pressed again, which is
+ * the only way an on-screen key can be held at all.
  */
 final class ActionBarView extends HorizontalScrollView {
-    /** Told which action was pressed. Not {@code Consumer}, which is API 24. */
+    /** What the bar asks the service to do. */
     interface Listener {
         void onAction(BarAction action);
+
+        void onText(String text);
+
+        /** A chord pressed and released at once. */
+        void onChord(BarSlot slot);
+
+        /** A chord pressed and left down, or let up again. */
+        void onChordLatch(BarSlot slot, boolean down);
     }
 
     /** How tall the strip is. Shorter than a key row: it is a shelf, not another row of keys. */
@@ -32,7 +47,12 @@ final class ActionBarView extends HorizontalScrollView {
 
     private final LinearLayout row;
     private final KeyboardPalette palette;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    /** The chords held down right now. They stay down until pressed again. */
+    private final Set<BarSlot> latched = new HashSet<>();
     private Listener listener;
+    private int repeatDelayMs = KeyRepeatSettings.DEFAULT_DELAY_MS;
+    private int repeatIntervalMs = KeyRepeatSettings.DEFAULT_INTERVAL_MS;
 
     ActionBarView(Context context) {
         super(context);
@@ -49,11 +69,18 @@ final class ActionBarView extends HorizontalScrollView {
         this.listener = listener;
     }
 
+    /** The auto-repeat timings the keyboard itself uses, so a held slot feels like a held key. */
+    void setRepeatTimings(int delayMs, int intervalMs) {
+        repeatDelayMs = delayMs;
+        repeatIntervalMs = intervalMs;
+    }
+
     /** Fills the bar. Called again whenever the slot list changes. */
-    void setSlots(List<BarAction> slots) {
+    void setSlots(List<BarSlot> slots) {
         row.removeAllViews();
-        for (BarAction action : slots) {
-            row.addView(button(action), slotParams());
+        latched.clear();
+        for (BarSlot slot : slots) {
+            row.addView(button(slot), slotParams());
         }
     }
 
@@ -69,9 +96,9 @@ final class ActionBarView extends HorizontalScrollView {
         return params;
     }
 
-    private View button(BarAction action) {
+    private View button(BarSlot slot) {
         TextView view = new TextView(getContext());
-        view.setText(action.label());
+        view.setText(slot.label());
         view.setGravity(Gravity.CENTER);
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, LABEL_SP);
         view.setTextColor(palette.keyText);
@@ -81,16 +108,125 @@ final class ActionBarView extends HorizontalScrollView {
         view.setMinimumWidth(dp(44));
         view.setClickable(true);
         view.setFocusable(true);
-        view.setOnClickListener(v -> {
-            // The press is drawn by hand: the bar takes its colours from the keyboard's palette
-            // rather than from the activity theme, which has no say inside an IME window.
-            v.setBackgroundColor(KeyPressTint.pressed(palette.keyFace, palette.pressTint));
-            v.postDelayed(() -> v.setBackgroundColor(palette.keyFace), 90);
-            if (listener != null) {
-                listener.onAction(action);
-            }
-        });
+        view.setOnTouchListener(new SlotTouch(slot, view));
         return view;
+    }
+
+    /**
+     * A slot's press, hold and release.
+     *
+     * <p>Written by hand rather than as a click listener, because "what a hold does" is the whole
+     * point of two of the three kinds and a click listener cannot see a hold at all.
+     */
+    private final class SlotTouch implements View.OnTouchListener {
+        private final BarSlot slot;
+        private final TextView view;
+        private final Runnable repeat = new Runnable() {
+            @Override
+            public void run() {
+                if (listener != null) {
+                    listener.onText(slot.text());
+                }
+                handler.postDelayed(this, Math.max(20, repeatIntervalMs));
+            }
+        };
+        private final Runnable latch = new Runnable() {
+            @Override
+            public void run() {
+                held = true;
+                setLatched(true);
+            }
+        };
+        private boolean held;
+
+        SlotTouch(BarSlot slot, TextView view) {
+            this.slot = slot;
+            this.view = view;
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    press();
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    release(event.getActionMasked() == MotionEvent.ACTION_UP);
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        private void press() {
+            held = false;
+            paint(true);
+            if (slot.kind() == BarSlot.Kind.TEXT) {
+                handler.postDelayed(repeat, Math.max(50, repeatDelayMs));
+            } else if (slot.canLatch() && !latched.contains(slot)) {
+                handler.postDelayed(latch, Math.max(50, repeatDelayMs));
+            }
+        }
+
+        private void release(boolean insideThePress) {
+            handler.removeCallbacks(repeat);
+            handler.removeCallbacks(latch);
+            paint(false);
+            if (!insideThePress || listener == null) {
+                return;
+            }
+            if (held) {
+                // The hold already did what it does; the lift only ends it.
+                return;
+            }
+            switch (slot.kind()) {
+                case BUILT_IN:
+                    listener.onAction(slot.action());
+                    break;
+                case TEXT:
+                    listener.onText(slot.text());
+                    break;
+                default:
+                    if (latched.contains(slot)) {
+                        setLatched(false);
+                    } else {
+                        listener.onChord(slot);
+                    }
+                    break;
+            }
+        }
+
+        private void setLatched(boolean down) {
+            if (down) {
+                latched.add(slot);
+            } else {
+                latched.remove(slot);
+            }
+            paint(false);
+            if (listener != null) {
+                listener.onChordLatch(slot, down);
+            }
+        }
+
+        /** A pressed slot is tinted; a latched one keeps the accent until it is let up. */
+        private void paint(boolean pressed) {
+            if (latched.contains(slot)) {
+                view.setBackgroundColor(palette.keyAccent);
+                view.setTextColor(palette.keyLatchedInk());
+                return;
+            }
+            view.setTextColor(palette.keyText);
+            view.setBackgroundColor(pressed
+                ? KeyPressTint.pressed(palette.keyFace, palette.pressTint)
+                : palette.keyFace);
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDetachedFromWindow();
     }
 
     @Override

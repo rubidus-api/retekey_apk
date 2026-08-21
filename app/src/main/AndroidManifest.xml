@@ -19,6 +19,11 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ActionBarSettingsActivity"
+            android:exported="false"
+            android:label="@string/bar_settings_title"
+            android:theme="@style/ReteScreenTheme" />
+        <activity
             android:name=".SettingsActivity"
             android:exported="true"
             android:label="@string/settings_title"

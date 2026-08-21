@@ -2,16 +2,15 @@ package com.retekey;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * Which actions the bar above the keys carries, and in what order.
+ * What the bar above the keys carries, and in what order.
  *
- * <p>The same shape as {@link LetterLayouts}: a comma-separated list of stored words, parsed and
- * repaired rather than trusted, because a preference file outlives the build that wrote it. An
- * unknown word is dropped — a bar from a newer build opened by an older one loses the action it
- * cannot perform and keeps the rest.
+ * <p>A slot is a built-in action, a piece of text the user wrote, or a key combination they
+ * assembled — see {@link BarSlot}. This class is the list: what it holds by default, how it is read
+ * back from preferences, and the one rule for moving a slot, shared by the arrows and by dragging so
+ * a slot cannot land somewhere different depending on how it was picked up.
  *
  * <p>The bar is off until the user turns it on. A keyboard that grows a new strip on update, and so
  * becomes taller, is a keyboard that changed size for a reason its owner did not choose.
@@ -22,7 +21,7 @@ final class ActionBarSlots {
     static final boolean DEFAULT_ENABLED = false;
 
     /** What the bar holds before anyone rearranges it: select, the clipboard three, the arrows. */
-    static final List<BarAction> DEFAULT = Arrays.asList(
+    static final List<BarAction> DEFAULT_ACTIONS = Arrays.asList(
         BarAction.SELECT_WORD,
         BarAction.SELECT_ALL,
         BarAction.CUT,
@@ -34,45 +33,40 @@ final class ActionBarSlots {
     private ActionBarSlots() {
     }
 
-    /** Reads a stored bar, keeping only known actions and dropping repeats. */
-    static List<BarAction> parse(String stored) {
-        LinkedHashSet<BarAction> slots = new LinkedHashSet<>();
-        if (stored != null) {
-            for (String raw : stored.split(",")) {
-                BarAction action = BarAction.parse(raw.trim());
-                if (action != null) {
-                    slots.add(action);
-                }
-            }
+    /** The default bar as slots. */
+    static List<BarSlot> defaults() {
+        List<BarSlot> slots = new ArrayList<>(DEFAULT_ACTIONS.size());
+        for (BarAction action : DEFAULT_ACTIONS) {
+            slots.add(BarSlot.of(action));
         }
-        // An empty bar is a bar of nothing, which is what turning it off is for: the setting says
-        // whether there is a bar, and this says what is on it.
-        return slots.isEmpty() ? DEFAULT : new ArrayList<>(slots);
+        return slots;
+    }
+
+    /**
+     * Reads a stored bar. An empty or unreadable one falls back to the default, which is what the
+     * bar looked like the first time it was switched on; emptiness is stored as the bar being off,
+     * not as a bar of nothing.
+     */
+    static List<BarSlot> parse(String stored) {
+        List<BarSlot> slots = BarSlotCodec.decode(stored);
+        return slots.isEmpty() ? defaults() : slots;
+    }
+
+    /** The stored form of a bar. */
+    static String format(List<BarSlot> slots) {
+        return BarSlotCodec.encode(slots);
     }
 
     /**
      * The list with the item at {@code from} put down at {@code to}, or the same list where either
-     * index is not one of its own. Shared by the arrows and by dragging, so a slot cannot end up
-     * somewhere different depending on how it was moved.
+     * index is not one of its own.
      */
-    static List<BarAction> moved(List<BarAction> slots, int from, int to) {
+    static List<BarSlot> moved(List<BarSlot> slots, int from, int to) {
         if (from == to || from < 0 || to < 0 || from >= slots.size() || to >= slots.size()) {
             return slots;
         }
-        List<BarAction> next = new ArrayList<>(slots);
+        List<BarSlot> next = new ArrayList<>(slots);
         next.add(to, next.remove(from));
         return next;
-    }
-
-    /** The stored form of a bar. */
-    static String format(List<BarAction> slots) {
-        StringBuilder out = new StringBuilder();
-        for (BarAction action : slots) {
-            if (out.length() > 0) {
-                out.append(',');
-            }
-            out.append(action.stored());
-        }
-        return out.toString();
     }
 }

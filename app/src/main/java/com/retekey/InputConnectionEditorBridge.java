@@ -173,7 +173,13 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case F10: return KeyEvent.KEYCODE_F10;
             case F11: return KeyEvent.KEYCODE_F11;
             case F12: return KeyEvent.KEYCODE_F12;
+            case SPACE: return KeyEvent.KEYCODE_SPACE;
             default:
+                if (key.ordinal() >= RawKey.DIGIT_0.ordinal()
+                    && key.ordinal() <= RawKey.DIGIT_9.ordinal()) {
+                    // 0..9 are contiguous in both enums, so map by offset from zero.
+                    return KeyEvent.KEYCODE_0 + (key.ordinal() - RawKey.DIGIT_0.ordinal());
+                }
                 if (key.ordinal() >= RawKey.A.ordinal() && key.ordinal() <= RawKey.Z.ordinal()) {
                     // A..Z are contiguous in both enums, so map by offset from A.
                     return KeyEvent.KEYCODE_A + (key.ordinal() - RawKey.A.ordinal());
