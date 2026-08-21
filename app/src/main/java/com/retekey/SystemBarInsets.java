@@ -29,8 +29,8 @@ final class SystemBarInsets {
      */
     private static final int MAX_SHARE_DENOMINATOR = 4;
 
-    /** Passed as {@code overlapPx} when the window has not been laid out and cannot be measured. */
-    static final int OVERLAP_UNKNOWN = -1;
+    /** Passed as {@code liftPx} when the window has not been laid out and cannot be measured. */
+    static final int LIFT_UNKNOWN = -1;
 
     private SystemBarInsets() {
     }
@@ -58,31 +58,44 @@ final class SystemBarInsets {
     }
 
     /**
-     * The band to reserve.
+     * How far the system's bottom furniture reaches up from the physical bottom of the screen —
+     * the height the keyboard's keys have to clear.
      *
-     * <p>Automatic asks two things: how tall the system's bottom furniture is, and how much of it is
-     * over <em>this window</em>. The second is geometry — the window's own bottom against the top of
-     * the navigation bar — and it is what lets the answer be nothing at all on a phone where the
-     * framework has already placed the keyboard above the bar.
+     * <p>Two insets describe it and neither is enough on its own. In gesture navigation on a Galaxy
+     * A56 the tappable-element inset is 42px (the gesture bar's own box) and the navigation-bar inset
+     * is 135px (the whole zone the hide-keyboard and switch-keyboard buttons live in); on a phone
+     * with those buttons on but gesture bar hidden the two can come the other way round. The
+     * furniture is whichever reaches higher. This is the number the reporter of issue #1 called A,
+     * and it is what the Always mode has reserved all along — which is why Always was right on every
+     * phone and setting he tried.
+     */
+    static int furniturePx(int tappableBottom, int navigationBottom) {
+        return Math.max(0, Math.max(tappableBottom, navigationBottom));
+    }
+
+    /**
+     * The band to reserve under the keys.
      *
-     * <p>The first used to be read as the smaller of the navigation-bar and tappable-element insets,
-     * and that was wrong. Measured on a Galaxy A56 in gesture navigation (issue #1, 2026-08-19): the
-     * tappable inset is 42px — the gesture bar's own bounding box — while the navigation-bar inset is
-     * 135px, the whole zone the hide-keyboard and switch-keyboard buttons live in. Taking the smaller
-     * lifted the keyboard clear of the gesture bar and left it under the buttons, which is the bug in
-     * a milder form. **The navigation bar is the furniture; the tappable inset describes something
-     * else.** It has no part in this answer any more.
+     * <p>Automatic is one subtraction: the furniture's height, minus how far the framework has already
+     * lifted this window off the physical bottom. On a phone where the window sits at the very bottom
+     * the lift is zero and the whole furniture height is ours to reserve; on a phone where the
+     * framework has already placed the window above the bar the lift eats some or all of it and there
+     * is little or nothing left to add. The reporter of issue #1 wrote the rule down as
+     * {@code A - B} after reading the numbers off the settings screen of two phones, and he was
+     * right: the earlier versions measured the lift and then used it as a cap on the navigation bar
+     * alone, which changes nothing on a phone whose window is at the bottom — exactly the phones that
+     * were reporting the bug.
      *
      * @param sdkInt the running platform's API level
      * @param tappableBottom the tappable-element bottom inset, or 0 where the platform has none
      * @param navigationBottom the navigation-bar bottom inset
      * @param navigationVisible whether the navigation bar is showing at all
      * @param systemWindowBottom the system-window bottom inset, the only answer below API 29
-     * @param overlapPx how far this window reaches into the navigation bar, or
-     *     {@link #OVERLAP_UNKNOWN} before it has been laid out and can be measured
+     * @param liftPx how far this window's bottom edge sits above the physical bottom of the screen,
+     *     or {@link #LIFT_UNKNOWN} before it has been laid out and can be measured
      */
     static int bandPx(int sdkInt, int tappableBottom, int navigationBottom,
-            boolean navigationVisible, int systemWindowBottom, int overlapPx, Mode mode) {
+            boolean navigationVisible, int systemWindowBottom, int liftPx, Mode mode) {
         if (sdkInt < ANY_INSETS_SDK || mode == Mode.NEVER) {
             return 0;
         }
@@ -90,18 +103,20 @@ final class SystemBarInsets {
             // Before tappable-element insets there is one number and no way to tell what is in it.
             return Math.max(0, systemWindowBottom);
         }
+        int furniture = furniturePx(tappableBottom, navigationBottom);
         if (mode == Mode.ALWAYS) {
-            return Math.max(0, Math.max(tappableBottom, navigationBottom));
+            return furniture;
         }
-        if (!navigationVisible) {
+        if (!navigationVisible && tappableBottom <= 0) {
+            // Nothing is showing down there and nothing takes a tap: there is nothing to clear.
             return 0;
         }
-        int band = navigationBottom;
-        if (overlapPx != OVERLAP_UNKNOWN) {
-            // Only the part actually over this window is ours to give up.
-            band = Math.min(band, overlapPx);
+        if (liftPx == LIFT_UNKNOWN) {
+            // The window has no geometry yet. Reserve the whole furniture for now — the same answer
+            // as Always — and the frame re-asks once it has been laid out.
+            return furniture;
         }
-        return Math.max(0, band);
+        return Math.max(0, furniture - Math.max(0, liftPx));
     }
 
     /**

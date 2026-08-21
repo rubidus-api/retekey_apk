@@ -1,0 +1,15 @@
+Automatic finally reserves the right space under the keyboard on every
+phone and navigation setting the issue-#1 reporter measured.
+
+The rule is now one subtraction, and it is his: the system's furniture
+reaches max(tappable, navigation) pixels up from the bottom of the
+screen; the framework has already lifted the keyboard window some
+distance off that bottom; the band under the keys is the difference.
+On a phone whose window sits at the very bottom that is the whole
+furniture - what Always gave, and what worked for him. On a phone whose
+window is already placed above the bar it is little or nothing, which is
+what kept Always from being the default.
+
+Earlier versions measured the lift and then used it as a cap on the
+navigation bar alone, which changed nothing on exactly the phones that
+were reporting the bug. The settings readout now shows the lift.

@@ -57,45 +57,45 @@ final class WindowInsetsWatcher {
             navigation = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
             navigationVisible = insets.isVisible(WindowInsets.Type.navigationBars());
         }
-        int overlap = overlapWithNavigationBar(view, navigation);
+        int lift = liftAboveScreenBottom(view);
         int band = SystemBarInsets.bandPx(
             Build.VERSION.SDK_INT,
             tappable,
             navigation,
             navigationVisible,
             insets.getSystemWindowInsetBottom(),
-            overlap,
+            lift,
             SystemBandSettings.mode(view.getContext()));
         // What the phone actually reported, so the settings screen can show it rather than leaving
         // the user to guess why their keyboard has a gap under it — or has none.
         SystemBandSettings.remember(
-            view.getContext(), tappable, navigation, navigationVisible, overlap, band);
+            view.getContext(), tappable, navigation, navigationVisible, lift, band);
         return band;
     }
 
     /**
-     * How far this window reaches into the navigation bar, in pixels.
+     * How far this window's bottom edge sits above the physical bottom of the screen, in pixels.
      *
-     * <p>The insets describe the screen; this describes us. The window's bottom edge in screen
-     * coordinates against the top of the bar is the whole question: a window the framework has
-     * already lifted above the bar overlaps it by nothing and needs no band, however tall the bar
-     * is, while a window drawn edge to edge overlaps it by the bar's full height.
+     * <p>The insets describe the screen; this describes us. A window the framework has already
+     * lifted above the navigation bar has a lift equal to the bar's height and needs little or
+     * nothing reserved; a window drawn to the very bottom has a lift of zero and needs the whole
+     * furniture cleared. The issue #1 reporter's phones were the second kind, the owner's the first,
+     * and that single number is the difference between them.
      *
-     * @return the overlap, or {@link SystemBarInsets#OVERLAP_UNKNOWN} before the view has a size
+     * @return the lift, or {@link SystemBarInsets#LIFT_UNKNOWN} before the view has a size
      */
-    private static int overlapWithNavigationBar(View view, int navigationBottom) {
+    private static int liftAboveScreenBottom(View view) {
         if (view.getHeight() <= 0 || view.getWindowToken() == null) {
-            return SystemBarInsets.OVERLAP_UNKNOWN;
+            return SystemBarInsets.LIFT_UNKNOWN;
         }
         int screenHeight = realScreenHeight(view);
         if (screenHeight <= 0) {
-            return SystemBarInsets.OVERLAP_UNKNOWN;
+            return SystemBarInsets.LIFT_UNKNOWN;
         }
         int[] location = new int[2];
         view.getLocationOnScreen(location);
         int windowBottom = location[1] + view.getHeight();
-        int furnitureTop = screenHeight - navigationBottom;
-        return Math.max(0, windowBottom - furnitureTop);
+        return Math.max(0, screenHeight - windowBottom);
     }
 
     /** The display's real height, system furniture included — not the app area's. */

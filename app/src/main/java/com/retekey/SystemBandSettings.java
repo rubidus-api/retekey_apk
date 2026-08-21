@@ -18,7 +18,7 @@ final class SystemBandSettings {
     private static final String KEY_NAVIGATION = "system_band_seen_navigation";
     private static final String KEY_NAV_VISIBLE = "system_band_seen_nav_visible";
     private static final String KEY_RESERVED = "system_band_seen_reserved";
-    private static final String KEY_OVERLAP = "system_band_seen_overlap";
+    private static final String KEY_LIFT = "system_band_seen_lift";
 
     private SystemBandSettings() {
     }
@@ -44,13 +44,13 @@ final class SystemBandSettings {
 
     /** Records what the window was told and what it measured, for the settings screen to show. */
     static void remember(Context context, int tappable, int navigation, boolean navigationVisible,
-            int overlap, int reserved) {
+            int lift, int reserved) {
         try {
             prefs(context).edit()
                 .putInt(KEY_TAPPABLE, tappable)
                 .putInt(KEY_NAVIGATION, navigation)
                 .putBoolean(KEY_NAV_VISIBLE, navigationVisible)
-                .putInt(KEY_OVERLAP, overlap)
+                .putInt(KEY_LIFT, lift)
                 .putInt(KEY_RESERVED, reserved)
                 .apply();
         } catch (RuntimeException ignored) {
@@ -64,12 +64,12 @@ final class SystemBandSettings {
         if (!prefs.contains(KEY_RESERVED)) {
             return "Not measured yet — open the keyboard once and come back.";
         }
-        int overlap = prefs.getInt(KEY_OVERLAP, SystemBarInsets.OVERLAP_UNKNOWN);
+        int lift = prefs.getInt(KEY_LIFT, SystemBarInsets.LIFT_UNKNOWN);
         return "This phone reports: tappable " + prefs.getInt(KEY_TAPPABLE, 0)
             + "px, navigation bar " + prefs.getInt(KEY_NAVIGATION, 0)
             + "px" + (prefs.getBoolean(KEY_NAV_VISIBLE, true) ? "" : " (hidden)")
-            + ", keyboard window over it by "
-            + (overlap == SystemBarInsets.OVERLAP_UNKNOWN ? "?" : String.valueOf(overlap))
-            + "px → reserved " + prefs.getInt(KEY_RESERVED, 0) + "px.";
+            + ", keyboard window lifted "
+            + (lift == SystemBarInsets.LIFT_UNKNOWN ? "?" : String.valueOf(lift))
+            + "px off the bottom → reserved " + prefs.getInt(KEY_RESERVED, 0) + "px.";
     }
 }
