@@ -1,0 +1,9 @@
+The themed launcher icon shows its lettering again: RETE over KEY,
+punched through the key caps so the theme's own background shows in the
+shape of the letters - the themed-icon equivalent of dark ink on a pale
+cap, and what the ordinary icon has always shown.
+
+The layer is a bitmap now, one per density, because a vector drawable
+cannot subtract a stroke from a fill and rebuilding the letters as
+polygons left a speck at every joint. One raster composite punches them
+out cleanly, which is also how reteclock ships its themed icon.
