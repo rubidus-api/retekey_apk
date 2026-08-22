@@ -24,7 +24,7 @@ public final class SpecialKeysPageTest {
             labels(NUMBERS, 0)
         );
         assertEquals(
-            Arrays.asList("RAlt", "RCt", "RSh", "Menu", "Lang", "Fn", "4", "5", "6", "⌫"),
+            Arrays.asList("RAlt", "RCt", "RSh", "Caps", "Menu", "Fn", "4", "5", "6", "⌫"),
             labels(NUMBERS, 1)
         );
         assertEquals(
@@ -64,6 +64,16 @@ public final class SpecialKeysPageTest {
     }
 
     @Test
+    public void capsLockIsAToggleControlBesideMenu() {
+        // Caps took the dead Lang cell and Menu moved one to the right. The key is a control — the
+        // view flips its own face and sends KEYCODE_CAPS_LOCK — not a plain raw key.
+        SoftwareKeySpec caps = NUMBERS.findById("touch.key.capslock");
+        assertNotNull(caps);
+        assertEquals(ControlKey.CAPS_LOCK, caps.control());
+        assertEquals(RawKey.MENU, raw(NUMBERS, "touch.key.menu"));
+    }
+
+    @Test
     public void hanjaKeyIsAnEnabledControl() {
         SoftwareKeySpec hanja = NUMBERS.findById("touch.key.hanja");
         assertNotNull(hanja);
@@ -74,7 +84,8 @@ public final class SpecialKeysPageTest {
 
     @Test
     public void koreanAndMediaSpecialKeysStayDisabled() {
-        for (String id : Arrays.asList("touch.key.lang",
+        // Lang is gone: its cell is Caps Lock now. The right-hand modifiers stay drawn and dead.
+        for (String id : Arrays.asList(
             "touch.key.ralt", "touch.key.rctrl", "touch.key.rshift")) {
             SoftwareKeySpec key = NUMBERS.findById(id);
             assertNotNull(id, key);

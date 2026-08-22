@@ -22,6 +22,7 @@ public enum RawKey {
     PAGE_DOWN,
     PRINT_SCREEN,
     SCROLL_LOCK,
+    CAPS_LOCK,
     BREAK,
     MENU,
     SEARCH,

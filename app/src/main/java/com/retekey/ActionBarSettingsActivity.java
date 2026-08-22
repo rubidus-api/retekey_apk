@@ -40,6 +40,10 @@ public final class ActionBarSettingsActivity extends Activity {
     private LinearLayout spareList;
     /** The slot a finger is carrying while a row is dragged to a new place. */
     private Integer draggingIndex;
+    /** The row the drop would land on, drawn with a heavy line across its top while dragging. */
+    private Integer dropTarget;
+    /** The thin rule between rows; thickened where the drop will land. */
+    private final java.util.List<View> dividers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,9 +125,13 @@ public final class ActionBarSettingsActivity extends Activity {
     private void refresh() {
         List<BarSlot> slots = slots();
         slotList.removeAllViews();
+        dividers.clear();
         for (int i = 0; i < slots.size(); i++) {
+            // A rule above every row, and one after the last: the drop indicator lives on these.
+            slotList.addView(divider(), dividerParams());
             slotList.addView(slotRow(slots.get(i), i, slots.size()), matchWidth());
         }
+        slotList.addView(divider(), dividerParams());
         spareList.removeAllViews();
         Set<BarAction> carried = new LinkedHashSet<>();
         for (BarSlot slot : slots) {
@@ -201,7 +209,10 @@ public final class ActionBarSettingsActivity extends Activity {
                 return false;
             }
             draggingIndex = index;
-            Compat.startDrag(view, new View.DragShadowBuilder(view));
+            // The shadow is the whole row, not the handle that was touched: what follows the
+            // finger should look like the thing being moved.
+            View row = (View) view.getParent();
+            Compat.startDrag(view, new View.DragShadowBuilder(row));
             return true;
         });
         return handle;
@@ -211,23 +222,76 @@ public final class ActionBarSettingsActivity extends Activity {
         return (view, event) -> {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
+                    return draggingIndex != null;
                 case DragEvent.ACTION_DRAG_ENTERED:
                 case DragEvent.ACTION_DRAG_LOCATION:
+                    // Whether the drop would go above or below this row depends on which half of
+                    // it the finger is over: the line is drawn where the slot will actually land.
+                    boolean upperHalf = event.getY() < view.getHeight() / 2f;
+                    showDropAt(upperHalf ? target : target + 1);
+                    return true;
                 case DragEvent.ACTION_DRAG_EXITED:
-                    return draggingIndex != null;
+                    return true;
                 case DragEvent.ACTION_DROP:
                     if (draggingIndex != null) {
-                        move(draggingIndex, target);
+                        boolean above = event.getY() < view.getHeight() / 2f;
+                        int landing = above ? target : target + 1;
+                        // Taking the row out first shifts everything below it up by one.
+                        if (landing > draggingIndex) {
+                            landing--;
+                        }
+                        move(draggingIndex, landing);
                         draggingIndex = null;
                     }
                     return true;
                 case DragEvent.ACTION_DRAG_ENDED:
                     draggingIndex = null;
+                    showDropAt(null);
                     return true;
                 default:
                     return false;
             }
         };
+    }
+
+    /**
+     * Thickens the rule where the carried row would be put down, and thins the one it was on. Rule
+     * {@code i} sits above row {@code i}; the rule after the last row is where "append" lands.
+     */
+    private void showDropAt(Integer gap) {
+        if (gap != null && gap.equals(dropTarget)) {
+            return;
+        }
+        dropTarget = gap;
+        for (int i = 0; i < dividers.size(); i++) {
+            boolean active = gap != null && i == gap;
+            View line = dividers.get(i);
+            android.view.ViewGroup.LayoutParams params = line.getLayoutParams();
+            params.height = dp(active ? 4 : 1);
+            line.setLayoutParams(params);
+            line.setAlpha(active ? 1f : 0.35f);
+        }
+    }
+
+    /** One horizontal rule, painted in the theme's own text colour so it is visible in either scheme. */
+    private View divider() {
+        View line = new View(this);
+        TypedValue colour = new TypedValue();
+        int ink = getTheme().resolveAttribute(android.R.attr.textColorPrimary, colour, true)
+            ? getResources().getColor(colour.resourceId)
+            : 0xFF808080;
+        line.setBackgroundColor(ink);
+        line.setAlpha(0.35f);
+        dividers.add(line);
+        return line;
+    }
+
+    private LinearLayout.LayoutParams dividerParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(1));
+        params.leftMargin = dp(8);
+        params.rightMargin = dp(8);
+        return params;
     }
 
     private void move(int from, int to) {

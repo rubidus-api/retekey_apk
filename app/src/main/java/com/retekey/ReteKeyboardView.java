@@ -29,6 +29,7 @@ public final class ReteKeyboardView extends View {
 
     /** The Tab key's stable id, which the hold latch paints and addresses its events to. */
     private static final String TAB_KEY_ID = "touch.edit.tab";
+    private static final String CAPS_KEY_ID = "touch.key.capslock";
     /** The space bar, which is drawn as a bar rather than labelled with a word. */
     private static final String SPACE_KEY_ID = "touch.text.space";
     /** The key that walks the letter layouts; it is captioned with the one it is showing. */
@@ -45,6 +46,11 @@ public final class ReteKeyboardView extends View {
      * down half and has not been sent the up, so as far as it knows a finger is still on the key.
      */
     private boolean tabHeld;
+    /**
+     * Whether Caps Lock is on, as far as this keyboard knows. The editor owns the real state; this is
+     * what the face shows, flipped on every tap of the key so the two stay in step from here.
+     */
+    private boolean capsLocked;
     /**
      * One finger, and the key it is holding. Typing with two thumbs means two of these at once, so
      * each carries its own long-press and auto-repeat timers rather than sharing the view's.
@@ -703,7 +709,8 @@ public final class ReteKeyboardView extends View {
         return page + "|" + letterLayoutId + "|" + nextLayoutCaption() + "|" + numpadMode
             + "|" + phoneOverlay + "|" + unicodeEntry + "|" + unicodePreview
             + "|" + shiftLayer.isActive()
-            + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld + "|"
+            + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld
+            + "|" + capsLocked + "|"
             + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext());
     }
 
@@ -850,7 +857,9 @@ public final class ReteKeyboardView extends View {
     /** Whether holding this key keeps it down: Shift, the three modifiers, and Tab. */
     private static boolean canBeHeld(SoftwareKeySpec key) {
         if (key.isControl()) {
-            return key.control() == ControlKey.SHIFT || ModifierLatches.handles(key.control());
+            return key.control() == ControlKey.SHIFT
+                || key.control() == ControlKey.CAPS_LOCK
+                || ModifierLatches.handles(key.control());
         }
         return TAB_KEY_ID.equals(key.stableKeyId());
     }
@@ -862,6 +871,9 @@ public final class ReteKeyboardView extends View {
         }
         if (key.control() == ControlKey.SHIFT) {
             return shiftLayer.isLocked();
+        }
+        if (key.control() == ControlKey.CAPS_LOCK) {
+            return capsLocked;
         }
         return modifierLatches.isLocked(key.control());
     }
@@ -1294,6 +1306,16 @@ public final class ReteKeyboardView extends View {
                 RawKey.TAB,
                 EnumSet.noneOf(KeyModifier.class),
                 tabHeld ? RawKeyPhase.HOLD : RawKeyPhase.RELEASE)));
+    }
+
+    /**
+     * Caps Lock: one tap sends the key and flips the face. The editor's own lock is what changes;
+     * we only remember which way we last flipped it, so the key reads on or off at a glance.
+     */
+    private void toggleCapsLock() {
+        capsLocked = !capsLocked;
+        sink.accept(ProjectKeyEvent.softwareDown(
+            CAPS_KEY_ID, SemanticInput.rawKey(RawKey.CAPS_LOCK)));
     }
 
     /** Lets a latched Tab up, so a held key cannot outlive the editor it was held in. */
@@ -1742,6 +1764,9 @@ public final class ReteKeyboardView extends View {
             case TAB_HOLD:
                 toggleTabHold();
                 break;
+            case CAPS_LOCK:
+                toggleCapsLock();
+                break;
             default:
                 break;
         }
@@ -1783,6 +1808,10 @@ public final class ReteKeyboardView extends View {
         }
         if (tabHeld && TAB_KEY_ID.equals(key.stableKeyId())) {
             // Tab latched down is held, not armed, so it inverts like the modifiers do.
+            return palette.keyLatchedFace();
+        }
+        if (capsLocked && CAPS_KEY_ID.equals(key.stableKeyId())) {
+            // Caps on reads the same way a held Tab does: the strongest thing a face can say.
             return palette.keyLatchedFace();
         }
         if (!key.enabled() && !key.isControl()) {

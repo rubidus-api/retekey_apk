@@ -730,7 +730,10 @@ public final class KeyboardLayouts {
         ));
         rows.add(KeyboardLayout.row(
             disabled("ralt", "RAlt"), disabled("rctrl", "RCt"), disabled("rshift", "RSh"),
-            rawKey("menu", "Menu", RawKey.MENU), disabled("lang", "Lang"),
+            // Caps Lock where the dead Lang cell was, with Menu moved one to the right; the face
+            // inverts while the lock is on, so the page says what state the editor is in.
+            SoftwareKeySpec.control("touch.key.capslock", "Caps", ControlKey.CAPS_LOCK),
+            rawKey("menu", "Menu", RawKey.MENU),
             fnKey(), padCell(mode, 3), padCell(mode, 4), padCell(mode, 5), backspaceKey()
         ));
         rows.add(KeyboardLayout.row(

@@ -71,5 +71,10 @@ public enum ControlKey {
      * armed state waiting for a next key: the editor is told Tab is pressed and is not told
      * otherwise until this fires a second time. Tab itself types on a tap; only a hold latches.
      */
-    TAB_HOLD
+    TAB_HOLD,
+    /**
+     * Caps Lock. One tap sends the key and flips the face, the way the key on a real keyboard
+     * toggles: there is no "armed" state here, the editor's own lock is what changes.
+     */
+    CAPS_LOCK
 }

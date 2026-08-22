@@ -1,0 +1,8 @@
+Caps Lock on the special-keys page, where the dead Lang cell was; Menu
+moved one to the right. One tap toggles it, and the key's face inverts
+while it is on, so the page shows the editor's state.
+
+Dragging a row in Action bar settings now draws a heavy line between the
+rows where it will land, and the whole row follows the finger rather
+than just the handle. Which side of a row you let go on decides whether
+the slot goes above or below it.
