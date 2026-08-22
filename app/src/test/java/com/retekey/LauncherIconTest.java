@@ -132,15 +132,19 @@ public final class LauncherIconTest {
     public void theThemedLayerPaintsTheMarkRatherThanTheBackdrop() {
         // A themed launcher fills the background with the theme's light accent and paints whatever
         // is opaque here in its dark on-colour. A filled plate therefore comes out as a slab with
-        // pale keys — the inverse of the icon everyone else sees. The keys are the opaque part, and
-        // the plate is an outline.
+        // pale keys — the inverse of the icon everyone else sees — and even a thin outline read as a
+        // framed square at launcher size. The keys are the whole mark now: one solid path, no
+        // stroke, no plate, no lettering. The same rule reteclock's themed layer follows.
         String xml = read(MONOCHROME);
-        assertTrue("the plate must be an outline, not a fill",
-            xml.contains("android:strokeColor") && xml.contains("android:fillColor=\"#00000000\""));
-        assertFalse("nothing is punched out of anything any more",
-            xml.contains("evenOdd"));
+        assertFalse("no outline: a frame reads as a dark square at 48dp",
+            xml.contains("android:strokeColor"));
+        assertFalse("nothing is punched out of anything any more", xml.contains("evenOdd"));
         assertFalse("the lettering does not survive at themed-icon size",
             xml.contains("strokeLineCap"));
+        assertEquals("one solid path: the eight caps", 1,
+            Pattern.compile("<path\\b").matcher(xml).results().count());
+        assertEquals("eight closed subpaths, one per key", 8,
+            xml.split("Z").length - 1);
     }
 
     @Test

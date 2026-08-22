@@ -1,0 +1,9 @@
+The themed launcher icon is the eight keys and nothing else now.
+
+The 0.1.108 layer kept a thin outline where the plate had been, and at
+launcher size that ring plus the tight block of keys read as a framed
+dark square rather than a keyboard. A themed home screen paints what is
+opaque in the layer and fills the rest with its accent, so the layer is
+the mark alone - the same rule reteclock's themed icon follows: its
+wordmark, solid, on nothing. The keys are pulled in slightly from their
+caps so the eight stay eight at small size.
