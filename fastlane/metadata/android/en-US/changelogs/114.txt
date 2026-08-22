@@ -1,0 +1,6 @@
+The themed icon's eight keys have clear air between them sideways now.
+In the source the caps sit 1.4 units apart - fine under the pale plate
+of the ordinary icon, but with no plate, at launcher size the row fused
+into a bar. Each cap is narrowed by 1.6 units on both sides on the
+themed layer only, so every gap is 4.6 units; the letters and the rows
+are untouched.
