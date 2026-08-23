@@ -55,6 +55,16 @@ final class LatinAccents {
         "d", "đ"
     );
 
+    static final Map<String, String[]> FRENCH = table(
+        "a", "à â æ",
+        "e", "é è ê ë",
+        "i", "î ï",
+        "o", "ô œ",
+        "u", "ù û ü",
+        "y", "ÿ",
+        "c", "ç"
+    );
+
     static final Map<String, String[]> GERMAN = table(
         "a", "ä",
         "o", "ö",

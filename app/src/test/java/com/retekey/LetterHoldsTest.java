@@ -189,6 +189,25 @@ public final class LetterHoldsTest {
         assertEquals("Ş", shifted.rows().get(1).get(1).longPressTexts().get(1));
     }
 
+    @Test
+    public void frenchIsAzertyTenTenSixWithTheAccentsHeld() {
+        KeyboardLayout fr = KeyboardLayouts.of(KeyboardLayoutId.FR_AZERTY, false);
+        assertEquals(Arrays.asList("a", "z", "e", "r", "t", "y", "u", "i", "o", "p"), labels(fr, 0));
+        assertEquals(Arrays.asList("q", "s", "d", "f", "g", "h", "j", "k", "l", "m"), labels(fr, 1));
+        assertEquals(Arrays.asList("⇧", "w", "x", "c", "v", "b", "n", "⌫", ".", "⏎"), labels(fr, 2));
+        // Holds: digits up top, the nine symbols plus the apostrophe across the ten home letters,
+        // the first six marks below; the accents follow.
+        assertEquals(Arrays.asList("3", "é", "è", "ê", "ë"), fr.rows().get(0).get(2).longPressTexts());
+        assertEquals(Arrays.asList("1", "à", "â", "æ"), fr.rows().get(0).get(0).longPressTexts());
+        assertEquals(Arrays.asList("'"), fr.rows().get(1).get(9).longPressTexts());
+        assertEquals(Arrays.asList(":", "ç"), fr.rows().get(2).get(3).longPressTexts());
+        assertEquals(Arrays.asList("_"), fr.rows().get(2).get(1).longPressTexts());
+        assertEquals(Arrays.asList(",", "«", "»"), fr.rows().get(2).get(8).longPressTexts());
+        KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.FR_AZERTY, true);
+        assertEquals(Arrays.asList("3", "É", "È", "Ê", "Ë"), shifted.rows().get(0).get(2).longPressTexts());
+        assertEquals(Arrays.asList("9", "Ô", "Œ"), shifted.rows().get(0).get(8).longPressTexts());
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

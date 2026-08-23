@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.119** —
-[retekey-0.1.119.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.119/retekey-0.1.119.apk)
+Current release: **v0.1.120** —
+[retekey-0.1.120.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.120/retekey-0.1.120.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -116,8 +116,8 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Fifteen layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
-  Polish, Vietnamese (Telex), German, Turkish, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
+- **Sixteen layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
@@ -178,6 +178,7 @@ Seven letter layouts share that grid:
 | **Portuguese** (Portugal and Brazil) | QWERTY; á â ã à ª · é ê · í · ó ô õ º · ú ü · ç held under their letters |
 | **Italian** | QWERTY; à · è é · ì · ò · ù held |
 | **Polish** | QWERTY; ą ć ę ł ń ó ś ż ź held under their letters |
+| **French (AZERTY)** | AZERTY as phones draw it, 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. The fifteen accented letters — à â æ · é è ê ë · î ï · ô œ · ù û ü · ÿ · ç — are held under their vowels and c, reached along the hold strip; the period holds `, « »` |
 | **German** | QWERTZ in ten columns — y and z swapped, ü ö ä under u o a, ß under s (ẞ with Shift) |
 | **Turkish** | Q layout in ten columns — ü ı ö ş ğ ç held under u i o s g c; Shift follows Turkish casing, so i → İ and the held ı → I |
 | **Vietnamese (Telex)** | QWERTY as it is; the **Telex** rules make the letters as you type — `aa→â ee→ê oo→ô aw→ă ow→ơ uw→ư dd→đ`, a lone `w` is `ư`, tones `s f r x j` (sắc huyền hỏi ngã nặng), `z` takes a tone off, and a mark or tone key pressed again gives the letter itself. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke. A physical keyboard types Telex too. â ă ê ô ơ ư đ are also held under their letters for anyone who does not know Telex |
@@ -235,6 +236,12 @@ slide along the strip and lift on the one you want. A dot in the key's bottom co
 a strip:
 
 ![Hold strip](assets/keyboard-spanish-hold.png)
+
+**French AZERTY** — its own 10/10/6 shape, and the strip that makes fifteen accents workable:
+
+![French layout](assets/keyboard-french.png)
+
+![French hold strip](assets/keyboard-french-hold.png)
 
 **Cheonjiin(천지인)** — Next beside Alt, 漢 beside Tab, and `.,` `!?` either side of ㅇㅁ:
 

@@ -20,6 +20,8 @@ public enum KeyboardLayoutId {
     DE_QWERTZ,
     /** Turkish Q, ten columns: ü ı ö ş ğ ç held; Shift follows Turkish casing (i → İ, ı → I). */
     TR_QWERTY,
+    /** French AZERTY, 10/10/6: the accents held under the vowels and ç under c. */
+    FR_AZERTY,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

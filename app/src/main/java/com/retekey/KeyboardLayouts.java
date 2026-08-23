@@ -62,6 +62,12 @@ public final class KeyboardLayouts {
     private static final String[] HOLDS_7_10_9 = {HOLD_MARKS, HOLD_DIGITS, HOLD_SYMBOLS};
     /** Nine, ten, seven: Colemak — the symbols up top, the digits on the home row, the marks below. */
     private static final String[] HOLDS_9_10_7 = {HOLD_SYMBOLS, HOLD_DIGITS, HOLD_MARKS};
+    /**
+     * Ten, ten, six: AZERTY. The digits up top as ever; the home row has ten letters and the symbol
+     * group nine, so m takes the apostrophe from the marks; the bottom row has six letters and
+     * takes the first six marks.
+     */
+    private static final String[] HOLDS_10_10_6 = {HOLD_DIGITS, HOLD_SYMBOLS + "'", HOLD_MARKS};
 
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
@@ -85,6 +91,8 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout DE_SHIFTED = german(true);
     private static final KeyboardLayout TR_BASE = turkish(false);
     private static final KeyboardLayout TR_SHIFTED = turkish(true);
+    private static final KeyboardLayout FR_BASE = french(false);
+    private static final KeyboardLayout FR_SHIFTED = french(true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -130,6 +138,8 @@ public final class KeyboardLayouts {
                 return shifted ? DE_SHIFTED : DE_BASE;
             case TR_QWERTY:
                 return shifted ? TR_SHIFTED : TR_BASE;
+            case FR_AZERTY:
+                return shifted ? FR_SHIFTED : FR_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -744,6 +754,44 @@ public final class KeyboardLayouts {
             "qwertyuiop", "asdfghjkl", "zxcvbnm", LatinAccents.TURKISH, new java.util.Locale("tr"));
     }
 
+    /**
+     * French AZERTY as phones draw it: 10/10/6. The home row is ten letters (m where QWERTY has the
+     * semicolon), so backspace drops to the bottom letter row, which has only six letters and so
+     * holds {@code ⇧ w x c v b n ⌫ . ⏎} exactly (RFC-0011 §2.12). The fifteen accented letters are
+     * held under their vowels and c — the hold strip is what makes that workable.
+     */
+    private static KeyboardLayout french(boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
+            letter("a", shifted), letter("z", shifted), letter("e", shifted),
+            letter("r", shifted), letter("t", shifted), letter("y", shifted),
+            letter("u", shifted), letter("i", shifted), letter("o", shifted),
+            letter("p", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            letter("q", shifted), letter("s", shifted), letter("d", shifted),
+            letter("f", shifted), letter("g", shifted), letter("h", shifted),
+            letter("j", shifted), letter("k", shifted), letter("l", shifted),
+            letter("m", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            shiftKey(shifted),
+            letter("w", shifted), letter("x", shifted), letter("c", shifted),
+            letter("v", shifted), letter("b", shifted), letter("n", shifted),
+            backspaceKey(), frenchPeriodKey(), enterKey()
+        ));
+        return letterPage(KeyboardLayoutId.FR_AZERTY, shifted,
+            withAccents(withHolds(rows, HOLDS_10_10_6), LatinAccents.FRENCH, shifted,
+                java.util.Locale.FRENCH), null);
+    }
+
+    /** The French period: the comma, and the guillemets French quotes with. */
+    private static SoftwareKeySpec frenchPeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period", ".", SemanticInput.text("."))
+            .withLongPress(",", "«", "»");
+    }
+
     /** The period the Spanish page keeps beside space, with the comma and the inverted marks under it. */
     private static SoftwareKeySpec spanishPeriodKey() {
         return SoftwareKeySpec
@@ -820,6 +868,7 @@ public final class KeyboardLayouts {
             case VI_TELEX:
             case DE_QWERTZ:
             case TR_QWERTY:
+            case FR_AZERTY:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period

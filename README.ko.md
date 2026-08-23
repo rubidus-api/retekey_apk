@@ -51,8 +51,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.119** —
-[retekey-0.1.119.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.119/retekey-0.1.119.apk)
+현재 릴리즈: **v0.1.120** —
+[retekey-0.1.120.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.120/retekey-0.1.120.apk)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -114,8 +114,8 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
 
 ## 기능
 
-- **열다섯 가지 자판** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, 스페인어, 포르투갈어, 이탈리아어,
-  폴란드어, 베트남어(Telex), 독일어, 터키어, 12키 자판인 Cheonjiin(천지인)과 Naratgeul(나랏글), 그리고 같은 12키 틀 위의 Arrows와 Keypad. 자판 키가 켜 두신
+- **열여섯 가지 자판** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, 스페인어, 포르투갈어, 이탈리아어,
+  폴란드어, 베트남어(Telex), 독일어, 터키어, 프랑스어 AZERTY, 12키 자판인 Cheonjiin(천지인)과 Naratgeul(나랏글), 그리고 같은 12키 틀 위의 Arrows와 Keypad. 자판 키가 켜 두신
   자판들을 정하신 순서대로 돌고, 길게 누르면 메뉴가 열립니다.
 - **숫자 입력창에는 키패드로** — 전화번호·금액·PIN·날짜처럼 숫자를 받는 칸에서는 12키 Keypad로
   먼저 열립니다. 거기서 자판 키로 원하시는 자판으로 넘어갈 수 있고, 다음 일반 입력창에서는 쓰시던
@@ -176,6 +176,7 @@ vi를 쓰실 때를 위한 진짜 `KEYCODE_ESCAPE`입니다), 나머지에는 �
 | **포르투갈어**(포르투갈·브라질) | QWERTY; á â ã à ª · é ê · í · ó ô õ º · ú ü · ç를 각 글자 아래에 품습니다 |
 | **이탈리아어** | QWERTY; à · è é · ì · ò · ù |
 | **폴란드어** | QWERTY; ą ć ę ł ń ó ś ż ź |
+| **프랑스어(AZERTY)** | 폰이 그리는 AZERTY 그대로 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. 악센트 글자 열다섯 — à â æ · é è ê ë · î ï · ô œ · ù û ü · ÿ · ç — 을 각 모음과 c 아래에 품고 길게 누르기 띠로 고릅니다. 마침표는 `, « »`를 품습니다 |
 | **독일어** | 10열 QWERTZ — y와 z가 바뀌고, ü ö ä는 u o a 아래, ß는 s 아래(Shift면 ẞ) |
 | **터키어** | 10열 Q 자판 — ü ı ö ş ğ ç를 u i o s g c 아래에 품고, Shift는 터키어 규칙을 따라 i → İ, 품은 ı → I |
 | **베트남어(Telex)** | QWERTY 그대로이고 **Telex** 규칙이 치는 대로 글자를 만듭니다 — `aa→â ee→ê oo→ô aw→ă ow→ơ uw→ư dd→đ`, `w` 혼자는 `ư`, 성조 `s f r x j`(sắc huyền hỏi ngã nặng), `z`는 성조 제거, 부호·성조 키를 한 번 더 누르면 그 글자 자체가 들어갑니다. 낱말은 커서 아래에서 조합되다가 스페이스·문장부호에서 확정되고, 백스페이스는 키 입력 하나를 되돌립니다. 물리 키보드도 Telex로 칩니다. Telex를 모르는 분을 위해 â ă ê ô ơ ư đ도 각 글자 아래에 품습니다 |
@@ -230,6 +231,12 @@ QWERTY의 줄 모양이자 Dvorak의 7/10/9를 다른 순서로 읽은 것이라
 띠가 있다는 표시입니다:
 
 ![길게 누르기 띠](assets/keyboard-spanish-hold.png)
+
+**프랑스어 AZERTY** — 고유의 10/10/6 모양과, 악센트 열다섯을 쓸 만하게 만드는 띠:
+
+![프랑스어 자판](assets/keyboard-french.png)
+
+![프랑스어 길게 누르기 띠](assets/keyboard-french-hold.png)
 
 **Cheonjiin(천지인)** — Alt 옆에 Next, Tab 옆에 漢, ㅇㅁ 양옆에 `.,`와 `!?`가 있습니다:
 
