@@ -1,0 +1,5 @@
+German and Turkish join, both in ten columns. German is QWERTZ (y and z
+swapped) with u-umlaut, o-umlaut, a-umlaut and sharp s held under their
+keys (capital sharp s with Shift). Turkish holds u-umlaut, dotless i,
+o-umlaut, s-cedilla, g-breve and c-cedilla, and Shift follows Turkish
+casing: i becomes dotted capital I, dotless i becomes I.

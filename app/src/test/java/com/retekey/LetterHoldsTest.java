@@ -164,6 +164,31 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList("7", "ư"), vi.rows().get(0).get(6).longPressTexts());
     }
 
+    @Test
+    public void germanSwapsYAndZAndHoldsTheUmlautsAndSharpS() {
+        KeyboardLayout de = KeyboardLayouts.of(KeyboardLayoutId.DE_QWERTZ, false);
+        assertEquals(Arrays.asList("q", "w", "e", "r", "t", "z", "u", "i", "o", "p"), labels(de, 0));
+        assertEquals(Arrays.asList("⇧", "y", "x", "c", "v", "b", "n", "m", ".", "⏎"), labels(de, 2));
+        assertEquals(Arrays.asList("7", "ü"), de.rows().get(0).get(6).longPressTexts());
+        assertEquals(Arrays.asList("@", "ß"), de.rows().get(1).get(1).longPressTexts());
+        KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.DE_QWERTZ, true);
+        assertEquals("capital sharp s, not SS", Arrays.asList("@", "ẞ"),
+            shifted.rows().get(1).get(1).longPressTexts());
+        assertEquals("Z", labels(shifted, 0).get(5));
+    }
+
+    @Test
+    public void turkishKeepsTheDottedIOnTheKeyAndCasesTheTurkishWay() {
+        KeyboardLayout tr = KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, false);
+        assertEquals("i", labels(tr, 0).get(7));
+        assertEquals(Arrays.asList("8", "ı"), tr.rows().get(0).get(7).longPressTexts());
+        assertEquals(Arrays.asList("%", "ğ"), tr.rows().get(1).get(4).longPressTexts());
+        KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, true);
+        assertEquals("İ", labels(shifted, 0).get(7));
+        assertEquals(Arrays.asList("8", "I"), shifted.rows().get(0).get(7).longPressTexts());
+        assertEquals("Ş", shifted.rows().get(1).get(1).longPressTexts().get(1));
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

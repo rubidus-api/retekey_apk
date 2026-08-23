@@ -183,7 +183,7 @@ public final class KeyboardLayoutTest {
     @Test
     public void theLatinLayoutsPutEscapeBesideSpace() {
         // vi over ssh is the case: Esc without a trip to the keypad page.
-        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK, KeyboardLayoutId.EN_COLEMAK, KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.IT_QWERTY, KeyboardLayoutId.PL_QWERTY, KeyboardLayoutId.VI_TELEX)) {
+        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK, KeyboardLayoutId.EN_COLEMAK, KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.IT_QWERTY, KeyboardLayoutId.PL_QWERTY, KeyboardLayoutId.VI_TELEX, KeyboardLayoutId.DE_QWERTZ, KeyboardLayoutId.TR_QWERTY)) {
             for (boolean shifted : new boolean[] {false, true}) {
                 KeyboardLayout layout = KeyboardLayouts.of(id, shifted);
                 SoftwareKeySpec escape = layout.findById("touch.key.escape.letters");
@@ -203,7 +203,7 @@ public final class KeyboardLayoutTest {
         assertNotNull("2-beolsik keeps 漢 there",
             KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false)
                 .findById("touch.key.hanja.letters"));
-        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK, KeyboardLayoutId.EN_COLEMAK, KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.IT_QWERTY, KeyboardLayoutId.PL_QWERTY, KeyboardLayoutId.VI_TELEX)) {
+        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK, KeyboardLayoutId.EN_COLEMAK, KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.IT_QWERTY, KeyboardLayoutId.PL_QWERTY, KeyboardLayoutId.VI_TELEX, KeyboardLayoutId.DE_QWERTZ, KeyboardLayoutId.TR_QWERTY)) {
             assertNull(id + " has no 漢 key",
                 KeyboardLayouts.of(id, false).findById("touch.key.hanja.letters"));
         }

@@ -81,6 +81,10 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout PL_SHIFTED = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, true, LatinAccents.POLISH);
     private static final KeyboardLayout VI_BASE = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, false, LatinAccents.VIETNAMESE);
     private static final KeyboardLayout VI_SHIFTED = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, true, LatinAccents.VIETNAMESE);
+    private static final KeyboardLayout DE_BASE = german(false);
+    private static final KeyboardLayout DE_SHIFTED = german(true);
+    private static final KeyboardLayout TR_BASE = turkish(false);
+    private static final KeyboardLayout TR_SHIFTED = turkish(true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -122,6 +126,10 @@ public final class KeyboardLayouts {
                 return shifted ? PL_SHIFTED : PL_BASE;
             case VI_TELEX:
                 return shifted ? VI_SHIFTED : VI_BASE;
+            case DE_QWERTZ:
+                return shifted ? DE_SHIFTED : DE_BASE;
+            case TR_QWERTY:
+                return shifted ? TR_SHIFTED : TR_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -650,27 +658,42 @@ public final class KeyboardLayouts {
      */
     private static KeyboardLayout qwertyWithAccents(
             KeyboardLayoutId id, boolean shifted, java.util.Map<String, String[]> accents) {
+        return latinQwertyShape(id, shifted, "qwertyuiop", "asdfghjkl", "zxcvbnm", accents,
+            java.util.Locale.ROOT);
+    }
+
+    /**
+     * QWERTY's 10/9/7 shape with the letters given row by row — QWERTZ hands in its own top and
+     * bottom rows — the accents held, and capitals made in {@code locale} (Turkish: i → İ, ı → I).
+     */
+    private static KeyboardLayout latinQwertyShape(
+            KeyboardLayoutId id, boolean shifted, String top, String home, String bottom,
+            java.util.Map<String, String[]> accents, java.util.Locale locale) {
+        if (top.length() != 10 || home.length() != 9 || bottom.length() != 7) {
+            throw new IllegalArgumentException("QWERTY shape is 10/9/7 letters");
+        }
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
-        rows.add(KeyboardLayout.row(
-            letter("q", shifted), letter("w", shifted), letter("e", shifted),
-            letter("r", shifted), letter("t", shifted), letter("y", shifted),
-            letter("u", shifted), letter("i", shifted), letter("o", shifted),
-            letter("p", shifted)
-        ));
-        rows.add(KeyboardLayout.row(
-            letter("a", shifted), letter("s", shifted), letter("d", shifted),
-            letter("f", shifted), letter("g", shifted), letter("h", shifted),
-            letter("j", shifted), letter("k", shifted), letter("l", shifted),
-            backspaceKey()
-        ));
-        rows.add(KeyboardLayout.row(
-            shiftKey(shifted),
-            letter("z", shifted), letter("x", shifted), letter("c", shifted),
-            letter("v", shifted), letter("b", shifted), letter("n", shifted),
-            letter("m", shifted),
-            letterPeriodKey(), enterKey()
-        ));
-        return letterPage(id, shifted, withAccents(withHolds(rows, HOLDS_10_9_7), accents, shifted), null);
+        List<SoftwareKeySpec> first = new ArrayList<>(10);
+        for (char c : top.toCharArray()) {
+            first.add(letter(String.valueOf(c), shifted, locale));
+        }
+        rows.add(KeyboardLayout.row(first.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> second = new ArrayList<>(10);
+        for (char c : home.toCharArray()) {
+            second.add(letter(String.valueOf(c), shifted, locale));
+        }
+        second.add(backspaceKey());
+        rows.add(KeyboardLayout.row(second.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> third = new ArrayList<>(10);
+        third.add(shiftKey(shifted));
+        for (char c : bottom.toCharArray()) {
+            third.add(letter(String.valueOf(c), shifted, locale));
+        }
+        third.add(letterPeriodKey());
+        third.add(enterKey());
+        rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        return letterPage(id, shifted,
+            withAccents(withHolds(rows, HOLDS_10_9_7), accents, shifted, locale), null);
     }
 
     /**
@@ -701,7 +724,24 @@ public final class KeyboardLayouts {
             backspaceKey(), enterKey()
         ));
         return letterPage(KeyboardLayoutId.ES_QWERTY, shifted,
-            withAccents(withHolds(rows, HOLDS_10_9_7), LatinAccents.SPANISH, shifted), null);
+            withAccents(withHolds(rows, HOLDS_10_9_7), LatinAccents.SPANISH, shifted,
+                java.util.Locale.ROOT), null);
+    }
+
+    /** German QWERTZ in ten columns: y and z swapped, ü ö ä under u o a, ß under s. */
+    private static KeyboardLayout german(boolean shifted) {
+        return latinQwertyShape(KeyboardLayoutId.DE_QWERTZ, shifted,
+            "qwertzuiop", "asdfghjkl", "yxcvbnm", LatinAccents.GERMAN, java.util.Locale.GERMAN);
+    }
+
+    /**
+     * Turkish Q in ten columns. Turkish has both i and ı; the key is i (the commoner, and the one
+     * every other layout has there) and ı is held under it — the owner's decision (RFC-0011 §7).
+     * Capitals follow Turkish: i → İ and ı → I.
+     */
+    private static KeyboardLayout turkish(boolean shifted) {
+        return latinQwertyShape(KeyboardLayoutId.TR_QWERTY, shifted,
+            "qwertyuiop", "asdfghjkl", "zxcvbnm", LatinAccents.TURKISH, new java.util.Locale("tr"));
     }
 
     /** The period the Spanish page keeps beside space, with the comma and the inverted marks under it. */
@@ -716,7 +756,8 @@ public final class KeyboardLayouts {
      * the shifted page holds their capitals. Letters the table does not name are left alone.
      */
     private static List<List<SoftwareKeySpec>> withAccents(
-            List<List<SoftwareKeySpec>> rows, java.util.Map<String, String[]> accents, boolean shifted) {
+            List<List<SoftwareKeySpec>> rows, java.util.Map<String, String[]> accents, boolean shifted,
+            java.util.Locale locale) {
         List<List<SoftwareKeySpec>> out = new ArrayList<>(rows.size());
         for (List<SoftwareKeySpec> row : rows) {
             List<SoftwareKeySpec> updated = new ArrayList<>(row);
@@ -726,14 +767,19 @@ public final class KeyboardLayouts {
                         || key.semanticInput().kind() != SemanticInput.Kind.TEXT) {
                     continue;
                 }
-                String base = key.label().toLowerCase(java.util.Locale.ROOT);
+                // The base letter comes from the key's id, not its label: the shifted label is a
+                // capital, and Turkish's İ does not lower-case back to i in the root locale.
+                if (!key.stableKeyId().startsWith("touch.en.")) {
+                    continue;
+                }
+                String base = key.stableKeyId().substring("touch.en.".length());
                 String[] extra = accents.get(base);
                 if (extra == null) {
                     continue;
                 }
                 List<String> candidates = new ArrayList<>(key.longPressTexts());
                 for (String accent : extra) {
-                    candidates.add(shifted ? accent.toUpperCase(java.util.Locale.ROOT) : accent);
+                    candidates.add(shifted ? capital(accent, locale) : accent);
                 }
                 updated.set(i, key.withLongPress(candidates.toArray(new String[0])));
             }
@@ -772,6 +818,8 @@ public final class KeyboardLayouts {
             case IT_QWERTY:
             case PL_QWERTY:
             case VI_TELEX:
+            case DE_QWERTZ:
+            case TR_QWERTY:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period
@@ -1104,8 +1152,24 @@ public final class KeyboardLayouts {
     }
 
     private static SoftwareKeySpec letter(String lowercase, boolean shifted) {
-        String label = shifted ? lowercase.toUpperCase(java.util.Locale.ROOT) : lowercase;
+        return letter(lowercase, shifted, java.util.Locale.ROOT);
+    }
+
+    /** A letter key whose capital is made in {@code locale} — Turkish turns i into İ. */
+    private static SoftwareKeySpec letter(String lowercase, boolean shifted, java.util.Locale locale) {
+        String label = shifted ? capital(lowercase, locale) : lowercase;
         return SoftwareKeySpec.enabled("touch.en." + lowercase, label, SemanticInput.text(label));
+    }
+
+    /**
+     * The one-character capital of a letter. Java's upper-casing of ß is "SS"; the keyboard wants
+     * the capital letter ẞ, which German orthography has had since 2017.
+     */
+    private static String capital(String lowercase, java.util.Locale locale) {
+        if ("ß".equals(lowercase)) {
+            return "ẞ";
+        }
+        return lowercase.toUpperCase(locale);
     }
 
     private static SoftwareKeySpec consonant(String id, String label, int index) {

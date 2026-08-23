@@ -1663,6 +1663,12 @@ public final class ReteKeyboardView extends View {
                 phoneOverlay = parts.length > 2
                     ? PhoneOverlay.valueOf(parts[2]) : PhoneOverlay.NONE;
                 break;
+            case "shifted":
+                // shifted:LAYOUT — the page with Shift down, for pictures of capitals.
+                page = Page.LETTERS;
+                letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
+                shiftLayer.tap();
+                break;
             case "hold": {
                 // hold:LAYOUT:row:key:cand1,cand2,... — the strip a held key raises, for pictures.
                 // The finger is pretended to be down on that key, not moved.

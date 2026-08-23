@@ -16,6 +16,10 @@ public enum KeyboardLayoutId {
     PL_QWERTY,
     /** Vietnamese Telex: QWERTY as is; the Telex composer makes the marks and tones. */
     VI_TELEX,
+    /** German QWERTZ, ten columns: y and z swapped, ü ö ä ß held. */
+    DE_QWERTZ,
+    /** Turkish Q, ten columns: ü ı ö ş ğ ç held; Shift follows Turkish casing (i → İ, ı → I). */
+    TR_QWERTY,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

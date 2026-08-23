@@ -12,7 +12,7 @@ Layouts
 
 * 2-beolsik, the standard full Korean keyboard.
 * 천지인 and 나랏글, the two 12-key phone layouts. Both compose the whole of Hangul, including every compound final — 많, 삶, 앉 and the rest. Two keys in the spare column turn the twelve keys into the phone keypad's digits or into the cursor cluster.
-* QWERTY, Dvorak and Colemak for English; Spanish, Portuguese, Italian and Polish with their accented letters under the keys; Vietnamese with Telex.
+* QWERTY, Dvorak and Colemak for English; Spanish, Portuguese, Italian, Polish, German and Turkish with their own letters under the keys; Vietnamese with Telex.
 * A symbols page, a keypad with arrows and function keys, and a menu page for edit commands.
 * The globe key walks the layouts you enabled, in the order you set.
 
