@@ -1,0 +1,6 @@
+The settings screens no longer hide their first rows under the title bar
+(issue #2, seen on One UI 8.5). Android 15 lays activities out edge to
+edge and some ROMs put the content under the status bar and action bar;
+each screen now measures where its frame landed against where the bars
+reach and pads by the overlap - zero on phones that already fit it -
+and does the same at the bottom and the sides in landscape.

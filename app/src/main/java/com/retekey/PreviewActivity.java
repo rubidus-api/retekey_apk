@@ -77,6 +77,7 @@ public final class PreviewActivity extends Activity {
         addDivider(list);
 
         setContentView(root);
+        ScreenFit.apply(root, root);
     }
 
     /** A tap-to-select list row with the platform's selectable-item touch feedback. */

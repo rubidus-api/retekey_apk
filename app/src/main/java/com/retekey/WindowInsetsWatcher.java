@@ -100,20 +100,126 @@ final class WindowInsetsWatcher {
 
     /** The display's real height, system furniture included — not the app area's. */
     private static int realScreenHeight(View view) {
+        return realScreenSize(view)[1];
+    }
+
+    // ---- activities: issue #2 ----
+
+    /**
+     * Fits an activity's {@code content} under the furniture. See {@link ScreenFit}: the frame is
+     * measured on screen against the status bar, the action bar, the navigation bar and the keyboard,
+     * and the content is padded by however much each one overlaps it — zero where the framework has
+     * already made room. Re-measured whenever insets change and after every layout, since the frame
+     * has no position until it is laid out and the action bar may appear after it.
+     */
+    static void fitScreen(final View frame, final View content) {
+        final int[] base = {
+            content.getPaddingLeft(), content.getPaddingTop(),
+            content.getPaddingRight(), content.getPaddingBottom()
+        };
+        frame.setOnApplyWindowInsetsListener((v, insets) -> {
+            refit(frame, content, base, insets);
+            return v.onApplyWindowInsets(insets);
+        });
+        frame.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            WindowInsets insets = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                ? frame.getRootWindowInsets() : null;
+            refit(frame, content, base, insets);
+        });
+        frame.requestApplyInsets();
+    }
+
+    private static void refit(View frame, View content, int[] base, WindowInsets insets) {
+        if (frame.getWindowToken() == null || frame.getHeight() <= 0 || frame.getWidth() <= 0) {
+            return; // Not on screen yet; the layout listener will be back.
+        }
+        int[] screen = realScreenSize(frame);
+        if (screen[1] <= 0) {
+            return;
+        }
+        int[] location = new int[2];
+        frame.getLocationOnScreen(location);
+        int frameLeft = location[0];
+        int frameTop = location[1];
+        int frameRight = frameLeft + frame.getWidth();
+        int frameBottom = frameTop + frame.getHeight();
+
+        int statusBottom = 0;
+        int bottomFurniture = 0;
+        int leftFurniture = 0;
+        int rightFurniture = 0;
+        if (insets != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                android.graphics.Insets bars = insets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                statusBottom = bars.top;
+                bottomFurniture = Math.max(bars.bottom,
+                    insets.getInsets(WindowInsets.Type.ime()).bottom);
+                leftFurniture = bars.left;
+                rightFurniture = bars.right;
+            } else {
+                statusBottom = insets.getSystemWindowInsetTop();
+                bottomFurniture = insets.getSystemWindowInsetBottom();
+                leftFurniture = insets.getSystemWindowInsetLeft();
+                rightFurniture = insets.getSystemWindowInsetRight();
+            }
+        }
+        int topFurnitureBottom = Math.max(statusBottom, actionBarBottomOnScreen(frame, statusBottom));
+
+        int left = base[0] + ScreenFit.leftOverlap(leftFurniture, frameLeft);
+        int top = base[1] + ScreenFit.topOverlap(topFurnitureBottom, frameTop);
+        int right = base[2] + ScreenFit.rightOverlap(rightFurniture, screen[0], frameRight);
+        int bottom = base[3] + ScreenFit.bottomOverlap(bottomFurniture, screen[1], frameBottom);
+        if (left != content.getPaddingLeft() || top != content.getPaddingTop()
+                || right != content.getPaddingRight() || bottom != content.getPaddingBottom()) {
+            content.setPadding(left, top, right, bottom);
+        }
+    }
+
+    /**
+     * Where the activity's own action bar ends, in screen pixels, or 0 when it has none showing.
+     * Measured from the bar's container view when the decor exposes one (it does on every ROM seen,
+     * Samsung's included); otherwise taken as the bar's height under the status bar.
+     */
+    private static int actionBarBottomOnScreen(View frame, int statusBottom) {
+        View bar = actionBarContainer(frame);
+        if (bar != null && bar.getVisibility() == View.VISIBLE && bar.getHeight() > 0) {
+            int[] location = new int[2];
+            bar.getLocationOnScreen(location);
+            return location[1] + bar.getHeight();
+        }
+        android.content.Context context = frame.getContext();
+        if (context instanceof android.app.Activity) {
+            android.app.ActionBar actionBar = ((android.app.Activity) context).getActionBar();
+            if (actionBar != null && actionBar.isShowing()) {
+                return statusBottom + actionBar.getHeight();
+            }
+        }
+        return 0;
+    }
+
+    private static View actionBarContainer(View frame) {
+        int id = frame.getResources().getIdentifier("action_bar_container", "id", "android");
+        return id == 0 ? null : frame.getRootView().findViewById(id);
+    }
+
+    /** The display's real width and height, system furniture included — not the app area's. */
+    private static int[] realScreenSize(View view) {
         try {
             android.view.WindowManager windows = (android.view.WindowManager)
                 view.getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
             if (windows == null) {
-                return 0;
+                return new int[] {0, 0};
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                return windows.getMaximumWindowMetrics().getBounds().height();
+                android.graphics.Rect bounds = windows.getMaximumWindowMetrics().getBounds();
+                return new int[] {bounds.width(), bounds.height()};
             }
             android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
             windows.getDefaultDisplay().getRealMetrics(metrics);
-            return metrics.heightPixels;
+            return new int[] {metrics.widthPixels, metrics.heightPixels};
         } catch (RuntimeException unavailable) {
-            return 0;
+            return new int[] {0, 0};
         }
     }
 }

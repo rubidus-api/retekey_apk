@@ -121,6 +121,7 @@ public final class SettingsActivity extends Activity {
         ScrollView scroller = new ScrollView(this);
         scroller.addView(root);
         setContentView(scroller);
+        ScreenFit.apply(scroller, root);
         applyPercent(currentPercent());
     }
 
