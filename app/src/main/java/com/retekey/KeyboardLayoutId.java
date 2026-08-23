@@ -14,6 +14,8 @@ public enum KeyboardLayoutId {
     IT_QWERTY,
     /** Polish: QWERTY with the ogonek, acute, stroke and dot letters held. */
     PL_QWERTY,
+    /** Vietnamese Telex: QWERTY as is; the Telex composer makes the marks and tones. */
+    VI_TELEX,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

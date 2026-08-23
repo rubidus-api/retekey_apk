@@ -29,6 +29,7 @@ public final class LetterLayouts {
         KeyboardLayoutId.PT_QWERTY,
         KeyboardLayoutId.IT_QWERTY,
         KeyboardLayoutId.PL_QWERTY,
+        KeyboardLayoutId.VI_TELEX,
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
@@ -69,6 +70,8 @@ public final class LetterLayouts {
                 return "it";
             case PL_QWERTY:
                 return "pl";
+            case VI_TELEX:
+                return "vi";
             case KO_DUBEOLSIK:
                 return "2b";
             case KO_CHEONJIIN:
@@ -103,6 +106,8 @@ public final class LetterLayouts {
                 return "Italiano";
             case PL_QWERTY:
                 return "Polski";
+            case VI_TELEX:
+                return "Tiếng Việt (Telex)";
             case KO_DUBEOLSIK:
                 return "2beolsik(2벌식)";
             case KO_CHEONJIIN:

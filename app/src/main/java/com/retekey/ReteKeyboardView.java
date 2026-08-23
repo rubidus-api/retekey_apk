@@ -259,6 +259,11 @@ public final class ReteKeyboardView extends View {
         this.onLayoutChanged = handler;
     }
 
+    /** The letter layout in use — what the letter keys type, whichever page is showing. */
+    public KeyboardLayoutId letterLayoutId() {
+        return letterLayoutId;
+    }
+
     /** The layouts the globe key walks, as the user ordered them in settings. */
     private java.util.List<KeyboardLayoutId> letterOrder() {
         return LetterLayouts.parse(

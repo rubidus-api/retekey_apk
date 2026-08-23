@@ -43,6 +43,18 @@ final class LatinAccents {
         "u", "ù"
     );
 
+    /**
+     * Vietnamese holds are a fallback for anyone who does not know Telex, and a way to the bare
+     * marked letters: the composer is the real way, and it never needs these.
+     */
+    static final Map<String, String[]> VIETNAMESE = table(
+        "a", "â ă",
+        "e", "ê",
+        "o", "ô ơ",
+        "u", "ư",
+        "d", "đ"
+    );
+
     static final Map<String, String[]> POLISH = table(
         "a", "ą",
         "c", "ć",

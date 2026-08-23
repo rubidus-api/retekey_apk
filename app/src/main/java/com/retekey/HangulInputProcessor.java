@@ -12,6 +12,8 @@ import java.util.Objects;
  */
 public final class HangulInputProcessor implements StatelessInputProcessor {
     private final HangulComposer composer = new HangulComposer();
+    /** A Latin-script composer (Vietnamese Telex) for the current layout, or null for none. */
+    private TelexComposer latin;
     private final Fn.Supplier<EditorProfile> editorProfile;
     private final Fn.Supplier<CharSequence> textBeforeCursor;
 
@@ -34,14 +36,32 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
     /** Clears the composing syllable at a session boundary. */
     public void reset() {
         composer.reset();
+        if (latin != null) {
+            latin.reset();
+        }
+    }
+
+    /**
+     * Gives the letter keys to a Latin composer — Vietnamese Telex — or takes them back with null.
+     * Switching flushes nothing by itself; the caller commits what was composing first.
+     */
+    public void setLatinComposer(TelexComposer composer) {
+        this.latin = composer;
+    }
+
+    public TelexComposer latinComposer() {
+        return latin;
     }
 
     public boolean isComposing() {
-        return composer.isComposing();
+        return composer.isComposing() || (latin != null && latin.isComposing());
     }
 
     /** The text currently composing, for comparing against what sits before the editor's cursor. */
     public String composingText() {
+        if (latin != null && latin.isComposing()) {
+            return latin.preeditText();
+        }
         return composer.preeditText();
     }
 
@@ -54,6 +74,9 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
             case JAMO:
                 return jamo(input.jamo());
             case TEXT:
+                if (latin != null && latin.accepts(input.text())) {
+                    return latinLetter(input.text());
+                }
                 return flushThen(KeyAction.commitText(input.text()));
             case DELETE_BACKWARD:
                 return delete(input.isCorrection());
@@ -72,8 +95,11 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
     }
 
     private DispatchResult jamo(SemanticJamo jamo) {
+        List<KeyAction> actions = new ArrayList<>(3);
+        if (latin != null && latin.isComposing()) {
+            actions.add(KeyAction.commitText(latin.flush()));
+        }
         HangulComposer.Result result = composer.input(jamo);
-        List<KeyAction> actions = new ArrayList<>(2);
         if (!result.commit().isEmpty()) {
             actions.add(KeyAction.commitText(result.commit()));
         }
@@ -82,7 +108,24 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         return DispatchResult.handled(actions);
     }
 
+    /** A letter for the Latin composer: the Hangul syllable, if any, commits first. */
+    private DispatchResult latinLetter(String text) {
+        List<KeyAction> actions = new ArrayList<>(2);
+        String hangul = composer.flush();
+        if (!hangul.isEmpty()) {
+            actions.add(KeyAction.commitText(hangul));
+        }
+        TelexComposer.Result result = latin.input(text);
+        actions.add(KeyAction.setComposingText(result.preedit));
+        return DispatchResult.handled(actions);
+    }
+
     private DispatchResult delete(boolean correction) {
+        if (latin != null && latin.isComposing()) {
+            TelexComposer.Result result = latin.backspace();
+            return DispatchResult.handled(
+                KeyAction.setComposingText(result == null ? "" : result.preedit));
+        }
         if (correction) {
             HangulComposer.Result reopened = composer.reopenClosedSyllable();
             if (reopened != null) {
@@ -256,15 +299,22 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         return DispatchResult.handled(actions);
     }
 
+    /** Everything composing, in either script, as one committed string. */
+    private String flushAll() {
+        String hangul = composer.flush();
+        String word = latin == null ? "" : latin.flush();
+        return hangul + word;
+    }
+
     private DispatchResult flushOnly() {
-        String flushed = composer.flush();
+        String flushed = flushAll();
         return flushed.isEmpty()
             ? DispatchResult.handled()
             : DispatchResult.handled(KeyAction.commitText(flushed));
     }
 
     private DispatchResult flushThen(KeyAction trailing) {
-        String flushed = composer.flush();
+        String flushed = flushAll();
         if (flushed.isEmpty()) {
             return DispatchResult.handled(trailing);
         }
@@ -272,7 +322,7 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
     }
 
     private DispatchResult primaryAction() {
-        String flushed = composer.flush();
+        String flushed = flushAll();
         DispatchResult enter = EditorActionPolicy.enter(
             Objects.requireNonNull(editorProfile.get(), "editor profile")
         );

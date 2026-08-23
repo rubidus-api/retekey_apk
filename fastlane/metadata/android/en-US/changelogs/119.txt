@@ -1,0 +1,5 @@
+Vietnamese joins, typed with Telex: aa ee oo for the circumflex, aw ow uw
+for the breve and horn, dd for d-stroke, a lone w for u-horn, and s f r x
+j for the tones (z takes one off). The word composes under the cursor and
+commits on space or punctuation; backspace takes back one keystroke. A
+physical keyboard types Telex too while the layout is up.

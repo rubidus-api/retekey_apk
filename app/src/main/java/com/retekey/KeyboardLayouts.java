@@ -79,6 +79,8 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout IT_SHIFTED = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, true, LatinAccents.ITALIAN);
     private static final KeyboardLayout PL_BASE = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, false, LatinAccents.POLISH);
     private static final KeyboardLayout PL_SHIFTED = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, true, LatinAccents.POLISH);
+    private static final KeyboardLayout VI_BASE = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, false, LatinAccents.VIETNAMESE);
+    private static final KeyboardLayout VI_SHIFTED = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, true, LatinAccents.VIETNAMESE);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -118,6 +120,8 @@ public final class KeyboardLayouts {
                 return shifted ? IT_SHIFTED : IT_BASE;
             case PL_QWERTY:
                 return shifted ? PL_SHIFTED : PL_BASE;
+            case VI_TELEX:
+                return shifted ? VI_SHIFTED : VI_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -767,6 +771,7 @@ public final class KeyboardLayouts {
             case PT_QWERTY:
             case IT_QWERTY:
             case PL_QWERTY:
+            case VI_TELEX:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period

@@ -173,4 +173,63 @@ public final class HangulInputProcessorTest {
             processor.process(SemanticInput.jamo(GIYEOK)).actions()
         );
     }
+
+    // ---- the Latin composer (Vietnamese Telex) riding beside the Hangul one ----
+
+    @Test
+    public void withTelexTheLettersComposeInsteadOfCommitting() {
+        HangulInputProcessor processor = processor();
+        processor.setLatinComposer(new TelexComposer());
+        assertEquals(Collections.singletonList(KeyAction.setComposingText("v")),
+            processor.process(SemanticInput.text("v")).actions());
+        processor.process(SemanticInput.text("i"));
+        processor.process(SemanticInput.text("e"));
+        processor.process(SemanticInput.text("e"));
+        assertEquals(Collections.singletonList(KeyAction.setComposingText("việ")),
+            processor.process(SemanticInput.text("j")).actions());
+    }
+
+    @Test
+    public void aSpaceCommitsTheTelexWordAndThenTypesItself() {
+        HangulInputProcessor processor = processor();
+        processor.setLatinComposer(new TelexComposer());
+        for (String key : new String[] {"V", "i", "e", "e", "j", "t"}) {
+            processor.process(SemanticInput.text(key));
+        }
+        assertTrue(processor.isComposing());
+        assertEquals("Việt", processor.composingText());
+        assertEquals(
+            Arrays.asList(KeyAction.commitText("Việt"), KeyAction.commitText(" ")),
+            processor.process(SemanticInput.text(" ")).actions());
+        assertFalse(processor.isComposing());
+    }
+
+    @Test
+    public void backspaceInsideATelexWordDropsAKeystrokeNotACharacter() {
+        HangulInputProcessor processor = processor();
+        processor.setLatinComposer(new TelexComposer());
+        for (String key : new String[] {"d", "d", "a", "a", "t", "s"}) {
+            processor.process(SemanticInput.text(key));
+        }
+        assertEquals(Collections.singletonList(KeyAction.setComposingText("đât")),
+            processor.process(SemanticInput.deleteBackward()).actions());
+    }
+
+    @Test
+    public void withoutTelexTheLettersCommitAsBefore() {
+        HangulInputProcessor processor = processor();
+        assertEquals(Collections.singletonList(KeyAction.commitText("v")),
+            processor.process(SemanticInput.text("v")).actions());
+    }
+
+    @Test
+    public void aJamoCommitsTheTelexWordFirst() {
+        HangulInputProcessor processor = processor();
+        processor.setLatinComposer(new TelexComposer());
+        processor.process(SemanticInput.text("a"));
+        processor.process(SemanticInput.text("a"));
+        assertEquals(
+            Arrays.asList(KeyAction.commitText("â"), KeyAction.setComposingText("ㄱ")),
+            processor.process(SemanticInput.jamo(GIYEOK)).actions());
+    }
 }

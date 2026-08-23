@@ -57,6 +57,10 @@ public class ReteKeyImeService extends InputMethodService {
     private NotepadView notepad;
     /** The notepad's own Hangul composer: what is typed there is not going through the editor. */
     private final HangulComposer notepadComposer = new HangulComposer();
+    /** The notepad's own Telex composer, used while the Vietnamese layout is the one showing. */
+    private final TelexComposer notepadTelex = new TelexComposer();
+    /** The editor's Telex composer; handed to the processor while the Vietnamese layout is up. */
+    private final TelexComposer telex = new TelexComposer();
     /** The orientation the current input view was built for; a rotation rebuilds it. */
     private ScreenOrientation builtFor;
     private FloatingKeyboardBounds floatingBounds;
@@ -599,6 +603,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (usesRawKeyCompatibility()) {
             return super.onKeyDown(keyCode, event);
         }
+        // A physical keyboard types through the same composers as the screen: with the Vietnamese
+        // layout up, its letters are Telex too (RFC-0011: one layout definition, both ways in).
+        syncLatinComposer();
         ProjectKeyEvent projectEvent = KeyEventNormalizer.fromAndroid(
             keyCode,
             event,
@@ -606,6 +613,10 @@ public class ReteKeyImeService extends InputMethodService {
         );
         DispatchResult result = dispatcher.dispatch(projectEvent);
         if (result.actions().isEmpty()) {
+            if (!result.isHandled() && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getRepeatCount() == 0) {
+                endLatinWordBeforeDelegating(event);
+            }
             return result.isHandled() || super.onKeyDown(keyCode, event);
         }
         ExecutionResult execution = execute(result);
@@ -631,6 +642,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (usesRawKeyCompatibility()) {
             return super.onKeyUp(keyCode, event);
         }
+        // A physical keyboard types through the same composers as the screen: with the Vietnamese
+        // layout up, its letters are Telex too (RFC-0011: one layout definition, both ways in).
+        syncLatinComposer();
         ProjectKeyEvent projectEvent = KeyEventNormalizer.fromAndroid(
             keyCode,
             event,
@@ -662,6 +676,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (usesRawKeyCompatibility()) {
             return super.onKeyMultiple(keyCode, count, event);
         }
+        // A physical keyboard types through the same composers as the screen: with the Vietnamese
+        // layout up, its letters are Telex too (RFC-0011: one layout definition, both ways in).
+        syncLatinComposer();
         ProjectKeyEvent projectEvent = KeyEventNormalizer.fromAndroid(
             keyCode,
             event,
@@ -949,6 +966,7 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         hideHanjaCandidatesIfShown();
+        syncLatinComposer();
         // A single misbehaving editor must never crash the IME and make the keyboard vanish.
         try {
             ExecutionResult result = execute(dispatcher.dispatch(event));
@@ -965,6 +983,56 @@ public class ReteKeyImeService extends InputMethodService {
         return editorProfile;
     }
 
+    /**
+     * A physical key the Latin composer does not take — space, punctuation, Enter, a digit — is
+     * about to go to the editor itself. The word composing must be committed first, or the editor
+     * would type after a composing region the next letter then replaces.
+     */
+    private void endLatinWordBeforeDelegating(KeyEvent event) {
+        TelexComposer latin = inputProcessor.latinComposer();
+        if (latin == null || !latin.isComposing()) {
+            return;
+        }
+        int keyCode = event.getKeyCode();
+        boolean printable = event.getUnicodeChar() != 0
+            || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB;
+        if (!printable) {
+            return;
+        }
+        ExecutionResult result = execute(dispatcher.dispatch(
+            ProjectKeyEvent.softwareDown("hardware.flush", SemanticInput.flush())));
+        if (result == null || result.isFailure()) {
+            latin.reset();
+        }
+    }
+
+    /** Whether the letter keys are Vietnamese Telex right now. */
+    private boolean telexActive() {
+        return keyboardView != null && keyboardView.letterLayoutId() == KeyboardLayoutId.VI_TELEX;
+    }
+
+    /**
+     * Hands the letter keys to the Telex composer while the Vietnamese layout is up and takes
+     * them back otherwise. The switch itself commits whatever the outgoing composer had, so a
+     * half-made word is not left behind as composing text the next layout cannot finish.
+     */
+    private void syncLatinComposer() {
+        boolean wanted = telexActive();
+        boolean current = inputProcessor.latinComposer() != null;
+        if (wanted == current) {
+            return;
+        }
+        applyHardwareMode();
+        if (!wanted && telex.isComposing()) {
+            ExecutionResult result = execute(dispatcher.dispatch(
+                ProjectKeyEvent.softwareDown("layout.switch", SemanticInput.flush())));
+            if (result == null || result.isFailure()) {
+                telex.reset();
+            }
+        }
+        inputProcessor.setLatinComposer(wanted ? telex : null);
+    }
+
     private void updateHardwareMapper(InputMethodSubtype subtype) {
         hardwareKoreanMode = isKoreanSubtype(subtype);
         applyHardwareMode();
@@ -972,9 +1040,13 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Selects the physical-key mapper for the current Hangul mode and editor kind. */
     private void applyHardwareMode() {
-        hardwareMapper = !usesRawKeyCompatibility() && hardwareKoreanMode
-            ? DubeolsikHardwareMapper.INSTANCE
-            : HardwareSemanticMapper.none();
+        if (!usesRawKeyCompatibility() && hardwareKoreanMode) {
+            hardwareMapper = DubeolsikHardwareMapper.INSTANCE;
+        } else if (!usesRawKeyCompatibility() && telexActive()) {
+            hardwareMapper = LatinHardwareMapper.INSTANCE;
+        } else {
+            hardwareMapper = HardwareSemanticMapper.none();
+        }
     }
 
     /** Re-reads the user's physical-key shortcuts for 한/영 and 한자 from preferences. */
@@ -1194,6 +1266,7 @@ public class ReteKeyImeService extends InputMethodService {
     private void closeNotepad() {
         flushNotepadComposition();
         notepadComposer.reset();
+        notepadTelex.reset();
         if (notepad != null) {
             NoteStore.save(this, notepad.notes());
             notepad = null;
@@ -1230,10 +1303,22 @@ public class ReteKeyImeService extends InputMethodService {
                 return true;
             }
             case TEXT:
+                if (telexActive() && notepadTelex.accepts(input.text())) {
+                    // A Telex letter: the Hangul syllable, if any, settles first.
+                    flushNotepadHangul();
+                    TelexComposer.Result result = notepadTelex.input(input.text());
+                    notepad.typeComposed("", result.preedit);
+                    return true;
+                }
                 flushNotepadComposition();
                 notepad.type(input.text());
                 return true;
             case DELETE_BACKWARD: {
+                if (notepadTelex.isComposing()) {
+                    TelexComposer.Result result = notepadTelex.backspace();
+                    notepad.typeComposed("", result == null ? "" : result.preedit);
+                    return true;
+                }
                 if (notepad.isComposing()) {
                     // Inside a syllable, backspace takes it apart rather than deleting it whole.
                     HangulComposer.Result result = notepadComposer.backspace();
@@ -1241,6 +1326,7 @@ public class ReteKeyImeService extends InputMethodService {
                     return true;
                 }
                 notepadComposer.reset();
+        notepadTelex.reset();
                 notepad.deleteBackward();
                 return true;
             }
@@ -1258,7 +1344,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Settles whatever syllable the notepad was building, so the next thing types after it. */
     private void flushNotepadComposition() {
-        String flushed = notepadComposer.flush();
+        String flushed = notepadComposer.flush() + notepadTelex.flush();
         if (notepad == null) {
             return;
         }
@@ -1266,6 +1352,14 @@ public class ReteKeyImeService extends InputMethodService {
             notepad.typeComposed(flushed, "");
         }
         notepad.endComposition();
+    }
+
+    /** Settles only the Hangul syllable, leaving a Telex word to carry on. */
+    private void flushNotepadHangul() {
+        String flushed = notepadComposer.flush();
+        if (notepad != null && !flushed.isEmpty()) {
+            notepad.typeComposed(flushed, "");
+        }
     }
 
     private void handleHanja() {

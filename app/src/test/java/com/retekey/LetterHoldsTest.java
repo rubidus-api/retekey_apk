@@ -154,6 +154,16 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList("1"), pl.rows().get(0).get(0).longPressTexts());
     }
 
+    @Test
+    public void vietnameseIsQwertyWithTheMarkedLettersAsAFallbackHold() {
+        KeyboardLayout vi = KeyboardLayouts.of(KeyboardLayoutId.VI_TELEX, false);
+        assertEquals(labels(EN, 0), labels(vi, 0));
+        assertEquals(labels(EN, 2), labels(vi, 2));
+        assertEquals(Arrays.asList("!", "â", "ă"), vi.rows().get(1).get(0).longPressTexts());
+        assertEquals(Arrays.asList("#", "đ"), vi.rows().get(1).get(2).longPressTexts());
+        assertEquals(Arrays.asList("7", "ư"), vi.rows().get(0).get(6).longPressTexts());
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {
