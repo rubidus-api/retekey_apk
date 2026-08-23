@@ -1,0 +1,9 @@
+Four Latin layouts join: Spanish (Spain and Latin America; n-tilde on the
+home row, the period beside space with the inverted marks), Portuguese,
+Italian and Polish, each holding its accented letters under the keys.
+
+Holding a key with several characters under it now raises a strip on
+the row above (beside the key on the top row, always towards the side
+with room). Lift without moving for the first - the digit or symbol the
+key always held - or slide along the strip and lift on the one you want.
+Keys with one character under them type it at once, as before.

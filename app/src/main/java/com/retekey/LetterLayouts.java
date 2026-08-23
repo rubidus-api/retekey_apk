@@ -25,6 +25,10 @@ public final class LetterLayouts {
         KeyboardLayoutId.EN_QWERTY,
         KeyboardLayoutId.EN_DVORAK,
         KeyboardLayoutId.EN_COLEMAK,
+        KeyboardLayoutId.ES_QWERTY,
+        KeyboardLayoutId.PT_QWERTY,
+        KeyboardLayoutId.IT_QWERTY,
+        KeyboardLayoutId.PL_QWERTY,
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
@@ -57,6 +61,14 @@ public final class LetterLayouts {
                 return "dv";
             case EN_COLEMAK:
                 return "cm";
+            case ES_QWERTY:
+                return "es";
+            case PT_QWERTY:
+                return "pt";
+            case IT_QWERTY:
+                return "it";
+            case PL_QWERTY:
+                return "pl";
             case KO_DUBEOLSIK:
                 return "2b";
             case KO_CHEONJIIN:
@@ -83,6 +95,14 @@ public final class LetterLayouts {
                 return "Dvorak";
             case EN_COLEMAK:
                 return "Colemak";
+            case ES_QWERTY:
+                return "Español";
+            case PT_QWERTY:
+                return "Português";
+            case IT_QWERTY:
+                return "Italiano";
+            case PL_QWERTY:
+                return "Polski";
             case KO_DUBEOLSIK:
                 return "2beolsik(2벌식)";
             case KO_CHEONJIIN:

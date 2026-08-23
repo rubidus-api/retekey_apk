@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.116** —
-[retekey-0.1.116.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.116/retekey-0.1.116.apk)
+Current release: **v0.1.117** —
+[retekey-0.1.117.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.117/retekey-0.1.117.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -116,8 +116,8 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Eight layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, the 12-key Cheonjiin(천지인)
-  and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
+- **Twelve layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+  Polish, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
@@ -174,6 +174,10 @@ Seven letter layouts share that grid:
 | **QWERTY** | English |
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
 | **Colemak** | English, on QWERTY's grid with every letter where Colemak puts it — nine across the top, ten on the home row, seven below; backspace takes the top-right cell the letters leave free. Holds follow the rows: symbols up top, digits on the home row, marks below |
+| **Spanish** (Spain and Latin America) | QWERTY with **ñ** ending the home row, so backspace drops to the bottom letter row and the period sits beside space holding `, ¿ ¡`. á é í ó ú ü are held under their vowels |
+| **Portuguese** (Portugal and Brazil) | QWERTY; á â ã à ª · é ê · í · ó ô õ º · ú ü · ç held under their letters |
+| **Italian** | QWERTY; à · è é · ì · ò · ù held |
+| **Polish** | QWERTY; ą ć ę ł ń ó ś ż ź held under their letters |
 | **Cheonjiin(천지인)** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **Next** key — starts the next letter |
 | **Naratgeul(나랏글)** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
@@ -211,6 +215,22 @@ The layouts, as they are:
 **Colemak** — the same bottom row, the letters in Colemak's places, backspace top right:
 
 ![Colemak layout](assets/keyboard-colemak.png)
+
+**Spanish** — ñ on the home row, backspace below it, the period beside space with `, ¿ ¡`:
+
+![Spanish layout](assets/keyboard-spanish.png)
+
+**Portuguese**, **Italian** and **Polish** keep QWERTY's shape and hold their own letters:
+
+![Portuguese layout](assets/keyboard-portuguese.png)
+
+**Holding a key with several characters under it** raises a strip on the row above — beside the key
+on the top row, and always towards the side with room, so no key ever asks for a slide off an edge.
+Lift without moving and the first character types (the digit or symbol the key has always held);
+slide along the strip and lift on the one you want. A dot in the key's bottom corner says there is
+a strip:
+
+![Hold strip](assets/keyboard-spanish-hold.png)
 
 **Cheonjiin(천지인)** — Next beside Alt, 漢 beside Tab, and `.,` `!?` either side of ㅇㅁ:
 

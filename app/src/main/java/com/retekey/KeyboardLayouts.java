@@ -71,6 +71,14 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout DVORAK_SHIFTED = dvorak(true);
     private static final KeyboardLayout COLEMAK_BASE = colemak(false);
     private static final KeyboardLayout COLEMAK_SHIFTED = colemak(true);
+    private static final KeyboardLayout ES_BASE = spanish(false);
+    private static final KeyboardLayout ES_SHIFTED = spanish(true);
+    private static final KeyboardLayout PT_BASE = qwertyWithAccents(KeyboardLayoutId.PT_QWERTY, false, LatinAccents.PORTUGUESE);
+    private static final KeyboardLayout PT_SHIFTED = qwertyWithAccents(KeyboardLayoutId.PT_QWERTY, true, LatinAccents.PORTUGUESE);
+    private static final KeyboardLayout IT_BASE = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, false, LatinAccents.ITALIAN);
+    private static final KeyboardLayout IT_SHIFTED = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, true, LatinAccents.ITALIAN);
+    private static final KeyboardLayout PL_BASE = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, false, LatinAccents.POLISH);
+    private static final KeyboardLayout PL_SHIFTED = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, true, LatinAccents.POLISH);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -102,6 +110,14 @@ public final class KeyboardLayouts {
                 return shifted ? DVORAK_SHIFTED : DVORAK_BASE;
             case EN_COLEMAK:
                 return shifted ? COLEMAK_SHIFTED : COLEMAK_BASE;
+            case ES_QWERTY:
+                return shifted ? ES_SHIFTED : ES_BASE;
+            case PT_QWERTY:
+                return shifted ? PT_SHIFTED : PT_BASE;
+            case IT_QWERTY:
+                return shifted ? IT_SHIFTED : IT_BASE;
+            case PL_QWERTY:
+                return shifted ? PL_SHIFTED : PL_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -620,6 +636,108 @@ public final class KeyboardLayouts {
         return letterPage(KeyboardLayoutId.EN_COLEMAK, shifted, rows, HOLDS_9_10_7);
     }
 
+    // ---- Latin pages beyond English (RFC-0011 §2.14) ----
+
+    /**
+     * QWERTY's own shape with a language's accented letters held under their base letters. The
+     * group hold — the digit, symbol or mark the key has always carried — stays the first candidate,
+     * so holding without moving types what it always did; the accents follow, reached by sliding
+     * along the strip the hold raises.
+     */
+    private static KeyboardLayout qwertyWithAccents(
+            KeyboardLayoutId id, boolean shifted, java.util.Map<String, String[]> accents) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
+            letter("q", shifted), letter("w", shifted), letter("e", shifted),
+            letter("r", shifted), letter("t", shifted), letter("y", shifted),
+            letter("u", shifted), letter("i", shifted), letter("o", shifted),
+            letter("p", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            letter("a", shifted), letter("s", shifted), letter("d", shifted),
+            letter("f", shifted), letter("g", shifted), letter("h", shifted),
+            letter("j", shifted), letter("k", shifted), letter("l", shifted),
+            backspaceKey()
+        ));
+        rows.add(KeyboardLayout.row(
+            shiftKey(shifted),
+            letter("z", shifted), letter("x", shifted), letter("c", shifted),
+            letter("v", shifted), letter("b", shifted), letter("n", shifted),
+            letter("m", shifted),
+            letterPeriodKey(), enterKey()
+        ));
+        return letterPage(id, shifted, withAccents(withHolds(rows, HOLDS_10_9_7), accents, shifted), null);
+    }
+
+    /**
+     * Spanish, for Spain and Latin America alike: QWERTY with ñ as the tenth key of the home row —
+     * the cell QWERTY gives to backspace — so backspace drops to the bottom letter row and the
+     * period, which that row can no longer hold, goes to the language cell beside space with
+     * {@code , ¿ ¡} under it. The owner's decision (RFC-0011 §7): Gboard's arrangement.
+     */
+    private static KeyboardLayout spanish(boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
+            letter("q", shifted), letter("w", shifted), letter("e", shifted),
+            letter("r", shifted), letter("t", shifted), letter("y", shifted),
+            letter("u", shifted), letter("i", shifted), letter("o", shifted),
+            letter("p", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            letter("a", shifted), letter("s", shifted), letter("d", shifted),
+            letter("f", shifted), letter("g", shifted), letter("h", shifted),
+            letter("j", shifted), letter("k", shifted), letter("l", shifted),
+            letter("ñ", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            shiftKey(shifted),
+            letter("z", shifted), letter("x", shifted), letter("c", shifted),
+            letter("v", shifted), letter("b", shifted), letter("n", shifted),
+            letter("m", shifted),
+            backspaceKey(), enterKey()
+        ));
+        return letterPage(KeyboardLayoutId.ES_QWERTY, shifted,
+            withAccents(withHolds(rows, HOLDS_10_9_7), LatinAccents.SPANISH, shifted), null);
+    }
+
+    /** The period the Spanish page keeps beside space, with the comma and the inverted marks under it. */
+    private static SoftwareKeySpec spanishPeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
+            .withLongPress(",", "¿", "¡");
+    }
+
+    /**
+     * Appends a language's accented letters to the hold list of each base letter in {@code rows};
+     * the shifted page holds their capitals. Letters the table does not name are left alone.
+     */
+    private static List<List<SoftwareKeySpec>> withAccents(
+            List<List<SoftwareKeySpec>> rows, java.util.Map<String, String[]> accents, boolean shifted) {
+        List<List<SoftwareKeySpec>> out = new ArrayList<>(rows.size());
+        for (List<SoftwareKeySpec> row : rows) {
+            List<SoftwareKeySpec> updated = new ArrayList<>(row);
+            for (int i = 0; i < updated.size(); i++) {
+                SoftwareKeySpec key = updated.get(i);
+                if (key.isControl() || !key.enabled() || key.semanticInput() == null
+                        || key.semanticInput().kind() != SemanticInput.Kind.TEXT) {
+                    continue;
+                }
+                String base = key.label().toLowerCase(java.util.Locale.ROOT);
+                String[] extra = accents.get(base);
+                if (extra == null) {
+                    continue;
+                }
+                List<String> candidates = new ArrayList<>(key.longPressTexts());
+                for (String accent : extra) {
+                    candidates.add(shifted ? accent.toUpperCase(java.util.Locale.ROOT) : accent);
+                }
+                updated.set(i, key.withLongPress(candidates.toArray(new String[0])));
+            }
+            out.add(updated);
+        }
+        return out;
+    }
+
     /** Adds the hold groups and the fixed bottom row to a page's three letter rows. */
     private static KeyboardLayout letterPage(
         KeyboardLayoutId id,
@@ -627,7 +745,8 @@ public final class KeyboardLayouts {
         List<List<SoftwareKeySpec>> letterRows,
         String[] groups
     ) {
-        List<List<SoftwareKeySpec>> rows = new ArrayList<>(withHolds(letterRows, groups));
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(
+            groups == null ? letterRows : withHolds(letterRows, groups));
         rows.add(bottomRow(bottomRowCellFor(id)));
         return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }
@@ -645,7 +764,14 @@ public final class KeyboardLayouts {
             case EN_QWERTY:
             case EN_DVORAK:
             case EN_COLEMAK:
+            case PT_QWERTY:
+            case IT_QWERTY:
+            case PL_QWERTY:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
+            case ES_QWERTY:
+                // ñ took the home row's last cell and backspace took the period's: the period
+                // lives here, with what Spanish needs under it. Esc is on the special-keys page.
+                return spanishPeriodKey();
             default:
                 return vacatedCell("layer");
         }

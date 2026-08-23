@@ -6,6 +6,14 @@ public enum KeyboardLayoutId {
     EN_DVORAK,
     /** English Colemak, on QWERTY's grid with the letters where Colemak puts them. */
     EN_COLEMAK,
+    /** Spanish (Spain and Latin America): QWERTY with ñ ending the home row, accents held. */
+    ES_QWERTY,
+    /** Portuguese (Portugal and Brazil): QWERTY with the accents and ç held. */
+    PT_QWERTY,
+    /** Italian: QWERTY with the grave and acute vowels held. */
+    IT_QWERTY,
+    /** Polish: QWERTY with the ogonek, acute, stroke and dot letters held. */
+    PL_QWERTY,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

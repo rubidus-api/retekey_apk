@@ -848,11 +848,13 @@ public final class ReteKeyboardView extends View {
             }
             canvas.drawText(label, x, y, paint);
         }
-        if (key.longPressTexts().size() == 1 || key.hasLongPressHint()) {
+        if (key.hasLongPress() || key.hasLongPressHint()) {
             // What a long press reaches, in small text in the top-right of the key's own face:
             // the alternate character for a key that types one, or a letter naming the page for a
             // key that opens one. Inset from the face, not from the cell — drawn against the cell
-            // it sat on the very edge and read as if it had slipped out of the key.
+            // it sat on the very edge and read as if it had slipped out of the key. A key with
+            // several alternates shows its first — the one a still hold types — and a dot in the
+            // bottom-right corner saying there are more along the strip.
             String corner = key.hasLongPressHint()
                 ? key.longPressHint()
                 : key.longPressTexts().get(0);
@@ -863,6 +865,9 @@ public final class ReteKeyboardView extends View {
             paint.setTextAlign(Paint.Align.RIGHT);
             canvas.drawText(corner, r - inset, t + inset + hint * 0.85f, paint);
             paint.setTextAlign(Paint.Align.CENTER);
+            if (key.longPressTexts().size() > 1) {
+                canvas.drawCircle(r - keyRadiusPx, b - keyRadiusPx, 3.0f, paint);
+            }
         } else if (canBeHeld(key)) {
             // Nothing in the corner. Ctrl, Meta, Alt and Tab used to carry a ring that filled in
             // when they latched; the face itself now says it — armed keys take the soft accent and

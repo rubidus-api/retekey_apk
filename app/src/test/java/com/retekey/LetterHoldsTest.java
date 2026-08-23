@@ -105,6 +105,55 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList(","), colemak.rows().get(2).get(8).longPressTexts());
     }
 
+    // ---- the Latin pages beyond English (RFC-0011 §2.14) ----
+
+    @Test
+    public void spanishPutsEnyeOnTheHomeRowAndThePeriodBesideSpace() {
+        KeyboardLayout es = KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, false);
+        assertEquals(Arrays.asList("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"), labels(es, 0));
+        assertEquals(Arrays.asList("a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"), labels(es, 1));
+        assertEquals(Arrays.asList("⇧", "z", "x", "c", "v", "b", "n", "m", "⌫", "⏎"), labels(es, 2));
+        // The language cell beside space is the period, with the comma and the inverted marks.
+        List<SoftwareKeySpec> bottom = es.rows().get(3);
+        SoftwareKeySpec period = es.findById("touch.text.period.letters");
+        assertEquals("space", bottom.get(bottom.indexOf(period) - 1).label());
+        assertEquals(".", period.label());
+        assertEquals(Arrays.asList(",", "¿", "¡"), period.longPressTexts());
+        assertEquals("no Esc beside space on Spanish", null, es.findById("touch.key.escape.letters"));
+        assertEquals("Ñ", labels(KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, true), 1).get(9));
+    }
+
+    @Test
+    public void accentsFollowTheGroupHoldSoHoldingStillTypesTheDigit() {
+        KeyboardLayout es = KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, false);
+        assertEquals(Arrays.asList("3", "é"), es.rows().get(0).get(2).longPressTexts());
+        assertEquals(Arrays.asList("7", "ú", "ü"), es.rows().get(0).get(6).longPressTexts());
+        assertEquals(Arrays.asList("!", "á"), es.rows().get(1).get(0).longPressTexts());
+        // ñ is the tenth home-row key and the symbol group has nine: it holds nothing.
+        assertEquals(false, es.rows().get(1).get(9).hasLongPress());
+        // Shifted, the accents are capitals.
+        KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, true);
+        assertEquals(Arrays.asList("3", "É"), shifted.rows().get(0).get(2).longPressTexts());
+    }
+
+    @Test
+    public void portugueseItalianAndPolishKeepQwertysShapeAndHoldTheirLetters() {
+        KeyboardLayout pt = KeyboardLayouts.of(KeyboardLayoutId.PT_QWERTY, false);
+        assertEquals(labels(EN, 2), labels(pt, 2));
+        assertEquals(Arrays.asList(":", "ç"), pt.rows().get(2).get(3).longPressTexts());
+        assertEquals(Arrays.asList("!", "á", "â", "ã", "à", "ª"), pt.rows().get(1).get(0).longPressTexts());
+        assertEquals(Arrays.asList("9", "ó", "ô", "õ", "º"), pt.rows().get(0).get(8).longPressTexts());
+
+        KeyboardLayout it = KeyboardLayouts.of(KeyboardLayoutId.IT_QWERTY, false);
+        assertEquals(Arrays.asList("3", "è", "é"), it.rows().get(0).get(2).longPressTexts());
+
+        KeyboardLayout pl = KeyboardLayouts.of(KeyboardLayoutId.PL_QWERTY, false);
+        assertEquals(Arrays.asList("_", "ż", "ź"), pl.rows().get(2).get(1).longPressTexts());
+        assertEquals(Arrays.asList(";", "ł"), pl.rows().get(1).get(8).longPressTexts());
+        // Letters the table does not name hold only their group character.
+        assertEquals(Arrays.asList("1"), pl.rows().get(0).get(0).longPressTexts());
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {
