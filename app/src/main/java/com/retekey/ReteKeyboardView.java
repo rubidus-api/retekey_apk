@@ -74,6 +74,14 @@ public final class ReteKeyboardView extends View {
         boolean guideOpen;
         /** Which way the finger has gone since the guide opened; null means it is still still. */
         CheonjiinInterpreter.Flick guideDirection;
+        /** The strip of hold candidates this finger is choosing from, or null. */
+        HoldPicker picker;
+        /** Which candidate the finger is on while the strip is up. */
+        int pickerIndex;
+        /** Whether the finger has moved off its key since the strip came up. */
+        boolean pickerMoved;
+        /** A made-up candidate list for pictures (ScreenshotActivity); null in real use. */
+        List<String> pickerPreview;
         final Runnable onHold = () -> handleLongPress(this);
         final Runnable onRepeat = () -> handleRepeat(this);
 
@@ -501,6 +509,7 @@ public final class ReteKeyboardView extends View {
         canvas.drawBitmap(baseBitmap, 0.0f, 0.0f, null);
         drawPressFeedback(canvas, width, height);
         drawFlickGuides(canvas, width, height);
+        drawHoldPickers(canvas, width, height);
         drawFlash(canvas, width, height);
         drawEchoBox(canvas, width, height);
     }
@@ -655,6 +664,42 @@ public final class ReteKeyboardView extends View {
                 CheonjiinInterpreter.flickLabel(phoneKey, CheonjiinInterpreter.Flick.DOWN),
                 touch.guideDirection == CheonjiinInterpreter.Flick.DOWN);
         }
+    }
+
+    /**
+     * The strip a held key with several alternates raises — see {@link HoldPicker} for where it
+     * goes. Each candidate is drawn in its own column on the strip's row, the one under the finger
+     * lit; the strip is painted over the keys there, the way the 천지인 guide is.
+     */
+    private void drawHoldPickers(Canvas canvas, int width, int height) {
+        KeyboardLayout layout = layout();
+        for (int i = 0; i < touches.size(); i++) {
+            Touch touch = touches.valueAt(i);
+            HoldPicker picker = touch.picker;
+            if (picker == null || touch.row >= layout.rows().size()) {
+                continue;
+            }
+            List<SoftwareKeySpec> row = layout.rows().get(touch.row);
+            if (touch.key >= row.size()) {
+                continue;
+            }
+            List<String> candidates = pickerCandidates(touch, row.get(touch.key));
+            float cellTop = layout.rowEdge(picker.stripRow, height);
+            float cellBottom = layout.rowEdge(picker.stripRow + 1, height);
+            for (int index = 0; index < picker.count && index < candidates.size(); index++) {
+                int column = picker.columnOf(index);
+                float cellLeft = layout.columnEdge(column, width);
+                float cellRight = layout.columnEdge(column + 1, width);
+                float box = Math.min(cellRight - cellLeft, cellBottom - cellTop) * 0.92f;
+                drawGuideCell(canvas, (cellLeft + cellRight) * 0.5f, (cellTop + cellBottom) * 0.5f,
+                    box, candidates.get(index), index == touch.pickerIndex);
+            }
+        }
+    }
+
+    /** What a finger's strip offers: the key's alternates, or the preview's made-up list. */
+    private List<String> pickerCandidates(Touch touch, SoftwareKeySpec key) {
+        return touch.pickerPreview != null ? touch.pickerPreview : key.longPressTexts();
     }
 
     private void drawGuideCell(
@@ -985,6 +1030,18 @@ public final class ReteKeyboardView extends View {
             }
             float x = event.getX(pointer);
             float y = event.getY(pointer);
+            if (touch.picker != null) {
+                // The strip is up: the finger slides along it; the column under it is the choice.
+                if (!touch.pickerMoved && escapedKey(layout, touch, x, y)) {
+                    touch.pickerMoved = true;
+                }
+                int index = touch.picker.indexAt(columnAt(layout, x), touch.pickerMoved);
+                if (index != touch.pickerIndex) {
+                    touch.pickerIndex = index;
+                    invalidate();
+                }
+                continue;
+            }
             if (touch.guideOpen) {
                 // The guide is up: the finger is choosing, not typing. It types when it lifts.
                 CheonjiinInterpreter.Flick aimed =
@@ -1094,15 +1151,30 @@ public final class ReteKeyboardView extends View {
 
     /** Types a key's held alternate — the digit on a 천지인 key, whatever it is elsewhere. */
     private void typeLongPress(SoftwareKeySpec key) {
+        typeLongPress(key, 0);
+    }
+
+    /** Types the key's {@code index}-th alternate — the one a strip was lifted on. */
+    private void typeLongPress(SoftwareKeySpec key, int index) {
         if (!key.hasLongPress()) {
             return;
         }
-        sink.accept(key.longPressEvent(0));
+        sink.accept(key.longPressEvent(index));
         resetPhoneInterpreters();
         consumeOneShotShift();
         feedback.playKeyDown();
-        flashKeyboard(key, key.longPressTexts().get(0));
+        flashKeyboard(key, key.longPressTexts().get(index));
         performClick();
+    }
+
+    /** The grid column under {@code x}, clamped to the keyboard. */
+    private int columnAt(KeyboardLayout layout, float x) {
+        int width = getWidth();
+        if (width <= 0) {
+            return 0;
+        }
+        int column = (int) Math.floor(x / width * layout.columns());
+        return Math.max(0, Math.min(layout.columns() - 1, column));
     }
 
     /** Whether a finger has left its key's cell by more than a touch slop. */
@@ -1164,6 +1236,15 @@ public final class ReteKeyboardView extends View {
             // Another finger switched the page while this one was down; its key is gone.
             return;
         }
+        if (touch.picker != null) {
+            // Held, slid, lifted: the candidate the finger is on is what types.
+            SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
+            if (touch.pickerMoved || escapedKey(layout(), touch, x, y)) {
+                touch.pickerIndex = touch.picker.indexAt(columnAt(layout(), x), true);
+            }
+            typeLongPress(held, Math.min(touch.pickerIndex, held.longPressTexts().size() - 1));
+            return;
+        }
         if (touch.guideOpen) {
             // Held, then lifted: whatever the guide was showing under the finger is what types.
             SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
@@ -1223,7 +1304,7 @@ public final class ReteKeyboardView extends View {
         }
         java.util.Collections.sort(pending, (a, b) -> Integer.compare(a.serial, b.serial));
         for (Touch touch : pending) {
-            if (touch.holdConsumed || touch.repeatFired || touch.guideOpen
+            if (touch.holdConsumed || touch.repeatFired || touch.guideOpen || touch.picker != null
                 || !touch.grid.equals(grid)) {
                 continue;
             }
@@ -1373,9 +1454,22 @@ public final class ReteKeyboardView extends View {
             invalidate();
             return;
         }
+        if (key.hasLongPress() && key.longPressTexts().size() > 1) {
+            // Several alternates: raise the strip and wait. Lift without moving and the first is
+            // what you meant; slide along the strip and lift, and that one is.
+            KeyboardLayout layout = layout();
+            touch.picker = HoldPicker.place(layout.columns(), touch.row,
+                layout.startColumn(touch.row, touch.key), key.columnSpan(),
+                key.longPressTexts().size());
+            touch.pickerIndex = 0;
+            touch.pickerMoved = false;
+            feedback.playKeyDown();
+            invalidate();
+            return;
+        }
         if (key.hasLongPress()) {
-            // Holding a key types its alternate straight away. There is no popup to aim at and
-            // nothing to drag to: the finger is already where it needs to be.
+            // Holding a key types its one alternate straight away. There is no popup to aim at
+            // and nothing to drag to: the finger is already where it needs to be.
             sink.accept(key.longPressEvent(0));
             // The alternate is not part of a 12-key run, so it ends one.
             resetPhoneInterpreters();
@@ -1559,6 +1653,24 @@ public final class ReteKeyboardView extends View {
                 phoneOverlay = parts.length > 2
                     ? PhoneOverlay.valueOf(parts[2]) : PhoneOverlay.NONE;
                 break;
+            case "hold": {
+                // hold:LAYOUT:row:key:cand1,cand2,... — the strip a held key raises, for pictures.
+                // The finger is pretended to be down on that key, not moved.
+                page = Page.LETTERS;
+                letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
+                int row = Integer.parseInt(parts[2]);
+                int keyIndex = Integer.parseInt(parts[3]);
+                List<String> candidates = java.util.Arrays.asList(parts[4].split(","));
+                KeyboardLayout layout = layout();
+                SoftwareKeySpec key = layout.rows().get(row).get(keyIndex);
+                Touch pretend = new Touch(-1, row, keyIndex, gridSignature(), 0f, 0f);
+                pretend.picker = HoldPicker.place(layout.columns(), row,
+                    layout.startColumn(row, keyIndex), key.columnSpan(), candidates.size());
+                pretend.pickerPreview = candidates;
+                pretend.pickerIndex = parts.length > 5 ? Integer.parseInt(parts[5]) : 0;
+                touches.put(-1, pretend);
+                break;
+            }
             default:
                 page = Page.LETTERS;
                 if (parts.length > 1) {
