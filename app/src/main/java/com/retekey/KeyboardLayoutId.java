@@ -4,6 +4,8 @@ public enum KeyboardLayoutId {
     EN_QWERTY,
     /** English Dvorak, on the same ten-column grid as QWERTY. */
     EN_DVORAK,
+    /** English Colemak, on QWERTY's grid with the letters where Colemak puts them. */
+    EN_COLEMAK,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

@@ -1,0 +1,7 @@
+Colemak joins QWERTY and Dvorak: QWERTY's grid with every letter in
+Colemak's place (nine, ten, seven), backspace in the top-right cell the
+letters leave free, Esc beside space, holds by row (symbols, digits,
+marks). Turn it on under Settings > Layouts; the layout key shows "cm".
+
+The action bar stays on the keyboard while the clipboard panel or the
+notepad is open, instead of disappearing until they close.

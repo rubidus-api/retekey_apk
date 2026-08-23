@@ -5,7 +5,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 /**
- * A panel above the keyboard, filling the window.
+ * A panel above the keyboard, filling the window. The bottom block is the keyboard as it is
+ * docked — action bar included, when the user has one: opening a panel must not take it away.
  *
  * <p>The same shape as {@link NotepadFrame} — the keyboard keeps its own height at the bottom and
  * the panel takes the rest — for anything that is a list rather than a way of typing: the clipboard
@@ -13,7 +14,7 @@ import android.widget.LinearLayout;
  */
 final class PanelFrame extends LinearLayout implements BottomReserving {
     private final View panel;
-    private final ReteKeyboardView keyboard;
+    private final View keyboard;
     private int bottomReserved;
 
     @Override
@@ -25,7 +26,7 @@ final class PanelFrame extends LinearLayout implements BottomReserving {
         requestLayout();
     }
 
-    PanelFrame(Context context, View panel, ReteKeyboardView keyboard) {
+    PanelFrame(Context context, View panel, View keyboard) {
         super(context);
         this.panel = panel;
         this.keyboard = keyboard;
@@ -39,10 +40,6 @@ final class PanelFrame extends LinearLayout implements BottomReserving {
 
     View panel() {
         return panel;
-    }
-
-    ReteKeyboardView keyboard() {
-        return keyboard;
     }
 
     @Override

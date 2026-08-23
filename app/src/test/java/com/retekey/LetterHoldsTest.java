@@ -79,6 +79,32 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList(","), dvorak.rows().get(0).get(2).longPressTexts());
     }
 
+    @Test
+    public void colemakKeepsEveryLetterInItsOwnPlaceOnQwertysGrid() {
+        KeyboardLayout colemak = KeyboardLayouts.of(KeyboardLayoutId.EN_COLEMAK, false);
+
+        // Nine, ten, seven. The home row is full — o takes the semicolon's cell — so backspace
+        // goes to the top right, the one cell Colemak's letters do not need.
+        assertEquals(Arrays.asList("q", "w", "f", "p", "g", "j", "l", "u", "y", "⌫"),
+            labels(colemak, 0));
+        assertEquals(Arrays.asList("a", "r", "s", "t", "d", "h", "n", "e", "i", "o"),
+            labels(colemak, 1));
+        assertEquals(Arrays.asList("⇧", "z", "x", "c", "v", "b", "k", "m", ".", "⏎"),
+            labels(colemak, 2));
+    }
+
+    @Test
+    public void colemakCarriesTheSameThreeGroupsOnItsNineTenSevenRows() {
+        KeyboardLayout colemak = KeyboardLayouts.of(KeyboardLayoutId.EN_COLEMAK, false);
+
+        assertEquals(Arrays.asList("!", "@", "#", "$", "%", "^", "&", "*", ";"),
+            holds(colemak, 0, 0, 9));
+        assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
+            holds(colemak, 1, 0, 10));
+        assertEquals(Arrays.asList("_", "-", ":", "=", "'", "\"", "?"), holds(colemak, 2, 1, 7));
+        assertEquals(Arrays.asList(","), colemak.rows().get(2).get(8).longPressTexts());
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

@@ -60,6 +60,8 @@ public final class KeyboardLayouts {
     private static final String[] HOLDS_10_9_7 = {HOLD_DIGITS, HOLD_SYMBOLS, HOLD_MARKS};
     /** Seven, ten, nine: Dvorak, carrying the same three groups rotated to fit its rows. */
     private static final String[] HOLDS_7_10_9 = {HOLD_MARKS, HOLD_DIGITS, HOLD_SYMBOLS};
+    /** Nine, ten, seven: Colemak — the symbols up top, the digits on the home row, the marks below. */
+    private static final String[] HOLDS_9_10_7 = {HOLD_SYMBOLS, HOLD_DIGITS, HOLD_MARKS};
 
     private static final KeyboardLayout EN_BASE = english(false);
     private static final KeyboardLayout EN_SHIFTED = english(true);
@@ -67,6 +69,8 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout KO_SHIFTED = korean(true);
     private static final KeyboardLayout DVORAK_BASE = dvorak(false);
     private static final KeyboardLayout DVORAK_SHIFTED = dvorak(true);
+    private static final KeyboardLayout COLEMAK_BASE = colemak(false);
+    private static final KeyboardLayout COLEMAK_SHIFTED = colemak(true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -96,6 +100,8 @@ public final class KeyboardLayouts {
                 return shifted ? EN_SHIFTED : EN_BASE;
             case EN_DVORAK:
                 return shifted ? DVORAK_SHIFTED : DVORAK_BASE;
+            case EN_COLEMAK:
+                return shifted ? COLEMAK_SHIFTED : COLEMAK_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -583,6 +589,37 @@ public final class KeyboardLayouts {
         return letterPage(KeyboardLayoutId.EN_DVORAK, shifted, rows, HOLDS_7_10_9);
     }
 
+    /**
+     * Colemak, on QWERTY's grid with every letter in Colemak's own place: nine across the top, ten
+     * on the home row (the {@code o} takes the cell QWERTY gives to the semicolon), seven below.
+     * That leaves one cell at the top right — where Colemak's semicolon sits — and backspace goes
+     * there, since the home row is full. The hold groups follow the rows: symbols up top, digits
+     * on the home row, marks below, none of them split or padded.
+     */
+    private static KeyboardLayout colemak(boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(KeyboardLayout.row(
+            letter("q", shifted), letter("w", shifted), letter("f", shifted),
+            letter("p", shifted), letter("g", shifted), letter("j", shifted),
+            letter("l", shifted), letter("u", shifted), letter("y", shifted),
+            backspaceKey()
+        ));
+        rows.add(KeyboardLayout.row(
+            letter("a", shifted), letter("r", shifted), letter("s", shifted),
+            letter("t", shifted), letter("d", shifted), letter("h", shifted),
+            letter("n", shifted), letter("e", shifted), letter("i", shifted),
+            letter("o", shifted)
+        ));
+        rows.add(KeyboardLayout.row(
+            shiftKey(shifted),
+            letter("z", shifted), letter("x", shifted), letter("c", shifted),
+            letter("v", shifted), letter("b", shifted), letter("k", shifted),
+            letter("m", shifted),
+            letterPeriodKey(), enterKey()
+        ));
+        return letterPage(KeyboardLayoutId.EN_COLEMAK, shifted, rows, HOLDS_9_10_7);
+    }
+
     /** Adds the hold groups and the fixed bottom row to a page's three letter rows. */
     private static KeyboardLayout letterPage(
         KeyboardLayoutId id,
@@ -607,6 +644,7 @@ public final class KeyboardLayouts {
                 return hanjaKey();
             case EN_QWERTY:
             case EN_DVORAK:
+            case EN_COLEMAK:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             default:
                 return vacatedCell("layer");

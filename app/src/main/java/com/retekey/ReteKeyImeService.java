@@ -122,14 +122,14 @@ public class ReteKeyImeService extends InputMethodService {
         if (clipboardPanel != null) {
             // The clipboard owns the window while it is open, the way the notepad does.
             floatingFrame = null;
-            return new PanelFrame(this, buildClipboardPanel(), keyboardView);
+            return new PanelFrame(this, buildClipboardPanel(), withActionBar(keyboardView));
         }
         if (notepad != null) {
             // The notepad owns the window while it is open: the keyboard keeps its height at the
             // bottom and the panel takes the rest of the screen.
             floatingFrame = null;
             NotepadView panel = buildNotepad();
-            return new NotepadFrame(this, panel, keyboardView);
+            return new NotepadFrame(this, panel, withActionBar(keyboardView));
         }
         if (!floatingMode) {
             floatingFrame = null;
@@ -809,7 +809,7 @@ public class ReteKeyImeService extends InputMethodService {
         // screen, the listener may have fired when there was nothing to rebuild.
         boolean wanted = viewPrefs().getBoolean(
             ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED);
-        if (wanted != builtWithBar && clipboardPanel == null && notepad == null) {
+        if (wanted != builtWithBar) {
             rebuildInputView();
         }
     }

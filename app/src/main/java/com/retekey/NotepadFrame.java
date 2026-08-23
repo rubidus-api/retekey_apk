@@ -5,7 +5,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 /**
- * The keyboard with the notepad above it, filling the screen.
+ * The keyboard with the notepad above it, filling the screen. The bottom block is the keyboard as
+ * it is docked — action bar included, when the user has one.
  *
  * <p>An IME window is normally exactly as tall as its keyboard. While the notepad is open the
  * window takes the whole screen instead, and everything above the keys is the notepad — translucent,
@@ -15,7 +16,7 @@ import android.widget.LinearLayout;
  */
 final class NotepadFrame extends LinearLayout implements BottomReserving {
     private final NotepadView notepad;
-    private final ReteKeyboardView keyboard;
+    private final View keyboard;
     private int bottomReserved;
 
     @Override
@@ -27,7 +28,7 @@ final class NotepadFrame extends LinearLayout implements BottomReserving {
         requestLayout();
     }
 
-    NotepadFrame(Context context, NotepadView notepad, ReteKeyboardView keyboard) {
+    NotepadFrame(Context context, NotepadView notepad, View keyboard) {
         super(context);
         this.notepad = notepad;
         this.keyboard = keyboard;
@@ -39,10 +40,6 @@ final class NotepadFrame extends LinearLayout implements BottomReserving {
 
     NotepadView notepad() {
         return notepad;
-    }
-
-    ReteKeyboardView keyboard() {
-        return keyboard;
     }
 
     @Override
