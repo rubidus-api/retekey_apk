@@ -344,10 +344,15 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
+    /** The height the keyboard asks for on its own: the height setting's share of the screen. */
+    int desiredHeightPx() {
+        return KeyboardHeightPercent.heightPx(heightPercent(), screenHeightPx());
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        int desired = KeyboardHeightPercent.heightPx(heightPercent(), screenHeightPx());
+        int desired = desiredHeightPx();
         int height;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {
             case MeasureSpec.EXACTLY:

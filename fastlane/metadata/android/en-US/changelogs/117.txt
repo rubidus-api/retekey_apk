@@ -1,0 +1,5 @@
+The action bar now lives inside the keyboard's height instead of being
+added on top of it: the height setting is the whole keyboard area, bar
+included, so turning the bar on keeps the keyboard's top edge where it
+was and the keys give up one short row to it. Floating mode already
+worked this way.
