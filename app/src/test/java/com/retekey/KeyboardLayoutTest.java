@@ -218,7 +218,7 @@ public final class KeyboardLayoutTest {
         // same width on all of them. The 12-key pages — the two Hangul pads and the Arrows and
         // Keypad layouts built on their frame — have their own, narrower one.
         List<KeyboardLayoutId> pads = Arrays.asList(
-            KeyboardLayoutId.KO_CHEONJIIN, KeyboardLayoutId.KO_NARATGEUL,
+            KeyboardLayoutId.KO_CHEONJIIN, KeyboardLayoutId.KO_NARATGEUL, KeyboardLayoutId.JA_FLICK,
             KeyboardLayoutId.PAD_ARROWS, KeyboardLayoutId.PAD_KEYPAD);
         List<KeyboardLayout> fullSize = new ArrayList<>();
         for (KeyboardLayoutId id : KeyboardLayoutId.values()) {

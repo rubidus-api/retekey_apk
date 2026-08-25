@@ -98,6 +98,9 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout HEBREW = hebrew();
     private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
+    private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE);
+    private static final KeyboardLayout JA_FLICK_DIGITS = kanaFlick(PhoneOverlay.DIGITS);
+    private static final KeyboardLayout JA_FLICK_NAV = kanaFlick(PhoneOverlay.NAV);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -152,6 +155,8 @@ public final class KeyboardLayouts {
                 return HEBREW;
             case JA_ROMAJI:
                 return shifted ? JA_SHIFTED : JA_BASE;
+            case JA_FLICK:
+                return JA_FLICK_LAYOUT;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -237,6 +242,13 @@ public final class KeyboardLayouts {
                 case DIGITS: return NARATGEUL_DIGITS;
                 case NAV: return NARATGEUL_NAV;
                 default: return NARATGEUL;
+            }
+        }
+        if (id == KeyboardLayoutId.JA_FLICK) {
+            switch (overlay) {
+                case DIGITS: return JA_FLICK_DIGITS;
+                case NAV: return JA_FLICK_NAV;
+                default: return JA_FLICK_LAYOUT;
             }
         }
         throw new IllegalArgumentException("not a 12-key layout: " + id);
@@ -584,6 +596,51 @@ public final class KeyboardLayouts {
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);
+    }
+
+    /**
+     * The Japanese 12-key flick pad, in the same frame as 천지인: the ten kana keys on the phone
+     * cells, the ゛゜小 modifier and the cycling 、。？！ key on the bottom pad row beside わ, and
+     * the same surround — toggles, space, Next, ⌫ ⏎ and the page keys. Flick-only, so a tap is
+     * always the あ-column kana and every press is one character; the digits ride the holds the
+     * way they do on every 12-key page.
+     */
+    private static KeyboardLayout kanaFlick(PhoneOverlay overlay) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        rows.add(phoneRow(0, phoneDigitsToggleKey(),
+            padCell(overlay, 0, kanaKey(KanaFlick.Key.A, PadHolds.digit(0))),
+            padCell(overlay, 1, kanaKey(KanaFlick.Key.KA, PadHolds.digit(1))),
+            padCell(overlay, 2, kanaKey(KanaFlick.Key.SA, PadHolds.digit(2))),
+            backspaceKey().withColumnSpan(2)));
+        rows.add(phoneRow(1, phoneNavToggleKey(),
+            padCell(overlay, 3, kanaKey(KanaFlick.Key.TA, PadHolds.digit(3))),
+            padCell(overlay, 4, kanaKey(KanaFlick.Key.NA, PadHolds.digit(4))),
+            padCell(overlay, 5, kanaKey(KanaFlick.Key.HA, PadHolds.digit(5))),
+            phoneSpaceKey()));
+        rows.add(phoneRow(2, commitKey(),
+            padCell(overlay, 6, kanaKey(KanaFlick.Key.MA, PadHolds.digit(6))),
+            padCell(overlay, 7, kanaKey(KanaFlick.Key.YA, PadHolds.digit(7))),
+            padCell(overlay, 8, kanaKey(KanaFlick.Key.RA, PadHolds.digit(8))),
+            letterPeriodKey(),
+            enterKey()));
+        List<SoftwareKeySpec> bottom = phoneRow(3, vacatedCell("kana"),
+            padCell(overlay, 9, SoftwareKeySpec
+                .control("touch.kana.modifier", "゛゜小", ControlKey.KANA_MODIFIER)
+                .withColumnSpan(2)),
+            padCell(overlay, 10, kanaKey(KanaFlick.Key.WA, PadHolds.digit(10))),
+            padCell(overlay, 11, phoneCycleKey("kana-punct", "、。？！")));
+        bottom.addAll(phoneBottomPageKeys());
+        rows.add(bottom);
+        return KeyboardLayout.of(KeyboardLayoutId.JA_FLICK, false, COLUMNS, rows);
+    }
+
+    /** One kana key: its tap character as label and text, the pad digit held under it. */
+    private static SoftwareKeySpec kanaKey(KanaFlick.Key key, String digit) {
+        return SoftwareKeySpec
+            .enabled("touch.kana." + key.name().toLowerCase(java.util.Locale.ROOT),
+                KanaFlick.tap(key), SemanticInput.text(KanaFlick.tap(key)))
+            .withColumnSpan(2)
+            .withLongPress(digit);
     }
 
     // ---- Letter pages ----

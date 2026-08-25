@@ -307,6 +307,16 @@ public final class NotepadView extends LinearLayout {
     }
 
     /** Deletes backwards, or the selection when there is one. */
+    /** The character just before the cursor in the focused field, or null when there is none. */
+    public String lastCharacter() {
+        EditText target = focusedField();
+        int start = target.getSelectionStart();
+        if (start <= 0 || target.getSelectionEnd() != start) {
+            return null;
+        }
+        return String.valueOf(target.getText().charAt(start - 1));
+    }
+
     public void deleteBackward() {
         EditText target = focusedField();
         Editable editable = target.getText();

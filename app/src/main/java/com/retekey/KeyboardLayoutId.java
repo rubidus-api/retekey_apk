@@ -28,6 +28,8 @@ public enum KeyboardLayoutId {
     HE_STANDARD,
     /** Japanese by romaji: QWERTY as is, the composer turning it into hiragana. */
     JA_ROMAJI,
+    /** Japanese on the 12-key flick pad, flick-only: tap あ, flick い う え お. */
+    JA_FLICK,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

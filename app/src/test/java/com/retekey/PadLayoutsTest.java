@@ -115,4 +115,23 @@ public final class PadLayoutsTest {
     private static SoftwareKeySpec last(List<SoftwareKeySpec> row) {
         return row.get(row.size() - 1);
     }
+
+    // ---- the Japanese flick pad ----
+
+    @Test
+    public void kanaFlickPadPutsTheTenKeysOnThePhoneCells() {
+        KeyboardLayout ja = KeyboardLayouts.of(KeyboardLayoutId.JA_FLICK, false);
+        assertEquals("あ", ja.findById("touch.kana.a").label());
+        assertEquals("か", ja.findById("touch.kana.ka").label());
+        assertEquals("わ", ja.findById("touch.kana.wa").label());
+        assertEquals("゛゜小", ja.findById("touch.kana.modifier").label());
+        assertEquals(ControlKey.KANA_MODIFIER, ja.findById("touch.kana.modifier").control());
+        assertEquals("、。？！", ja.findById("touch.phone.cycle.kana-punct").label());
+        // The pad digits ride the holds, like every 12-key page.
+        assertEquals("1", ja.findById("touch.kana.a").longPressTexts().get(0));
+        // One page whatever Shift says, and overlays swap the cells like 천지인's.
+        assertEquals(ja, KeyboardLayouts.of(KeyboardLayoutId.JA_FLICK, true));
+        assertEquals(null, KeyboardLayouts.phone(KeyboardLayoutId.JA_FLICK, PhoneOverlay.DIGITS)
+            .findById("touch.kana.a"));
+    }
 }

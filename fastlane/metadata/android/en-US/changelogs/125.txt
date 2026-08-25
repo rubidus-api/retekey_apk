@@ -1,0 +1,6 @@
+The Japanese 12-key flick pad joins, flick-only: tap for the a-column
+kana, flick for i u e o, with the same drag and hold guide the Korean
+Cheonjiin pad uses. The mark key turns the character before the cursor
+along its cycle - ka to ga, ha through ba to pa, tsu to the small tsu -
+and the wa key carries wo, n and the long-vowel bar on its flicks. The
+layout key's three-letter captions now drop the arrow and go bold.

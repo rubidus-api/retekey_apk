@@ -122,6 +122,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnNotepad(this::toggleNotepad);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         keyboardView.setOnThemeCycle(this::cycleTheme);
+        keyboardView.setOnKanaModifier(this::applyKanaModifier);
         keyboardView.setOnLayoutChanged(this::announceLayout);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
@@ -1005,6 +1006,45 @@ public class ReteKeyImeService extends InputMethodService {
             ProjectKeyEvent.softwareDown("hardware.flush", SemanticInput.flush())));
         if (result == null || result.isFailure()) {
             latin.reset();
+        }
+    }
+
+    /**
+     * The kana pad's ゛゜小 key: the character before the cursor moves along its cycle — か to が,
+     * は through ば to ぱ, a vowel to its small form. Nothing before the cursor, or a character
+     * with no cycle, does nothing, like a drag at an empty guide cell. The notepad's text is
+     * edited the same way when a note is open.
+     */
+    private void applyKanaModifier() {
+        if (notepad != null && notepad.isWriting()) {
+            String last = notepad.lastCharacter();
+            String turned = last != null && last.length() == 1
+                ? KanaFlick.modified(last.charAt(0)) : null;
+            if (turned != null) {
+                notepad.deleteBackward();
+                notepad.type(turned);
+            }
+            return;
+        }
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) {
+            return;
+        }
+        try {
+            CharSequence before = ic.getTextBeforeCursor(1, 0);
+            if (before == null || before.length() != 1) {
+                return;
+            }
+            String turned = KanaFlick.modified(before.charAt(0));
+            if (turned == null) {
+                return;
+            }
+            ic.beginBatchEdit();
+            ic.deleteSurroundingText(1, 0);
+            ic.commitText(turned, 1);
+            ic.endBatchEdit();
+        } catch (RuntimeException ignored) {
+            // A misbehaving editor must never crash the keyboard.
         }
     }
 

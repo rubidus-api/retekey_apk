@@ -23,6 +23,8 @@ public enum ControlKey {
     FUNCTION_LOCK,
     /** Open ReteKey's settings screen. Handled by the host service, not the input pipeline. */
     OPEN_SETTINGS,
+    /** The kana pad's ゛゜小 key: turn the character before the cursor along its cycle. */
+    KANA_MODIFIER,
     /** Grow the keyboard height by one step (view-local, persisted). */
     HEIGHT_UP,
     /** Shrink the keyboard height by one step (view-local, persisted). */
