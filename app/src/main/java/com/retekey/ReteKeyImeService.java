@@ -57,10 +57,12 @@ public class ReteKeyImeService extends InputMethodService {
     private NotepadView notepad;
     /** The notepad's own Hangul composer: what is typed there is not going through the editor. */
     private final HangulComposer notepadComposer = new HangulComposer();
-    /** The notepad's own Telex composer, used while the Vietnamese layout is the one showing. */
+    /** The notepad's own Latin composers, used while their layout is the one showing. */
     private final TelexComposer notepadTelex = new TelexComposer();
-    /** The editor's Telex composer; handed to the processor while the Vietnamese layout is up. */
+    private final RomajiKanaComposer notepadRomaji = new RomajiKanaComposer();
+    /** The editor's Latin composers; one is handed to the processor while its layout is up. */
     private final TelexComposer telex = new TelexComposer();
+    private final RomajiKanaComposer romaji = new RomajiKanaComposer();
     /** The orientation the current input view was built for; a rotation rebuilds it. */
     private ScreenOrientation builtFor;
     private FloatingKeyboardBounds floatingBounds;
@@ -989,7 +991,7 @@ public class ReteKeyImeService extends InputMethodService {
      * would type after a composing region the next letter then replaces.
      */
     private void endLatinWordBeforeDelegating(KeyEvent event) {
-        TelexComposer latin = inputProcessor.latinComposer();
+        LatinComposer latin = inputProcessor.latinComposer();
         if (latin == null || !latin.isComposing()) {
             return;
         }
@@ -1006,9 +1008,34 @@ public class ReteKeyImeService extends InputMethodService {
         }
     }
 
-    /** Whether the letter keys are Vietnamese Telex right now. */
-    private boolean telexActive() {
-        return keyboardView != null && keyboardView.letterLayoutId() == KeyboardLayoutId.VI_TELEX;
+    /** The Latin composer the current letter layout wants, or null for none. */
+    private LatinComposer wantedLatinComposer() {
+        if (keyboardView == null) {
+            return null;
+        }
+        switch (keyboardView.letterLayoutId()) {
+            case VI_TELEX:
+                return telex;
+            case JA_ROMAJI:
+                return romaji;
+            default:
+                return null;
+        }
+    }
+
+    /** The notepad's own composer for the current letter layout, or null. */
+    private LatinComposer wantedNotepadLatin() {
+        if (keyboardView == null) {
+            return null;
+        }
+        switch (keyboardView.letterLayoutId()) {
+            case VI_TELEX:
+                return notepadTelex;
+            case JA_ROMAJI:
+                return notepadRomaji;
+            default:
+                return null;
+        }
     }
 
     /**
@@ -1017,20 +1044,20 @@ public class ReteKeyImeService extends InputMethodService {
      * half-made word is not left behind as composing text the next layout cannot finish.
      */
     private void syncLatinComposer() {
-        boolean wanted = telexActive();
-        boolean current = inputProcessor.latinComposer() != null;
+        LatinComposer wanted = wantedLatinComposer();
+        LatinComposer current = inputProcessor.latinComposer();
         if (wanted == current) {
             return;
         }
         applyHardwareMode();
-        if (!wanted && telex.isComposing()) {
+        if (current != null && current.isComposing()) {
             ExecutionResult result = execute(dispatcher.dispatch(
                 ProjectKeyEvent.softwareDown("layout.switch", SemanticInput.flush())));
             if (result == null || result.isFailure()) {
-                telex.reset();
+                current.reset();
             }
         }
-        inputProcessor.setLatinComposer(wanted ? telex : null);
+        inputProcessor.setLatinComposer(wanted);
     }
 
     private void updateHardwareMapper(InputMethodSubtype subtype) {
@@ -1042,7 +1069,7 @@ public class ReteKeyImeService extends InputMethodService {
     private void applyHardwareMode() {
         if (!usesRawKeyCompatibility() && hardwareKoreanMode) {
             hardwareMapper = DubeolsikHardwareMapper.INSTANCE;
-        } else if (!usesRawKeyCompatibility() && telexActive()) {
+        } else if (!usesRawKeyCompatibility() && wantedLatinComposer() != null) {
             hardwareMapper = LatinHardwareMapper.INSTANCE;
         } else {
             hardwareMapper = HardwareSemanticMapper.none();
@@ -1267,6 +1294,7 @@ public class ReteKeyImeService extends InputMethodService {
         flushNotepadComposition();
         notepadComposer.reset();
         notepadTelex.reset();
+        notepadRomaji.reset();
         if (notepad != null) {
             NoteStore.save(this, notepad.notes());
             notepad = null;
@@ -1302,20 +1330,24 @@ public class ReteKeyImeService extends InputMethodService {
                 notepad.typeComposed(result.commit(), result.preedit());
                 return true;
             }
-            case TEXT:
-                if (telexActive() && notepadTelex.accepts(input.text())) {
-                    // A Telex letter: the Hangul syllable, if any, settles first.
+            case TEXT: {
+                LatinComposer latin = wantedNotepadLatin();
+                if (latin != null && latin.accepts(input.text())) {
+                    // A composer letter: the Hangul syllable, if any, settles first.
                     flushNotepadHangul();
-                    TelexComposer.Result result = notepadTelex.input(input.text());
-                    notepad.typeComposed("", result.preedit);
+                    LatinComposer.Result result = latin.input(input.text());
+                    notepad.typeComposed(result.commit, result.preedit);
                     return true;
                 }
                 flushNotepadComposition();
                 notepad.type(input.text());
                 return true;
+            }
             case DELETE_BACKWARD: {
-                if (notepadTelex.isComposing()) {
-                    TelexComposer.Result result = notepadTelex.backspace();
+                LatinComposer notepadLatin = notepadTelex.isComposing() ? notepadTelex
+                    : notepadRomaji.isComposing() ? notepadRomaji : null;
+                if (notepadLatin != null) {
+                    LatinComposer.Result result = notepadLatin.backspace();
                     notepad.typeComposed("", result == null ? "" : result.preedit);
                     return true;
                 }
@@ -1327,6 +1359,7 @@ public class ReteKeyImeService extends InputMethodService {
                 }
                 notepadComposer.reset();
         notepadTelex.reset();
+        notepadRomaji.reset();
                 notepad.deleteBackward();
                 return true;
             }
@@ -1344,7 +1377,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Settles whatever syllable the notepad was building, so the next thing types after it. */
     private void flushNotepadComposition() {
-        String flushed = notepadComposer.flush() + notepadTelex.flush();
+        String flushed = notepadComposer.flush() + notepadTelex.flush() + notepadRomaji.flush();
         if (notepad == null) {
             return;
         }

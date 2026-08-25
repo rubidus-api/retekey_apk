@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.122** —
-[retekey-0.1.122.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.122/retekey-0.1.122.apk)
+Current release: **v0.1.123** —
+[retekey-0.1.123.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.123/retekey-0.1.123.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -116,8 +116,8 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Eighteen layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
-  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, Hebrew, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
+- **Nineteen layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, Hebrew, Japanese Romaji, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
@@ -179,6 +179,7 @@ Seven letter layouts share that grid:
 | **Italian** | QWERTY; à · è é · ì · ò · ù held |
 | **Polish** | QWERTY; ą ć ę ł ń ó ś ż ź held under their letters |
 | **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels ά έ ή ί ϊ ΐ ό ύ ϋ ΰ ώ held under their plain vowels. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
+| **Japanese Romaji(ローマ字)** | QWERTY as it is; what you type becomes hiragana as you go — `ka` か, `sha`/`sya` しゃ, a doubled consonant っ (`gakkou` → がっこう), `nn` ん and a lone `n` before most consonants too, `-` ー, `x`/`l` for the small kana. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke; a physical keyboard types the same way. Kana-to-kanji conversion is a dictionary's job and not in yet |
 | **Hebrew** | the standard layout's positions, reading from the right (ק ר א ט ו ן ם פ across the top). Hebrew has no capitals, so there is no Shift and one page; backspace is two columns wide in the corner the letters leave free, and the period sits beside space holding `, ׳ ״ ־`. The text direction is the editor's own — the keyboard needs nothing special |
 | **French (AZERTY)** | AZERTY as phones draw it, 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. The fifteen accented letters — à â æ · é è ê ë · î ï · ô œ · ù û ü · ÿ · ç — are held under their vowels and c, reached along the hold strip; the period holds `, « »` |
 | **German** | QWERTZ in ten columns — y and z swapped, ü ö ä under u o a, ß under s (ẞ with Shift) |

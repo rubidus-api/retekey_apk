@@ -67,8 +67,8 @@ public final class PadLayoutsTest {
     public void theTwoPadsAreNamedInEnglishAlone() {
         // Arrows and Keypad are not Korean layouts with Korean names; there is nothing for a
         // Hangul gloss to add to either.
-        assertEquals("Arrows", LetterLayouts.displayName(KeyboardLayoutId.PAD_ARROWS));
-        assertEquals("Keypad", LetterLayouts.displayName(KeyboardLayoutId.PAD_KEYPAD));
+        assertEquals("arw-Arrows", LetterLayouts.displayName(KeyboardLayoutId.PAD_ARROWS));
+        assertEquals("num-Keypad", LetterLayouts.displayName(KeyboardLayoutId.PAD_KEYPAD));
         assertEquals("arw", LetterLayouts.keyCapName(KeyboardLayoutId.PAD_ARROWS));
         assertEquals("num", LetterLayouts.keyCapName(KeyboardLayoutId.PAD_KEYPAD));
     }

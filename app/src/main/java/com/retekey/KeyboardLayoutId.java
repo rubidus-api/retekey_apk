@@ -26,6 +26,8 @@ public enum KeyboardLayoutId {
     EL_QWERTY,
     /** Hebrew, on the standard layout's positions; no case, so no Shift and a single page. */
     HE_STANDARD,
+    /** Japanese by romaji: QWERTY as is, the composer turning it into hiragana. */
+    JA_ROMAJI,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

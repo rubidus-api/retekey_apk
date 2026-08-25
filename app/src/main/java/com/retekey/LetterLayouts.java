@@ -35,6 +35,7 @@ public final class LetterLayouts {
         KeyboardLayoutId.FR_AZERTY,
         KeyboardLayoutId.EL_QWERTY,
         KeyboardLayoutId.HE_STANDARD,
+        KeyboardLayoutId.JA_ROMAJI,
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
@@ -87,6 +88,8 @@ public final class LetterLayouts {
                 return "el";
             case HE_STANDARD:
                 return "he";
+            case JA_ROMAJI:
+                return "rj";
             case KO_DUBEOLSIK:
                 return "2b";
             case KO_CHEONJIIN:
@@ -98,14 +101,24 @@ public final class LetterLayouts {
             case PAD_KEYPAD:
                 return "num";
             default:
-                return displayName(id);
+                return baseName(id);
         }
     }
 
+    /**
+     * The name settings and the layout toast show: the key-cap abbreviation, a hyphen, then the
+     * English name with the language's own spelling in parentheses — {@code es-Spanish(Español)},
+     * {@code 2b-2beolsik(2벌식)} — so the two-letter cap on the layout key and the full name are
+     * always seen together (owner's format, 2026-08-24).
+     */
     public static String displayName(KeyboardLayoutId id) {
         if (id == null) {
             return "";
         }
+        return keyCapName(id) + "-" + baseName(id);
+    }
+
+    private static String baseName(KeyboardLayoutId id) {
         switch (id) {
             case EN_QWERTY:
                 return "QWERTY";
@@ -114,25 +127,27 @@ public final class LetterLayouts {
             case EN_COLEMAK:
                 return "Colemak";
             case ES_QWERTY:
-                return "Español";
+                return "Spanish(Español)";
             case PT_QWERTY:
-                return "Português";
+                return "Portuguese(Português)";
             case IT_QWERTY:
-                return "Italiano";
+                return "Italian(Italiano)";
             case PL_QWERTY:
-                return "Polski";
+                return "Polish(Polski)";
             case VI_TELEX:
-                return "Tiếng Việt (Telex)";
+                return "Vietnamese Telex(Tiếng Việt)";
             case DE_QWERTZ:
-                return "Deutsch";
+                return "German(Deutsch)";
             case TR_QWERTY:
-                return "Türkçe";
+                return "Turkish(Türkçe)";
             case FR_AZERTY:
-                return "Français (AZERTY)";
+                return "French AZERTY(Français)";
             case EL_QWERTY:
-                return "Ελληνικά";
+                return "Greek(Ελληνικά)";
             case HE_STANDARD:
-                return "עברית";
+                return "Hebrew(עברית)";
+            case JA_ROMAJI:
+                return "Japanese Romaji(ローマ字)";
             case KO_DUBEOLSIK:
                 return "2beolsik(2벌식)";
             case KO_CHEONJIIN:

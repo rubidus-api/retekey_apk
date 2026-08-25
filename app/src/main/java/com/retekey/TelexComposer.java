@@ -23,18 +23,7 @@ import java.util.List;
  * <p>Android-free, like {@link HangulComposer}; the processor calls {@link #accepts} to decide which
  * key presses are the composer's, and everything else flushes it.
  */
-final class TelexComposer {
-    /** What a key did: text to commit (always empty here — a word commits on flush) and the preedit. */
-    static final class Result {
-        final String commit;
-        final String preedit;
-
-        Result(String commit, String preedit) {
-            this.commit = commit;
-            this.preedit = preedit;
-        }
-    }
-
+final class TelexComposer implements LatinComposer {
     private enum Mark { NONE, CIRCUMFLEX, BREVE, HORN }
     private enum Tone { NONE, ACUTE, GRAVE, HOOK, TILDE, DOT }
 
@@ -57,7 +46,8 @@ final class TelexComposer {
     private final List<Character> raw = new ArrayList<>();
 
     /** Whether this key press is the composer's: a single Latin letter. */
-    boolean accepts(String text) {
+    @Override
+    public boolean accepts(String text) {
         if (text == null || text.length() != 1) {
             return false;
         }
@@ -65,13 +55,15 @@ final class TelexComposer {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
-    Result input(String text) {
+    @Override
+    public Result input(String text) {
         raw.add(text.charAt(0));
         return new Result("", preeditText());
     }
 
     /** Drops the last keystroke, or returns null when nothing is composing. */
-    Result backspace() {
+    @Override
+    public Result backspace() {
         if (raw.isEmpty()) {
             return null;
         }
@@ -80,21 +72,25 @@ final class TelexComposer {
     }
 
     /** The word so far, committed; the composer is empty afterwards. */
-    String flush() {
+    @Override
+    public String flush() {
         String word = preeditText();
         raw.clear();
         return word;
     }
 
-    void reset() {
+    @Override
+    public void reset() {
         raw.clear();
     }
 
-    boolean isComposing() {
+    @Override
+    public boolean isComposing() {
         return !raw.isEmpty();
     }
 
-    String preeditText() {
+    @Override
+    public String preeditText() {
         return render(derive());
     }
 

@@ -1,0 +1,5 @@
+Japanese by romaji: type on QWERTY and hiragana appears as you go -
+ka, sha, doubled consonants for the small tsu, nn for n, the hyphen
+for the long-vowel bar, x or l for the small kana. Kana-to-kanji
+conversion is not in yet. Layout names in settings and the switch
+toast now read as cap-English(native), like es-Spanish(Espanol).

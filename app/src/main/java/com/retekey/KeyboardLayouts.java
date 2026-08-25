@@ -96,6 +96,8 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout EL_BASE = greek(false);
     private static final KeyboardLayout EL_SHIFTED = greek(true);
     private static final KeyboardLayout HEBREW = hebrew();
+    private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
+    private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -148,6 +150,8 @@ public final class KeyboardLayouts {
             case HE_STANDARD:
                 // Hebrew has no capitals: one page, whatever Shift says.
                 return HEBREW;
+            case JA_ROMAJI:
+                return shifted ? JA_SHIFTED : JA_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -953,6 +957,7 @@ public final class KeyboardLayouts {
             case TR_QWERTY:
             case FR_AZERTY:
             case EL_QWERTY:
+            case JA_ROMAJI:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period

@@ -13,7 +13,7 @@ import java.util.Objects;
 public final class HangulInputProcessor implements StatelessInputProcessor {
     private final HangulComposer composer = new HangulComposer();
     /** A Latin-script composer (Vietnamese Telex) for the current layout, or null for none. */
-    private TelexComposer latin;
+    private LatinComposer latin;
     private final Fn.Supplier<EditorProfile> editorProfile;
     private final Fn.Supplier<CharSequence> textBeforeCursor;
 
@@ -45,11 +45,11 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
      * Gives the letter keys to a Latin composer — Vietnamese Telex — or takes them back with null.
      * Switching flushes nothing by itself; the caller commits what was composing first.
      */
-    public void setLatinComposer(TelexComposer composer) {
+    public void setLatinComposer(LatinComposer composer) {
         this.latin = composer;
     }
 
-    public TelexComposer latinComposer() {
+    public LatinComposer latinComposer() {
         return latin;
     }
 
@@ -115,14 +115,14 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         if (!hangul.isEmpty()) {
             actions.add(KeyAction.commitText(hangul));
         }
-        TelexComposer.Result result = latin.input(text);
+        LatinComposer.Result result = latin.input(text);
         actions.add(KeyAction.setComposingText(result.preedit));
         return DispatchResult.handled(actions);
     }
 
     private DispatchResult delete(boolean correction) {
         if (latin != null && latin.isComposing()) {
-            TelexComposer.Result result = latin.backspace();
+            LatinComposer.Result result = latin.backspace();
             return DispatchResult.handled(
                 KeyAction.setComposingText(result == null ? "" : result.preedit));
         }
