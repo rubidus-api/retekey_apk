@@ -1,0 +1,4 @@
+Hebrew joins, on the standard layout's positions. Hebrew has no
+capitals, so there is no Shift key and a single page; backspace is two
+columns wide in the corner the letters leave free, and the period sits
+beside space with the comma, geresh, gershayim and maqaf under it.

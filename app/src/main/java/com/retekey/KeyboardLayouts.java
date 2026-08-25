@@ -95,6 +95,7 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout FR_SHIFTED = french(true);
     private static final KeyboardLayout EL_BASE = greek(false);
     private static final KeyboardLayout EL_SHIFTED = greek(true);
+    private static final KeyboardLayout HEBREW = hebrew();
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -144,6 +145,9 @@ public final class KeyboardLayouts {
                 return shifted ? FR_SHIFTED : FR_BASE;
             case EL_QWERTY:
                 return shifted ? EL_SHIFTED : EL_BASE;
+            case HE_STANDARD:
+                // Hebrew has no capitals: one page, whatever Shift says.
+                return HEBREW;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -827,6 +831,43 @@ public final class KeyboardLayouts {
                 LatinAccents.GREEK, shifted, java.util.Locale.ROOT), null);
     }
 
+    /**
+     * Hebrew, each letter where the standard layout puts it, written here in visual left-to-right
+     * order (the top row reads ק ר א ט ו ן ם פ from the right, which is how Hebrew reads it).
+     * Hebrew has no capitals, so there is no Shift and no shifted page; the cell Shift would take
+     * goes back to the letters, and the freed top-row corner widens backspace to two columns. The
+     * period sits in the language cell with the comma, geresh, gershayim and maqaf under it.
+     */
+    private static KeyboardLayout hebrew() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        List<SoftwareKeySpec> first = new ArrayList<>(9);
+        for (char c : "פםןוטארק".toCharArray()) {
+            first.add(letter(String.valueOf(c), false));
+        }
+        first.add(backspaceKey().withColumnSpan(2));
+        rows.add(KeyboardLayout.row(first.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> second = new ArrayList<>(10);
+        for (char c : "ףךלחיעכגדש".toCharArray()) {
+            second.add(letter(String.valueOf(c), false));
+        }
+        rows.add(KeyboardLayout.row(second.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> third = new ArrayList<>(10);
+        for (char c : "ץתצמנהבסז".toCharArray()) {
+            third.add(letter(String.valueOf(c), false));
+        }
+        third.add(enterKey());
+        rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        return letterPage(KeyboardLayoutId.HE_STANDARD, false,
+            withHolds(rows, HOLDS_9_10_7), null);
+    }
+
+    /** The Hebrew period: the comma, then geresh, gershayim and maqaf. */
+    private static SoftwareKeySpec hebrewPeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
+            .withLongPress(",", "׳", "״", "־");
+    }
+
     /** The French period: the comma, and the guillemets French quotes with. */
     private static SoftwareKeySpec frenchPeriodKey() {
         return SoftwareKeySpec
@@ -917,6 +958,9 @@ public final class KeyboardLayouts {
                 // ñ took the home row's last cell and backspace took the period's: the period
                 // lives here, with what Spanish needs under it. Esc is on the special-keys page.
                 return spanishPeriodKey();
+            case HE_STANDARD:
+                // The letter rows are all letters: the period lives beside space.
+                return hebrewPeriodKey();
             default:
                 return vacatedCell("layer");
         }

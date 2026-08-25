@@ -24,6 +24,8 @@ public enum KeyboardLayoutId {
     FR_AZERTY,
     /** Greek, on the PC layout's positions: ; ς up top, the tone vowels held. */
     EL_QWERTY,
+    /** Hebrew, on the standard layout's positions; no case, so no Shift and a single page. */
+    HE_STANDARD,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

@@ -34,6 +34,7 @@ public final class LetterLayouts {
         KeyboardLayoutId.TR_QWERTY,
         KeyboardLayoutId.FR_AZERTY,
         KeyboardLayoutId.EL_QWERTY,
+        KeyboardLayoutId.HE_STANDARD,
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
@@ -84,6 +85,8 @@ public final class LetterLayouts {
                 return "fr";
             case EL_QWERTY:
                 return "el";
+            case HE_STANDARD:
+                return "he";
             case KO_DUBEOLSIK:
                 return "2b";
             case KO_CHEONJIIN:
@@ -128,6 +131,8 @@ public final class LetterLayouts {
                 return "Français (AZERTY)";
             case EL_QWERTY:
                 return "Ελληνικά";
+            case HE_STANDARD:
+                return "עברית";
             case KO_DUBEOLSIK:
                 return "2beolsik(2벌식)";
             case KO_CHEONJIIN:

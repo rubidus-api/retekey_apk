@@ -1,5 +1,6 @@
 package com.retekey;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -222,6 +223,24 @@ public final class LetterHoldsTest {
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.EL_QWERTY, true);
         assertEquals("Σ", labels(shifted, 0).get(1));
         assertEquals(Arrays.asList("3", "Έ"), shifted.rows().get(0).get(2).longPressTexts());
+    }
+
+    @Test
+    public void hebrewHasNoShiftAndOnePageAndThePeriodBesideSpace() {
+        KeyboardLayout he = KeyboardLayouts.of(KeyboardLayoutId.HE_STANDARD, false);
+        assertEquals(Arrays.asList("פ", "ם", "ן", "ו", "ט", "א", "ר", "ק", "⌫"), labels(he, 0));
+        assertEquals(2, he.rows().get(0).get(8).columnSpan());
+        assertEquals(Arrays.asList("ף", "ך", "ל", "ח", "י", "ע", "כ", "ג", "ד", "ש"), labels(he, 1));
+        assertEquals(Arrays.asList("ץ", "ת", "צ", "מ", "נ", "ה", "ב", "ס", "ז", "⏎"), labels(he, 2));
+        // One page whatever Shift says, and no Shift key anywhere on it.
+        assertEquals(he, KeyboardLayouts.of(KeyboardLayoutId.HE_STANDARD, true));
+        assertNull(he.findById("touch.modifier.shift"));
+        // Digits ride the full home row; the period beside space carries Hebrew's own marks.
+        assertEquals(Arrays.asList("1"), he.rows().get(1).get(0).longPressTexts());
+        assertEquals(Arrays.asList("0"), he.rows().get(1).get(9).longPressTexts());
+        SoftwareKeySpec period = he.findById("touch.text.period.letters");
+        assertEquals(Arrays.asList(",", "׳", "״", "־"), period.longPressTexts());
+        assertNull(he.findById("touch.key.escape.letters"));
     }
 
     private static List<String> labels(KeyboardLayout layout, int row) {
