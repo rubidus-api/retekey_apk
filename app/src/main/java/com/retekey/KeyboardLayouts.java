@@ -928,7 +928,7 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec
             .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
             .withLongPress(",")
-            .withFlicks("׳", "״", "־", null);
+            .withFlicks("׳", "״", "־", "₪");
     }
 
     /** The French period: the comma below the finger's ways, the guillemets left and right. */
@@ -936,7 +936,7 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec
             .enabled("touch.text.period", ".", SemanticInput.text("."))
             .withLongPress(",")
-            .withFlicks("«", ",", "»", null);
+            .withFlicks("«", ",", "»", "€");
     }
 
     /** The period the Spanish page keeps beside space, with the comma and the inverted marks under it. */
@@ -944,7 +944,7 @@ public final class KeyboardLayouts {
         return SoftwareKeySpec
             .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
             .withLongPress(",")
-            .withFlicks(",", "¿", "¡", null);
+            .withFlicks(",", "¿", "¡", "€");
     }
 
     /**
@@ -965,14 +965,24 @@ public final class KeyboardLayouts {
                     continue;
                 }
                 // The base letter comes from the key's id, not its label: the shifted label is a
-                // capital, and Turkish's İ does not lower-case back to i in the root locale.
-                if (!key.stableKeyId().startsWith("touch.en.")) {
+                // capital, and Turkish's İ does not lower-case back to i in the root locale. The
+                // period key answers to "." for a layout's own punctuation and currency.
+                String base;
+                if (key.stableKeyId().startsWith("touch.en.")) {
+                    base = key.stableKeyId().substring("touch.en.".length());
+                } else if ("touch.text.period".equals(key.stableKeyId())) {
+                    base = ".";
+                } else {
                     continue;
                 }
-                String base = key.stableKeyId().substring("touch.en.".length());
                 String[] ways = accents.get(base);
                 if (ways == null) {
                     continue;
+                }
+                if (ways.length > 4 && !ways[4].isEmpty()) {
+                    // A fifth character replaces the group hold: the digit is the expendable one,
+                    // never what the language cannot do without (Portuguese ª º).
+                    key = key.withLongPress(flickWay(ways[4], shifted, locale));
                 }
                 updated.set(i, key.withFlicks(
                     flickWay(ways[0], shifted, locale),

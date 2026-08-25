@@ -144,6 +144,7 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList(","), period.longPressTexts());
         assertEquals("¿", period.flickText(CheonjiinInterpreter.Flick.UP));
         assertEquals("¡", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("€", period.flickText(CheonjiinInterpreter.Flick.DOWN));
     }
 
     @Test
@@ -156,6 +157,14 @@ public final class LetterHoldsTest {
         assertEquals("á", pt.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.RIGHT));
         assertEquals("ã", pt.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.DOWN));
         assertEquals("õ", pt.rows().get(0).get(8).flickText(CheonjiinInterpreter.Flick.DOWN));
+        // The ordinal signs replace those keys' group holds, and the period carries the
+        // guillemets and the euro: the digits and symbols are the expendable ones.
+        assertEquals(Arrays.asList("ª"), pt.rows().get(1).get(0).longPressTexts());
+        assertEquals(Arrays.asList("º"), pt.rows().get(0).get(8).longPressTexts());
+        SoftwareKeySpec ptPeriod = pt.rows().get(2).get(8);
+        assertEquals("«", ptPeriod.flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("»", ptPeriod.flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("€", ptPeriod.flickText(CheonjiinInterpreter.Flick.DOWN));
 
         KeyboardLayout it = KeyboardLayouts.of(KeyboardLayoutId.IT_QWERTY, false);
         assertEquals("è", it.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.LEFT));
@@ -202,6 +211,7 @@ public final class LetterHoldsTest {
         KeyboardLayout tr = KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, false);
         assertEquals("i", labels(tr, 0).get(7));
         assertEquals("ı", tr.rows().get(0).get(7).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("₺", tr.rows().get(2).get(8).flickText(CheonjiinInterpreter.Flick.DOWN));
         assertEquals("ğ", tr.rows().get(1).get(4).flickText(CheonjiinInterpreter.Flick.UP));
         assertEquals(Arrays.asList("8"), tr.rows().get(0).get(7).longPressTexts());
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, true);
@@ -231,6 +241,7 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList(","), period.longPressTexts());
         assertEquals("«", period.flickText(CheonjiinInterpreter.Flick.LEFT));
         assertEquals("»", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("€", period.flickText(CheonjiinInterpreter.Flick.DOWN));
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.FR_AZERTY, true);
         assertEquals("É", shifted.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.RIGHT));
         assertEquals("Œ", shifted.rows().get(0).get(8).flickText(CheonjiinInterpreter.Flick.RIGHT));

@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.125** —
-[retekey-0.1.125.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.125/retekey-0.1.125.apk)
+Current release: **v0.1.126** —
+[retekey-0.1.126.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.126/retekey-0.1.126.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -176,7 +176,7 @@ Seven letter layouts share that grid:
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
 | **Colemak** | English, on QWERTY's grid with every letter where Colemak puts it — nine across the top, ten on the home row, seven below; backspace takes the top-right cell the letters leave free. Holds follow the rows: symbols up top, digits on the home row, marks below |
 | **Spanish** (Spain and Latin America) | QWERTY with **ñ** ending the home row, so backspace drops to the bottom letter row and the period sits beside space holding `, ¿ ¡`. á é í ó ú ü are a **flick up** on their vowels (ü down), and a still hold is still the digit |
-| **Portuguese** (Portugal and Brazil) | QWERTY; the accents ride flicks the mark's own way — grave left, circumflex up, acute right, tilde/cedilla/diaeresis down (à â á ã on a, ô ó õ on o, ç under c) |
+| **Portuguese** (Portugal and Brazil) | QWERTY; the accents ride flicks the mark's own way — grave left, circumflex up, acute right, tilde/cedilla/diaeresis down (à â á ã on a, ô ó õ on o, ç under c); ª and º replace the group holds on a and o |
 | **Italian** | QWERTY; the grave vowels are a flick left (è also é right) |
 | **Polish** | QWERTY; each letter's mark is one flick — ogonek down (ą ę), acute/stroke right (ć ń ó ś ź ł), dot up (ż) |
 | **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels a flick right (ά …), the diaereses down (ϊ ϋ) and both together up (ΐ ΰ); the question mark flicks up to the ano teleia. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
@@ -238,8 +238,11 @@ shape and hold their own letters; Vietnamese types through Telex:
 circumflex up, acute right, cedilla down — and the letter types at once, exactly the drag the Korean
 Cheonjiin and Japanese flick pads use. Hold instead and the four-way guide appears around the key
 with the digit in the middle: lift where you want, or lift in place for the digit. The digit and
-symbol holds never crowd a language's essentials onto one key. (A strip on the row above still
-appears for the rare key whose extra characters outnumber the four directions.)
+symbol holds never crowd a language's essentials onto one key — where a language needs a fifth
+character, the digit is the one that goes (Portuguese ª º). The period key carries each language's
+own quotation marks on its sideways flicks («» „“ “”), its currency down (€ ₺ ₫ ₪), and Spanish's
+¿ ¡ up and right. (A strip on the row above still appears for the rare key whose extra characters
+outnumber the four directions.)
 
 ![Hold strip](assets/keyboard-spanish-hold.png)
 

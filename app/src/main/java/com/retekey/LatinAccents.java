@@ -27,12 +27,13 @@ final class LatinAccents {
     );
 
     static final Map<String, String[]> PORTUGUESE = table(
-        "a", "à|â|á|ã",
+        "a", "à|â|á|ã|ª",
         "e", " |ê|é| ",
         "i", " |í| | ",
-        "o", " |ô|ó|õ",
+        "o", " |ô|ó|õ|º",
         "u", " |ú| |ü",
-        "c", " | | |ç"
+        "c", " | | |ç",
+        ".", "«| |»|€"
     );
 
     static final Map<String, String[]> ITALIAN = table(
@@ -40,7 +41,8 @@ final class LatinAccents {
         "e", "è| |é| ",
         "i", "ì| | | ",
         "o", "ò| | | ",
-        "u", "ù| | | "
+        "u", "ù| | | ",
+        ".", "«| |»|€"
     );
 
     static final Map<String, String[]> POLISH = table(
@@ -51,7 +53,8 @@ final class LatinAccents {
         "n", " | |ń| ",
         "o", " | |ó| ",
         "s", " | |ś| ",
-        "z", " |ż|ź| "
+        "z", " |ż|ź| ",
+        ".", "„| |”|€"
     );
 
     static final Map<String, String[]> FRENCH = table(
@@ -68,7 +71,8 @@ final class LatinAccents {
         "a", " |ä| | ",
         "o", " |ö| | ",
         "u", " |ü| | ",
-        "s", " | | |ß"
+        "s", " | | |ß",
+        ".", "„| |“|€"
     );
 
     static final Map<String, String[]> TURKISH = table(
@@ -77,7 +81,8 @@ final class LatinAccents {
         "g", " |ğ| | ",
         "i", " | | |ı",
         "s", " | | |ş",
-        "c", " | | |ç"
+        "c", " | | |ç",
+        ".", "“| |”|₺"
     );
 
     /** Telex is the real way in; the flicks are for anyone who does not know it. */
@@ -86,7 +91,8 @@ final class LatinAccents {
         "e", " |ê| | ",
         "o", " |ô|ơ| ",
         "u", " | |ư| ",
-        "d", " | | |đ"
+        "d", " | | |đ",
+        ".", "“| |”|₫"
     );
 
     /** The tonos leans right; the diaeresis goes down; both together go up. */
@@ -97,7 +103,8 @@ final class LatinAccents {
         "ι", " |ΐ|ί|ϊ",
         "ο", " | |ό| ",
         "υ", " |ΰ|ύ|ϋ",
-        "ω", " | |ώ| "
+        "ω", " | |ώ| ",
+        ".", "«| |»|€"
     );
 
     /** Pairs of base letter and a left|up|right|down string; a space (or nothing) is an empty way. */
@@ -105,10 +112,10 @@ final class LatinAccents {
         Map<String, String[]> map = new HashMap<>();
         for (int i = 0; i + 1 < pairs.length; i += 2) {
             String[] ways = pairs[i + 1].split("\\|", -1);
-            if (ways.length != 4) {
-                throw new IllegalArgumentException("a flick entry is left|up|right|down");
+            if (ways.length != 4 && ways.length != 5) {
+                throw new IllegalArgumentException("a flick entry is left|up|right|down[|hold]");
             }
-            for (int w = 0; w < 4; w++) {
+            for (int w = 0; w < ways.length; w++) {
                 ways[w] = ways[w].trim();
             }
             map.put(pairs[i], ways);
