@@ -208,6 +208,22 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList("9", "Ô", "Œ"), shifted.rows().get(0).get(8).longPressTexts());
     }
 
+    @Test
+    public void greekSitsOnThePcPositionsWithTheToneVowelsHeld() {
+        KeyboardLayout el = KeyboardLayouts.of(KeyboardLayoutId.EL_QWERTY, false);
+        assertEquals(Arrays.asList(";", "ς", "ε", "ρ", "τ", "υ", "θ", "ι", "ο", "π"), labels(el, 0));
+        assertEquals(Arrays.asList("α", "σ", "δ", "φ", "γ", "η", "ξ", "κ", "λ", "⌫"), labels(el, 1));
+        assertEquals(Arrays.asList("⇧", "ζ", "χ", "ψ", "ω", "β", "ν", "μ", ".", "⏎"), labels(el, 2));
+        // The Greek question mark holds the ano teleia; the tone vowels ride after the group holds.
+        assertEquals(Arrays.asList("1", "·"), el.rows().get(0).get(0).longPressTexts());
+        assertEquals(Arrays.asList("3", "έ"), el.rows().get(0).get(2).longPressTexts());
+        assertEquals(Arrays.asList("8", "ί", "ϊ", "ΐ"), el.rows().get(0).get(7).longPressTexts());
+        assertEquals(Arrays.asList("!", "ά"), el.rows().get(1).get(0).longPressTexts());
+        KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.EL_QWERTY, true);
+        assertEquals("Σ", labels(shifted, 0).get(1));
+        assertEquals(Arrays.asList("3", "Έ"), shifted.rows().get(0).get(2).longPressTexts());
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

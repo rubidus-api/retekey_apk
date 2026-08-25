@@ -55,6 +55,17 @@ final class LatinAccents {
         "d", "đ"
     );
 
+    /** Greek tone vowels (and the diaereses), held under their plain vowels. */
+    static final Map<String, String[]> GREEK = table(
+        "α", "ά",
+        "ε", "έ",
+        "η", "ή",
+        "ι", "ί ϊ ΐ",
+        "ο", "ό",
+        "υ", "ύ ϋ ΰ",
+        "ω", "ώ"
+    );
+
     static final Map<String, String[]> FRENCH = table(
         "a", "à â æ",
         "e", "é è ê ë",

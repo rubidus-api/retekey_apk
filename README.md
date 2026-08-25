@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.120** —
-[retekey-0.1.120.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.120/retekey-0.1.120.apk)
+Current release: **v0.1.121** —
+[retekey-0.1.121.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.121/retekey-0.1.121.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -116,8 +116,8 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Sixteen layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
-  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
+- **Seventeen layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
@@ -178,6 +178,7 @@ Seven letter layouts share that grid:
 | **Portuguese** (Portugal and Brazil) | QWERTY; á â ã à ª · é ê · í · ó ô õ º · ú ü · ç held under their letters |
 | **Italian** | QWERTY; à · è é · ì · ò · ù held |
 | **Polish** | QWERTY; ą ć ę ł ń ó ś ż ź held under their letters |
+| **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels ά έ ή ί ϊ ΐ ό ύ ϋ ΰ ώ held under their plain vowels. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
 | **French (AZERTY)** | AZERTY as phones draw it, 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. The fifteen accented letters — à â æ · é è ê ë · î ï · ô œ · ù û ü · ÿ · ç — are held under their vowels and c, reached along the hold strip; the period holds `, « »` |
 | **German** | QWERTZ in ten columns — y and z swapped, ü ö ä under u o a, ß under s (ẞ with Shift) |
 | **Turkish** | Q layout in ten columns — ü ı ö ş ğ ç held under u i o s g c; Shift follows Turkish casing, so i → İ and the held ı → I |

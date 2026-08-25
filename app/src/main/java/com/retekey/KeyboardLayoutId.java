@@ -22,6 +22,8 @@ public enum KeyboardLayoutId {
     TR_QWERTY,
     /** French AZERTY, 10/10/6: the accents held under the vowels and ç under c. */
     FR_AZERTY,
+    /** Greek, on the PC layout's positions: ; ς up top, the tone vowels held. */
+    EL_QWERTY,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

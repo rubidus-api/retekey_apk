@@ -93,6 +93,8 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout TR_SHIFTED = turkish(true);
     private static final KeyboardLayout FR_BASE = french(false);
     private static final KeyboardLayout FR_SHIFTED = french(true);
+    private static final KeyboardLayout EL_BASE = greek(false);
+    private static final KeyboardLayout EL_SHIFTED = greek(true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
@@ -140,6 +142,8 @@ public final class KeyboardLayouts {
                 return shifted ? TR_SHIFTED : TR_BASE;
             case FR_AZERTY:
                 return shifted ? FR_SHIFTED : FR_BASE;
+            case EL_QWERTY:
+                return shifted ? EL_SHIFTED : EL_BASE;
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
@@ -785,6 +789,44 @@ public final class KeyboardLayouts {
                 java.util.Locale.FRENCH), null);
     }
 
+    /**
+     * Greek, each letter on the key its PC layout uses: the top row is {@code ; ς ε ρ τ υ θ ι ο π}
+     * — the {@code ;} is the Greek question mark, on the very key that carries the tonos dead key
+     * on a PC, and here it holds the ano teleia {@code ·}, Greek's semicolon. The tone vowels are
+     * held under their plain vowels, the way the Latin pages hold their accents; capitals keep the
+     * tonos (Ά), which is how dictionaries write them.
+     */
+    private static KeyboardLayout greek(boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        List<SoftwareKeySpec> first = new ArrayList<>(10);
+        // The question-mark key keeps its column's digit as its first hold, like every other key
+        // in the row, with the ano teleia after it; the letters then take 2 through 0.
+        first.add(SoftwareKeySpec
+            .enabled("touch.text.erotimatiko", ";", SemanticInput.text(";"))
+            .withLongPress("1", "·"));
+        for (char c : "ςερτυθιοπ".toCharArray()) {
+            first.add(letter(String.valueOf(c), shifted));
+        }
+        rows.add(KeyboardLayout.row(first.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> second = new ArrayList<>(10);
+        for (char c : "ασδφγηξκλ".toCharArray()) {
+            second.add(letter(String.valueOf(c), shifted));
+        }
+        second.add(backspaceKey());
+        rows.add(KeyboardLayout.row(second.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> third = new ArrayList<>(10);
+        third.add(shiftKey(shifted));
+        for (char c : "ζχψωβνμ".toCharArray()) {
+            third.add(letter(String.valueOf(c), shifted));
+        }
+        third.add(letterPeriodKey());
+        third.add(enterKey());
+        rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        return letterPage(KeyboardLayoutId.EL_QWERTY, shifted,
+            withAccents(withHolds(rows, new String[] {"234567890", HOLD_SYMBOLS, HOLD_MARKS}),
+                LatinAccents.GREEK, shifted, java.util.Locale.ROOT), null);
+    }
+
     /** The French period: the comma, and the guillemets French quotes with. */
     private static SoftwareKeySpec frenchPeriodKey() {
         return SoftwareKeySpec
@@ -869,6 +911,7 @@ public final class KeyboardLayouts {
             case DE_QWERTZ:
             case TR_QWERTY:
             case FR_AZERTY:
+            case EL_QWERTY:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period
