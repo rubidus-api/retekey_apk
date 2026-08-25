@@ -175,18 +175,18 @@ Seven letter layouts share that grid:
 | **QWERTY** | English |
 | **Dvorak** | English, in its own 7/10/9 shape; the three cells the top row does not need for letters carry Enter, backspace and the period, on the left |
 | **Colemak** | English, on QWERTY's grid with every letter where Colemak puts it — nine across the top, ten on the home row, seven below; backspace takes the top-right cell the letters leave free. Holds follow the rows: symbols up top, digits on the home row, marks below |
-| **Spanish** (Spain and Latin America) | QWERTY with **ñ** ending the home row, so backspace drops to the bottom letter row and the period sits beside space holding `, ¿ ¡`. á é í ó ú ü are held under their vowels |
-| **Portuguese** (Portugal and Brazil) | QWERTY; á â ã à ª · é ê · í · ó ô õ º · ú ü · ç held under their letters |
-| **Italian** | QWERTY; à · è é · ì · ò · ù held |
-| **Polish** | QWERTY; ą ć ę ł ń ó ś ż ź held under their letters |
-| **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels ά έ ή ί ϊ ΐ ό ύ ϋ ΰ ώ held under their plain vowels. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
+| **Spanish** (Spain and Latin America) | QWERTY with **ñ** ending the home row, so backspace drops to the bottom letter row and the period sits beside space holding `, ¿ ¡`. á é í ó ú ü are a **flick up** on their vowels (ü down), and a still hold is still the digit |
+| **Portuguese** (Portugal and Brazil) | QWERTY; the accents ride flicks the mark's own way — grave left, circumflex up, acute right, tilde/cedilla/diaeresis down (à â á ã on a, ô ó õ on o, ç under c) |
+| **Italian** | QWERTY; the grave vowels are a flick left (è also é right) |
+| **Polish** | QWERTY; each letter's mark is one flick — ogonek down (ą ę), acute/stroke right (ć ń ó ś ź ł), dot up (ż) |
+| **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels a flick right (ά …), the diaereses down (ϊ ϋ) and both together up (ΐ ΰ); the question mark flicks up to the ano teleia. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
 | **Japanese Flick(フリック)** | the 12-key pad Japanese phones use, flick-only: tap a key for its あ-column kana, flick left/up/right/down for い う え お — the same drag Cheonjiin uses, with the same hold guide. ゛゜小 turns the character before the cursor along its cycle (か→が, は→ば→ぱ, つ→づ→っ, a vowel to its small form); わ carries を ん ー on its flicks and 、。？！ cycles. Digits ride the holds. Kana-to-kanji conversion is not in yet |
 | **Japanese Romaji(ローマ字)** | QWERTY as it is; what you type becomes hiragana as you go — `ka` か, `sha`/`sya` しゃ, a doubled consonant っ (`gakkou` → がっこう), `nn` ん and a lone `n` before most consonants too, `-` ー, `x`/`l` for the small kana. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke; a physical keyboard types the same way. Kana-to-kanji conversion is a dictionary's job and not in yet |
-| **Hebrew** | the standard layout's positions, reading from the right (ק ר א ט ו ן ם פ across the top). Hebrew has no capitals, so there is no Shift and one page; backspace is two columns wide in the corner the letters leave free, and the period sits beside space holding `, ׳ ״ ־`. The text direction is the editor's own — the keyboard needs nothing special |
-| **French (AZERTY)** | AZERTY as phones draw it, 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. The fifteen accented letters — à â æ · é è ê ë · î ï · ô œ · ù û ü · ÿ · ç — are held under their vowels and c, reached along the hold strip; the period holds `, « »` |
-| **German** | QWERTZ in ten columns — y and z swapped, ü ö ä under u o a, ß under s (ẞ with Shift) |
-| **Turkish** | Q layout in ten columns — ü ı ö ş ğ ç held under u i o s g c; Shift follows Turkish casing, so i → İ and the held ı → I |
-| **Vietnamese (Telex)** | QWERTY as it is; the **Telex** rules make the letters as you type — `aa→â ee→ê oo→ô aw→ă ow→ơ uw→ư dd→đ`, a lone `w` is `ư`, tones `s f r x j` (sắc huyền hỏi ngã nặng), `z` takes a tone off, and a mark or tone key pressed again gives the letter itself. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke. A physical keyboard types Telex too. â ă ê ô ơ ư đ are also held under their letters for anyone who does not know Telex |
+| **Hebrew** | the standard layout's positions, reading from the right (ק ר א ט ו ן ם פ across the top). Hebrew has no capitals, so there is no Shift and one page; backspace is two columns wide in the corner the letters leave free, and the period sits beside space — the comma held, geresh gershayim maqaf on its flicks. The text direction is the editor's own — the keyboard needs nothing special |
+| **French (AZERTY)** | AZERTY as phones draw it, 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. The fifteen accented letters ride flicks the mark's own way — è left, ê up, é right, ë down, and so on for every vowel, æ œ to the right, ç ÿ down; the period flicks to « , » and a still hold anywhere is still the digit or symbol |
+| **German** | QWERTZ in ten columns — y and z swapped, ü ö ä a flick up on u o a, ß a flick down on s (ẞ with Shift) |
+| **Turkish** | Q layout in ten columns — ü ö ğ a flick up, ş ç ı a flick down; Shift follows Turkish casing, so i → İ and ı → I |
+| **Vietnamese (Telex)** | QWERTY as it is; the **Telex** rules make the letters as you type — `aa→â ee→ê oo→ô aw→ă ow→ơ uw→ư dd→đ`, a lone `w` is `ư`, tones `s f r x j` (sắc huyền hỏi ngã nặng), `z` takes a tone off, and a mark or tone key pressed again gives the letter itself. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke. A physical keyboard types Telex too. â ă ê ô ơ ư đ also ride flicks on their letters for anyone who does not know Telex |
 | **Cheonjiin(천지인)** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **Next** key — starts the next letter |
 | **Naratgeul(나랏글)** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
@@ -234,11 +234,12 @@ shape and hold their own letters; Vietnamese types through Telex:
 
 ![Portuguese layout](assets/keyboard-portuguese.png)
 
-**Holding a key with several characters under it** raises a strip on the row above — beside the key
-on the top row, and always towards the side with room, so no key ever asks for a slide off an edge.
-Lift without moving and the first character types (the digit or symbol the key has always held);
-slide along the strip and lift on the one you want. A dot in the key's bottom corner says there is
-a strip:
+**A language's own letters are flicks, not lists.** Drag a key the mark's own way — grave left,
+circumflex up, acute right, cedilla down — and the letter types at once, exactly the drag the Korean
+Cheonjiin and Japanese flick pads use. Hold instead and the four-way guide appears around the key
+with the digit in the middle: lift where you want, or lift in place for the digit. The digit and
+symbol holds never crowd a language's essentials onto one key. (A strip on the row above still
+appears for the rare key whose extra characters outnumber the four directions.)
 
 ![Hold strip](assets/keyboard-spanish-hold.png)
 
