@@ -1,0 +1,6 @@
+Backspace works again in Google Docs, Samsung Notes and other editors
+that show the keyboard a proxy buffer whose cursor sits at position
+zero while the real document has text. The keyboard no longer decides
+from the reported cursor alone that there is nothing to delete: it
+always asks the editor itself, which is a harmless no-op at a genuine
+start of text. Reported with a physical keyboard on issue #3.

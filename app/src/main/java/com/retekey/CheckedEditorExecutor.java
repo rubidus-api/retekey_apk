@@ -28,10 +28,6 @@ public final class CheckedEditorExecutor {
         if (plan.actions().isEmpty()) {
             return actionless(plan);
         }
-        if (isConfirmedCursorStart(plan, context)) {
-            return confirmedNoEffect(plan);
-        }
-
         EditorEndpoint endpoint;
         try {
             endpoint = endpointProvider.resolve();
@@ -103,23 +99,6 @@ public final class CheckedEditorExecutor {
             return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
         }
         return null;
-    }
-
-    private static boolean isConfirmedCursorStart(
-        TransitionPlan<?> plan,
-        ExecutionContext context
-    ) {
-        return context.capabilities().deletionMode()
-            == EditorCapabilities.DeletionMode.RICH_TEXT
-            && context.areBoundsConfirmed()
-            && isSingleDelete(plan.actions())
-            && !context.bounds().hasSelectedText()
-            && !context.bounds().hasComposingRange()
-            && context.bounds().selectionStart() == 0;
-    }
-
-    private static boolean isSingleDelete(List<KeyAction> actions) {
-        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.DELETE_BACKWARD;
     }
 
     private static boolean isSingleRawCompatibleAction(List<KeyAction> actions) {
@@ -590,6 +569,12 @@ public final class CheckedEditorExecutor {
         }
         String text = textBefore.value();
         if (text.isEmpty()) {
+            if (bounds.selectionStart() <= 0) {
+                // The editor itself confirms what the bounds claimed: nothing sits before the
+                // cursor, so a backspace is a no-op, not a failure.
+                return ActionExecution.noEffect(2);
+            }
+            // Empty context contradicting a known nonzero cursor: do not guess.
             return capabilities.allowRawDeleteFallback()
                 ? executeRawDeleteFallback(endpoint, 2)
                 : ActionExecution.failure(
@@ -745,23 +730,6 @@ public final class CheckedEditorExecutor {
         return result(
             plan,
             ExecutionResult.Outcome.NO_EDITOR_ACTIONS,
-            ExecutionResult.Reason.NONE,
-            ExecutionResult.Reason.NONE,
-            ExecutionResult.StateEffect.ADOPT_PROPOSED_SYNCED,
-            -1,
-            -1,
-            -1,
-            0,
-            null,
-            0,
-            false
-        );
-    }
-
-    private static ExecutionResult confirmedNoEffect(TransitionPlan<?> plan) {
-        return result(
-            plan,
-            ExecutionResult.Outcome.CONFIRMED_NO_EFFECT,
             ExecutionResult.Reason.NONE,
             ExecutionResult.Reason.NONE,
             ExecutionResult.StateEffect.ADOPT_PROPOSED_SYNCED,

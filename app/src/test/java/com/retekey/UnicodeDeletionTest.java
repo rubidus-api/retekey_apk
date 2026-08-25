@@ -33,8 +33,12 @@ public final class UnicodeDeletionTest {
     }
 
     @Test
-    public void cursorAtStartIsConfirmedNoEffectWithoutResolvingConnection() {
-        AtomicInteger resolves = new AtomicInteger();
+    public void cursorAtStartStillAsksTheEditorItself() {
+        // Issue #3: Google Docs and Samsung Notes report a proxy buffer whose selection sits at
+        // zero while the real document has text, so backspace must never be swallowed on the
+        // bounds alone — the editor's own delete call is the only answer that counts. At a
+        // genuine start of text that call is a harmless no-op inside the editor.
+        FakeEditorBridge bridge = new FakeEditorBridge();
 
         ExecutionResult result = EXECUTOR.execute(
             deletePlan(EditorBounds.of(0, 0, -1, -1)),
@@ -44,18 +48,31 @@ public final class UnicodeDeletionTest {
                 EditorBounds.of(0, 0, -1, -1),
                 EditorCapabilities.richText(false, false)
             ),
-            () -> {
-                resolves.incrementAndGet();
-                return EditorEndpoint.of(1, new FakeEditorBridge());
-            }
+            () -> EditorEndpoint.of(1, bridge)
         );
 
-        Assert.assertEquals(0, resolves.get());
-        Assert.assertEquals(ExecutionResult.Outcome.CONFIRMED_NO_EFFECT, result.outcome());
-        Assert.assertEquals(
-            ExecutionResult.StateEffect.ADOPT_PROPOSED_SYNCED,
-            result.stateEffect()
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+        Assert.assertEquals(Arrays.asList(
+            "beginBatchEdit",
+            "deleteCodePoints:before=1:after=0",
+            "endBatchEdit"
+        ), bridge.trace());
+    }
+
+    @Test
+    public void emptyContextAtAConfirmedStartIsANoEffectNotAFailure() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.returnAt(2, EditorCallResult.rejected());
+        bridge.setTextBeforeCursor(EditorTextResult.value(""));
+
+        ExecutionResult result = execute(
+            bridge,
+            EditorBounds.of(0, 0, -1, -1),
+            EditorCapabilities.richText(false, true)
         );
+
+        Assert.assertEquals(ExecutionResult.Outcome.CONFIRMED_NO_EFFECT, result.outcome());
+        Assert.assertFalse(result.remoteMutationMayHaveOccurred());
     }
 
     @Test
