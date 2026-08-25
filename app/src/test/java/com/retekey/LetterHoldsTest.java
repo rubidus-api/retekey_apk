@@ -119,50 +119,68 @@ public final class LetterHoldsTest {
         SoftwareKeySpec period = es.findById("touch.text.period.letters");
         assertEquals("space", bottom.get(bottom.indexOf(period) - 1).label());
         assertEquals(".", period.label());
-        assertEquals(Arrays.asList(",", "¿", "¡"), period.longPressTexts());
+        assertEquals(Arrays.asList(","), period.longPressTexts());
         assertEquals("no Esc beside space on Spanish", null, es.findById("touch.key.escape.letters"));
         assertEquals("Ñ", labels(KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, true), 1).get(9));
     }
 
     @Test
-    public void accentsFollowTheGroupHoldSoHoldingStillTypesTheDigit() {
+    public void accentsRideTheFlicksAndTheDigitKeepsTheStillHold() {
+        // The owner's rule: the digit and symbol holds must never crowd a language's own letters,
+        // so the accents live on directional flicks and a still hold stays the group character.
         KeyboardLayout es = KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, false);
-        assertEquals(Arrays.asList("3", "é"), es.rows().get(0).get(2).longPressTexts());
-        assertEquals(Arrays.asList("7", "ú", "ü"), es.rows().get(0).get(6).longPressTexts());
-        assertEquals(Arrays.asList("!", "á"), es.rows().get(1).get(0).longPressTexts());
+        assertEquals(Arrays.asList("3"), es.rows().get(0).get(2).longPressTexts());
+        assertEquals("é", es.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ú", es.rows().get(0).get(6).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ü", es.rows().get(0).get(6).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("á", es.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.UP));
         // ñ is the tenth home-row key and the symbol group has nine: it holds nothing.
         assertEquals(false, es.rows().get(1).get(9).hasLongPress());
-        // Shifted, the accents are capitals.
+        // Shifted, the flicks are capitals.
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.ES_QWERTY, true);
-        assertEquals(Arrays.asList("3", "É"), shifted.rows().get(0).get(2).longPressTexts());
+        assertEquals("É", shifted.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.UP));
+        // And the period beside space carries the inverted marks on its flicks.
+        SoftwareKeySpec period = es.findById("touch.text.period.letters");
+        assertEquals(Arrays.asList(","), period.longPressTexts());
+        assertEquals("¿", period.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("¡", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
     }
 
     @Test
-    public void portugueseItalianAndPolishKeepQwertysShapeAndHoldTheirLetters() {
+    public void portugueseItalianAndPolishFlickByTheMarksOwnDirection() {
         KeyboardLayout pt = KeyboardLayouts.of(KeyboardLayoutId.PT_QWERTY, false);
         assertEquals(labels(EN, 2), labels(pt, 2));
-        assertEquals(Arrays.asList(":", "ç"), pt.rows().get(2).get(3).longPressTexts());
-        assertEquals(Arrays.asList("!", "á", "â", "ã", "à", "ª"), pt.rows().get(1).get(0).longPressTexts());
-        assertEquals(Arrays.asList("9", "ó", "ô", "õ", "º"), pt.rows().get(0).get(8).longPressTexts());
+        assertEquals("ç", pt.rows().get(2).get(3).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("à", pt.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("â", pt.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("á", pt.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ã", pt.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("õ", pt.rows().get(0).get(8).flickText(CheonjiinInterpreter.Flick.DOWN));
 
         KeyboardLayout it = KeyboardLayouts.of(KeyboardLayoutId.IT_QWERTY, false);
-        assertEquals(Arrays.asList("3", "è", "é"), it.rows().get(0).get(2).longPressTexts());
+        assertEquals("è", it.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("é", it.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.RIGHT));
 
         KeyboardLayout pl = KeyboardLayouts.of(KeyboardLayoutId.PL_QWERTY, false);
-        assertEquals(Arrays.asList("_", "ż", "ź"), pl.rows().get(2).get(1).longPressTexts());
-        assertEquals(Arrays.asList(";", "ł"), pl.rows().get(1).get(8).longPressTexts());
-        // Letters the table does not name hold only their group character.
+        assertEquals("ż", pl.rows().get(2).get(1).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ź", pl.rows().get(2).get(1).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ą", pl.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.DOWN));
+        // The still hold stays the group character, and unnamed letters have no flicks.
+        assertEquals(Arrays.asList("_"), pl.rows().get(2).get(1).longPressTexts());
+        assertEquals(false, pl.rows().get(0).get(0).hasFlicks());
         assertEquals(Arrays.asList("1"), pl.rows().get(0).get(0).longPressTexts());
     }
 
     @Test
-    public void vietnameseIsQwertyWithTheMarkedLettersAsAFallbackHold() {
+    public void vietnameseIsQwertyWithTheMarkedLettersAsFallbackFlicks() {
         KeyboardLayout vi = KeyboardLayouts.of(KeyboardLayoutId.VI_TELEX, false);
         assertEquals(labels(EN, 0), labels(vi, 0));
         assertEquals(labels(EN, 2), labels(vi, 2));
-        assertEquals(Arrays.asList("!", "â", "ă"), vi.rows().get(1).get(0).longPressTexts());
-        assertEquals(Arrays.asList("#", "đ"), vi.rows().get(1).get(2).longPressTexts());
-        assertEquals(Arrays.asList("7", "ư"), vi.rows().get(0).get(6).longPressTexts());
+        assertEquals("â", vi.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ă", vi.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("đ", vi.rows().get(1).get(2).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ư", vi.rows().get(0).get(6).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals(Arrays.asList("!"), vi.rows().get(1).get(0).longPressTexts());
     }
 
     @Test
@@ -170,11 +188,12 @@ public final class LetterHoldsTest {
         KeyboardLayout de = KeyboardLayouts.of(KeyboardLayoutId.DE_QWERTZ, false);
         assertEquals(Arrays.asList("q", "w", "e", "r", "t", "z", "u", "i", "o", "p"), labels(de, 0));
         assertEquals(Arrays.asList("⇧", "y", "x", "c", "v", "b", "n", "m", ".", "⏎"), labels(de, 2));
-        assertEquals(Arrays.asList("7", "ü"), de.rows().get(0).get(6).longPressTexts());
-        assertEquals(Arrays.asList("@", "ß"), de.rows().get(1).get(1).longPressTexts());
+        assertEquals("ü", de.rows().get(0).get(6).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ß", de.rows().get(1).get(1).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals(Arrays.asList("7"), de.rows().get(0).get(6).longPressTexts());
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.DE_QWERTZ, true);
-        assertEquals("capital sharp s, not SS", Arrays.asList("@", "ẞ"),
-            shifted.rows().get(1).get(1).longPressTexts());
+        assertEquals("capital sharp s, not SS", "ẞ",
+            shifted.rows().get(1).get(1).flickText(CheonjiinInterpreter.Flick.DOWN));
         assertEquals("Z", labels(shifted, 0).get(5));
     }
 
@@ -182,12 +201,13 @@ public final class LetterHoldsTest {
     public void turkishKeepsTheDottedIOnTheKeyAndCasesTheTurkishWay() {
         KeyboardLayout tr = KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, false);
         assertEquals("i", labels(tr, 0).get(7));
-        assertEquals(Arrays.asList("8", "ı"), tr.rows().get(0).get(7).longPressTexts());
-        assertEquals(Arrays.asList("%", "ğ"), tr.rows().get(1).get(4).longPressTexts());
+        assertEquals("ı", tr.rows().get(0).get(7).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ğ", tr.rows().get(1).get(4).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals(Arrays.asList("8"), tr.rows().get(0).get(7).longPressTexts());
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, true);
         assertEquals("İ", labels(shifted, 0).get(7));
-        assertEquals(Arrays.asList("8", "I"), shifted.rows().get(0).get(7).longPressTexts());
-        assertEquals("Ş", shifted.rows().get(1).get(1).longPressTexts().get(1));
+        assertEquals("I", shifted.rows().get(0).get(7).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("Ş", shifted.rows().get(1).get(1).flickText(CheonjiinInterpreter.Flick.DOWN));
     }
 
     @Test
@@ -196,17 +216,24 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList("a", "z", "e", "r", "t", "y", "u", "i", "o", "p"), labels(fr, 0));
         assertEquals(Arrays.asList("q", "s", "d", "f", "g", "h", "j", "k", "l", "m"), labels(fr, 1));
         assertEquals(Arrays.asList("⇧", "w", "x", "c", "v", "b", "n", "⌫", ".", "⏎"), labels(fr, 2));
-        // Holds: digits up top, the nine symbols plus the apostrophe across the ten home letters,
-        // the first six marks below; the accents follow.
-        assertEquals(Arrays.asList("3", "é", "è", "ê", "ë"), fr.rows().get(0).get(2).longPressTexts());
-        assertEquals(Arrays.asList("1", "à", "â", "æ"), fr.rows().get(0).get(0).longPressTexts());
+        // Holds stay the group characters alone; the fifteen accents ride the flicks, the mark's
+        // own way round: grave left, circumflex up, acute right, the diaeresis and cedilla down.
+        assertEquals(Arrays.asList("3"), fr.rows().get(0).get(2).longPressTexts());
+        SoftwareKeySpec e = fr.rows().get(0).get(2);
+        assertEquals("è", e.flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("ê", e.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("é", e.flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ë", e.flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("æ", fr.rows().get(0).get(0).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ç", fr.rows().get(2).get(3).flickText(CheonjiinInterpreter.Flick.DOWN));
         assertEquals(Arrays.asList("'"), fr.rows().get(1).get(9).longPressTexts());
-        assertEquals(Arrays.asList(":", "ç"), fr.rows().get(2).get(3).longPressTexts());
-        assertEquals(Arrays.asList("_"), fr.rows().get(2).get(1).longPressTexts());
-        assertEquals(Arrays.asList(",", "«", "»"), fr.rows().get(2).get(8).longPressTexts());
+        SoftwareKeySpec period = fr.rows().get(2).get(8);
+        assertEquals(Arrays.asList(","), period.longPressTexts());
+        assertEquals("«", period.flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("»", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.FR_AZERTY, true);
-        assertEquals(Arrays.asList("3", "É", "È", "Ê", "Ë"), shifted.rows().get(0).get(2).longPressTexts());
-        assertEquals(Arrays.asList("9", "Ô", "Œ"), shifted.rows().get(0).get(8).longPressTexts());
+        assertEquals("É", shifted.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("Œ", shifted.rows().get(0).get(8).flickText(CheonjiinInterpreter.Flick.RIGHT));
     }
 
     @Test
@@ -215,14 +242,18 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList(";", "ς", "ε", "ρ", "τ", "υ", "θ", "ι", "ο", "π"), labels(el, 0));
         assertEquals(Arrays.asList("α", "σ", "δ", "φ", "γ", "η", "ξ", "κ", "λ", "⌫"), labels(el, 1));
         assertEquals(Arrays.asList("⇧", "ζ", "χ", "ψ", "ω", "β", "ν", "μ", ".", "⏎"), labels(el, 2));
-        // The Greek question mark holds the ano teleia; the tone vowels ride after the group holds.
-        assertEquals(Arrays.asList("1", "·"), el.rows().get(0).get(0).longPressTexts());
-        assertEquals(Arrays.asList("3", "έ"), el.rows().get(0).get(2).longPressTexts());
-        assertEquals(Arrays.asList("8", "ί", "ϊ", "ΐ"), el.rows().get(0).get(7).longPressTexts());
-        assertEquals(Arrays.asList("!", "ά"), el.rows().get(1).get(0).longPressTexts());
+        // The Greek question mark flicks up to the ano teleia; the tonos leans right, the
+        // diaeresis goes down, and both together go up. Holds stay the digits alone.
+        assertEquals(Arrays.asList("1"), el.rows().get(0).get(0).longPressTexts());
+        assertEquals("·", el.rows().get(0).get(0).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("έ", el.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ί", el.rows().get(0).get(7).flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ϊ", el.rows().get(0).get(7).flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ΐ", el.rows().get(0).get(7).flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ά", el.rows().get(1).get(0).flickText(CheonjiinInterpreter.Flick.RIGHT));
         KeyboardLayout shifted = KeyboardLayouts.of(KeyboardLayoutId.EL_QWERTY, true);
         assertEquals("Σ", labels(shifted, 0).get(1));
-        assertEquals(Arrays.asList("3", "Έ"), shifted.rows().get(0).get(2).longPressTexts());
+        assertEquals("Έ", shifted.rows().get(0).get(2).flickText(CheonjiinInterpreter.Flick.RIGHT));
     }
 
     @Test
@@ -239,7 +270,10 @@ public final class LetterHoldsTest {
         assertEquals(Arrays.asList("1"), he.rows().get(1).get(0).longPressTexts());
         assertEquals(Arrays.asList("0"), he.rows().get(1).get(9).longPressTexts());
         SoftwareKeySpec period = he.findById("touch.text.period.letters");
-        assertEquals(Arrays.asList(",", "׳", "״", "־"), period.longPressTexts());
+        assertEquals(Arrays.asList(","), period.longPressTexts());
+        assertEquals("׳", period.flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("״", period.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("־", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
         assertNull(he.findById("touch.key.escape.letters"));
     }
 

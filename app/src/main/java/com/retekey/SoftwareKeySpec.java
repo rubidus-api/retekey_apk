@@ -14,6 +14,13 @@ public final class SoftwareKeySpec {
     private final ControlKey longPressControl;
     /** What to write in the corner for a long press that runs a control rather than typing. */
     private final String longPressHint;
+    /**
+     * What a directional drag off this key types: left, up, right, down — null where a direction
+     * has nothing. Null (rather than four nulls) when the key has no flicks at all. Set after
+     * construction by {@link #withFlicks}, which returns a copy like every other wither; kept
+     * outside the constructors so the dozen existing call chains stay untouched.
+     */
+    private String[] flickTexts;
 
     private SoftwareKeySpec(
         String stableKeyId,
@@ -109,8 +116,57 @@ public final class SoftwareKeySpec {
         );
     }
 
+    /**
+     * The characters a drag off this key types, by direction; null skips a direction. A key with
+     * flicks raises the four-way guide on a hold, the way a 12-key cell does, with its first
+     * long-press character in the middle.
+     */
+    public SoftwareKeySpec withFlicks(String left, String up, String right, String down) {
+        SoftwareKeySpec copy = copyOf(this);
+        for (String text : new String[] {left, up, right, down}) {
+            if (text != null) {
+                SemanticInput.text(text); // the committable-text guard, as withLongPress uses
+            }
+        }
+        copy.flickTexts = new String[] {left, up, right, down};
+        return copy;
+    }
+
+    public boolean hasFlicks() {
+        return flickTexts != null;
+    }
+
+    /** What a drag {@code direction} types, or null for nothing there (or no flicks at all). */
+    public String flickText(CheonjiinInterpreter.Flick direction) {
+        if (flickTexts == null || direction == null) {
+            return null;
+        }
+        switch (direction) {
+            case LEFT: return flickTexts[0];
+            case UP: return flickTexts[1];
+            case RIGHT: return flickTexts[2];
+            case DOWN: return flickTexts[3];
+            default: return null;
+        }
+    }
+
+    private static SoftwareKeySpec copyOf(SoftwareKeySpec from) {
+        SoftwareKeySpec copy = new SoftwareKeySpec(
+            from.stableKeyId,
+            from.label,
+            from.semanticInput,
+            from.control,
+            from.columnSpan,
+            from.longPressTexts,
+            from.longPressControl,
+            from.longPressHint
+        );
+        copy.flickTexts = from.flickTexts;
+        return copy;
+    }
+
     public SoftwareKeySpec withColumnSpan(int newColumnSpan) {
-        return new SoftwareKeySpec(
+        SoftwareKeySpec next = new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -120,6 +176,8 @@ public final class SoftwareKeySpec {
             longPressControl,
             longPressHint
         );
+        next.flickTexts = flickTexts;
+        return next;
     }
 
     /**
@@ -139,7 +197,7 @@ public final class SoftwareKeySpec {
             SemanticInput.text(text);
             candidates.add(text);
         }
-        return new SoftwareKeySpec(
+        SoftwareKeySpec next = new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -148,6 +206,8 @@ public final class SoftwareKeySpec {
             Collections.unmodifiableList(candidates),
             longPressControl
         );
+        next.flickTexts = flickTexts;
+        return next;
     }
 
     /**
@@ -158,7 +218,7 @@ public final class SoftwareKeySpec {
         if (longPressCommand == null) {
             throw new IllegalArgumentException("long-press control must not be null");
         }
-        return new SoftwareKeySpec(
+        SoftwareKeySpec next = new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -168,6 +228,8 @@ public final class SoftwareKeySpec {
             longPressCommand,
             longPressHint
         );
+        next.flickTexts = flickTexts;
+        return next;
     }
 
     public List<String> longPressTexts() {
@@ -194,7 +256,7 @@ public final class SoftwareKeySpec {
         if (longPressControl == null) {
             throw new IllegalStateException("a long-press hint needs a long press to describe");
         }
-        return new SoftwareKeySpec(
+        SoftwareKeySpec next = new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -204,6 +266,8 @@ public final class SoftwareKeySpec {
             longPressControl,
             hint
         );
+        next.flickTexts = flickTexts;
+        return next;
     }
 
     public boolean hasLongPressHint() {

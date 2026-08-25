@@ -644,7 +644,7 @@ public final class ReteKeyboardView extends View {
             SoftwareKeySpec key = row.get(touch.key);
             CheonjiinInterpreter.Key phoneKey = phoneKeyOf(key);
             KanaFlick.Key kanaKey = KanaFlick.of(key);
-            if (phoneKey == null && kanaKey == null) {
+            if (phoneKey == null && kanaKey == null && !key.hasFlicks()) {
                 continue;
             }
             int startColumn = layout.startColumn(touch.row, touch.key);
@@ -664,16 +664,16 @@ public final class ReteKeyboardView extends View {
                 key.hasLongPress() ? key.longPressTexts().get(0) : null,
                 touch.guideDirection == null);
             drawGuideCell(canvas, centreX - step, centreY, box,
-                guideLabel(phoneKey, kanaKey, CheonjiinInterpreter.Flick.LEFT),
+                guideLabel(key, phoneKey, kanaKey, CheonjiinInterpreter.Flick.LEFT),
                 touch.guideDirection == CheonjiinInterpreter.Flick.LEFT);
             drawGuideCell(canvas, centreX + step, centreY, box,
-                guideLabel(phoneKey, kanaKey, CheonjiinInterpreter.Flick.RIGHT),
+                guideLabel(key, phoneKey, kanaKey, CheonjiinInterpreter.Flick.RIGHT),
                 touch.guideDirection == CheonjiinInterpreter.Flick.RIGHT);
             drawGuideCell(canvas, centreX, centreY - step, box,
-                guideLabel(phoneKey, kanaKey, CheonjiinInterpreter.Flick.UP),
+                guideLabel(key, phoneKey, kanaKey, CheonjiinInterpreter.Flick.UP),
                 touch.guideDirection == CheonjiinInterpreter.Flick.UP);
             drawGuideCell(canvas, centreX, centreY + step, box,
-                guideLabel(phoneKey, kanaKey, CheonjiinInterpreter.Flick.DOWN),
+                guideLabel(key, phoneKey, kanaKey, CheonjiinInterpreter.Flick.DOWN),
                 touch.guideDirection == CheonjiinInterpreter.Flick.DOWN);
         }
     }
@@ -714,9 +714,12 @@ public final class ReteKeyboardView extends View {
         return touch.pickerPreview != null ? touch.pickerPreview : key.longPressTexts();
     }
 
-    /** What a guide cell shows for whichever kind of 12-key cell is held. */
-    private static String guideLabel(CheonjiinInterpreter.Key phoneKey, KanaFlick.Key kanaKey,
-            CheonjiinInterpreter.Flick direction) {
+    /** What a guide cell shows for whichever kind of flicking key is held. */
+    private static String guideLabel(SoftwareKeySpec key, CheonjiinInterpreter.Key phoneKey,
+            KanaFlick.Key kanaKey, CheonjiinInterpreter.Flick direction) {
+        if (key.hasFlicks()) {
+            return key.flickText(direction);
+        }
         if (kanaKey != null) {
             return KanaFlick.flick(kanaKey, direction);
         }
@@ -1127,6 +1130,21 @@ public final class ReteKeyboardView extends View {
             flashKeyboard(key, null);
             return true;
         }
+        if (key.hasFlicks()) {
+            CheonjiinInterpreter.Flick way =
+                FlickDirection.of(x - touch.downX, y - touch.downY, flickDistancePx);
+            if (way == null) {
+                return false;
+            }
+            removeCallbacks(touch.onHold);
+            removeCallbacks(touch.onRepeat);
+            touch.holdConsumed = true;
+            typeSpecFlick(key, way);
+            touch.guideOpen = true;
+            touch.guideDirection = way;
+            invalidate();
+            return true;
+        }
         KanaFlick.Key kana = KanaFlick.of(key);
         if (kana != null) {
             CheonjiinInterpreter.Flick way =
@@ -1169,6 +1187,20 @@ public final class ReteKeyboardView extends View {
     }
 
     /** The 천지인 key this spec drives, or null when it is not one of them. */
+    /** Types a key's own declared flick; a direction with nothing there types nothing. */
+    private void typeSpecFlick(SoftwareKeySpec key, CheonjiinInterpreter.Flick direction) {
+        String text = key.flickText(direction);
+        if (text == null) {
+            feedback.playKeyDown();
+            return;
+        }
+        sink.accept(ProjectKeyEvent.softwareDown(key.stableKeyId(), SemanticInput.text(text)));
+        resetPhoneInterpreters();
+        consumeOneShotShift();
+        feedback.playKeyDown();
+        flashKeyboard(key, text);
+    }
+
     /** Types what a flick off a kana key means; a direction with nothing types nothing. */
     private void typeKanaFlick(SoftwareKeySpec key, KanaFlick.Key kana,
             CheonjiinInterpreter.Flick direction) {
@@ -1314,6 +1346,8 @@ public final class ReteKeyboardView extends View {
                 FlickDirection.of(x - touch.downX, y - touch.downY, flickDistancePx);
             if (aimed == null) {
                 typeLongPress(held);
+            } else if (held.hasFlicks()) {
+                typeSpecFlick(held, aimed);
             } else if (KanaFlick.of(held) != null) {
                 typeKanaFlick(held, KanaFlick.of(held), aimed);
             } else {
@@ -1509,7 +1543,7 @@ public final class ReteKeyboardView extends View {
             touch.holdConsumed = true;
             return;
         }
-        if (phoneKeyOf(key) != null || KanaFlick.of(key) != null) {
+        if (phoneKeyOf(key) != null || KanaFlick.of(key) != null || key.hasFlicks()) {
             // A 12-key cell has four letters around it and a digit under it, so holding one shows
             // what is where and waits. Lift without moving and the digit is what you meant; drag
             // to one of the four and lift, and that is.
@@ -1723,6 +1757,19 @@ public final class ReteKeyboardView extends View {
                 letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
                 shiftLayer.tap();
                 break;
+            case "guide": {
+                // guide:LAYOUT:row:key[:DIRECTION] — the four-way guide a held flicking key
+                // raises, for pictures. The finger is pretended down on that key.
+                page = Page.LETTERS;
+                letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
+                Touch pretend = new Touch(-2, Integer.parseInt(parts[2]),
+                    Integer.parseInt(parts[3]), gridSignature(), 0f, 0f);
+                pretend.guideOpen = true;
+                pretend.guideDirection = parts.length > 4
+                    ? CheonjiinInterpreter.Flick.valueOf(parts[4]) : null;
+                touches.put(-2, pretend);
+                break;
+            }
             case "hold": {
                 // hold:LAYOUT:row:key:cand1,cand2,... — the strip a held key raises, for pictures.
                 // The finger is pretended to be down on that key, not moved.

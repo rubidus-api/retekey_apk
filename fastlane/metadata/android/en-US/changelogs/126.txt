@@ -1,0 +1,6 @@
+The new layouts' letters moved from long-press lists onto flicks: drag
+a key the mark's own way - grave left, circumflex up, acute right,
+cedilla or ogonek down - and the letter types at once, the same drag
+the Korean and Japanese pads use. Hold instead for the four-way guide
+with the digit in the middle. No key piles its language's essential
+letters into a list any more.

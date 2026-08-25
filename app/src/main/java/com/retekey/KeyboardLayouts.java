@@ -868,7 +868,8 @@ public final class KeyboardLayouts {
         // in the row, with the ano teleia after it; the letters then take 2 through 0.
         first.add(SoftwareKeySpec
             .enabled("touch.text.erotimatiko", ";", SemanticInput.text(";"))
-            .withLongPress("1", "·"));
+            .withLongPress("1")
+            .withFlicks(null, "·", null, null));
         for (char c : "ςερτυθιοπ".toCharArray()) {
             first.add(letter(String.valueOf(c), shifted));
         }
@@ -922,30 +923,34 @@ public final class KeyboardLayouts {
             withHolds(rows, HOLDS_9_10_7), null);
     }
 
-    /** The Hebrew period: the comma, then geresh, gershayim and maqaf. */
+    /** The Hebrew period: the comma held, and geresh, gershayim and maqaf on the flicks. */
     private static SoftwareKeySpec hebrewPeriodKey() {
         return SoftwareKeySpec
             .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
-            .withLongPress(",", "׳", "״", "־");
+            .withLongPress(",")
+            .withFlicks("׳", "״", "־", null);
     }
 
-    /** The French period: the comma, and the guillemets French quotes with. */
+    /** The French period: the comma below the finger's ways, the guillemets left and right. */
     private static SoftwareKeySpec frenchPeriodKey() {
         return SoftwareKeySpec
             .enabled("touch.text.period", ".", SemanticInput.text("."))
-            .withLongPress(",", "«", "»");
+            .withLongPress(",")
+            .withFlicks("«", ",", "»", null);
     }
 
     /** The period the Spanish page keeps beside space, with the comma and the inverted marks under it. */
     private static SoftwareKeySpec spanishPeriodKey() {
         return SoftwareKeySpec
             .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
-            .withLongPress(",", "¿", "¡");
+            .withLongPress(",")
+            .withFlicks(",", "¿", "¡", null);
     }
 
     /**
-     * Appends a language's accented letters to the hold list of each base letter in {@code rows};
-     * the shifted page holds their capitals. Letters the table does not name are left alone.
+     * Puts a language's accented letters on their base keys as flicks — one direction each, the
+     * mark's own direction — so the digit and symbol holds never crowd the letters the language
+     * cannot do without (the owner's rule, 2026-08-24). The shifted page flicks their capitals.
      */
     private static List<List<SoftwareKeySpec>> withAccents(
             List<List<SoftwareKeySpec>> rows, java.util.Map<String, String[]> accents, boolean shifted,
@@ -965,19 +970,26 @@ public final class KeyboardLayouts {
                     continue;
                 }
                 String base = key.stableKeyId().substring("touch.en.".length());
-                String[] extra = accents.get(base);
-                if (extra == null) {
+                String[] ways = accents.get(base);
+                if (ways == null) {
                     continue;
                 }
-                List<String> candidates = new ArrayList<>(key.longPressTexts());
-                for (String accent : extra) {
-                    candidates.add(shifted ? capital(accent, locale) : accent);
-                }
-                updated.set(i, key.withLongPress(candidates.toArray(new String[0])));
+                updated.set(i, key.withFlicks(
+                    flickWay(ways[0], shifted, locale),
+                    flickWay(ways[1], shifted, locale),
+                    flickWay(ways[2], shifted, locale),
+                    flickWay(ways[3], shifted, locale)));
             }
             out.add(updated);
         }
         return out;
+    }
+
+    private static String flickWay(String accent, boolean shifted, java.util.Locale locale) {
+        if (accent == null || accent.isEmpty()) {
+            return null;
+        }
+        return shifted ? capital(accent, locale) : accent;
     }
 
     /** Adds the hold groups and the fixed bottom row to a page's three letter rows. */
