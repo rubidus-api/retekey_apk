@@ -96,6 +96,45 @@ final class LatinAccents {
     );
 
     /**
+     * Hindi: InScript's Shift layer as the upward flick — matra to vowel, plain to aspirate —
+     * with the families the signs share: candra on ॉ, sibilants on स, nasal signs on ं.
+     */
+    static final Map<String, String[]> HINDI = table(
+        "ौ", " |औ| | ",
+        "ै", " |ऐ| | ",
+        "ा", " |आ| | ",
+        "ी", " |ई| | ",
+        "ू", " |ऊ| | ",
+        "ब", " |भ| | ",
+        "ह", " |ङ| | ",
+        "ग", " |घ| | ",
+        "द", " |ध| | ",
+        "ज", " |झ| | ",
+        "ो", " |ओ| | ",
+        "े", " |ए| | ",
+        "्", " |अ| | ",
+        "ि", " |इ| | ",
+        "ु", " |उ| | ",
+        "प", " |फ| | ",
+        "र", " |ऱ| | ",
+        "क", " |ख| | ",
+        "त", " |थ| | ",
+        "च", " |छ| | ",
+        "ट", " |ठ| | ",
+        "ड", " |ढ| | ",
+        "म", " |ण| | ",
+        "ल", " |ळ| | ",
+        "स", " |श| |ष",
+        "य", " |य़| | ",
+        "ं", " |ँ| |ः",
+        "ृ", " |ऋ| | ",
+        "़", " |ञ| | ",
+        "ॉ", "ऍ|ऑ| |ॅ",
+        "ऽ", " |ॐ| | ",
+        "।", " |॥| | "
+    );
+
+    /**
      * Thai: Kedmanee's Shift layer, key for key, as the upward flick; the folded letters ride
      * their kin sideways and down. ฟ carries its whole family: ๅ left, ฤ up, ฦ right, ฝ down.
      */

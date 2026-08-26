@@ -374,6 +374,54 @@ public final class LetterHoldsTest {
         }
     }
 
+    @Test
+    public void hindiIsInscriptInFiveRowsWithTheSystemOnUpFlicks() {
+        KeyboardLayout hi = KeyboardLayouts.of(KeyboardLayoutId.HI_INSCRIPT, false);
+        assertEquals(5, hi.rows().size());
+        assertEquals(Arrays.asList("ौ", "ै", "ा", "ी", "ू", "ब", "ह", "ग", "द", "ज"), labels(hi, 0));
+        assertEquals(Arrays.asList("ो", "े", "्", "ि", "ु", "प", "र", "क", "त", "च"), labels(hi, 1));
+        assertEquals(Arrays.asList("ट", "ड", "म", "न", "व", "ल", "स", "य", "ं", "ृ"), labels(hi, 2));
+        assertEquals(Arrays.asList("₹", "़", "ॉ", "ऽ", "ॐ", "।", ",", "⌫", "⏎"), labels(hi, 3));
+        assertEquals(hi, KeyboardLayouts.of(KeyboardLayoutId.HI_INSCRIPT, true));
+        assertNull(hi.findById("touch.modifier.shift"));
+        // InScript's system: matra flicks up to its vowel, plain up to its aspirate.
+        assertEquals("आ", hi.findById("touch.en.ा").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("इ", hi.findById("touch.en.ि").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ख", hi.findById("touch.en.क").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ठ", hi.findById("touch.en.ट").flickText(CheonjiinInterpreter.Flick.UP));
+        // The families: candra on one key, sibilants on स, nasal signs on ं, danda doubled up.
+        SoftwareKeySpec candra = hi.findById("touch.en.ॉ");
+        assertEquals("ऑ", candra.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ऍ", candra.flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("ॅ", candra.flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("श", hi.findById("touch.en.स").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ष", hi.findById("touch.en.स").flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ँ", hi.findById("touch.en.ं").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ः", hi.findById("touch.en.ं").flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("॥", hi.findById("touch.en.।").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ञ", hi.findById("touch.en.़").flickText(CheonjiinInterpreter.Flick.UP));
+        // Western digits ride the first row, India's official choice.
+        assertEquals(Arrays.asList("1"), hi.rows().get(0).get(0).longPressTexts());
+        // Every consonant, matra and sign of the InScript tables is reachable.
+        java.util.Set<String> reachable = new java.util.HashSet<>();
+        for (List<SoftwareKeySpec> row : hi.rows()) {
+            for (SoftwareKeySpec key : row) {
+                reachable.add(key.label());
+                reachable.addAll(key.longPressTexts());
+                for (CheonjiinInterpreter.Flick way : CheonjiinInterpreter.Flick.values()) {
+                    if (key.flickText(way) != null) {
+                        reachable.add(key.flickText(way));
+                    }
+                }
+            }
+        }
+        String needed = "कखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळऱय़"
+            + "अआइईउऊऋएऐओऔऍऑ" + "ािीुूृेैोौॉॅ" + "्ंँः़ऽॐ।॥₹";
+        for (char c : needed.toCharArray()) {
+            assertTrue("missing " + c, reachable.contains(String.valueOf(c)));
+        }
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

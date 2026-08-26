@@ -98,6 +98,7 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout HEBREW = hebrew();
     private static final KeyboardLayout PERSIAN = persian();
     private static final KeyboardLayout THAI = thai();
+    private static final KeyboardLayout HINDI = hindi();
     private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE);
@@ -161,6 +162,9 @@ public final class KeyboardLayouts {
             case TH_KEDMANEE:
                 // Nor Thai.
                 return THAI;
+            case HI_INSCRIPT:
+                // Nor Devanagari.
+                return HINDI;
             case JA_ROMAJI:
                 return shifted ? JA_SHIFTED : JA_BASE;
             case JA_FLICK:
@@ -1033,6 +1037,42 @@ public final class KeyboardLayouts {
         return KeyboardLayout.of(KeyboardLayoutId.TH_KEDMANEE, false, COLUMNS, all);
     }
 
+    /**
+     * Hindi on InScript's positions, four letter rows and a signs row. InScript's genius is that
+     * its Shift layer is systematic — a matra's Shift is its independent vowel, a plain
+     * consonant's Shift is its aspirate — and that system rides the upward flicks here, key for
+     * key (ा↑आ, क↑ख …). The signs row gathers what InScript keeps at the grid's edges: the rupee
+     * sign, the nukta (ञ above it, as on its InScript key), the whole candra family on one key
+     * (ॉ, with ऑ up, ऍ left, ॅ down), avagraha and om, the danda with its double above, and the
+     * comma. The sibilants share स (श up, ष down) and the nasal signs share ं (ँ up, ः down).
+     * Text commits as typed; the editor draws the conjuncts.
+     */
+    private static KeyboardLayout hindi() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        String[] letterRows = {"ौैाीूबहगदज", "ोे्िुपरकतच", "टडमनवलसयंृ"};
+        for (String rowLetters : letterRows) {
+            List<SoftwareKeySpec> row = new ArrayList<>(10);
+            for (char c : rowLetters.toCharArray()) {
+                row.add(letter(String.valueOf(c), false));
+            }
+            rows.add(KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0])));
+        }
+        List<SoftwareKeySpec> fourth = new ArrayList<>(9);
+        for (char c : "₹़ॉऽॐ।,".toCharArray()) {
+            fourth.add(letter(String.valueOf(c), false));
+        }
+        fourth.add(backspaceKey().withColumnSpan(2));
+        fourth.add(enterKey());
+        rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
+        List<List<SoftwareKeySpec>> held = withAccents(
+            withHolds(rows, new String[] {HOLD_DIGITS}),
+            LatinAccents.HINDI, false, java.util.Locale.ROOT);
+        List<SoftwareKeySpec> bottom = bottomRow(bottomRowCellFor(KeyboardLayoutId.HI_INSCRIPT));
+        List<List<SoftwareKeySpec>> all = new ArrayList<>(held);
+        all.add(bottom);
+        return KeyboardLayout.of(KeyboardLayoutId.HI_INSCRIPT, false, COLUMNS, all);
+    }
+
     /** The Thai repeat sign beside space: ฯ held, quotes sideways, the baht sign below. */
     private static SoftwareKeySpec thaiMaiyamokKey() {
         return SoftwareKeySpec
@@ -1175,6 +1215,8 @@ public final class KeyboardLayouts {
                 return persianPeriodKey();
             case TH_KEDMANEE:
                 return thaiMaiyamokKey();
+            case HI_INSCRIPT:
+                return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             default:
                 return vacatedCell("layer");
         }

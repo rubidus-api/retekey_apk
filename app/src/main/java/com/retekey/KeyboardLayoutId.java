@@ -34,6 +34,8 @@ public enum KeyboardLayoutId {
     FA_ISIRI,
     /** Thai on Kedmanee's positions: four letter rows, the Shift layer as upward flicks. */
     TH_KEDMANEE,
+    /** Hindi on InScript's positions: matra up to its vowel, plain up to its aspirate. */
+    HI_INSCRIPT,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,
