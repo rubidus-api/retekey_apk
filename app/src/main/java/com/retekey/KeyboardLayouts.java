@@ -647,6 +647,27 @@ public final class KeyboardLayouts {
             .withLongPress(digit);
     }
 
+    /**
+     * A five-row page for pictures and tests: the digits as a fourth letter row over QWERTY, the
+     * usual bottom row under them. Not reachable from settings — it exists to prove the geometry
+     * is row-count-agnostic (RFC-0011 G1: Thai, Devanagari and a number-row option all want a
+     * fourth letter row), with the keyboard's height unchanged and each row one fifth of it.
+     */
+    static KeyboardLayout fiveRowDemo() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(5);
+        List<SoftwareKeySpec> digits = new ArrayList<>(10);
+        for (char c : "1234567890".toCharArray()) {
+            digits.add(letter(String.valueOf(c), false));
+        }
+        rows.add(KeyboardLayout.row(digits.toArray(new SoftwareKeySpec[0])));
+        KeyboardLayout qwerty = of(KeyboardLayoutId.EN_QWERTY, false);
+        rows.add(qwerty.rows().get(0));
+        rows.add(qwerty.rows().get(1));
+        rows.add(qwerty.rows().get(2));
+        rows.add(qwerty.rows().get(3));
+        return KeyboardLayout.of(KeyboardLayoutId.EN_QWERTY, false, COLUMNS, rows);
+    }
+
     // ---- Letter pages ----
 
     private static KeyboardLayout english(boolean shifted) {

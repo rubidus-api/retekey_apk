@@ -113,6 +113,8 @@ public final class ReteKeyboardView extends View {
     private boolean unicodeEntry;
     /** What the pad's top strip reads: the digits so far and the character they name. */
     private String unicodePreview = "U+";
+    /** A layout handed in whole for pictures (ScreenshotActivity's five-row proof); null in real use. */
+    private KeyboardLayout previewLayout;
 
 
     /**
@@ -388,6 +390,9 @@ public final class ReteKeyboardView extends View {
 
     /** The layout currently drawn and hit-tested, including layer, shift, and keypad mode. */
     public KeyboardLayout layout() {
+        if (previewLayout != null) {
+            return previewLayout;
+        }
         if (unicodeEntry) {
             // While a code point is being typed the keys are the digits it is made of; anything
             // else would be a key that cannot be pressed for the thing on screen.
@@ -1761,6 +1766,12 @@ public final class ReteKeyboardView extends View {
                 page = Page.LETTERS;
                 letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
                 shiftLayer.tap();
+                break;
+            case "fiverow":
+                // A five-row page — a digit row over QWERTY — at the same keyboard height, for the
+                // picture that proves the geometry divides by the row count rather than assuming
+                // four. Nothing ships it yet; the row height simply comes out one fifth.
+                previewLayout = KeyboardLayouts.fiveRowDemo();
                 break;
             case "guide": {
                 // guide:LAYOUT:row:key[:DIRECTION] — the four-way guide a held flicking key

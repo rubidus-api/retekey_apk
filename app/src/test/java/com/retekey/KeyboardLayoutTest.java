@@ -477,4 +477,24 @@ public final class KeyboardLayoutTest {
         }
         return labels;
     }
+
+    @Test
+    public void aFifthRowShortensTheRowsInsteadOfGrowingTheKeyboard() {
+        // RFC-0011 G1 groundwork (owner's request, 2026-08-26): a five-row page must divide the
+        // same height into five bands — the keyboard's height is the user's setting, and a layout
+        // with more rows gets shorter keys, not a taller keyboard.
+        KeyboardLayout five = KeyboardLayouts.fiveRowDemo();
+        assertEquals(5, five.rows().size());
+        int height = 600;
+        assertEquals(0, five.rowEdge(0, height));
+        assertEquals(120, five.rowEdge(1, height));
+        assertEquals(480, five.rowEdge(4, height));
+        assertEquals("the last edge is the same bottom the four-row pages reach",
+            height, five.rowEdge(5, height));
+        KeyboardLayout four = KeyboardLayouts.of(KeyboardLayoutId.EN_QWERTY, false);
+        assertEquals(height, four.rowEdge(4, height));
+        // The demo's fifth row is the ordinary bottom row, holds and all.
+        assertEquals("1", five.rows().get(0).get(0).label());
+        assertEquals("q", five.rows().get(1).get(0).label());
+    }
 }
