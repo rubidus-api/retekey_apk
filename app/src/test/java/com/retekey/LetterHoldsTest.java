@@ -422,6 +422,42 @@ public final class LetterHoldsTest {
         }
     }
 
+    @Test
+    public void frequentLetterLanguagesGainedAFourthLetterRow() {
+        // The owner's split (2026-08-26): where a language's own letters were too frequent to
+        // live on flicks, they get a real row and the page becomes five rows in the same height.
+        // The flicks stay, so both paths type the same characters.
+        assertEquals(Arrays.asList("ü", "ö", "ä", "ß", "„", "“", "€", "-", "?", "!"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.DE_QWERTZ, false), 3));
+        assertEquals(Arrays.asList("ü", "ı", "ö", "ş", "ğ", "ç", "“", "”", "₺", "?"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, false), 3));
+        assertEquals(Arrays.asList("ą", "ć", "ę", "ł", "ń", "ó", "ś", "ź", "ż", "„"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.PL_QWERTY, false), 3));
+        assertEquals(Arrays.asList("ç", "ã", "õ", "á", "é", "í", "ó", "ú", "â", "ê"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.PT_QWERTY, false), 3));
+        assertEquals(Arrays.asList("é", "è", "ê", "à", "ç", "ù", "â", "û", "î", "ô"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.FR_AZERTY, false), 3));
+        assertEquals(Arrays.asList("ά", "έ", "ή", "ί", "ό", "ύ", "ώ", "ϊ", "ϋ", "€"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.EL_QWERTY, false), 3));
+        assertEquals(Arrays.asList("ئ", "ؤ", "إ", "أ", "ء", "ژ", "ظ", "ذ", "ث", "آ"),
+            labels(KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, false), 3));
+        for (KeyboardLayoutId id : Arrays.asList(
+                KeyboardLayoutId.DE_QWERTZ, KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.PL_QWERTY,
+                KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.FR_AZERTY, KeyboardLayoutId.EL_QWERTY,
+                KeyboardLayoutId.FA_ISIRI)) {
+            assertEquals(String.valueOf(id), 5, KeyboardLayouts.of(id, false).rows().size());
+        }
+        // Turkish cases its new row the Turkish way; German's sharp s capitalises to ẞ.
+        assertEquals("I", labels(KeyboardLayouts.of(KeyboardLayoutId.TR_QWERTY, true), 3).get(1));
+        assertEquals("ẞ", labels(KeyboardLayouts.of(KeyboardLayoutId.DE_QWERTZ, true), 3).get(3));
+        // And the four-row layouts stayed four rows.
+        for (KeyboardLayoutId id : Arrays.asList(
+                KeyboardLayoutId.ES_QWERTY, KeyboardLayoutId.IT_QWERTY, KeyboardLayoutId.VI_TELEX,
+                KeyboardLayoutId.HE_STANDARD, KeyboardLayoutId.JA_ROMAJI, KeyboardLayoutId.EN_COLEMAK)) {
+            assertEquals(String.valueOf(id), 4, KeyboardLayouts.of(id, false).rows().size());
+        }
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

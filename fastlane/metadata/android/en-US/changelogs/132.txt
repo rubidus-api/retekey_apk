@@ -1,0 +1,6 @@
+Languages whose own letters are too frequent to live on flicks gained
+a fourth letter row: German, Turkish, Polish, Portuguese, French, Greek
+and Persian are five-row pages now, each row a fifth of the same
+keyboard height, with the flicks kept as a second path. Spanish,
+Italian, Vietnamese, Hebrew and Japanese Romaji stay four rows, where
+flicks are enough.

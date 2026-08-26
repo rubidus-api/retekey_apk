@@ -79,12 +79,16 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout COLEMAK_SHIFTED = colemak(true);
     private static final KeyboardLayout ES_BASE = spanish(false);
     private static final KeyboardLayout ES_SHIFTED = spanish(true);
-    private static final KeyboardLayout PT_BASE = qwertyWithAccents(KeyboardLayoutId.PT_QWERTY, false, LatinAccents.PORTUGUESE);
-    private static final KeyboardLayout PT_SHIFTED = qwertyWithAccents(KeyboardLayoutId.PT_QWERTY, true, LatinAccents.PORTUGUESE);
+    private static final KeyboardLayout PT_BASE = latinQwertyShape(KeyboardLayoutId.PT_QWERTY, false,
+        "qwertyuiop", "asdfghjkl", "zxcvbnm", "çãõáéíóúâê", LatinAccents.PORTUGUESE, java.util.Locale.ROOT);
+    private static final KeyboardLayout PT_SHIFTED = latinQwertyShape(KeyboardLayoutId.PT_QWERTY, true,
+        "qwertyuiop", "asdfghjkl", "zxcvbnm", "çãõáéíóúâê", LatinAccents.PORTUGUESE, java.util.Locale.ROOT);
     private static final KeyboardLayout IT_BASE = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, false, LatinAccents.ITALIAN);
     private static final KeyboardLayout IT_SHIFTED = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, true, LatinAccents.ITALIAN);
-    private static final KeyboardLayout PL_BASE = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, false, LatinAccents.POLISH);
-    private static final KeyboardLayout PL_SHIFTED = qwertyWithAccents(KeyboardLayoutId.PL_QWERTY, true, LatinAccents.POLISH);
+    private static final KeyboardLayout PL_BASE = latinQwertyShape(KeyboardLayoutId.PL_QWERTY, false,
+        "qwertyuiop", "asdfghjkl", "zxcvbnm", "ąćęłńóśźż„", LatinAccents.POLISH, java.util.Locale.ROOT);
+    private static final KeyboardLayout PL_SHIFTED = latinQwertyShape(KeyboardLayoutId.PL_QWERTY, true,
+        "qwertyuiop", "asdfghjkl", "zxcvbnm", "ąćęłńóśźż„", LatinAccents.POLISH, java.util.Locale.ROOT);
     private static final KeyboardLayout VI_BASE = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, false, LatinAccents.VIETNAMESE);
     private static final KeyboardLayout VI_SHIFTED = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, true, LatinAccents.VIETNAMESE);
     private static final KeyboardLayout DE_BASE = german(false);
@@ -781,6 +785,17 @@ public final class KeyboardLayouts {
     private static KeyboardLayout latinQwertyShape(
             KeyboardLayoutId id, boolean shifted, String top, String home, String bottom,
             java.util.Map<String, String[]> accents, java.util.Locale locale) {
+        return latinQwertyShape(id, shifted, top, home, bottom, null, accents, locale);
+    }
+
+    /**
+     * The same, with a fourth letter row — a language whose own letters are too frequent to live
+     * on flicks gets them as real keys, and the five-row geometry shortens every row to a fifth
+     * of the same height (the owner's split, 2026-08-26). The flicks stay, so both paths work.
+     */
+    private static KeyboardLayout latinQwertyShape(
+            KeyboardLayoutId id, boolean shifted, String top, String home, String bottom,
+            String extraRow, java.util.Map<String, String[]> accents, java.util.Locale locale) {
         if (top.length() != 10 || home.length() != 9 || bottom.length() != 7) {
             throw new IllegalArgumentException("QWERTY shape is 10/9/7 letters");
         }
@@ -804,6 +819,13 @@ public final class KeyboardLayouts {
         third.add(letterPeriodKey());
         third.add(enterKey());
         rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        if (extraRow != null) {
+            List<SoftwareKeySpec> fourth = new ArrayList<>(10);
+            for (char c : extraRow.toCharArray()) {
+                fourth.add(letter(String.valueOf(c), shifted, locale));
+            }
+            rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
+        }
         return letterPage(id, shifted,
             withAccents(withHolds(rows, HOLDS_10_9_7), accents, shifted, locale), null);
     }
@@ -842,8 +864,11 @@ public final class KeyboardLayouts {
 
     /** German QWERTZ in ten columns: y and z swapped, ü ö ä under u o a, ß under s. */
     private static KeyboardLayout german(boolean shifted) {
+        // The umlauts and ß are alphabet members: a fourth letter row seats them (with the German
+        // quotes and the euro), rather than an eleventh column narrowing every key.
         return latinQwertyShape(KeyboardLayoutId.DE_QWERTZ, shifted,
-            "qwertzuiop", "asdfghjkl", "yxcvbnm", LatinAccents.GERMAN, java.util.Locale.GERMAN);
+            "qwertzuiop", "asdfghjkl", "yxcvbnm", "üöäß„“€-?!",
+            LatinAccents.GERMAN, java.util.Locale.GERMAN);
     }
 
     /**
@@ -852,8 +877,10 @@ public final class KeyboardLayouts {
      * Capitals follow Turkish: i → İ and ı → I.
      */
     private static KeyboardLayout turkish(boolean shifted) {
+        // ı is one of Turkish's commonest letters — it and its five siblings get a real row.
         return latinQwertyShape(KeyboardLayoutId.TR_QWERTY, shifted,
-            "qwertyuiop", "asdfghjkl", "zxcvbnm", LatinAccents.TURKISH, new java.util.Locale("tr"));
+            "qwertyuiop", "asdfghjkl", "zxcvbnm", "üıöşğç“”₺?",
+            LatinAccents.TURKISH, new java.util.Locale("tr"));
     }
 
     /**
@@ -882,6 +909,11 @@ public final class KeyboardLayouts {
             letter("v", shifted), letter("b", shifted), letter("n", shifted),
             backspaceKey(), frenchPeriodKey(), enterKey()
         ));
+        List<SoftwareKeySpec> fourth = new ArrayList<>(10);
+        for (char c : "éèêàçùâûîô".toCharArray()) {
+            fourth.add(letter(String.valueOf(c), shifted, java.util.Locale.FRENCH));
+        }
+        rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
         return letterPage(KeyboardLayoutId.FR_AZERTY, shifted,
             withAccents(withHolds(rows, HOLDS_10_10_6), LatinAccents.FRENCH, shifted,
                 java.util.Locale.FRENCH), null);
@@ -921,6 +953,11 @@ public final class KeyboardLayouts {
         third.add(letterPeriodKey());
         third.add(enterKey());
         rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> fourth = new ArrayList<>(10);
+        for (char c : "άέήίόύώϊϋ€".toCharArray()) {
+            fourth.add(letter(String.valueOf(c), shifted));
+        }
+        rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
         return letterPage(KeyboardLayoutId.EL_QWERTY, shifted,
             withAccents(withHolds(rows, new String[] {"234567890", HOLD_SYMBOLS, HOLD_MARKS}),
                 LatinAccents.GREEK, shifted, java.util.Locale.ROOT), null);
@@ -986,6 +1023,13 @@ public final class KeyboardLayouts {
         third.add(backspaceKey());
         third.add(enterKey());
         rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        // The letters the ten columns squeezed out get a row of their own (visual left-to-right;
+        // it reads آ ث ذ ظ ژ ء أ إ ؤ ئ from the right); the flicks stay as the second path.
+        List<SoftwareKeySpec> fourth = new ArrayList<>(10);
+        for (char c : "ئؤإأءژظذثآ".toCharArray()) {
+            fourth.add(letter(String.valueOf(c), false));
+        }
+        rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
         List<List<SoftwareKeySpec>> held = withAccents(
             withHolds(rows, new String[] {"۱۲۳۴۵۶۷۸۹۰", "۱۲۳۴۵۶۷۸۹۰", "۱۲۳۴۵۶۷۸"}),
             LatinAccents.PERSIAN, false, java.util.Locale.ROOT);

@@ -51,8 +51,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.130** —
-[retekey-0.1.130.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.130/retekey-0.1.130.apk)
+현재 릴리즈: **v0.1.131** —
+[retekey-0.1.131.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.131/retekey-0.1.131.apk)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -232,6 +232,12 @@ QWERTY의 줄 모양이자 Dvorak의 7/10/9를 다른 순서로 읽은 것이라
 **포르투갈어·이탈리아어·폴란드어·베트남어·독일어(y/z 교환)·터키어**는 QWERTY 모양 그대로 자기 글자를 품고, 베트남어는 Telex로 칩니다:
 
 ![포르투갈어 자판](assets/keyboard-portuguese.png)
+
+**자기 글자가 끌기에 두기엔 너무 잦은 언어들은 4번째 글자 행을 받았습니다** — 독일어(ü ö ä ß와 독일
+인용부호·€), 터키어(ü ı ö ş ğ ç), 폴란드어(ą ć ę ł ń ó ś ź ż), 포르투갈어(ç ã õ와 악센트 모음),
+프랑스어(최빈 악센트 열 자), 그리스어(톤 모음), 페르시아어(10열이 밀어냈던 글자들) — 같은 키보드 높이의
+5줄이고 행 높이는 1/5입니다. 끌기는 그대로 남아 두 경로가 같은 글자를 칩니다. 스페인어·이탈리아어·
+베트남어·히브리어·일본어 로마자는 끌기로 충분해 4줄 그대로입니다.
 
 **언어의 글자는 목록이 아니라 끌기입니다.** 부호 모양의 방향대로 키를 끌면 — 그라브 왼쪽, 곡절 위, 아쿠트
 오른쪽, 세디유 아래 — 그 글자가 바로 입력됩니다. 천지인·일본어 플릭과 같은 드래그입니다. 길게 누르면 키

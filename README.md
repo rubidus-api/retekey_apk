@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.130** —
-[retekey-0.1.130.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.130/retekey-0.1.130.apk)
+Current release: **v0.1.131** —
+[retekey-0.1.131.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.131/retekey-0.1.131.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -236,6 +236,13 @@ The layouts, as they are:
 shape and hold their own letters; Vietnamese types through Telex:
 
 ![Portuguese layout](assets/keyboard-portuguese.png)
+
+**Languages whose own letters are too frequent for flicks got a fourth letter row** — German (ü ö ä ß
+with the German quotes and €), Turkish (ü ı ö ş ğ ç), Polish (ą ć ę ł ń ó ś ź ż), Portuguese
+(ç ã õ and the accented vowels), French (the ten commonest accents), Greek (the tone vowels) and
+Persian (the letters the ten columns had squeezed out) — five rows in the same keyboard height, each
+row a fifth of it. The flicks stay, so both paths type the same characters. Spanish, Italian,
+Vietnamese, Hebrew and Japanese Romaji stay four rows, where flicks are enough.
 
 **A language's own letters are flicks, not lists.** Drag a key the mark's own way — grave left,
 circumflex up, acute right, cedilla down — and the letter types at once, exactly the drag the Korean

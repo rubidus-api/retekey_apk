@@ -191,7 +191,7 @@ public final class KeyboardLayoutTest {
                 assertNotNull(where, escape);
                 assertEquals(where, "Esc", escape.label());
                 assertEquals(where, RawKey.ESCAPE, escape.semanticInput().rawKey());
-                List<SoftwareKeySpec> bottom = layout.rows().get(3);
+                List<SoftwareKeySpec> bottom = layout.rows().get(layout.rows().size() - 1);
                 assertEquals(where + ": it sits directly right of space",
                     "space", bottom.get(bottom.indexOf(escape) - 1).label());
             }
