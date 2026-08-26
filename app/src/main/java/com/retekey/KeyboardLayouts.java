@@ -96,6 +96,7 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout EL_BASE = greek(false);
     private static final KeyboardLayout EL_SHIFTED = greek(true);
     private static final KeyboardLayout HEBREW = hebrew();
+    private static final KeyboardLayout PERSIAN = persian();
     private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE);
@@ -153,6 +154,9 @@ public final class KeyboardLayouts {
             case HE_STANDARD:
                 // Hebrew has no capitals: one page, whatever Shift says.
                 return HEBREW;
+            case FA_ISIRI:
+                // Neither has Persian: one page.
+                return PERSIAN;
             case JA_ROMAJI:
                 return shifted ? JA_SHIFTED : JA_BASE;
             case JA_FLICK:
@@ -923,6 +927,59 @@ public final class KeyboardLayouts {
             withHolds(rows, HOLDS_9_10_7), null);
     }
 
+    /**
+     * Persian, on ISIRI 9147's positions squeezed into ten columns (RFC-0011 §2.6.1, the owner's
+     * 10-column decision): the four dotted twins ث ذ ظ ژ ride upward flicks on ت د ط ز — the dots
+     * sit on top, so the mark's-own-way rule already says up — which leaves 28 base letters. The
+     * rows keep ISIRI's order, written here in visual left-to-right; چ and گ, the last letters of
+     * ISIRI's crowded first and second rows, close the third. No capitals, so no Shift and one
+     * page, like Hebrew. The hamza family rides flicks on ا و ی ه; the digits held under the keys
+     * are Persian's own ۰–۹, which is what ISIRI puts on its primary layer; and the space bar
+     * flicks up to the ZWNJ — Persian's half-space, ISIRI's Shift+Space — which everyday spelling
+     * cannot do without.
+     */
+    private static KeyboardLayout persian() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        List<SoftwareKeySpec> first = new ArrayList<>(10);
+        for (char c : "جحخهعغفقصض".toCharArray()) {
+            first.add(letter(String.valueOf(c), false));
+        }
+        rows.add(KeyboardLayout.row(first.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> second = new ArrayList<>(10);
+        for (char c : "کمنتالبیسش".toCharArray()) {
+            second.add(letter(String.valueOf(c), false));
+        }
+        rows.add(KeyboardLayout.row(second.toArray(new SoftwareKeySpec[0])));
+        List<SoftwareKeySpec> third = new ArrayList<>(10);
+        for (char c : "گچوپدرزط".toCharArray()) {
+            third.add(letter(String.valueOf(c), false));
+        }
+        third.add(backspaceKey());
+        third.add(enterKey());
+        rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
+        List<List<SoftwareKeySpec>> held = withAccents(
+            withHolds(rows, new String[] {"۱۲۳۴۵۶۷۸۹۰", "۱۲۳۴۵۶۷۸۹۰", "۱۲۳۴۵۶۷۸"}),
+            LatinAccents.PERSIAN, false, java.util.Locale.ROOT);
+        List<SoftwareKeySpec> bottom =
+            new ArrayList<>(bottomRow(bottomRowCellFor(KeyboardLayoutId.FA_ISIRI)));
+        for (int i = 0; i < bottom.size(); i++) {
+            if ("touch.text.space".equals(bottom.get(i).stableKeyId())) {
+                bottom.set(i, bottom.get(i).withFlicks(null, "\u200c", null, null));
+            }
+        }
+        List<List<SoftwareKeySpec>> all = new ArrayList<>(held);
+        all.add(bottom);
+        return KeyboardLayout.of(KeyboardLayoutId.FA_ISIRI, false, COLUMNS, all);
+    }
+
+    /** The Persian period: the Persian comma held, «» ؟ ؛ on the flicks. */
+    private static SoftwareKeySpec persianPeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
+            .withLongPress("،")
+            .withFlicks("«", "؟", "»", "؛");
+    }
+
     /** The Hebrew period: the comma held, and geresh, gershayim and maqaf on the flicks. */
     private static SoftwareKeySpec hebrewPeriodKey() {
         return SoftwareKeySpec
@@ -1045,6 +1102,8 @@ public final class KeyboardLayouts {
             case HE_STANDARD:
                 // The letter rows are all letters: the period lives beside space.
                 return hebrewPeriodKey();
+            case FA_ISIRI:
+                return persianPeriodKey();
             default:
                 return vacatedCell("layer");
         }

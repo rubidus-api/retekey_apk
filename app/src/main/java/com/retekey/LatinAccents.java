@@ -95,6 +95,21 @@ final class LatinAccents {
         ".", "“| |”|₫"
     );
 
+    /**
+     * Persian: the dotted twins go up (the dots sit on top), and the hamza family rides its
+     * carriers — آ أ إ ء around alef, ؤ over vav, ئ over ye, ة over he.
+     */
+    static final Map<String, String[]> PERSIAN = table(
+        "ت", " |ث| | ",
+        "د", " |ذ| | ",
+        "ط", " |ظ| | ",
+        "ز", " |ژ| | ",
+        "ا", "ء|آ|أ|إ",
+        "و", " |ؤ| | ",
+        "ی", " |ئ| | ",
+        "ه", " |ة| | "
+    );
+
     /** The tonos leans right; the diaeresis goes down; both together go up. */
     static final Map<String, String[]> GREEK = table(
         "α", " | |ά| ",

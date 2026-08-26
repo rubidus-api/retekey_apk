@@ -37,6 +37,7 @@ public final class LetterLayouts {
         KeyboardLayoutId.HE_STANDARD,
         KeyboardLayoutId.JA_ROMAJI,
         KeyboardLayoutId.JA_FLICK,
+        KeyboardLayoutId.FA_ISIRI,
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
@@ -93,6 +94,8 @@ public final class LetterLayouts {
                 return "rj";
             case JA_FLICK:
                 return "ja";
+            case FA_ISIRI:
+                return "fa";
             case KO_DUBEOLSIK:
                 return "2b";
             case KO_CHEONJIIN:
@@ -153,6 +156,8 @@ public final class LetterLayouts {
                 return "Japanese Romaji(ローマ字)";
             case JA_FLICK:
                 return "Japanese Flick(フリック)";
+            case FA_ISIRI:
+                return "Persian(فارسی)";
             case KO_DUBEOLSIK:
                 return "2beolsik(2벌식)";
             case KO_CHEONJIIN:

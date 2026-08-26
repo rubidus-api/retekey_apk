@@ -288,6 +288,38 @@ public final class LetterHoldsTest {
         assertNull(he.findById("touch.key.escape.letters"));
     }
 
+    @Test
+    public void persianSitsOnIsirisPositionsInTenColumnsWithTheDottedTwinsUp() {
+        KeyboardLayout fa = KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, false);
+        assertEquals(Arrays.asList("ج", "ح", "خ", "ه", "ع", "غ", "ف", "ق", "ص", "ض"), labels(fa, 0));
+        assertEquals(Arrays.asList("ک", "م", "ن", "ت", "ا", "ل", "ب", "ی", "س", "ش"), labels(fa, 1));
+        assertEquals(Arrays.asList("گ", "چ", "و", "پ", "د", "ر", "ز", "ط", "⌫", "⏎"), labels(fa, 2));
+        // One page, no Shift — Persian has no capitals.
+        assertEquals(fa, KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, true));
+        assertNull(fa.findById("touch.modifier.shift"));
+        // The dotted twins ride up off their plain letters; the hamza family rides alef and friends.
+        assertEquals("ث", fa.findById("touch.en.ت").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ذ", fa.findById("touch.en.د").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ظ", fa.findById("touch.en.ط").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ژ", fa.findById("touch.en.ز").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("آ", fa.findById("touch.en.ا").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ء", fa.findById("touch.en.ا").flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("ؤ", fa.findById("touch.en.و").flickText(CheonjiinInterpreter.Flick.UP));
+        // The digits under the keys are Persian's own, ISIRI's primary layer.
+        assertEquals(Arrays.asList("۱"), fa.rows().get(0).get(0).longPressTexts());
+        assertEquals(Arrays.asList("۱"), fa.rows().get(1).get(0).longPressTexts());
+        // The period beside space carries Persian's punctuation; the space bar flicks up to ZWNJ.
+        SoftwareKeySpec period = fa.findById("touch.text.period.letters");
+        assertEquals(Arrays.asList("،"), period.longPressTexts());
+        assertEquals("«", period.flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("؟", period.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("»", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("؛", period.flickText(CheonjiinInterpreter.Flick.DOWN));
+        SoftwareKeySpec space = fa.findById("touch.text.space");
+        assertEquals("\u200c", space.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals(3, space.columnSpan());
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

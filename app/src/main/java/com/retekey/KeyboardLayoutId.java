@@ -30,6 +30,8 @@ public enum KeyboardLayoutId {
     JA_ROMAJI,
     /** Japanese on the 12-key flick pad, flick-only: tap あ, flick い う え お. */
     JA_FLICK,
+    /** Persian on ISIRI 9147's positions, ten columns: the dotted twins and hamza forms as flicks. */
+    FA_ISIRI,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

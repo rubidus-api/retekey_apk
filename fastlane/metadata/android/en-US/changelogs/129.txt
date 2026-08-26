@@ -1,0 +1,6 @@
+Persian joins, on ISIRI 9147's positions in ten columns, with Persian's
+own ke and ye codepoints and no Shift page. The dotted twins are a
+flick up on their plain letters, the hamza family rides alef and
+friends, the digits under the keys are Persian's own, the period
+carries the guillemets and Persian question mark, and the space bar
+flicks up to the ZWNJ half-space. Requested in issue #4.

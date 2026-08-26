@@ -718,7 +718,7 @@ public final class ReteKeyboardView extends View {
     private static String guideLabel(SoftwareKeySpec key, CheonjiinInterpreter.Key phoneKey,
             KanaFlick.Key kanaKey, CheonjiinInterpreter.Flick direction) {
         if (key.hasFlicks()) {
-            return key.flickText(direction);
+            return visibleFlickText(key.flickText(direction));
         }
         if (kanaKey != null) {
             return KanaFlick.flick(kanaKey, direction);
@@ -1198,7 +1198,12 @@ public final class ReteKeyboardView extends View {
         resetPhoneInterpreters();
         consumeOneShotShift();
         feedback.playKeyDown();
-        flashKeyboard(key, text);
+        flashKeyboard(key, visibleFlickText(text));
+    }
+
+    /** What to show for a flick's text: the ZWNJ — Persian's half-space — is invisible by trade. */
+    private static String visibleFlickText(String text) {
+        return "\u200c".equals(text) ? "⌴" : text;
     }
 
     /** Types what a flick off a kana key means; a direction with nothing types nothing. */

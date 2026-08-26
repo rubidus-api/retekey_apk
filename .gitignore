@@ -48,3 +48,6 @@ local.properties
 *.apk
 *.aab
 .claude/
+
+# agy-only customization layer (local; see rootsator RFC-0001)
+/.agents/
