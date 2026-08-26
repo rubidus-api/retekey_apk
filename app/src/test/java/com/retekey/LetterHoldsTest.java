@@ -320,6 +320,60 @@ public final class LetterHoldsTest {
         assertEquals(3, space.columnSpan());
     }
 
+    @Test
+    public void thaiIsKedmaneeInFiveRowsWithTheShiftLayerOnUpFlicks() {
+        KeyboardLayout th = KeyboardLayouts.of(KeyboardLayoutId.TH_KEDMANEE, false);
+        assertEquals(5, th.rows().size());
+        assertEquals(Arrays.asList("บ", "ภ", "ถ", "ุ", "ึ", "ค", "ต", "จ", "ข", "ช"), labels(th, 0));
+        assertEquals(Arrays.asList("ไ", "ำ", "พ", "ะ", "ั", "ี", "ร", "น", "ย", "ล"), labels(th, 1));
+        assertEquals(Arrays.asList("ฟ", "ห", "ก", "ด", "เ", "้", "่", "า", "ส", "ว"), labels(th, 2));
+        assertEquals(Arrays.asList("ผ", "ป", "แ", "อ", "ิ", "ื", "ท", "ม", "⌫", "⏎"), labels(th, 3));
+        // One page, no Shift; the Shift layer rides the upward flicks, key for key.
+        assertEquals(th, KeyboardLayouts.of(KeyboardLayoutId.TH_KEDMANEE, true));
+        assertNull(th.findById("touch.modifier.shift"));
+        assertEquals("ู", th.findById("touch.en.ุ").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ฎ", th.findById("touch.en.ำ").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("์", th.findById("touch.en.ื").flickText(CheonjiinInterpreter.Flick.UP));
+        // The folded letters ride their kin: the obsolete pair, the twenty-word ใ, the velar ง,
+        // and ฟ's whole family.
+        assertEquals("ฃ", th.findById("touch.en.ข").flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ฅ", th.findById("touch.en.ค").flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ใ", th.findById("touch.en.ไ").flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ง", th.findById("touch.en.ก").flickText(CheonjiinInterpreter.Flick.DOWN));
+        assertEquals("ๅ", th.findById("touch.en.ฟ").flickText(CheonjiinInterpreter.Flick.LEFT));
+        assertEquals("ฤ", th.findById("touch.en.ฟ").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ฦ", th.findById("touch.en.ฟ").flickText(CheonjiinInterpreter.Flick.RIGHT));
+        assertEquals("ฝ", th.findById("touch.en.ฟ").flickText(CheonjiinInterpreter.Flick.DOWN));
+        // Thai digits ride the first row's holds; ๆ sits beside space with ฯ held and ฿ below.
+        assertEquals(Arrays.asList("๑"), th.rows().get(0).get(0).longPressTexts());
+        assertEquals(Arrays.asList("๐"), th.rows().get(0).get(9).longPressTexts());
+        SoftwareKeySpec maiyamok = th.findById("touch.text.maiyamok");
+        assertEquals("ๆ", maiyamok.label());
+        assertEquals(Arrays.asList("ฯ"), maiyamok.longPressTexts());
+        assertEquals("฿", maiyamok.flickText(CheonjiinInterpreter.Flick.DOWN));
+        // Every Thai consonant is reachable: the 44 of the alphabet plus ฤ ฦ.
+        java.util.Set<String> reachable = new java.util.HashSet<>();
+        for (List<SoftwareKeySpec> row : th.rows()) {
+            for (SoftwareKeySpec key : row) {
+                reachable.add(key.label());
+                reachable.addAll(key.longPressTexts());
+                for (CheonjiinInterpreter.Flick way : CheonjiinInterpreter.Flick.values()) {
+                    if (key.flickText(way) != null) {
+                        reachable.add(key.flickText(way));
+                    }
+                }
+            }
+        }
+        String consonants = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮ";
+        for (char c : consonants.toCharArray()) {
+            assertTrue("missing " + c, reachable.contains(String.valueOf(c)));
+        }
+        String marks = "ะัาำิีึืุูเแโใไ็่้๊๋์ํฺๆฯ";
+        for (char c : marks.toCharArray()) {
+            assertTrue("missing " + c, reachable.contains(String.valueOf(c)));
+        }
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

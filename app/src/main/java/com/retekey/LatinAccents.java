@@ -96,6 +96,43 @@ final class LatinAccents {
     );
 
     /**
+     * Thai: Kedmanee's Shift layer, key for key, as the upward flick; the folded letters ride
+     * their kin sideways and down. ฟ carries its whole family: ๅ left, ฤ up, ฦ right, ฝ down.
+     */
+    static final Map<String, String[]> THAI = table(
+        "บ", " |ฐ| | ",
+        "ุ", " |ู| | ",
+        "ค", " | | |ฅ",
+        "ข", " | | |ฃ",
+        "ไ", " |\"| |ใ",
+        "ำ", " |ฎ| | ",
+        "พ", " |ฑ| | ",
+        "ะ", " |ธ| | ",
+        "ั", " |ํ| | ",
+        "ี", " |๊| | ",
+        "ร", " |ณ| | ",
+        "น", " |ฯ| | ",
+        "ย", " |ญ| | ",
+        "ล", " |ฬ| | ",
+        "ฟ", "ๅ|ฤ|ฦ|ฝ",
+        "ห", " |ฆ| | ",
+        "ก", " |ฏ| |ง",
+        "ด", " |โ| | ",
+        "เ", " |ฌ| | ",
+        "้", " |็| | ",
+        "่", " |๋| | ",
+        "า", " |ษ| | ",
+        "ส", " |ศ| | ",
+        "ว", " |ซ| | ",
+        "แ", " |ฉ| | ",
+        "อ", " |ฮ| | ",
+        "ิ", " |ฺ| | ",
+        "ื", " |์| | ",
+        "ท", " |?| | ",
+        "ม", " |ฒ| | "
+    );
+
+    /**
      * Persian: the dotted twins go up (the dots sit on top), and the hamza family rides its
      * carriers — آ أ إ ء around alef, ؤ over vav, ئ over ye, ة over he.
      */

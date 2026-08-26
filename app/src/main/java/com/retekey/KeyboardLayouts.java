@@ -97,6 +97,7 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout EL_SHIFTED = greek(true);
     private static final KeyboardLayout HEBREW = hebrew();
     private static final KeyboardLayout PERSIAN = persian();
+    private static final KeyboardLayout THAI = thai();
     private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE);
@@ -157,6 +158,9 @@ public final class KeyboardLayouts {
             case FA_ISIRI:
                 // Neither has Persian: one page.
                 return PERSIAN;
+            case TH_KEDMANEE:
+                // Nor Thai.
+                return THAI;
             case JA_ROMAJI:
                 return shifted ? JA_SHIFTED : JA_BASE;
             case JA_FLICK:
@@ -993,6 +997,50 @@ public final class KeyboardLayouts {
         return KeyboardLayout.of(KeyboardLayoutId.FA_ISIRI, false, COLUMNS, all);
     }
 
+    /**
+     * Thai on Kedmanee's (TIS 820) positions — the first four-letter-row page, five rows in all,
+     * each one fifth of the same keyboard height. Kedmanee's base layer keeps its rows and order;
+     * its <em>Shift layer rides the upward flicks</em>, key for key, so a Kedmanee typist's "shift
+     * reaches the rare twin" habit becomes "flick up". The letters squeezed out of the ten columns
+     * ride their kin: the obsolete ฃ ฅ under ข ค, the twenty-word ใ under ไ, ง down from its
+     * fellow velar ก, and ฟ carries its whole family — ฤ up, ฝ down, ๅ left, ฦ right. The held
+     * digits are Thai's own ๑–๙ ๐, and the cell beside space is ๆ with ฯ held and ฿ a flick away.
+     * No case, so no Shift and one page.
+     */
+    private static KeyboardLayout thai() {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        String[] letterRows = {"บภถุึคตจขช", "ไำพะัีรนยล", "ฟหกดเ้่าสว"};
+        for (String rowLetters : letterRows) {
+            List<SoftwareKeySpec> row = new ArrayList<>(10);
+            for (char c : rowLetters.toCharArray()) {
+                row.add(letter(String.valueOf(c), false));
+            }
+            rows.add(KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0])));
+        }
+        List<SoftwareKeySpec> fourth = new ArrayList<>(10);
+        for (char c : "ผปแอิืทม".toCharArray()) {
+            fourth.add(letter(String.valueOf(c), false));
+        }
+        fourth.add(backspaceKey());
+        fourth.add(enterKey());
+        rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
+        List<List<SoftwareKeySpec>> held = withAccents(
+            withHolds(rows, new String[] {"๑๒๓๔๕๖๗๘๙๐"}),
+            LatinAccents.THAI, false, java.util.Locale.ROOT);
+        List<SoftwareKeySpec> bottom = bottomRow(bottomRowCellFor(KeyboardLayoutId.TH_KEDMANEE));
+        List<List<SoftwareKeySpec>> all = new ArrayList<>(held);
+        all.add(bottom);
+        return KeyboardLayout.of(KeyboardLayoutId.TH_KEDMANEE, false, COLUMNS, all);
+    }
+
+    /** The Thai repeat sign beside space: ฯ held, quotes sideways, the baht sign below. */
+    private static SoftwareKeySpec thaiMaiyamokKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.maiyamok", "ๆ", SemanticInput.text("ๆ"))
+            .withLongPress("ฯ")
+            .withFlicks("\"", "ฯ", "\"", "฿");
+    }
+
     /** The Persian period: the Persian comma held, «» ؟ ؛ on the flicks. */
     private static SoftwareKeySpec persianPeriodKey() {
         return SoftwareKeySpec
@@ -1125,6 +1173,8 @@ public final class KeyboardLayouts {
                 return hebrewPeriodKey();
             case FA_ISIRI:
                 return persianPeriodKey();
+            case TH_KEDMANEE:
+                return thaiMaiyamokKey();
             default:
                 return vacatedCell("layer");
         }

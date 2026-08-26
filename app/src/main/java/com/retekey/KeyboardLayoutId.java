@@ -32,6 +32,8 @@ public enum KeyboardLayoutId {
     JA_FLICK,
     /** Persian on ISIRI 9147's positions, ten columns: the dotted twins and hamza forms as flicks. */
     FA_ISIRI,
+    /** Thai on Kedmanee's positions: four letter rows, the Shift layer as upward flicks. */
+    TH_KEDMANEE,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

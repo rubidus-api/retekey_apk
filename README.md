@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.128** —
-[retekey-0.1.128.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.128/retekey-0.1.128.apk)
+Current release: **v0.1.129** —
+[retekey-0.1.129.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.129/retekey-0.1.129.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -116,9 +116,9 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Twenty-one layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
-  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, Hebrew, Persian, Japanese
-  Romaji and the 12-key Japanese Flick, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
+- **Twenty-two layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, Hebrew, Persian, Thai,
+  Japanese Romaji and the 12-key Japanese Flick, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
@@ -180,6 +180,7 @@ Seven letter layouts share that grid:
 | **Italian** | QWERTY; the grave vowels are a flick left (è also é right) |
 | **Polish** | QWERTY; each letter's mark is one flick — ogonek down (ą ę), acute/stroke right (ć ń ó ś ź ł), dot up (ż) |
 | **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels a flick right (ά …), the diaereses down (ϊ ϋ) and both together up (ΐ ΰ); the question mark flicks up to the ano teleia. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
+| **Thai(ไทย)** | Kedmanee's (TIS 820) positions as **four letter rows** — the first five-row page, every row one fifth of the same keyboard height. Kedmanee's Shift layer rides the **upward flicks**, key for key (ุ↑ู, ำ↑ฎ, ื↑์ …); the letters the ten columns squeeze out ride their kin — the obsolete ฃ ฅ under ข ค, the twenty-word ใ under ไ, ง below its fellow velar ก, and ฟ carries ฤ ฝ ๅ ฦ on its four ways. Thai digits ๑–๙ ๐ are the held digits, and ๆ sits beside space with ฯ held and ฿ a flick down. No Shift, one page |
 | **Persian(فارسی)** | ISIRI 9147's positions in ten columns, reading from the right, with Persian's own ک (U+06A9) and ی (U+06CC) and no Shift. The dotted twins ث ذ ظ ژ are a flick up on ت د ط ز — the dots sit on top — and the hamza family rides ا (آ أ إ ء) و ی ه. The digits under the keys are Persian's ۰–۹, the period carries « » ؟ ؛ with ، held, and **the space bar flicks up to the ZWNJ**, the half-space Persian spelling cannot do without |
 | **Japanese Flick(フリック)** | the 12-key pad Japanese phones use, flick-only: tap a key for its あ-column kana, flick left/up/right/down for い う え お — the same drag Cheonjiin uses, with the same hold guide. ゛゜小 turns the character before the cursor along its cycle (か→が, は→ば→ぱ, つ→づ→っ, a vowel to its small form); わ carries を ん ー on its flicks and 、。？！ cycles. Digits ride the holds. Kana-to-kanji conversion is not in yet |
 | **Japanese Romaji(ローマ字)** | QWERTY as it is; what you type becomes hiragana as you go — `ka` か, `sha`/`sya` しゃ, a doubled consonant っ (`gakkou` → がっこう), `nn` ん and a lone `n` before most consonants too, `-` ー, `x`/`l` for the small kana. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke; a physical keyboard types the same way. Kana-to-kanji conversion is a dictionary's job and not in yet |
