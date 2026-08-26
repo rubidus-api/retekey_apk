@@ -17,6 +17,15 @@ public final class EditorCapabilities {
     private final boolean allowLegacyCodeUnitFallback;
     private final boolean allowRawDeleteFallback;
     private final DeletionMode deletionMode;
+    /**
+     * Deletion goes out as backspace key events rather than deleteSurroundingText. Remote-desktop
+     * clients show the IME a local dummy buffer: a surrounding-text delete "succeeds" against that
+     * buffer and reaches the remote machine only while recently typed text still sits in it —
+     * which is exactly a backspace that works right after typing and dies otherwise. A key event
+     * is the one deletion those clients always forward, and the key event <em>is</em> the deletion
+     * on their side, so nothing is deleted twice.
+     */
+    private boolean deleteByKeyEvents;
 
     private EditorCapabilities(
         boolean supported,
@@ -55,6 +64,18 @@ public final class EditorCapabilities {
 
     public static EditorCapabilities rawKey() {
         return RAW_KEY;
+    }
+
+    /** A copy that deletes by backspace key events — the remote-desktop shape. */
+    public EditorCapabilities withDeleteByKeyEvents() {
+        EditorCapabilities copy = new EditorCapabilities(
+            supported, sensitive, allowLegacyCodeUnitFallback, allowRawDeleteFallback, deletionMode);
+        copy.deleteByKeyEvents = true;
+        return copy;
+    }
+
+    public boolean deleteByKeyEvents() {
+        return deleteByKeyEvents;
     }
 
     public static EditorCapabilities unsupported() {

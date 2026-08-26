@@ -510,6 +510,11 @@ public final class CheckedEditorExecutor {
         EditorCapabilities capabilities
     ) {
         EditorBridge bridge = endpoint.bridge();
+        if (capabilities.deleteByKeyEvents()) {
+            // A remote-desktop editor: the key event is the deletion its far side always sees,
+            // whatever its local dummy buffer holds (or does not). See EditorCapabilities.
+            return executeRawDeleteFallback(endpoint, 0);
+        }
         if (bounds.hasSelectedText()) {
             return mutationCall(guardedCall(endpoint, () -> bridge.commitText("", 1)));
         }

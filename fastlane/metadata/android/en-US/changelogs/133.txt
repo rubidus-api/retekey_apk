@@ -1,0 +1,7 @@
+Backspace is reliable in remote-desktop apps now. Those apps show the
+keyboard a local dummy buffer, so deleting "surrounding text" only
+reached the remote machine while recently typed text still sat in that
+buffer - backspace worked right after typing and died otherwise. For
+Microsoft Remote Desktop and Chrome Remote Desktop, deletion now goes
+out as real backspace key events, which they always forward; typing
+and Korean composition keep their ordinary paths.

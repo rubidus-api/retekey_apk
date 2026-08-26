@@ -86,4 +86,22 @@ public final class AndroidEditorProfileClassifierTest {
         );
         Assert.assertFalse(none.hasStandardAction());
     }
+
+    @Test
+    public void remoteDesktopPackagesDeleteByKeyEvents() {
+        // MS Remote Desktop and friends show the IME a dummy buffer; their deletion must go out
+        // as backspace key events (the intermittent-backspace report, 2026-08-27). The flag rides
+        // only on rich profiles — a TYPE_NULL remote editor is already fully raw.
+        org.junit.Assert.assertTrue(
+            AndroidEditorProfileClassifier.isRemoteDesktop("com.microsoft.rdc.androidx"));
+        org.junit.Assert.assertTrue(
+            AndroidEditorProfileClassifier.isRemoteDesktop("com.microsoft.rdc.android"));
+        org.junit.Assert.assertFalse(AndroidEditorProfileClassifier.isRemoteDesktop("com.example"));
+        org.junit.Assert.assertFalse(AndroidEditorProfileClassifier.isRemoteDesktop(null));
+        EditorProfile plain = AndroidEditorProfileClassifier.classifyFields(
+            InputType.TYPE_CLASS_TEXT, 0, false, 0, 34);
+        org.junit.Assert.assertFalse(plain.capabilities().deleteByKeyEvents());
+        org.junit.Assert.assertTrue(
+            plain.withDeleteByKeyEvents().capabilities().deleteByKeyEvents());
+    }
 }

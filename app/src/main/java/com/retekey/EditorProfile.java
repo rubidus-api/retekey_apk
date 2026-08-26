@@ -105,6 +105,18 @@ public final class EditorProfile {
         return capabilities;
     }
 
+    /** A copy whose deletion goes out as backspace key events (remote-desktop clients). */
+    public EditorProfile withDeleteByKeyEvents() {
+        return new EditorProfile(
+            capabilities.withDeleteByKeyEvents(),
+            multiline,
+            noEnterAction,
+            customActionPresent,
+            customActionId,
+            standardActionId
+        );
+    }
+
     public boolean isMultiline() {
         return multiline;
     }

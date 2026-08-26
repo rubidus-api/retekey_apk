@@ -60,6 +60,28 @@ public final class UnicodeDeletionTest {
     }
 
     @Test
+    public void aRemoteDesktopEditorDeletesByKeyEventsAlone() {
+        // MS Remote Desktop shows the IME a dummy buffer: a surrounding-text delete "succeeds"
+        // there and reaches the remote machine only while recently typed text still sits in it.
+        // The backspace key event is the one deletion it always forwards.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        ExecutionResult result = execute(
+            bridge,
+            EditorBounds.of(0, 0, -1, -1),
+            EditorCapabilities.richText(false, false).withDeleteByKeyEvents()
+        );
+
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+        Assert.assertEquals(Arrays.asList(
+            "beginBatchEdit",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=DOWN",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=UP",
+            "endBatchEdit"
+        ), bridge.trace());
+    }
+
+    @Test
     public void emptyContextAtAConfirmedStartIsANoEffectNotAFailure() {
         FakeEditorBridge bridge = new FakeEditorBridge();
         bridge.returnAt(2, EditorCallResult.rejected());
