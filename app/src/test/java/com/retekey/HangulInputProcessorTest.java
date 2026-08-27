@@ -284,4 +284,83 @@ public final class HangulInputProcessorTest {
                 KeyAction.commitText("가")),
             processor.process(SemanticInput.jamo(SemanticJamo.vowel(0))).actions());
     }
+
+    /** Applies a remote-desktop plan to a model buffer: commits append, deletes take one off. */
+    private static void applyRemote(StringBuilder buffer, java.util.List<KeyAction> actions) {
+        for (KeyAction action : actions) {
+            switch (action.kind()) {
+                case COMMIT_TEXT:
+                    buffer.append(action.text());
+                    break;
+                case DELETE_BACKWARD:
+                    if (buffer.length() > 0) {
+                        buffer.deleteCharAt(buffer.length() - 1);
+                    }
+                    break;
+                case SET_COMPOSING_TEXT:
+                    org.junit.Assert.fail("a remote-desktop plan must never compose: " + actions);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private static String typeRemotely(SemanticInput... inputs) {
+        HangulInputProcessor processor = remoteDesktopProcessor();
+        StringBuilder buffer = new StringBuilder();
+        for (SemanticInput input : inputs) {
+            applyRemote(buffer, processor.process(input).actions());
+        }
+        applyRemote(buffer, processor.process(SemanticInput.flush()).actions());
+        return buffer.toString();
+    }
+
+    @Test
+    public void theEverydaySyllablesArriveIntactOnARemoteDesktop() {
+        // The owner's report: 전 (Naratgeul's second ㅏ arrives as a correction delete plus ㅓ).
+        assertEquals("전", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(12)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.deleteForCorrection(),
+            SemanticInput.jamo(SemanticJamo.vowel(4)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(2))));
+        // Compound vowels and double finals.
+        assertEquals("와", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(11)),
+            SemanticInput.jamo(SemanticJamo.vowel(8)),
+            SemanticInput.jamo(SemanticJamo.vowel(0))));
+        assertEquals("값", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(0)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(7)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(9))));
+        assertEquals("많", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(6)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(2)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(18))));
+        assertEquals("뭐", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(6)),
+            SemanticInput.jamo(SemanticJamo.vowel(13)),
+            SemanticInput.jamo(SemanticJamo.vowel(4))));
+        // A compound-vowel correction takes two deletes before the replacement (Naratgeul ㅘ→ㅝ).
+        assertEquals("정말", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(12)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.deleteForCorrection(),
+            SemanticInput.jamo(SemanticJamo.vowel(4)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(11)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(6)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(5))));
+        // The reopened-syllable correction (the 만+ㅇ dance) still lands as 많.
+        assertEquals("많", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(6)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(2)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(11)),
+            SemanticInput.deleteForCorrection(),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(18))));
+    }
 }

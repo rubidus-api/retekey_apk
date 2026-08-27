@@ -1,0 +1,7 @@
+Korean composition in remote-desktop apps no longer breaks mid-
+syllable. Those apps report cursor movements of their own accord from
+their local dummy buffer, and the keyboard used to read that as "the
+user moved the cursor" and reset the syllable being built - so some
+syllables came out split or half-formed, depending on timing. That
+verdict is now ignored where composition is materialised, and the
+everyday syllables are pinned by tests played against a model buffer.

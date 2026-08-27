@@ -871,14 +871,20 @@ public class ReteKeyImeService extends InputMethodService {
                 );
                 return;
             }
-            boolean abandon = CursorMovePolicy.shouldAbandonComposition(
+            // A remote-desktop editor never has a composing region — composition is
+            // materialised as committed text — and its dummy buffer reports selection changes of
+            // its own accord, so a cursor-move verdict there is noise that resets the composer
+            // mid-syllable (일 became 이ㄹ, 전 stopped at 저 depending on when the report landed).
+            boolean remoteDesktop = editorProfile != null
+                && editorProfile.capabilities().deleteByKeyEvents();
+            boolean abandon = !remoteDesktop && CursorMovePolicy.shouldAbandonComposition(
                 inputProcessor.isComposing(),
                 newSelStart,
                 newSelEnd,
                 candidatesStart,
                 candidatesEnd
             );
-            if (!abandon && candidatesStart < 0 && inputProcessor.isComposing()) {
+            if (!abandon && !remoteDesktop && candidatesStart < 0 && inputProcessor.isComposing()) {
                 // Editors that never report a composing region (Compose text fields — Google
                 // Keep) get the text-based verdict: composing leaves the cursor right after the
                 // preedit, so anything else there means the user moved it.
