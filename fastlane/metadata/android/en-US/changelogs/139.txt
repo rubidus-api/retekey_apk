@@ -1,0 +1,5 @@
+Nine layouts join at once: Russian, Ukrainian, Bulgarian (Phonetic),
+Macedonian, Serbian, Arabic, Urdu, Georgian and Armenian - each on its
+own standard positions, each with a fourth letter row where ten
+columns are not enough, and each typeable from a US physical keyboard
+on its language's own Windows layout. Thirty-two layouts in all.

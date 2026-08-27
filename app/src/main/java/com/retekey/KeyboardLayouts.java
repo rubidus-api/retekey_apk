@@ -103,6 +103,21 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout PERSIAN = persian();
     private static final KeyboardLayout THAI = thai();
     private static final KeyboardLayout HINDI = hindi();
+    private static final KeyboardLayout RU_BASE = russian(false);
+    private static final KeyboardLayout RU_SHIFTED = russian(true);
+    private static final KeyboardLayout UK_BASE = ukrainian(false);
+    private static final KeyboardLayout UK_SHIFTED = ukrainian(true);
+    private static final KeyboardLayout BG_BASE = bulgarian(false);
+    private static final KeyboardLayout BG_SHIFTED = bulgarian(true);
+    private static final KeyboardLayout MK_BASE = macedonian(false);
+    private static final KeyboardLayout MK_SHIFTED = macedonian(true);
+    private static final KeyboardLayout SR_BASE = serbian(false);
+    private static final KeyboardLayout SR_SHIFTED = serbian(true);
+    private static final KeyboardLayout ARABIC = arabic();
+    private static final KeyboardLayout URDU = urdu();
+    private static final KeyboardLayout GEORGIAN = georgian();
+    private static final KeyboardLayout HY_BASE = armenian(false);
+    private static final KeyboardLayout HY_SHIFTED = armenian(true);
     private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE);
@@ -169,6 +184,25 @@ public final class KeyboardLayouts {
             case HI_INSCRIPT:
                 // Nor Devanagari.
                 return HINDI;
+            case RU_JCUKEN:
+                return shifted ? RU_SHIFTED : RU_BASE;
+            case UK_JCUKEN:
+                return shifted ? UK_SHIFTED : UK_BASE;
+            case BG_PHONETIC:
+                return shifted ? BG_SHIFTED : BG_BASE;
+            case MK_STANDARD:
+                return shifted ? MK_SHIFTED : MK_BASE;
+            case SR_CYRILLIC:
+                return shifted ? SR_SHIFTED : SR_BASE;
+            case AR_101:
+                // Arabic, Urdu and Georgian have no capitals: one page each.
+                return ARABIC;
+            case UR_PHONETIC:
+                return URDU;
+            case KA_QWERTY:
+                return GEORGIAN;
+            case HY_EASTERN:
+                return shifted ? HY_SHIFTED : HY_BASE;
             case JA_ROMAJI:
                 return shifted ? JA_SHIFTED : JA_BASE;
             case JA_FLICK:
@@ -1121,6 +1155,117 @@ public final class KeyboardLayouts {
         return KeyboardLayout.of(KeyboardLayoutId.HI_INSCRIPT, false, COLUMNS, all);
     }
 
+    /** Russian ЙЦУКЕН: its rows, ⌫ ending the second, the squeezed-out letters on the fourth. */
+    private static KeyboardLayout russian(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.RU_JCUKEN, shifted, new java.util.Locale("ru"),
+            new String[] {"йцукенгшщз", "фывапролд\b", "\u0001ячсмить.\n", "хъжэбюё«»—"},
+            LatinAccents.RUSSIAN);
+    }
+
+    /** Ukrainian: the same frame with і ї є, and ґ beside them on the fourth row. */
+    private static KeyboardLayout ukrainian(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.UK_JCUKEN, shifted, new java.util.Locale("uk"),
+            new String[] {"йцукенгшщз", "фівапролд\b", "\u0001ячсмить.\n", "хїжєбюґ«»—"},
+            LatinAccents.UKRAINIAN);
+    }
+
+    /** Bulgarian Phonetic — the layout Bulgarian phones actually use. */
+    private static KeyboardLayout bulgarian(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.BG_PHONETIC, shifted, new java.util.Locale("bg"),
+            new String[] {"чшертъуиоп", "асдфгхйкл\b", "\u0001зжцвбнм.\n", "ящьюѝ«»—?!"},
+            java.util.Collections.<String, String[]>emptyMap());
+    }
+
+    private static KeyboardLayout macedonian(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.MK_STANDARD, shifted, new java.util.Locale("mk"),
+            new String[] {"љњертѕуиоп", "асдфгхјкл\b", "\u0001зџцвбнм.\n", "шѓжчќѝ«»—,"},
+            java.util.Collections.<String, String[]>emptyMap());
+    }
+
+    private static KeyboardLayout serbian(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.SR_CYRILLIC, shifted, new java.util.Locale("sr"),
+            new String[] {"љњертзуиоп", "асдфгхјкл\b", "\u0001ѕџцвбнм.\n", "шђжчћ«»—,!"},
+            java.util.Collections.<String, String[]>emptyMap());
+    }
+
+    /**
+     * Arabic on the 101 layout's positions, in visual left-to-right (it reads from ض at the top
+     * right); the Shift layer's tashkil and hamza forms ride the flicks where the 101 puts them.
+     */
+    private static KeyboardLayout arabic() {
+        return scriptPage(KeyboardLayoutId.AR_101, false, java.util.Locale.ROOT,
+            new String[] {"حخهعغفقثصض", "منتالبيسش\b", "ظزوةىرؤءئ\n", "»«إأآذطكدج"},
+            LatinAccents.ARABIC);
+    }
+
+    /** Urdu on the phonetic layout's positions; the Shift layer's letters ride the flicks. */
+    private static KeyboardLayout urdu() {
+        return scriptPage(KeyboardLayoutId.UR_PHONETIC, false, java.util.Locale.ROOT,
+            new String[] {"حجبتپٹدھصط", "یکاہلنروم\b", "عغشسےفق۔،\n", "ڑڈثذژزخچگں"},
+            LatinAccents.URDU);
+    }
+
+    private static KeyboardLayout georgian() {
+        return scriptPage(KeyboardLayoutId.KA_QWERTY, false, java.util.Locale.ROOT,
+            new String[] {"ღჯუკენგშწზ", "ფძვთაპროლ\b", "ჭჩყსმიტხ.\n", "ცდჟქბჰ„“–—"},
+            java.util.Collections.<String, String[]>emptyMap());
+    }
+
+    /** Armenian (Eastern): ռ rides ր, and the everyday ligature և rides ե. */
+    private static KeyboardLayout armenian(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.HY_EASTERN, shifted, new java.util.Locale("hy"),
+            new String[] {"խւէրտեըիոպ", "ասդֆքհճկլ\b", "\u0001զցգվբնմշ\n", "չջթփղծձյօժ"},
+            LatinAccents.ARMENIAN);
+    }
+
+    /** The Arabic period: the Arabic comma held, «» ؟ ؛ on the flicks. */
+    private static SoftwareKeySpec arabicPeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
+            .withLongPress("،")
+            .withFlicks("«", "؟", "»", "؛");
+    }
+
+    /** The Armenian full stop ։, with the western period held and the marks on the flicks. */
+    private static SoftwareKeySpec armenianPeriodKey() {
+        return SoftwareKeySpec
+            .enabled("touch.text.period.letters", "։", SemanticInput.text("։"))
+            .withLongPress(".")
+            .withFlicks("՝", "՞", "՜", "՛");
+    }
+
+    /**
+     * A page from marker rows — the batch builder the Cyrillic, Arabic-script and Caucasus pages
+     * share (2026-08-28). Each row string is keys in visual left-to-right order: a letter makes a
+     * letter key, {@code \u0001} the Shift key, {@code \b} backspace, {@code \n} enter, and
+     * {@code .} the ordinary period key with its comma. Rows beyond the strings come from
+     * {@code letterPage} as ever: the digit holds ride the first row, the accents table adds the
+     * flicks, and the bottom row is the shared frame.
+     */
+    private static KeyboardLayout scriptPage(
+            KeyboardLayoutId id, boolean shifted, java.util.Locale locale, String[] rowSpecs,
+            java.util.Map<String, String[]> accents) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(rowSpecs.length);
+        for (String spec : rowSpecs) {
+            List<SoftwareKeySpec> row = new ArrayList<>(10);
+            for (int i = 0; i < spec.length(); ) {
+                int cp = spec.codePointAt(i);
+                i += Character.charCount(cp);
+                String c = new String(Character.toChars(cp));
+                switch (c) {
+                    case "\u0001": row.add(shiftKey(shifted)); break;
+                    case "\b": row.add(backspaceKey()); break;
+                    case "\n": row.add(enterKey()); break;
+                    case ".": row.add(letterPeriodKey()); break;
+                    default: row.add(letter(c, shifted, locale));
+                }
+            }
+            rows.add(KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0])));
+        }
+        return letterPage(id, shifted,
+            withAccents(withHolds(rows, new String[] {HOLD_DIGITS}), accents, shifted, locale), null);
+    }
+
     /** The Thai repeat sign beside space: ฯ held, quotes sideways, the baht sign below. */
     private static SoftwareKeySpec thaiMaiyamokKey() {
         return SoftwareKeySpec
@@ -1251,6 +1396,13 @@ public final class KeyboardLayouts {
             case FR_AZERTY:
             case EL_QWERTY:
             case JA_ROMAJI:
+            case RU_JCUKEN:
+            case UK_JCUKEN:
+            case BG_PHONETIC:
+            case MK_STANDARD:
+            case SR_CYRILLIC:
+            case UR_PHONETIC:
+            case KA_QWERTY:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period
@@ -1261,6 +1413,10 @@ public final class KeyboardLayouts {
                 return hebrewPeriodKey();
             case FA_ISIRI:
                 return persianPeriodKey();
+            case AR_101:
+                return arabicPeriodKey();
+            case HY_EASTERN:
+                return armenianPeriodKey();
             case TH_KEDMANEE:
                 return thaiMaiyamokKey();
             case HI_INSCRIPT:

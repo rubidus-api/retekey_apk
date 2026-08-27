@@ -458,6 +458,76 @@ public final class LetterHoldsTest {
         }
     }
 
+    private static java.util.Set<String> reachableOf(KeyboardLayout layout) {
+        java.util.Set<String> reachable = new java.util.HashSet<>();
+        for (List<SoftwareKeySpec> row : layout.rows()) {
+            for (SoftwareKeySpec key : row) {
+                reachable.add(key.label());
+                reachable.addAll(key.longPressTexts());
+                for (CheonjiinInterpreter.Flick way : CheonjiinInterpreter.Flick.values()) {
+                    if (key.flickText(way) != null) {
+                        reachable.add(key.flickText(way));
+                    }
+                }
+            }
+        }
+        return reachable;
+    }
+
+    private static void assertAlphabet(KeyboardLayoutId id, String alphabet) {
+        java.util.Set<String> reachable = reachableOf(KeyboardLayouts.of(id, false));
+        for (int i = 0; i < alphabet.length(); ) {
+            int cp = alphabet.codePointAt(i);
+            i += Character.charCount(cp);
+            String c = new String(Character.toChars(cp));
+            assertTrue(id + " missing " + c, reachable.contains(c));
+        }
+    }
+
+    @Test
+    public void theCyrillicPagesCarryTheirWholeAlphabets() {
+        assertAlphabet(KeyboardLayoutId.RU_JCUKEN, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя");
+        assertAlphabet(KeyboardLayoutId.UK_JCUKEN, "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя");
+        assertAlphabet(KeyboardLayoutId.BG_PHONETIC, "абвгдежзийклмнопрстуфхцчшщъьюя");
+        assertAlphabet(KeyboardLayoutId.MK_STANDARD, "абвгдѓежзѕијклљмнњопрстќуфхцчџш");
+        assertAlphabet(KeyboardLayoutId.SR_CYRILLIC, "абвгдђежзијклљмнњопрстћуфхцчџш");
+        // ЙЦУКЕН rows, ⌫ on the second, Shift on the third, the squeezed letters on the fourth.
+        KeyboardLayout ru = KeyboardLayouts.of(KeyboardLayoutId.RU_JCUKEN, false);
+        assertEquals(5, ru.rows().size());
+        assertEquals(Arrays.asList("й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з"), labels(ru, 0));
+        assertEquals("⌫", labels(ru, 1).get(9));
+        assertEquals("⇧", labels(ru, 2).get(0));
+        assertEquals(Arrays.asList("х", "ъ", "ж", "э", "б", "ю", "ё", "«", "»", "—"), labels(ru, 3));
+        assertEquals("ё", ru.findById("touch.en.е").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("Й", labels(KeyboardLayouts.of(KeyboardLayoutId.RU_JCUKEN, true), 0).get(0));
+        assertEquals("ґ", KeyboardLayouts.of(KeyboardLayoutId.UK_JCUKEN, false)
+            .findById("touch.en.г").flickText(CheonjiinInterpreter.Flick.UP));
+    }
+
+    @Test
+    public void theArabicScriptAndCaucasusPagesCarryTheirAlphabets() {
+        assertAlphabet(KeyboardLayoutId.AR_101, "ابتثجحخدذرزسشصضطظعغفقكلمنهوييةىءآأإؤئ");
+        assertAlphabet(KeyboardLayoutId.UR_PHONETIC, "اآبپتٹثجچحخدڈذرڑزژسشصضطظعغفقکگلمنںوہھءیےي");
+        assertAlphabet(KeyboardLayoutId.KA_QWERTY, "აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ");
+        assertAlphabet(KeyboardLayoutId.HY_EASTERN,
+            "աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆև");
+        // One page for the caseless three; the Arabic period beside space; Armenian's own stop.
+        KeyboardLayout ar = KeyboardLayouts.of(KeyboardLayoutId.AR_101, false);
+        assertEquals(ar, KeyboardLayouts.of(KeyboardLayoutId.AR_101, true));
+        assertNull(ar.findById("touch.modifier.shift"));
+        SoftwareKeySpec arPeriod = ar.findById("touch.text.period.letters");
+        assertEquals(Arrays.asList("،"), arPeriod.longPressTexts());
+        assertEquals("؟", arPeriod.flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("أ", ar.findById("touch.en.ا").flickText(CheonjiinInterpreter.Flick.UP));
+        KeyboardLayout ur = KeyboardLayouts.of(KeyboardLayoutId.UR_PHONETIC, false);
+        assertEquals("چ", ur.findById("touch.en.ج").flickText(CheonjiinInterpreter.Flick.UP));
+        KeyboardLayout hy = KeyboardLayouts.of(KeyboardLayoutId.HY_EASTERN, false);
+        assertEquals("։", hy.findById("touch.text.period.letters").label());
+        assertEquals("և", hy.findById("touch.en.ե").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("ռ", hy.findById("touch.en.ր").flickText(CheonjiinInterpreter.Flick.UP));
+        assertEquals("Ա", labels(KeyboardLayouts.of(KeyboardLayoutId.HY_EASTERN, true), 1).get(0));
+    }
+
     private static List<String> labels(KeyboardLayout layout, int row) {
         List<String> found = new ArrayList<>();
         for (SoftwareKeySpec key : layout.rows().get(row)) {

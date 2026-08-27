@@ -171,6 +171,65 @@ final class LatinAccents {
         "ม", " |ฒ| | "
     );
 
+    /** Russian: the habitual pairs ride up — ё over е, the hard sign over the soft. */
+    static final Map<String, String[]> RUSSIAN = table(
+        "е", " |ё| | ",
+        "ь", " |ъ| | "
+    );
+
+    /** Ukrainian: ґ rides г. */
+    static final Map<String, String[]> UKRAINIAN = table(
+        "г", " |ґ| | "
+    );
+
+    /** Arabic: the 101 layout's Shift layer — tashkil and hamza forms — key for key. */
+    static final Map<String, String[]> ARABIC = table(
+        "ء", " |ْ| | ",
+        "ا", " |أ| | ",
+        "ت", " |ـ| | ",
+        "ث", " |ُ| | ",
+        "ذ", " |ّ| | ",
+        "س", " |ٍ| | ",
+        "ش", " |ِ| | ",
+        "ص", " |ً| | ",
+        "ض", " |َ| | ",
+        "غ", " |إ| | ",
+        "ق", " |ٌ| | ",
+        "ى", " |آ| | "
+    );
+
+    /** Urdu: the phonetic layout's Shift layer, key for key — the paired letters ride up. */
+    static final Map<String, String[]> URDU = table(
+        "ا", " |آ| | ",
+        "ب", " |ـ| | ",
+        "ت", " |ۃ| | ",
+        "ج", " |چ| | ",
+        "ح", " |خ| | ",
+        "د", " |ڈ| | ",
+        "ر", " |ڑ| | ",
+        "ش", " |ؤ| | ",
+        "ص", " |ض| | ",
+        "ط", " |ظ| | ",
+        "غ", " |ئ| | ",
+        "ل", " |ۂ| | ",
+        "م", " |ژ| | ",
+        "ن", " |ں| | ",
+        "و", " |ز| | ",
+        "ٹ", " |ث| | ",
+        "پ", " |ّ| | ",
+        "ک", " |گ| | ",
+        "ھ", " |ذ| | ",
+        "ہ", " |ء| | ",
+        "ی", " |ي| | ",
+        "ے", " |ۓ| | "
+    );
+
+    /** Armenian: ռ rides ր and the ligature և rides ե. */
+    static final Map<String, String[]> ARMENIAN = table(
+        "ր", " |ռ| | ",
+        "ե", " |և| | "
+    );
+
     /**
      * Persian: the dotted twins go up (the dots sit on top), and the hamza family rides its
      * carriers — آ أ إ ء around alef, ؤ over vav, ئ over ye, ة over he.

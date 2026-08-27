@@ -40,6 +40,22 @@ public final class HardwareLayoutTablesTest {
     }
 
     @Test
+    public void theNewScriptTablesSitOnTheirWindowsPositions() {
+        assertEquals("й", type(KeyboardLayoutId.RU_JCUKEN, "hardware.key.q", false));
+        assertEquals("ф", type(KeyboardLayoutId.RU_JCUKEN, "hardware.key.a", false));
+        assertEquals("ё", type(KeyboardLayoutId.RU_JCUKEN, "hardware.keycode.68", false));
+        assertEquals("і", type(KeyboardLayoutId.UK_JCUKEN, "hardware.key.s", false));
+        assertEquals("ч", type(KeyboardLayoutId.BG_PHONETIC, "hardware.key.q", false));
+        assertEquals("љ", type(KeyboardLayoutId.MK_STANDARD, "hardware.key.q", false));
+        assertEquals("ђ", type(KeyboardLayoutId.SR_CYRILLIC, "hardware.keycode.72", false));
+        assertEquals("ض", type(KeyboardLayoutId.AR_101, "hardware.key.q", false));
+        assertEquals("ط", type(KeyboardLayoutId.UR_PHONETIC, "hardware.key.q", false));
+        assertEquals("ღ", type(KeyboardLayoutId.KA_QWERTY, "hardware.key.q", false));
+        assertEquals("ա", type(KeyboardLayoutId.HY_EASTERN, "hardware.key.a", false));
+        assertEquals("Ա", type(KeyboardLayoutId.HY_EASTERN, "hardware.key.a", true));
+    }
+
+    @Test
     public void asciiAndDeadKeysAreLeftToTheEditor() {
         // Greek Q is the question mark ; (ASCII) and OEM_1 the tonos dead key: both delegate.
         assertNull(type(KeyboardLayoutId.EL_QWERTY, "hardware.key.q", false));

@@ -36,6 +36,24 @@ public enum KeyboardLayoutId {
     TH_KEDMANEE,
     /** Hindi on InScript's positions: matra up to its vowel, plain up to its aspirate. */
     HI_INSCRIPT,
+    /** Russian ЙЦУКЕН, its three rows plus a fourth for the letters ten columns squeeze out. */
+    RU_JCUKEN,
+    /** Ukrainian: the ЙЦУКЕН frame with і ї є ґ. */
+    UK_JCUKEN,
+    /** Bulgarian Phonetic, the layout Bulgarian phones actually use. */
+    BG_PHONETIC,
+    /** Macedonian on its standard positions. */
+    MK_STANDARD,
+    /** Serbian Cyrillic on its standard positions. */
+    SR_CYRILLIC,
+    /** Arabic on the 101 layout's positions; the Shift layer's tashkil ride the flicks. */
+    AR_101,
+    /** Urdu on the phonetic layout's positions; the Shift layer's letters ride the flicks. */
+    UR_PHONETIC,
+    /** Georgian on its QWERTY-phonetic positions; no case, one page. */
+    KA_QWERTY,
+    /** Armenian (Eastern) on its typewriter positions. */
+    HY_EASTERN,
     KO_DUBEOLSIK,
     /** Korean 12-key with grouped consonants and the three vowel elements. */
     KO_CHEONJIIN,

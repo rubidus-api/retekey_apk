@@ -40,6 +40,15 @@ public final class LetterLayouts {
         KeyboardLayoutId.FA_ISIRI,
         KeyboardLayoutId.TH_KEDMANEE,
         KeyboardLayoutId.HI_INSCRIPT,
+        KeyboardLayoutId.RU_JCUKEN,
+        KeyboardLayoutId.UK_JCUKEN,
+        KeyboardLayoutId.BG_PHONETIC,
+        KeyboardLayoutId.MK_STANDARD,
+        KeyboardLayoutId.SR_CYRILLIC,
+        KeyboardLayoutId.AR_101,
+        KeyboardLayoutId.UR_PHONETIC,
+        KeyboardLayoutId.KA_QWERTY,
+        KeyboardLayoutId.HY_EASTERN,
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
@@ -102,6 +111,24 @@ public final class LetterLayouts {
                 return "th";
             case HI_INSCRIPT:
                 return "hi";
+            case RU_JCUKEN:
+                return "ru";
+            case UK_JCUKEN:
+                return "uk";
+            case BG_PHONETIC:
+                return "bg";
+            case MK_STANDARD:
+                return "mk";
+            case SR_CYRILLIC:
+                return "sr";
+            case AR_101:
+                return "ar";
+            case UR_PHONETIC:
+                return "ur";
+            case KA_QWERTY:
+                return "ka";
+            case HY_EASTERN:
+                return "hy";
             case KO_DUBEOLSIK:
                 return "2b";
             case KO_CHEONJIIN:
@@ -168,6 +195,24 @@ public final class LetterLayouts {
                 return "Thai(ไทย)";
             case HI_INSCRIPT:
                 return "Hindi(हिन्दी)";
+            case RU_JCUKEN:
+                return "Russian(Русский)";
+            case UK_JCUKEN:
+                return "Ukrainian(Українська)";
+            case BG_PHONETIC:
+                return "Bulgarian(Български)";
+            case MK_STANDARD:
+                return "Macedonian(Македонски)";
+            case SR_CYRILLIC:
+                return "Serbian(Српски)";
+            case AR_101:
+                return "Arabic(العربية)";
+            case UR_PHONETIC:
+                return "Urdu(اردو)";
+            case KA_QWERTY:
+                return "Georgian(ქართული)";
+            case HY_EASTERN:
+                return "Armenian(Հայերեն)";
             case KO_DUBEOLSIK:
                 return "2beolsik(2벌식)";
             case KO_CHEONJIIN:
