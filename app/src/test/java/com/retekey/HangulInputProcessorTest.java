@@ -232,4 +232,56 @@ public final class HangulInputProcessorTest {
             Arrays.asList(KeyAction.commitText("â"), KeyAction.setComposingText("ㄱ")),
             processor.process(SemanticInput.jamo(GIYEOK)).actions());
     }
+
+    // ---- remote-desktop editors: composition materialised as key-event deletes and commits ----
+
+    private static HangulInputProcessor remoteDesktopProcessor() {
+        EditorProfile remote = RICH.withDeleteByKeyEvents();
+        return new HangulInputProcessor(() -> remote);
+    }
+
+    @Test
+    public void aRemoteDesktopEditorGetsCommitsAndDeletesInsteadOfComposition() {
+        // 않 on MS Remote Desktop: its dummy buffer cannot carry a composing region to the far
+        // machine (the owner's report: 않 arrived as 안), so every update is a backspace key
+        // event plus a commit — both of which it always forwards.
+        HangulInputProcessor processor = remoteDesktopProcessor();
+        assertEquals(Collections.singletonList(KeyAction.commitText("ㅇ")),
+            processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11))).actions());
+        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("아")),
+            processor.process(SemanticInput.jamo(SemanticJamo.vowel(0))).actions());
+        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("안")),
+            processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2))).actions());
+        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("않")),
+            processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(18))).actions());
+        // A space flushes: the syllable is already on screen, so only the space itself goes out.
+        assertEquals(Collections.singletonList(KeyAction.commitText(" ")),
+            processor.process(SemanticInput.text(" ")).actions());
+    }
+
+    @Test
+    public void aRemoteDesktopBackspaceRetypesTheShorterSyllable() {
+        HangulInputProcessor processor = remoteDesktopProcessor();
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11)));
+        processor.process(SemanticInput.jamo(SemanticJamo.vowel(0)));
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2)));
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(18)));
+        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("안")),
+            processor.process(SemanticInput.deleteBackward()).actions());
+        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("아")),
+            processor.process(SemanticInput.deleteBackward()).actions());
+    }
+
+    @Test
+    public void aClosedSyllableOnRemoteDesktopCommitsOnlyTheNewLetter() {
+        HangulInputProcessor processor = remoteDesktopProcessor();
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11)));
+        processor.process(SemanticInput.jamo(SemanticJamo.vowel(0)));
+        // 아 + ㄱ = 악; 악 + ㅏ = the ㄱ moves on: 아 stays, 가 composes.
+        processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(0)));
+        assertEquals("the composing 악 is retyped as the closed 아 and the new 가",
+            Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("아"),
+                KeyAction.commitText("가")),
+            processor.process(SemanticInput.jamo(SemanticJamo.vowel(0))).actions());
+    }
 }

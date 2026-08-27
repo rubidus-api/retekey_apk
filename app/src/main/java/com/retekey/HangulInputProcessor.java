@@ -33,12 +33,22 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         this.textBeforeCursor = Objects.requireNonNull(textBeforeCursor, "textBeforeCursor");
     }
 
+    /**
+     * The composing text this processor has already written into a remote-desktop editor as
+     * committed characters. Those editors cannot carry a composing region across to the far
+     * machine, so composition is materialised: every update deletes the old syllable by backspace
+     * key events — which they always forward — and commits the new one (or just commits the tail
+     * when the update only grows). Empty everywhere else; the ordinary composing path is untouched.
+     */
+    private String materialized = "";
+
     /** Clears the composing syllable at a session boundary. */
     public void reset() {
         composer.reset();
         if (latin != null) {
             latin.reset();
         }
+        materialized = "";
     }
 
     /**
@@ -67,6 +77,73 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
 
     @Override
     public DispatchResult process(SemanticInput input) {
+        DispatchResult result = dispatch(input);
+        return composeByCommits() ? byCommits(result) : result;
+    }
+
+    /** Whether the editor wants composition materialised as commits (remote-desktop clients). */
+    private boolean composeByCommits() {
+        EditorProfile profile = editorProfile.get();
+        return profile != null && profile.capabilities().deleteByKeyEvents();
+    }
+
+    /**
+     * Rewrites a plan for an editor with no usable composing region: a composing-text update
+     * becomes backspaces for what was materialised plus a commit of the new text — or just the
+     * appended tail when the update only grows — and a commit that begins with the materialised
+     * text (the closed syllable, a flush) skips what is already on screen.
+     */
+    private DispatchResult byCommits(DispatchResult result) {
+        List<KeyAction> out = new ArrayList<>(result.actions().size() + 2);
+        for (KeyAction action : result.actions()) {
+            switch (action.kind()) {
+                case SET_COMPOSING_TEXT: {
+                    String next = action.text();
+                    if (next.startsWith(materialized)) {
+                        if (next.length() > materialized.length()) {
+                            out.add(KeyAction.commitText(next.substring(materialized.length())));
+                        }
+                    } else {
+                        addDeletes(out, materialized);
+                        if (!next.isEmpty()) {
+                            out.add(KeyAction.commitText(next));
+                        }
+                    }
+                    materialized = next;
+                    break;
+                }
+                case COMMIT_TEXT: {
+                    String text = action.text();
+                    if (!materialized.isEmpty() && text.startsWith(materialized)) {
+                        if (text.length() > materialized.length()) {
+                            out.add(KeyAction.commitText(text.substring(materialized.length())));
+                        }
+                    } else {
+                        addDeletes(out, materialized);
+                        out.add(action);
+                    }
+                    materialized = "";
+                    break;
+                }
+                case FINISH_COMPOSING:
+                    // Nothing composing in the editor: the materialised text simply stays.
+                    materialized = "";
+                    break;
+                default:
+                    out.add(action);
+            }
+        }
+        return result.isHandled() ? DispatchResult.handled(out) : DispatchResult.delegate(out);
+    }
+
+    private static void addDeletes(List<KeyAction> out, String materialized) {
+        int count = materialized.codePointCount(0, materialized.length());
+        for (int i = 0; i < count; i++) {
+            out.add(KeyAction.deleteBackward());
+        }
+    }
+
+    private DispatchResult dispatch(SemanticInput input) {
         if (input == null) {
             throw new IllegalArgumentException("semantic input must not be null");
         }

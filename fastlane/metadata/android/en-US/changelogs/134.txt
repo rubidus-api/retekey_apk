@@ -1,0 +1,6 @@
+Korean composes correctly in remote-desktop apps now: a syllable like
+the one with a double final used to lose its last consonant there,
+because those apps cannot carry a composing region across to the far
+machine. For them the keyboard now materialises composition - every
+update is a backspace key event plus a commit of the new syllable,
+both of which they always forward - so what you type is what arrives.
