@@ -51,8 +51,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.136** —
-[retekey-0.1.136.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.136/retekey-0.1.136.apk)
+현재 릴리즈: **v0.1.137** —
+[retekey-0.1.137.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.137/retekey-0.1.137.apk)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -232,6 +232,12 @@ QWERTY의 줄 모양이자 Dvorak의 7/10/9를 다른 순서로 읽은 것이라
 **포르투갈어·이탈리아어·폴란드어·베트남어·독일어(y/z 교환)·터키어**는 QWERTY 모양 그대로 자기 글자를 품고, 베트남어는 Telex로 칩니다:
 
 ![포르투갈어 자판](assets/keyboard-portuguese.png)
+
+**US 물리 키보드가 모든 문자 자판을 칩니다.** 자판을 선택해 두면 유선·블루투스 US 키보드가 그 언어의
+Windows 배열을 따릅니다: 그리스어·히브리어·태국어(Kedmanee의 숫자행 글자와 Shift의 태국 숫자까지)·힌디
+InScript는 전면 재매핑, 독일어는 오른쪽 키들에 ü ö ä ß, 프랑스어는 AZERTY처럼 숫자행에 é è ç à ù,
+터키어는 i 키가 ı, 스페인어 ñ·포르투갈어 ç·이탈리아어 악센트 모음이 제자리에 옵니다. 페르시아어와
+한국어는 전용 매퍼, 베트남어·일본어는 조합기로 칩니다. 출력이 ASCII뿐인 키와 데드키는 아직 편집기 몫입니다.
 
 **자기 글자가 끌기에 두기엔 너무 잦은 언어들은 4번째 글자 행을 받았습니다** — 독일어(ü ö ä ß와 독일
 인용부호·€), 터키어(ü ı ö ş ğ ç), 폴란드어(ą ć ę ł ń ó ś ź ż), 포르투갈어(ç ã õ와 악센트 모음),

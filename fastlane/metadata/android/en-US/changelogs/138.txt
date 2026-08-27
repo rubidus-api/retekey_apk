@@ -1,0 +1,6 @@
+A US physical keyboard now types every scripted layout, following that
+language's own Windows layout while it is selected: Greek, Hebrew,
+Thai and Hindi remap wholesale, German gains its umlauts and sharp s,
+French its accent keys on the digit row, Turkish its dotless i, and
+Spanish, Portuguese and Italian their own letters. Plain ASCII keys
+and dead keys stay with the editor.

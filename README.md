@@ -51,8 +51,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.136** —
-[retekey-0.1.136.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.136/retekey-0.1.136.apk)
+Current release: **v0.1.137** —
+[retekey-0.1.137.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.137/retekey-0.1.137.apk)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -236,6 +236,14 @@ The layouts, as they are:
 shape and hold their own letters; Vietnamese types through Telex:
 
 ![Portuguese layout](assets/keyboard-portuguese.png)
+
+**A US physical keyboard types every scripted layout.** While a layout is selected, a plugged-in or
+Bluetooth US keyboard follows that language's own Windows layout: Greek, Hebrew, Thai (Kedmanee's
+number-row letters and Thai digits on Shift included) and Hindi InScript remap wholesale; German adds
+ü ö ä ß on its right-hand keys; French puts é è ç à ù on the digit row as AZERTY does; Turkish types
+ı from the i key; Spanish adds ñ, Portuguese ç, Italian its accented vowels; Persian and Korean have
+mappers of their own, and Vietnamese and Japanese type through their composers. Keys whose output is
+plain ASCII, and dead keys, stay with the editor for now.
 
 **Languages whose own letters are too frequent for flicks got a fourth letter row** — German (ü ö ä ß
 with the German quotes and €), Turkish (ü ı ö ş ğ ç), Polish (ą ć ę ł ń ó ś ź ż), Portuguese

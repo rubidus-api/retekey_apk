@@ -1122,6 +1122,9 @@ public class ReteKeyImeService extends InputMethodService {
         } else if (!usesRawKeyCompatibility() && keyboardView != null
                 && keyboardView.letterLayoutId() == KeyboardLayoutId.FA_ISIRI) {
             hardwareMapper = PersianHardwareMapper.INSTANCE;
+        } else if (!usesRawKeyCompatibility() && keyboardView != null
+                && HardwareLayoutTables.of(keyboardView.letterLayoutId()) != null) {
+            hardwareMapper = HardwareLayoutTables.of(keyboardView.letterLayoutId());
         } else {
             hardwareMapper = HardwareSemanticMapper.none();
         }
