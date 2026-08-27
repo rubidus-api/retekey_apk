@@ -1090,12 +1090,14 @@ public class ReteKeyImeService extends InputMethodService {
      * half-made word is not left behind as composing text the next layout cannot finish.
      */
     private void syncLatinComposer() {
+        // The hardware mapper follows the layout even when the composers do not change —
+        // switching to Persian swaps a physical keyboard's letters without touching them.
+        applyHardwareMode();
         LatinComposer wanted = wantedLatinComposer();
         LatinComposer current = inputProcessor.latinComposer();
         if (wanted == current) {
             return;
         }
-        applyHardwareMode();
         if (current != null && current.isComposing()) {
             ExecutionResult result = execute(dispatcher.dispatch(
                 ProjectKeyEvent.softwareDown("layout.switch", SemanticInput.flush())));
@@ -1117,6 +1119,9 @@ public class ReteKeyImeService extends InputMethodService {
             hardwareMapper = DubeolsikHardwareMapper.INSTANCE;
         } else if (!usesRawKeyCompatibility() && wantedLatinComposer() != null) {
             hardwareMapper = LatinHardwareMapper.INSTANCE;
+        } else if (!usesRawKeyCompatibility() && keyboardView != null
+                && keyboardView.letterLayoutId() == KeyboardLayoutId.FA_ISIRI) {
+            hardwareMapper = PersianHardwareMapper.INSTANCE;
         } else {
             hardwareMapper = HardwareSemanticMapper.none();
         }

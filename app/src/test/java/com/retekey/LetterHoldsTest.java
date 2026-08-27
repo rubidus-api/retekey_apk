@@ -291,9 +291,9 @@ public final class LetterHoldsTest {
     @Test
     public void persianSitsOnIsirisPositionsInTenColumnsWithTheDottedTwinsUp() {
         KeyboardLayout fa = KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, false);
-        assertEquals(Arrays.asList("ج", "ح", "خ", "ه", "ع", "غ", "ف", "ق", "ص", "ض"), labels(fa, 0));
+        assertEquals(Arrays.asList("ح", "خ", "ه", "ع", "غ", "ف", "ق", "ص", "ض", "⌫"), labels(fa, 0));
         assertEquals(Arrays.asList("ک", "م", "ن", "ت", "ا", "ل", "ب", "ی", "س", "ش"), labels(fa, 1));
-        assertEquals(Arrays.asList("گ", "چ", "و", "پ", "د", "ر", "ز", "ط", "⌫", "⏎"), labels(fa, 2));
+        assertEquals(Arrays.asList("گ", "چ", "ج", "و", "پ", "د", "ر", "ز", "ط", "⏎"), labels(fa, 2));
         // One page, no Shift — Persian has no capitals.
         assertEquals(fa, KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, true));
         assertNull(fa.findById("touch.modifier.shift"));

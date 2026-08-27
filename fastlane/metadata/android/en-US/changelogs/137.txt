@@ -1,0 +1,6 @@
+Persian polish: Backspace now ends the first letter row and Enter the
+third, each at the right edge on its own row, the way every keyboard
+separates them. And a US physical keyboard types Persian now, on the
+Windows Persian layout's positions - letters on the base layer, the
+tashkil, zhe, the hamza family, guillemets and Persian marks on Shift,
+and Shift+Space for the half-space.

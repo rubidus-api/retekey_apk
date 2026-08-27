@@ -1005,11 +1005,16 @@ public final class KeyboardLayouts {
      * cannot do without.
      */
     private static KeyboardLayout persian() {
+        // Backspace ends the first row and Enter the third — each at the visual right edge, on
+        // separate rows the way every keyboard puts them (owner's request, 2026-08-27); the letter
+        // that makes room, ج, is the reading-order tail of ISIRI's first row and slides down to
+        // sit beside its family چ, keeping the relative order intact.
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
         List<SoftwareKeySpec> first = new ArrayList<>(10);
-        for (char c : "جحخهعغفقصض".toCharArray()) {
+        for (char c : "حخهعغفقصض".toCharArray()) {
             first.add(letter(String.valueOf(c), false));
         }
+        first.add(backspaceKey());
         rows.add(KeyboardLayout.row(first.toArray(new SoftwareKeySpec[0])));
         List<SoftwareKeySpec> second = new ArrayList<>(10);
         for (char c : "کمنتالبیسش".toCharArray()) {
@@ -1017,10 +1022,9 @@ public final class KeyboardLayouts {
         }
         rows.add(KeyboardLayout.row(second.toArray(new SoftwareKeySpec[0])));
         List<SoftwareKeySpec> third = new ArrayList<>(10);
-        for (char c : "گچوپدرزط".toCharArray()) {
+        for (char c : "گچجوپدرزط".toCharArray()) {
             third.add(letter(String.valueOf(c), false));
         }
-        third.add(backspaceKey());
         third.add(enterKey());
         rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
         // The letters the ten columns squeezed out get a row of their own (visual left-to-right;
