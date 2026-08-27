@@ -1,0 +1,8 @@
+Korean in remote-desktop apps stopped losing vowels. Rebuilding a
+syllable used to send a backspace key event before each new shape, and
+those apps sometimes filter rapid key events - so a vowel after a
+consonant could vanish. The repair now deletes through the text
+channel instead: the character being replaced was committed by this
+keyboard a moment ago, which is the one case those apps translate a
+text deletion reliably, and text calls cannot be key-filtered. Your
+own backspace on older text still goes out as a real key event.

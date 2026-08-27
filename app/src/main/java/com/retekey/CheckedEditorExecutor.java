@@ -495,6 +495,19 @@ public final class CheckedEditorExecutor {
                 return mutationCall(guardedCall(endpoint, bridge::finishComposingText));
             case DELETE_BACKWARD:
                 return executeRichDelete(endpoint, bounds, capabilities);
+            case DELETE_RECENT: {
+                // Our own just-committed characters: the surrounding-text call is reliable here
+                // on every editor, remote-desktop dummies included, and cannot be key-filtered.
+                int count = action.recentCount();
+                EditorCallResult recent = guardedCall(
+                    endpoint,
+                    () -> bridge.deleteSurroundingTextInCodePoints(count, 0)
+                );
+                return recent.isSucceeded()
+                    ? ActionExecution.dispatched(1, 1)
+                    : ActionExecution.failure(reasonForOperation(recent), 1,
+                        !recent.isStaleSession());
+            }
             case PERFORM_EDITOR_ACTION:
             case RAW_ENTER:
             case RAW_KEY:

@@ -138,8 +138,8 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
 
     private static void addDeletes(List<KeyAction> out, String materialized) {
         int count = materialized.codePointCount(0, materialized.length());
-        for (int i = 0; i < count; i++) {
-            out.add(KeyAction.deleteBackward());
+        if (count > 0) {
+            out.add(KeyAction.deleteRecent(count));
         }
     }
 

@@ -248,11 +248,11 @@ public final class HangulInputProcessorTest {
         HangulInputProcessor processor = remoteDesktopProcessor();
         assertEquals(Collections.singletonList(KeyAction.commitText("ㅇ")),
             processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11))).actions());
-        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("아")),
+        assertEquals(Arrays.asList(KeyAction.deleteRecent(1), KeyAction.commitText("아")),
             processor.process(SemanticInput.jamo(SemanticJamo.vowel(0))).actions());
-        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("안")),
+        assertEquals(Arrays.asList(KeyAction.deleteRecent(1), KeyAction.commitText("안")),
             processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2))).actions());
-        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("않")),
+        assertEquals(Arrays.asList(KeyAction.deleteRecent(1), KeyAction.commitText("않")),
             processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(18))).actions());
         // A space flushes: the syllable is already on screen, so only the space itself goes out.
         assertEquals(Collections.singletonList(KeyAction.commitText(" ")),
@@ -266,9 +266,9 @@ public final class HangulInputProcessorTest {
         processor.process(SemanticInput.jamo(SemanticJamo.vowel(0)));
         processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2)));
         processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(18)));
-        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("안")),
+        assertEquals(Arrays.asList(KeyAction.deleteRecent(1), KeyAction.commitText("안")),
             processor.process(SemanticInput.deleteBackward()).actions());
-        assertEquals(Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("아")),
+        assertEquals(Arrays.asList(KeyAction.deleteRecent(1), KeyAction.commitText("아")),
             processor.process(SemanticInput.deleteBackward()).actions());
     }
 
@@ -280,7 +280,7 @@ public final class HangulInputProcessorTest {
         // 아 + ㄱ = 악; 악 + ㅏ = the ㄱ moves on: 아 stays, 가 composes.
         processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(0)));
         assertEquals("the composing 악 is retyped as the closed 아 and the new 가",
-            Arrays.asList(KeyAction.deleteBackward(), KeyAction.commitText("아"),
+            Arrays.asList(KeyAction.deleteRecent(1), KeyAction.commitText("아"),
                 KeyAction.commitText("가")),
             processor.process(SemanticInput.jamo(SemanticJamo.vowel(0))).actions());
     }
@@ -294,6 +294,11 @@ public final class HangulInputProcessorTest {
                     break;
                 case DELETE_BACKWARD:
                     if (buffer.length() > 0) {
+                        buffer.deleteCharAt(buffer.length() - 1);
+                    }
+                    break;
+                case DELETE_RECENT:
+                    for (int i = 0; i < action.recentCount() && buffer.length() > 0; i++) {
                         buffer.deleteCharAt(buffer.length() - 1);
                     }
                     break;

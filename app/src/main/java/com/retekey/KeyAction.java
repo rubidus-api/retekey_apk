@@ -11,6 +11,14 @@ public final class KeyAction {
         SET_COMPOSING_TEXT,
         FINISH_COMPOSING,
         DELETE_BACKWARD,
+        /**
+         * Delete the last {@code count} code points, which this keyboard itself committed a
+         * moment ago — composition repair on an editor whose composing region is unusable. It is
+         * always executed as {@code deleteSurroundingTextInCodePoints}: the characters are still
+         * in even a remote-desktop editor's dummy buffer, which is the one case its translation
+         * of that call is reliable — and a text call cannot be dropped by key-event filtering.
+         */
+        DELETE_RECENT,
         PERFORM_EDITOR_ACTION,
         RAW_ENTER,
         RAW_KEY
@@ -54,6 +62,19 @@ public final class KeyAction {
         this.modifiers = modifiers.isEmpty()
             ? Collections.emptySet()
             : Collections.unmodifiableSet(EnumSet.copyOf(modifiers));
+    }
+
+    /** Deletes the last {@code count} code points this keyboard itself just committed. */
+    public static KeyAction deleteRecent(int count) {
+        if (count < 1) {
+            throw new IllegalArgumentException("deleteRecent needs at least one code point");
+        }
+        return new KeyAction(Kind.DELETE_RECENT, "", count, null, Collections.emptySet());
+    }
+
+    /** How many code points a {@link Kind#DELETE_RECENT} takes back. */
+    public int recentCount() {
+        return actionId;
     }
 
     public static KeyAction commitText(String text) {

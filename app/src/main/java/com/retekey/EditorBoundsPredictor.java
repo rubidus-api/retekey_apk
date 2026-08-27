@@ -39,6 +39,8 @@ static EditorBounds after(EditorBounds current, KeyAction action) {
                     -1,
                     -1
                 );
+            case DELETE_RECENT:
+                return EditorBounds.unknown();
             case DELETE_BACKWARD:
                 if (current.hasComposingRange()) {
                     return EditorBounds.unknown();
