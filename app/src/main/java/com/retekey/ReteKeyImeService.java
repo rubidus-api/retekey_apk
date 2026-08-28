@@ -285,7 +285,9 @@ public class ReteKeyImeService extends InputMethodService {
         try {
             switch (action) {
                 case SELECT_WORD:
-                    selectWordAroundCursor();
+                    if (!selectWordByRemoteChords()) {
+                        selectWordAroundCursor();
+                    }
                     break;
                 case SELECT_ALL:
                     performEditCommand(android.R.id.selectAll);
@@ -537,10 +539,61 @@ public class ReteKeyImeService extends InputMethodService {
         if (contextMenuId == android.R.id.paste && pasteByCommitForRemoteDesktop()) {
             return;
         }
+        if (editCommandAsRemoteChord(contextMenuId)) {
+            return;
+        }
         InputConnection inputConnection = getCurrentInputConnection();
         if (inputConnection != null) {
             inputConnection.performContextMenuAction(contextMenuId);
         }
+    }
+
+    /**
+     * On a remote-desktop editor the context-menu actions do nothing — the relay has no text
+     * view behind its InputConnection — but it always forwards key events, so the commands
+     * become the chords the far side already understands: Ctrl+A/C/X/Z/Y.
+     */
+    private boolean editCommandAsRemoteChord(int contextMenuId) {
+        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+            return false;
+        }
+        RawKey letter;
+        if (contextMenuId == android.R.id.selectAll) {
+            letter = RawKey.A;
+        } else if (contextMenuId == android.R.id.copy) {
+            letter = RawKey.C;
+        } else if (contextMenuId == android.R.id.cut) {
+            letter = RawKey.X;
+        } else if (contextMenuId == EditMenuIds.UNDO) {
+            letter = RawKey.Z;
+        } else if (contextMenuId == EditMenuIds.REDO) {
+            letter = RawKey.Y;
+        } else {
+            return false;
+        }
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+            "touch.edit.remote.chord",
+            SemanticInput.rawKey(letter, java.util.EnumSet.of(KeyModifier.CTRL))));
+        return true;
+    }
+
+    /**
+     * Word selection for a remote-desktop editor, where reading and setting a local selection
+     * means nothing: the far side's own word-jump chords — Ctrl+Left to the word's start, then
+     * Ctrl+Shift+Right across it.
+     */
+    private boolean selectWordByRemoteChords() {
+        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+            return false;
+        }
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+            "touch.bar.word.remote",
+            SemanticInput.rawKey(RawKey.LEFT, java.util.EnumSet.of(KeyModifier.CTRL))));
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+            "touch.bar.word.remote",
+            SemanticInput.rawKey(
+                RawKey.RIGHT, java.util.EnumSet.of(KeyModifier.CTRL, KeyModifier.SHIFT))));
+        return true;
     }
 
     /**
@@ -562,18 +615,41 @@ public class ReteKeyImeService extends InputMethodService {
             showFunctionToast(getString(R.string.remote_paste_empty));
             return false;
         }
-        // The relay reliably forwards what typing produces: one small commit per batch. A
-        // single large commit is the shape it has been seen swallowing whole, so paste types
-        // the clipboard out — one code point per commit, each in a batch of its own.
+        // splitTextForRemoteDesktop below types it out one code point at a time.
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+            "touch.bar.paste.remote", SemanticInput.text(text)));
+        return true;
+    }
+
+    /**
+     * Multi-character text bound for a remote-desktop editor — a paste, a clip from the
+     * clipboard panel, the date tile — is typed out one code point per commit, each in a batch
+     * of its own. That is the shape the relay reliably forwards: what typing produces. A single
+     * large commit is the shape it has been seen swallowing whole.
+     */
+    private boolean splitTextForRemoteDesktop(ProjectKeyEvent event) {
+        SemanticInput input = event.semanticInput();
+        if (input == null || input.kind() != SemanticInput.Kind.TEXT) {
+            return false;
+        }
+        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+            return false;
+        }
+        String text = input.text();
+        if (text == null || text.isEmpty() || text.codePointCount(0, text.length()) <= 1) {
+            return false;
+        }
         int length = text.length();
-        int pasted = 0;
-        for (int i = 0; i < length && pasted < REMOTE_PASTE_LIMIT;
-                i = text.offsetByCodePoints(i, 1), pasted++) {
+        int typed = 0;
+        int i = 0;
+        while (i < length && typed < REMOTE_PASTE_LIMIT) {
             int end = text.offsetByCodePoints(i, 1);
             dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-                "touch.bar.paste.remote", SemanticInput.text(text.substring(i, end))));
+                event.stableKeyId(), SemanticInput.text(text.substring(i, end))));
+            i = end;
+            typed++;
         }
-        if (pasted >= REMOTE_PASTE_LIMIT && text.offsetByCodePoints(0, pasted) < length) {
+        if (i < length) {
             showFunctionToast(getString(R.string.remote_paste_truncated));
         }
         return true;
@@ -1058,6 +1134,9 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         if (consumeForNotepad(event)) {
+            return;
+        }
+        if (splitTextForRemoteDesktop(event)) {
             return;
         }
         hideHanjaCandidatesIfShown();

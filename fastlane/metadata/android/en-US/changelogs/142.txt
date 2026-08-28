@@ -1,0 +1,1 @@
+Remote desktop: the action bar's Select all, Copy, Cut and the menu's Undo/Redo now send the matching Ctrl key chords, which the relay always forwards; Select word uses the remote side's own word-jump chords; clips from the clipboard panel and the date tile are typed out character by character like paste.
