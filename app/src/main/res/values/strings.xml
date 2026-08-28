@@ -83,4 +83,6 @@
     <string name="mode_korean">한글</string>
     <string name="mode_english">English</string>
     <string name="hanja_pending">한자 키 인식됨 — 변환 기능은 준비 중입니다.</string>
+    <string name="remote_paste_empty">Nothing on this device\'s clipboard to paste.</string>
+    <string name="remote_paste_truncated">Clipboard too long — pasted the first part only.</string>
 </resources>

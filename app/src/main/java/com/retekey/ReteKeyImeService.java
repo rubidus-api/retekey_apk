@@ -557,12 +557,30 @@ public class ReteKeyImeService extends InputMethodService {
         }
         String text = primaryClipText();
         if (text.isEmpty()) {
+            // Say so — a silent nothing reads as a broken paste key. Falling through still
+            // gives the native path its chance: the far side may hold a clipboard of its own.
+            showFunctionToast(getString(R.string.remote_paste_empty));
             return false;
         }
-        dispatchSoftwareInput(
-            ProjectKeyEvent.softwareDown("touch.bar.paste.remote", SemanticInput.text(text)));
+        // The relay reliably forwards what typing produces: one small commit per batch. A
+        // single large commit is the shape it has been seen swallowing whole, so paste types
+        // the clipboard out — one code point per commit, each in a batch of its own.
+        int length = text.length();
+        int pasted = 0;
+        for (int i = 0; i < length && pasted < REMOTE_PASTE_LIMIT;
+                i = text.offsetByCodePoints(i, 1), pasted++) {
+            int end = text.offsetByCodePoints(i, 1);
+            dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                "touch.bar.paste.remote", SemanticInput.text(text.substring(i, end))));
+        }
+        if (pasted >= REMOTE_PASTE_LIMIT && text.offsetByCodePoints(0, pasted) < length) {
+            showFunctionToast(getString(R.string.remote_paste_truncated));
+        }
         return true;
     }
+
+    /** How many code points a remote-desktop paste will type out before giving up. */
+    private static final int REMOTE_PASTE_LIMIT = 2000;
 
     /** A physical Ctrl+V, with no other modifier riding along. */
     private static boolean isHardwarePasteChord(int keyCode, KeyEvent event) {

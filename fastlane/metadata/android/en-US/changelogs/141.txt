@@ -1,0 +1,1 @@
+Remote desktop: paste now types the clipboard out one character at a time — the shape the relay reliably forwards — instead of one large commit, and an empty local clipboard says so in a toast instead of doing nothing.
