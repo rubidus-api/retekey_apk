@@ -158,6 +158,52 @@ public final class EditorActionExecutionTest {
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
     }
 
+    @Test
+    public void remoteDesktopBackspaceDeletesOverTheTextChannelWhenTheRelayHoldsText() {
+        // The two remote-desktop pipes are unordered against each other; when the relay's buffer
+        // verifiably holds text the backspace must ride the text channel with the commits, so a
+        // backspace-then-retype (the eaten 앉) cannot be re-ordered by the far side.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.setTextBeforeCursor(EditorTextResult.value("안"));
+
+        ExecutionResult result = execute(
+            bridge,
+            RICH.withDeleteByKeyEvents(),
+            Collections.singletonList(KeyAction.deleteBackward())
+        );
+
+        Assert.assertEquals(Arrays.asList(
+            "beginBatchEdit",
+            "getTextBeforeCursor:max=1:flags=0",
+            "deleteCodePoints:before=1:after=0",
+            "endBatchEdit"
+        ), bridge.trace());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+    }
+
+    @Test
+    public void remoteDesktopBackspaceFallsBackToTheKeyEventOnAnEmptyRelayBuffer() {
+        // An empty or unknown relay buffer says nothing about the far side: the key event is
+        // still the deletion the far side always sees.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.setTextBeforeCursor(EditorTextResult.value(""));
+
+        ExecutionResult result = execute(
+            bridge,
+            RICH.withDeleteByKeyEvents(),
+            Collections.singletonList(KeyAction.deleteBackward())
+        );
+
+        Assert.assertEquals(Arrays.asList(
+            "beginBatchEdit",
+            "getTextBeforeCursor:max=1:flags=0",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=DOWN",
+            "sendRawKey:key=BACKSPACE:modifiers=[]:action=UP",
+            "endBatchEdit"
+        ), bridge.trace());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+    }
+
     private static ExecutionResult execute(
         FakeEditorBridge bridge,
         EditorCapabilities capabilities,

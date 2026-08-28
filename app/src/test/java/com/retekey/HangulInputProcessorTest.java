@@ -345,6 +345,12 @@ public final class HangulInputProcessorTest {
             SemanticInput.jamo(SemanticJamo.vowel(0)),
             SemanticInput.jamo(SemanticJamo.contextualConsonant(2)),
             SemanticInput.jamo(SemanticJamo.contextualConsonant(18))));
+        // The owner's report of 2026-08-28: 앉, the other ㄴ-compound final.
+        assertEquals("앉", typeRemotely(
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(11)),
+            SemanticInput.jamo(SemanticJamo.vowel(0)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(2)),
+            SemanticInput.jamo(SemanticJamo.contextualConsonant(12))));
         assertEquals("뭐", typeRemotely(
             SemanticInput.jamo(SemanticJamo.contextualConsonant(6)),
             SemanticInput.jamo(SemanticJamo.vowel(13)),

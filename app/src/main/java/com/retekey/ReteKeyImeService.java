@@ -534,9 +534,71 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Runs an editor context-menu command (copy/paste/undo) on the focused editor. */
     private void performEditCommand(int contextMenuId) {
+        if (contextMenuId == android.R.id.paste && pasteByCommitForRemoteDesktop()) {
+            return;
+        }
         InputConnection inputConnection = getCurrentInputConnection();
         if (inputConnection != null) {
             inputConnection.performContextMenuAction(contextMenuId);
+        }
+    }
+
+    /**
+     * Pastes on a remote-desktop editor by committing the clipboard text through the ordered
+     * text channel — the same pipe every typed character takes. The relay's InputConnection has
+     * no text view behind it, so the paste context-menu action does nothing there, and a relayed
+     * Ctrl+V chord is at the mercy of the far side's clipboard sync. Returns false when this is
+     * not a remote-desktop editor, or when the clipboard holds no text to commit — non-text
+     * content still gets its chance on the native path.
+     */
+    private boolean pasteByCommitForRemoteDesktop() {
+        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+            return false;
+        }
+        String text = primaryClipText();
+        if (text.isEmpty()) {
+            return false;
+        }
+        dispatchSoftwareInput(
+            ProjectKeyEvent.softwareDown("touch.bar.paste.remote", SemanticInput.text(text)));
+        return true;
+    }
+
+    /** A physical Ctrl+V, with no other modifier riding along. */
+    private static boolean isHardwarePasteChord(int keyCode, KeyEvent event) {
+        return keyCode == KeyEvent.KEYCODE_V
+            && event.getRepeatCount() == 0
+            && event.isCtrlPressed()
+            && !event.isAltPressed()
+            && !event.isShiftPressed()
+            && !event.isMetaPressed();
+    }
+
+    /** A soft-armed Ctrl+V chord — the on-screen Ctrl latch followed by the V key. */
+    private static boolean isPasteChordInput(SemanticInput input) {
+        return input != null
+            && input.kind() == SemanticInput.Kind.RAW_KEY
+            && input.rawKey() == RawKey.V
+            && input.modifiers().size() == 1
+            && input.modifiers().contains(KeyModifier.CTRL);
+    }
+
+    /** The clipboard's current text, or empty when it holds none (or none coercible to text). */
+    private String primaryClipText() {
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager == null || !manager.hasPrimaryClip()) {
+                return "";
+            }
+            android.content.ClipData data = manager.getPrimaryClip();
+            if (data == null || data.getItemCount() == 0) {
+                return "";
+            }
+            CharSequence text = data.getItemAt(0).coerceToText(this);
+            return text == null ? "" : text.toString();
+        } catch (RuntimeException clipboardUnavailable) {
+            return "";
         }
     }
 
@@ -599,6 +661,9 @@ public class ReteKeyImeService extends InputMethodService {
             // A physical key ends any 12-key run on screen, the same way an on-screen key that is
             // not part of the run does; otherwise the next tap would continue a run the user left.
             keyboardView.resetPhoneInterpreters();
+        }
+        if (isHardwarePasteChord(keyCode, event) && pasteByCommitForRemoteDesktop()) {
+            return true;
         }
         if (passThroughChord(event)) {
             return super.onKeyDown(keyCode, event);
@@ -969,6 +1034,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     private void dispatchSoftwareInput(ProjectKeyEvent event) {
         if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
+            return;
+        }
+        if (isPasteChordInput(event.semanticInput()) && pasteByCommitForRemoteDesktop()) {
             return;
         }
         if (consumeForNotepad(event)) {

@@ -1,0 +1,1 @@
+Remote desktop: backspace now travels the same ordered channel as typed text when possible, so a backspace followed by retyping can no longer eat the new syllable (e.g. 앉). Paste button and Ctrl+V now paste the clipboard text directly on remote-desktop editors, whose relay ignores the normal paste command.

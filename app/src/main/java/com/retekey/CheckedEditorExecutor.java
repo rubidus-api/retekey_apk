@@ -524,9 +524,49 @@ public final class CheckedEditorExecutor {
     ) {
         EditorBridge bridge = endpoint.bridge();
         if (capabilities.deleteByKeyEvents()) {
-            // A remote-desktop editor: the key event is the deletion its far side always sees,
-            // whatever its local dummy buffer holds (or does not). See EditorCapabilities.
-            return executeRawDeleteFallback(endpoint, 0);
+            // A remote-desktop editor relays over two pipes — text operations and key events —
+            // and the pipes are not ordered against each other: a key-event backspace can land
+            // after a text commit that followed it, eating the retyped syllable. When the relay's
+            // buffer verifiably holds text, delete over the same text channel every commit takes,
+            // so order is preserved; the key event stays the fallback for an unknown, empty, or
+            // start-of-field buffer, for a sensitive field (never read), and for a selection,
+            // which lives on the far side.
+            int priorOperations = 0;
+            if (!bounds.hasSelectedText()
+                && !capabilities.isSensitive()
+                && bounds.selectionStart() != 0) {
+                EditorTextResult relayBefore = guardedTextCall(
+                    endpoint,
+                    () -> bridge.getTextBeforeCursor(1, 0)
+                );
+                priorOperations++;
+                if (relayBefore.kind() == EditorTextResult.Kind.STALE_SESSION) {
+                    return ActionExecution.failure(
+                        ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                        priorOperations,
+                        false
+                    );
+                }
+                if (relayBefore.hasValue() && !relayBefore.value().isEmpty()) {
+                    EditorCallResult ordered = guardedCall(
+                        endpoint,
+                        () -> bridge.deleteSurroundingTextInCodePoints(1, 0)
+                    );
+                    priorOperations++;
+                    if (ordered.isSucceeded()) {
+                        return ActionExecution.dispatched(1, priorOperations);
+                    }
+                    if (ordered.isStaleSession()) {
+                        return ActionExecution.failure(
+                            ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                            priorOperations,
+                            false
+                        );
+                    }
+                    // The text call was refused: the key event below still deletes remotely.
+                }
+            }
+            return executeRawDeleteFallback(endpoint, priorOperations);
         }
         if (bounds.hasSelectedText()) {
             return mutationCall(guardedCall(endpoint, () -> bridge.commitText("", 1)));
