@@ -52,7 +52,7 @@ Or take an APK directly:
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
 Current release: **v0.1.138** —
-[retekey-0.1.138.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.138/retekey-0.1.138.apk)
+[retekey-0.1.138.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.138/retekey-0.1.138.apk) (611 KB; the Android 4.0 build is 513 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
