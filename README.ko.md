@@ -1,5 +1,7 @@
 # ReteKey IME
 
+**ReteKey v0.1.144** (최신 릴리즈) 다운로드 — [apk](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk) · [레거시 apk](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)
+
 [English](README.md) · **한국어**
 
 **개발자와 전문 사용자를 위한 안드로이드 한글 키보드입니다.** 폰에서도 Esc와 Tab, Ctrl 조합, 함수키와

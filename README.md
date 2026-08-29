@@ -1,5 +1,7 @@
 # ReteKey IME
 
+**ReteKey v0.1.144** (latest release) download — [apk](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk) · [legacy apk](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)
+
 **English** · [한국어](README.ko.md)
 
 **An Android Hangul keyboard for developers and power users** — for anyone who needs Esc, Tab, Ctrl
