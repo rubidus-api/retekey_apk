@@ -63,7 +63,7 @@ public final class CheckedEditorExecutor {
         if (isSingleRawKey(plan.actions())
             || isSingleRawEnter(plan.actions())
             || (rawEditor && !isSingleCommitText(plan.actions()))) {
-            return executeRawCompatibility(plan, endpoint);
+            return executeRawCompatibility(plan, endpoint, context.capabilities());
         }
         return executeRichPlan(plan, context, endpoint);
     }
@@ -134,9 +134,47 @@ public final class CheckedEditorExecutor {
     }
 
 
+    /**
+     * 이 코드를 감쌀 **진짜 수식키**들 — 원격데스크톱 프로파일에서만, 그리고 코드가 있을 때만.
+     * 순서는 고정이다(Ctrl → Shift → Alt → Meta): 같은 코드가 언제나 같은 열로 나가야
+     * 저쪽에서 재현된다.
+     */
+    private static java.util.List<RawKey> modifierFrame(
+        EditorCapabilities capabilities,
+        java.util.Set<KeyModifier> modifiers
+    ) {
+        if (capabilities == null || !capabilities.deleteByKeyEvents() || modifiers.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        java.util.List<RawKey> frame = new java.util.ArrayList<>(4);
+        if (modifiers.contains(KeyModifier.CTRL)) {
+            frame.add(RawKey.CTRL_LEFT);
+        }
+        if (modifiers.contains(KeyModifier.SHIFT)) {
+            frame.add(RawKey.SHIFT_LEFT);
+        }
+        if (modifiers.contains(KeyModifier.ALT)) {
+            frame.add(RawKey.ALT_LEFT);
+        }
+        if (modifiers.contains(KeyModifier.META)) {
+            frame.add(RawKey.META_LEFT);
+        }
+        return frame;
+    }
+
+    private static KeyModifier modifierOf(RawKey key) {
+        switch (key) {
+            case CTRL_LEFT: return KeyModifier.CTRL;
+            case SHIFT_LEFT: return KeyModifier.SHIFT;
+            case ALT_LEFT: return KeyModifier.ALT;
+            default: return KeyModifier.META;
+        }
+    }
+
     private static ExecutionResult executeRawCompatibility(
         TransitionPlan<?> plan,
-        EditorEndpoint endpoint
+        EditorEndpoint endpoint,
+        EditorCapabilities capabilities
     ) {
         EditorBridge bridge = endpoint.bridge();
         KeyAction action = plan.actions().get(0);
@@ -160,6 +198,27 @@ public final class CheckedEditorExecutor {
         if (phase != RawKeyPhase.TAP) {
             return executeRawKeyHalf(plan, endpoint, action, rawKey, modifiers, phase);
         }
+        // ★★★ **원격데스크톱에서는 수식키를 진짜로 누른다** (2026-08-29, 사용자 보고).
+        //   릴레이 뒤에는 텍스트 뷰가 없고 저쪽은 **진짜 OS** 다: 릴레이는 KeyEvent 를 저쪽
+        //   키 입력으로 옮기면서 **metaState 를 안 본다**. 그래서 Ctrl+C 가 `c` 로 도착했고,
+        //   액션바의 잘라내기·복사와 터치 자판의 Ctrl+X/C/V/A 가 **원격에서만** 죽어 있었다.
+        //   ⇒ 그 프로파일에서만 코드를 프레임으로 감싼다: Ctrl down → C down/up → Ctrl up.
+        //   ☞ 로컬 편집기는 **그대로** 둔다 — 거기서는 metaState 하나면 TextView 가 읽고,
+        //     수식키를 따로 보내면 다른 앱의 단축키까지 깨울 수 있다.
+        java.util.List<RawKey> frame = modifierFrame(capabilities, modifiers);
+        java.util.Set<KeyModifier> held = java.util.EnumSet.noneOf(KeyModifier.class);
+        for (RawKey modifierKey : frame) {
+            held.add(modifierOf(modifierKey));
+            java.util.Set<KeyModifier> pressed = java.util.EnumSet.copyOf(held);
+            EditorCallResult modifierDown = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
+                modifierKey,
+                pressed,
+                RawEditorKey.Action.DOWN
+            )));
+            if (!modifierDown.isSucceeded()) {
+                break;
+            }
+        }
         EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
             rawKey,
             modifiers,
@@ -176,6 +235,17 @@ public final class CheckedEditorExecutor {
             modifiers,
             RawEditorKey.Action.UP
         )));
+        // 누른 역순으로 놓는다 — 실제 손가락이 그렇게 하고, 저쪽 OS 도 그 순서를 기대한다.
+        for (int i = frame.size() - 1; i >= 0; i--) {
+            RawKey modifierKey = frame.get(i);
+            held.remove(modifierOf(modifierKey));
+            java.util.Set<KeyModifier> stillHeld = java.util.EnumSet.copyOf(held);
+            safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
+                modifierKey,
+                stillHeld,
+                RawEditorKey.Action.UP
+            )));
+        }
         if (!down.isSucceeded() || !up.isSucceeded()) {
             EditorCallResult primary = down.isSucceeded() ? up : down;
             ExecutionResult.Reason cleanupReason = !down.isSucceeded() && !up.isSucceeded()

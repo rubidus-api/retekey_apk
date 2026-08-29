@@ -66,6 +66,64 @@ public final class RawKeyExecutionTest {
         ), bridge.trace());
     }
 
+    /**
+     * ★ 원격데스크톱 릴레이는 **metaState 를 안 본다** — 저쪽 OS 의 수식 상태를 세우는 것은
+     * 진짜 Ctrl 키의 down/up 이다. 그래서 그 프로파일에서는 코드를 **수식키로 감싼다**:
+     * Ctrl down → C down/up → Ctrl up. 이것이 없으면 저쪽에는 그냥 `c` 가 찍힌다
+     * (사용자 보고 2026-08-29: 액션바 잘라내기·복사·붙여넣기와 Ctrl+X/C/V/A 가 원격에서만 죽었다).
+     */
+    @Test
+    public void aRemoteDesktopChordIsFramedByRealModifierKeys() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        execute(
+            bridge,
+            RICH.withDeleteByKeyEvents(),
+            KeyAction.rawKey(RawKey.C, EnumSet.of(KeyModifier.CTRL))
+        );
+
+        Assert.assertEquals(Arrays.asList(
+            "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:action=DOWN",
+            "sendRawKey:key=C:modifiers=[CTRL]:action=DOWN",
+            "sendRawKey:key=C:modifiers=[CTRL]:action=UP",
+            "sendRawKey:key=CTRL_LEFT:modifiers=[]:action=UP"
+        ), bridge.trace());
+    }
+
+    /** 수식키가 여럿이면 **누른 역순으로** 놓는다 — 실제 손가락이 그렇게 한다. */
+    @Test
+    public void aRemoteDesktopChordReleasesModifiersInReverse() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        execute(
+            bridge,
+            RICH.withDeleteByKeyEvents(),
+            KeyAction.rawKey(RawKey.RIGHT, EnumSet.of(KeyModifier.CTRL, KeyModifier.SHIFT))
+        );
+
+        Assert.assertEquals(Arrays.asList(
+            "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:action=DOWN",
+            "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL, SHIFT]:action=DOWN",
+            "sendRawKey:key=RIGHT:modifiers=[CTRL, SHIFT]:action=DOWN",
+            "sendRawKey:key=RIGHT:modifiers=[CTRL, SHIFT]:action=UP",
+            "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL]:action=UP",
+            "sendRawKey:key=CTRL_LEFT:modifiers=[]:action=UP"
+        ), bridge.trace());
+    }
+
+    /** ★ 로컬(리치) 편집기는 **그대로** — metaState 하나면 TextView 가 읽는다. 두 벌로 안 보낸다. */
+    @Test
+    public void aLocalChordStillRidesOnMetaStateAlone() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+
+        execute(bridge, RICH, KeyAction.rawKey(RawKey.C, EnumSet.of(KeyModifier.CTRL)));
+
+        Assert.assertEquals(Arrays.asList(
+            "sendRawKey:key=C:modifiers=[CTRL]:action=DOWN",
+            "sendRawKey:key=C:modifiers=[CTRL]:action=UP"
+        ), bridge.trace());
+    }
+
     @Test
     public void theStatelessProcessorLowersRawInputToARawAction() {
         StatelessInputProcessor processor = new ScaffoldInputProcessor();

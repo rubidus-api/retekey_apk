@@ -1,0 +1,1 @@
+Cut, copy, paste and Ctrl+X/C/V/A work again on remote-desktop editors: the chords now press a real Ctrl key over there instead of riding on a meta flag the relay never reads. Paste asks the far side for its own clipboard again.

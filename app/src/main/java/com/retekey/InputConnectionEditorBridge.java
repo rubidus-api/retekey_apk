@@ -142,6 +142,10 @@ public final class InputConnectionEditorBridge implements EditorBridge {
 
     static int keyCodeFor(RawKey key) {
         switch (key) {
+            case CTRL_LEFT: return KeyEvent.KEYCODE_CTRL_LEFT;
+            case SHIFT_LEFT: return KeyEvent.KEYCODE_SHIFT_LEFT;
+            case ALT_LEFT: return KeyEvent.KEYCODE_ALT_LEFT;
+            case META_LEFT: return KeyEvent.KEYCODE_META_LEFT;
             case ENTER: return KeyEvent.KEYCODE_ENTER;
             case BACKSPACE: return KeyEvent.KEYCODE_DEL;
             case ESCAPE: return KeyEvent.KEYCODE_ESCAPE;
