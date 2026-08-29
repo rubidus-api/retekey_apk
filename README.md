@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.145** (latest release) download — [apk](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk) · [legacy apk](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)
+**ReteKey v0.1.145** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
