@@ -37,6 +37,7 @@ was paid for in this project.
 - [13. Settings and persistence](#13-settings-and-persistence)
 - [14. Testing and verification](#14-testing-and-verification)
 - [15. Anti-patterns, with the failures that taught them](#15-anti-patterns-with-the-failures-that-taught-them)
+- [15a. Remote-desktop editors: a wire with no editor behind it](#15a-remote-desktop-editors-a-wire-with-no-editor-behind-it)
 - [16. Pre-release checklist](#16-pre-release-checklist)
 
 ## 1. How an Android IME is put together
@@ -1667,6 +1668,81 @@ composing span, or failing that its own text — never by comparing against posi
 predicted. And when a composition is abandoned, settle it in place first; text must never travel
 with the cursor.
 
+## 15a. Remote-desktop editors: a wire with no editor behind it
+
+A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
+`InputConnection` like any editor, but there is no text view behind it. What sits behind it is a
+relay: a hidden dummy buffer on this side, and a real operating system on the far side of a
+network. Almost every assumption an IME makes about an editor fails against that shape, one at a
+time and each in its own way. ReteKey classifies these editors by package name and spent nine
+releases (v0.1.132–v0.1.145, 2026-08) learning what the wire actually honours. The findings, in
+the order they were paid for:
+
+### 15a.1 There is no composing region
+
+`setComposingText` "succeeds" against the dummy, but the far side never sees an underline and the
+next update corrupts what it did see. **Materialize composition as commits**: keep the preedit in
+the IME, and express each change as *delete what I materialized, commit the new form* — with the
+growth case (the new text extends the old) reduced to committing just the tail. The syllable 일
+becoming 이ㄹ on screen, and composition surviving the app's own selection reports, both trace
+back to pretending the composing region existed.
+
+### 15a.2 Two pipes, unordered — keep deletions with the commits
+
+The relay carries text operations (`commitText`, `deleteSurroundingText*`) and key events on
+separate paths, and nothing orders one against the other. A backspace sent as a DEL key event can
+land on the far side *after* a commit that was issued later — which eats the retyped syllable
+(the reported 앉). When the relay's buffer verifiably holds text (`getTextBeforeCursor` returns
+some), delete over the **text channel**, the same pipe the commits take; keep the key event as
+the fallback for an unknown or empty buffer. One ordered channel beats two fast ones.
+
+### 15a.3 Context-menu actions do nothing
+
+`performContextMenuAction(paste)` returns as if it worked and nothing happens — there is no
+`TextView` to act on. Editor commands must become what the far side understands: **key chords**
+(Ctrl+A/C/X/V/Z/Y), and word selection becomes the far side's own word-jump chords
+(Ctrl+Left, Ctrl+Shift+Right).
+
+### 15a.4 A large commit can vanish
+
+The relay reliably forwards what typing produces: one small commit per batch. A single
+`commitText` of a whole clipboard has been seen swallowed whole. **Type multi-character text
+out** — one code point per commit, each in its own batch — for anything that inserts more than a
+keystroke: a clip picked from the panel, a date tile, a paste of local text.
+
+### 15a.5 The soft path handles one event at a time — dress chords as hardware
+
+Injected chords failed twice before they worked, and each failure taught a property of the relay:
+
+- *Meta flag on the letter* (the shape a local `TextView` reads): the letter decodes to a control
+  character (Ctrl+B = 0x02) and the relay's soft path filters it as non-input. The far side
+  received Ctrl alone.
+- *Real modifier frame, bare letter* (Ctrl down → B down/up → Ctrl up): everything arrives, but
+  the soft path translates each event **alone** — the far side received a lone Ctrl tap and then
+  a plain letter. No cross-event modifier state is kept.
+
+A physical keyboard's Ctrl+A worked the whole time, because the relay has a second path for
+hardware events that *does* track modifier state and combine. The fix is to ride it: **dress the
+whole chord sequence as a physical keyboard's events** — `SOURCE_KEYBOARD`, real evdev scan codes
+(A=30, C=46, Ctrl=29 …), no `FLAG_SOFT_KEYBOARD`, and the meta flags kept on the letter. Local
+editors keep the plain soft shape; sending real modifier presses at a normal app can wake
+shortcuts you did not mean to press.
+
+### 15a.6 A success can be a mirage
+
+While chords were broken, Ctrl+A still "worked" — because the local dummy `EditText` performed
+its own select-all and the relay mirrored the *effect*. One key appearing to work while its
+neighbours fail is not evidence the pipe works for that key; it may be the dummy answering for
+itself. This mirage misdirected a whole release.
+
+### 15a.7 Measure the far side
+
+Every breakthrough in this chapter came from **running a key tester on the remote machine** and
+looking at what actually arrived: "Ctrl alone", "Ctrl, then a, separately", "Ctrl+A combined".
+Guessing from this side produced three plausible-but-wrong releases; one measurement on the far
+side settled each question in minutes. If a remote-desktop path misbehaves, instrument the far
+end first.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).
@@ -1680,4 +1756,5 @@ with the cursor.
 - [ ] Settings changes take effect on the live keyboard, not just after a restart.
 - [ ] Unit tests cover the Android-free core **and** parse the shipped data files.
 - [ ] Anything visual or input-interactive was verified on a real device, not an emulator.
+- [ ] Typing, backspace, chords, and paste were exercised in a **remote-desktop** client (§15a).
 - [ ] This manual was updated for whatever changed.
