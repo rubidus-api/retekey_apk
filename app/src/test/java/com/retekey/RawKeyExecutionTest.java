@@ -70,10 +70,10 @@ public final class RawKeyExecutionTest {
      * ★ 원격데스크톱 릴레이는 **metaState 를 안 본다** — 저쪽 OS 의 수식 상태를 세우는 것은
      * 진짜 Ctrl 키의 down/up 이다. 그래서 그 프로파일에서는 코드를 **수식키로 감싼다**:
      * Ctrl down → C down/up → Ctrl up.
-     * ★★ 그리고 본 키는 **맨 키**다(사용자 계측 2026-08-29, 원격 키 테스터): meta 를 실은
-     * 글자는 유니코드가 제어문자(Ctrl+B=0x02)가 되어 릴레이가 걸러버려 저쪽에 Ctrl 만 도착했다.
-     * 수식 상태는 프레임의 진짜 Ctrl 이 세우므로, 글자는 평범한 글자로 보낸다 — 릴레이 자체
-     * Ctrl 기능이 잘 되는 모양(Ctrl 상태 + 맨 글자)과 같다.
+     * ★★ 그리고 전부 **물리 키보드 모양으로 입혀** 보낸다(사용자 실기 2026-08-29): 소프트
+     * 모양의 이벤트는 릴레이가 하나씩 처리해 Ctrl 따로, 글자 따로 원격에 넣었다. 물리 Ctrl+A
+     * 는 되므로, 키보드 source + 실제 스캔코드 + 소프트 플래그 제거로 하드웨어 경로 — 수식
+     * 상태를 추적해 조합하는 경로 — 를 태우고, 글자에는 meta 도 싣는다.
      */
     @Test
     public void aRemoteDesktopChordIsFramedByRealModifierKeys() {
@@ -86,10 +86,10 @@ public final class RawKeyExecutionTest {
         );
 
         Assert.assertEquals(Arrays.asList(
-            "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:action=DOWN",
-            "sendRawKey:key=C:modifiers=[]:action=DOWN",
-            "sendRawKey:key=C:modifiers=[]:action=UP",
-            "sendRawKey:key=CTRL_LEFT:modifiers=[]:action=UP"
+            "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:hw:action=DOWN",
+            "sendRawKey:key=C:modifiers=[CTRL]:hw:action=DOWN",
+            "sendRawKey:key=C:modifiers=[CTRL]:hw:action=UP",
+            "sendRawKey:key=CTRL_LEFT:modifiers=[]:hw:action=UP"
         ), bridge.trace());
     }
 
@@ -105,12 +105,12 @@ public final class RawKeyExecutionTest {
         );
 
         Assert.assertEquals(Arrays.asList(
-            "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:action=DOWN",
-            "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL, SHIFT]:action=DOWN",
-            "sendRawKey:key=RIGHT:modifiers=[]:action=DOWN",
-            "sendRawKey:key=RIGHT:modifiers=[]:action=UP",
-            "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL]:action=UP",
-            "sendRawKey:key=CTRL_LEFT:modifiers=[]:action=UP"
+            "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:hw:action=DOWN",
+            "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL, SHIFT]:hw:action=DOWN",
+            "sendRawKey:key=RIGHT:modifiers=[CTRL, SHIFT]:hw:action=DOWN",
+            "sendRawKey:key=RIGHT:modifiers=[CTRL, SHIFT]:hw:action=UP",
+            "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL]:hw:action=UP",
+            "sendRawKey:key=CTRL_LEFT:modifiers=[]:hw:action=UP"
         ), bridge.trace());
     }
 

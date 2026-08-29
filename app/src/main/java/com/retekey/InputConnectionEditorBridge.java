@@ -93,17 +93,35 @@ public final class InputConnectionEditorBridge implements EditorBridge {
                 ? KeyEvent.ACTION_DOWN
                 : KeyEvent.ACTION_UP;
             int metaState = metaStateFor(key.modifiers());
-            KeyEvent event = new KeyEvent(
-                downTime,
-                eventTime,
-                action,
-                keyCodeFor(key.key()),
-                0,
-                metaState,
-                KeyCharacterMap.VIRTUAL_KEYBOARD,
-                0,
-                RAW_KEY_FLAGS
-            );
+            KeyEvent event;
+            if (key.asHardware()) {
+                // Dressed as a physical keyboard's event: keyboard source, a real scan code,
+                // no soft-keyboard flag. See RawEditorKey.hardware.
+                event = new KeyEvent(
+                    downTime,
+                    eventTime,
+                    action,
+                    keyCodeFor(key.key()),
+                    0,
+                    metaState,
+                    KeyCharacterMap.VIRTUAL_KEYBOARD,
+                    scanCodeFor(key.key()),
+                    KeyEvent.FLAG_KEEP_TOUCH_MODE,
+                    android.view.InputDevice.SOURCE_KEYBOARD
+                );
+            } else {
+                event = new KeyEvent(
+                    downTime,
+                    eventTime,
+                    action,
+                    keyCodeFor(key.key()),
+                    0,
+                    metaState,
+                    KeyCharacterMap.VIRTUAL_KEYBOARD,
+                    0,
+                    RAW_KEY_FLAGS
+                );
+            }
             boolean result = inputConnection.sendKeyEvent(event);
             if (key.action() == RawEditorKey.Action.UP) {
                 rawKeyDownTime = 0;
@@ -138,6 +156,52 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             }
         }
         return meta;
+    }
+
+    /** The Linux evdev scan code a physical keyboard reports for this key; 0 when unmapped. */
+    static int scanCodeFor(RawKey key) {
+        switch (key) {
+            case A: return 30;
+            case B: return 48;
+            case C: return 46;
+            case D: return 32;
+            case E: return 18;
+            case F: return 33;
+            case G: return 34;
+            case H: return 35;
+            case I: return 23;
+            case J: return 36;
+            case K: return 37;
+            case L: return 38;
+            case M: return 50;
+            case N: return 49;
+            case O: return 24;
+            case P: return 25;
+            case Q: return 16;
+            case R: return 19;
+            case S: return 31;
+            case T: return 20;
+            case U: return 22;
+            case V: return 47;
+            case W: return 17;
+            case X: return 45;
+            case Y: return 21;
+            case Z: return 44;
+            case CTRL_LEFT: return 29;
+            case SHIFT_LEFT: return 42;
+            case ALT_LEFT: return 56;
+            case META_LEFT: return 125;
+            case ENTER: return 28;
+            case BACKSPACE: return 14;
+            case TAB: return 15;
+            case ESCAPE: return 1;
+            case SPACE: return 57;
+            case LEFT: return 105;
+            case RIGHT: return 106;
+            case UP: return 103;
+            case DOWN: return 108;
+            default: return 0;
+        }
     }
 
     static int keyCodeFor(RawKey key) {

@@ -185,6 +185,7 @@ final class FakeEditorBridge implements EditorBridge {
     public EditorCallResult sendRawKey(RawEditorKey key) {
         return record(
             "sendRawKey:key=" + key.key() + ":modifiers=" + key.modifiers()
+                + (key.asHardware() ? ":hw" : "")
                 + ":action=" + key.action(),
             () -> applyRawKey(key)
         );

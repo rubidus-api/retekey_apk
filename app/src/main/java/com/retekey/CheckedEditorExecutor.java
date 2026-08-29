@@ -212,14 +212,17 @@ public final class CheckedEditorExecutor {
         //   이벤트를 입력 문자가 아니라며 거른다. 릴레이 자체 Ctrl 기능이 잘 되는 이유가
         //   정확히 이 모양이다 — Ctrl 상태 + 평범한 글자. 저쪽 OS 의 수식 상태는 프레임의
         //   진짜 Ctrl down 이 이미 세워 두었으므로, 글자에 meta 를 겹쳐 실을 이유가 없다.
-        java.util.Set<KeyModifier> baseKeyModifiers = frame.isEmpty()
-            ? modifiers
-            : java.util.Collections.<KeyModifier>emptySet();
+        // ★★★ v0.1.144 의 "맨 글자" 는 도착은 시켰지만 **조합이 안 됐다** (사용자 실기): 릴레이의
+        //   소프트 경로는 이벤트를 하나씩 처리해 Ctrl 따로, a 따로 원격에 넣는다. 물리 키보드의
+        //   Ctrl+A 는 되므로, 프레임 있는 코드는 이벤트를 **물리 키보드 모양**(키보드 source,
+        //   실제 스캔코드, 소프트 플래그 제거)으로 입혀 릴레이의 하드웨어 경로 — 수식 상태를
+        //   추적해 조합하는 경로 — 를 타게 한다. 글자에는 meta 도 도로 싣는다.
+        boolean dressAsHardware = !frame.isEmpty();
         java.util.Set<KeyModifier> held = java.util.EnumSet.noneOf(KeyModifier.class);
         for (RawKey modifierKey : frame) {
             held.add(modifierOf(modifierKey));
             java.util.Set<KeyModifier> pressed = java.util.EnumSet.copyOf(held);
-            EditorCallResult modifierDown = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
+            EditorCallResult modifierDown = safeCall(() -> bridge.sendRawKey(RawEditorKey.hardware(
                 modifierKey,
                 pressed,
                 RawEditorKey.Action.DOWN
@@ -228,28 +231,25 @@ public final class CheckedEditorExecutor {
                 break;
             }
         }
-        EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
-            rawKey,
-            baseKeyModifiers,
-            RawEditorKey.Action.DOWN
-        )));
+        boolean hw = dressAsHardware;
+        EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(hw
+            ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.DOWN)
+            : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.DOWN)));
         if (down.isStaleSession()) {
             return notDispatched(
                 plan,
                 ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
             );
         }
-        EditorCallResult up = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
-            rawKey,
-            baseKeyModifiers,
-            RawEditorKey.Action.UP
-        )));
+        EditorCallResult up = safeCall(() -> bridge.sendRawKey(hw
+            ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.UP)
+            : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.UP)));
         // 누른 역순으로 놓는다 — 실제 손가락이 그렇게 하고, 저쪽 OS 도 그 순서를 기대한다.
         for (int i = frame.size() - 1; i >= 0; i--) {
             RawKey modifierKey = frame.get(i);
             held.remove(modifierOf(modifierKey));
             java.util.Set<KeyModifier> stillHeld = java.util.EnumSet.copyOf(held);
-            safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
+            safeCall(() -> bridge.sendRawKey(RawEditorKey.hardware(
                 modifierKey,
                 stillHeld,
                 RawEditorKey.Action.UP

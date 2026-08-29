@@ -1,0 +1,1 @@
+Remote desktop: chord events are now dressed as a physical keyboard's - keyboard source, real scan codes, no soft-keyboard flag, meta flags restored on the letter. The relay's soft path handled each injected event alone (Ctrl separately, then the letter separately); its hardware path tracks modifier state and combines them, which is why a physical Ctrl+A always worked.
