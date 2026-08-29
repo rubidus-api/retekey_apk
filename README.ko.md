@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.145** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145-legacy.apk)
+**ReteKey v0.1.146** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.146/retekey-0.1.146.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.146/retekey-0.1.146-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.145** —
-[retekey-0.1.145.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145.apk) (614 KB; 안드로이드 4.0 빌드는 514 KB)
+현재 릴리즈: **v0.1.146** —
+[retekey-0.1.146.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.146/retekey-0.1.146.apk) (617 KB; 안드로이드 4.0 빌드는 516 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -72,7 +72,7 @@ APK를 바로 받으실 수도 있습니다.
    입력창이 있습니다. 시스템 설정을 헤매지 않으셔도 됩니다.
 
 설치한 뒤 한글·영어·12키 자판 사이를 오갈 때는 오른쪽 아래의 자판 키를 누르시면 됩니다. 이 키에는 지금 쓰는 자판이 아니라 *누르면 바뀔* 자판이
-적혀 있어(`>qw`, `>dv`, `>2b`, `>cj`, `>ng`, `>arw`, `>num`) 다음에 무엇이 올지 미리 보입니다. 길게 누르면 메뉴
+굵은 대문자로 적혀 있어(`QWE`, `DVO`, `2BS`, `CJI`, `NRG`, `ARW`, `NUM`) 다음에 무엇이 올지 미리 보입니다. 길게 누르면 메뉴
 페이지가 열립니다. 그 키가 어떤 자판을 어떤 순서로 돌지는 설정에서 직접 정하실 수 있습니다.
 
 ## 어떻게 생겼나

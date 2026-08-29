@@ -76,65 +76,65 @@ public final class LetterLayouts {
         }
         switch (id) {
             case EN_QWERTY:
-                return "qw";
+                return "qwe";
             case EN_DVORAK:
-                return "dv";
+                return "dvo";
             case EN_COLEMAK:
-                return "cm";
+                return "cmk";
             case ES_QWERTY:
-                return "es";
+                return "esp";
             case PT_QWERTY:
-                return "pt";
+                return "por";
             case IT_QWERTY:
-                return "it";
+                return "ita";
             case PL_QWERTY:
-                return "pl";
+                return "pol";
             case VI_TELEX:
-                return "vi";
+                return "vie";
             case DE_QWERTZ:
-                return "de";
+                return "deu";
             case TR_QWERTY:
-                return "tr";
+                return "tur";
             case FR_AZERTY:
-                return "fr";
+                return "fra";
             case EL_QWERTY:
-                return "el";
+                return "gre";
             case HE_STANDARD:
-                return "he";
+                return "heb";
             case JA_ROMAJI:
-                return "rj";
+                return "rmj";
             case JA_FLICK:
-                return "ja";
+                return "jpn";
             case FA_ISIRI:
-                return "fa";
+                return "fas";
             case TH_KEDMANEE:
-                return "th";
+                return "tha";
             case HI_INSCRIPT:
-                return "hi";
+                return "hin";
             case RU_JCUKEN:
-                return "ru";
+                return "rus";
             case UK_JCUKEN:
-                return "uk";
+                return "ukr";
             case BG_PHONETIC:
-                return "bg";
+                return "bul";
             case MK_STANDARD:
-                return "mk";
+                return "mkd";
             case SR_CYRILLIC:
-                return "sr";
+                return "srp";
             case AR_101:
-                return "ar";
+                return "ara";
             case UR_PHONETIC:
-                return "ur";
+                return "urd";
             case KA_QWERTY:
-                return "ka";
+                return "geo";
             case HY_EASTERN:
-                return "hy";
+                return "arm";
             case KO_DUBEOLSIK:
-                return "2b";
+                return "2bs";
             case KO_CHEONJIIN:
-                return "cj";
+                return "cji";
             case KO_NARATGEUL:
-                return "ng";
+                return "nrg";
             case PAD_ARROWS:
                 return "arw";
             case PAD_KEYPAD:
@@ -232,6 +232,50 @@ public final class LetterLayouts {
      * Reads a stored order, keeping only known letter layouts and dropping repeats. An empty or
      * unusable list falls back to {@link #DEFAULT}, so the globe key always has somewhere to go.
      */
+    /**
+     * The language a layout writes, as a short tag — the part of the id before the underscore
+     * (KO_DUBEOLSIK → "ko"); the two special pads share "pad". Settings groups the not-yet-enabled
+     * layouts under these tags so thirty-plus rows read as a dozen families.
+     */
+    public static String languageTag(KeyboardLayoutId id) {
+        String name = id.name();
+        int cut = name.indexOf('_');
+        return (cut < 0 ? name : name.substring(0, cut)).toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** The group heading for a language tag: the tag plus the language's English name. */
+    public static String languageGroupLabel(String tag) {
+        switch (tag) {
+            case "ko": return "ko (Korean)";
+            case "en": return "en (English)";
+            case "es": return "es (Spanish)";
+            case "pt": return "pt (Portuguese)";
+            case "it": return "it (Italian)";
+            case "pl": return "pl (Polish)";
+            case "vi": return "vi (Vietnamese)";
+            case "de": return "de (German)";
+            case "tr": return "tr (Turkish)";
+            case "fr": return "fr (French)";
+            case "el": return "el (Greek)";
+            case "he": return "he (Hebrew)";
+            case "ja": return "ja (Japanese)";
+            case "fa": return "fa (Persian)";
+            case "th": return "th (Thai)";
+            case "hi": return "hi (Hindi)";
+            case "ru": return "ru (Russian)";
+            case "uk": return "uk (Ukrainian)";
+            case "bg": return "bg (Bulgarian)";
+            case "mk": return "mk (Macedonian)";
+            case "sr": return "sr (Serbian)";
+            case "ar": return "ar (Arabic)";
+            case "ur": return "ur (Urdu)";
+            case "ka": return "ka (Georgian)";
+            case "hy": return "hy (Armenian)";
+            case "pad": return "pad (Special)";
+            default: return tag;
+        }
+    }
+
     public static List<KeyboardLayoutId> parse(String stored) {
         LinkedHashSet<KeyboardLayoutId> order = new LinkedHashSet<>();
         if (stored != null) {

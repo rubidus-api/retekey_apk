@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.145** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145-legacy.apk)
+**ReteKey v0.1.146** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.146/retekey-0.1.146.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.146/retekey-0.1.146-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.145** —
-[retekey-0.1.145.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.145/retekey-0.1.145.apk) (614 KB; the Android 4.0 build is 514 KB)
+Current release: **v0.1.146** —
+[retekey-0.1.146.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.146/retekey-0.1.146.apk) (617 KB; the Android 4.0 build is 516 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -72,7 +72,7 @@ Android 9+ build; the Android 4.0 one lives on the releases page.
    box to type in, so you can do the whole thing without hunting through system settings.
 
 To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right. It is captioned with where it goes rather than where
-you are — `>qw`, `>dv`, `>2b`, `>cj`, `>ng`, `>arw`, `>num` — so you can see what the next press will give you.
+you are — `QWE`, `DVO`, `2BS`, `CJI`, `NRG`, `ARW`, `NUM`, in bold capitals — so you can see what the next press will give you.
 Hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
 in the settings.
 
@@ -203,8 +203,8 @@ Seven letter layouts share that grid:
 | **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. Off until you turn it on in settings |
 | **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold. Off until you turn it on in settings |
 
-The layout key — captioned with the layout it goes to next (`>2b`, `>qw`, `>dv`, `>cj`, `>ng`,
-`>arw`, `>num`) — walks the layouts you ticked in settings, in the order you put them there, naming
+The layout key — captioned with the layout it goes to next (`2BS`, `QWE`, `DVO`, `CJI`, `NRG`,
+`ARW`, `NUM`, in bold capitals) — walks the layouts you ticked in settings, in the order you put them there, naming
 each one as it arrives. Holding it opens the menu page. Hanja conversion is the 漢 key: on the
 2beolsik letters page, on both 12-key pads while Hangul is being typed, and on the keypad page.
 

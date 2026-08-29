@@ -1,0 +1,1 @@
+Settings: the not-yet-enabled layouts are grouped by language - ko (Korean), en (English), ru (Russian) and so on - so thirty-plus rows read as a dozen families. Every layout abbreviation grew to three letters (QWE, DVO, 2BS, CJI, FAS ...), and the layout key at the bottom right now shows them in bold capitals with no arrow.

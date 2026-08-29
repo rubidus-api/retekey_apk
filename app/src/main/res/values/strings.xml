@@ -13,7 +13,7 @@
     <string name="settings_floating_hint">How solid the floating panel is. Lower lets more of the app show through.</string>
     <string name="settings_floating_value">Opacity: %1$d%%</string>
     <string name="settings_layouts_label">Keyboard layouts</string>
-    <string name="settings_layouts_hint">Tick the layouts the layout key at the bottom right should walk through, and order them with ▲ ▼. That key is captioned with where it goes next — <![CDATA[>2b, >qw]]> — and holding it opens the menu page.</string>
+    <string name="settings_layouts_hint">Tick the layouts the layout key at the bottom right should walk through, and order them with ▲ ▼. That key is captioned with where it goes next — QWE, 2BS — in bold capitals, and holding it opens the menu page.</string>
     <string name="settings_back">← Back to main screen</string>
     <string name="settings_height_label">Keyboard height</string>
     <string name="settings_height_hint">How much of the screen\'s height the keyboard takes, from 1% to 50%. The menu page\'s size keys move it too, two points at a time.</string>

@@ -363,11 +363,39 @@ public final class SettingsActivity extends Activity {
         for (KeyboardLayoutId id : order) {
             layoutList.addView(layoutRow(id, order, true), matchWidth());
         }
+        // The not-yet-enabled layouts, grouped by the language they write — thirty-plus rows
+        // read as a dozen families. Groups appear in the order their first layout appears.
+        java.util.LinkedHashMap<String, List<KeyboardLayoutId>> groups =
+            new java.util.LinkedHashMap<>();
         for (KeyboardLayoutId id : LetterLayouts.ALL) {
             if (!order.contains(id)) {
+                String tag = LetterLayouts.languageTag(id);
+                List<KeyboardLayoutId> group = groups.get(tag);
+                if (group == null) {
+                    group = new ArrayList<>();
+                    groups.put(tag, group);
+                }
+                group.add(id);
+            }
+        }
+        for (java.util.Map.Entry<String, List<KeyboardLayoutId>> entry : groups.entrySet()) {
+            layoutList.addView(
+                languageGroupHeader(LetterLayouts.languageGroupLabel(entry.getKey())),
+                matchWidth());
+            for (KeyboardLayoutId id : entry.getValue()) {
                 layoutList.addView(layoutRow(id, order, false), matchWidth());
             }
         }
+    }
+
+    /** A small bold heading over a language's layouts in the not-yet-enabled list. */
+    private TextView languageGroupHeader(String label) {
+        TextView header = new TextView(this);
+        header.setText(label);
+        Compat.setTextAppearance(header, android.R.style.TextAppearance_DeviceDefault_Small);
+        header.setTypeface(header.getTypeface(), android.graphics.Typeface.BOLD);
+        header.setPadding(0, dp(10), 0, dp(2));
+        return header;
     }
 
     private LinearLayout layoutRow(KeyboardLayoutId id, List<KeyboardLayoutId> order, boolean on) {

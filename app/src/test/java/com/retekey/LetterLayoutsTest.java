@@ -72,4 +72,28 @@ public final class LetterLayoutsTest {
             assertTrue(id.name(), LetterLayouts.displayName(id).length() > 0);
         }
     }
+
+    /** 언어 묶음: 모든 자판이 태그를 갖고, 태그마다 "tag (Name)" 꼴 제목이 있다. */
+    @org.junit.Test
+    public void everyLayoutBelongsToALabelledLanguageGroup() {
+        for (KeyboardLayoutId id : LetterLayouts.ALL) {
+            String tag = LetterLayouts.languageTag(id);
+            org.junit.Assert.assertFalse(id.name(), tag.isEmpty());
+            String label = LetterLayouts.languageGroupLabel(tag);
+            org.junit.Assert.assertTrue(id.name() + " -> " + label,
+                label.startsWith(tag + " ("));
+        }
+        org.junit.Assert.assertEquals("ko", LetterLayouts.languageTag(KeyboardLayoutId.KO_CHEONJIIN));
+        org.junit.Assert.assertEquals("ko (Korean)", LetterLayouts.languageGroupLabel("ko"));
+        org.junit.Assert.assertEquals("pad", LetterLayouts.languageTag(KeyboardLayoutId.PAD_ARROWS));
+    }
+
+    /** 자판 약어는 전부 세 글자다 — 전환 키가 굵은 대문자로 그대로 쓴다(2026-08-29). */
+    @org.junit.Test
+    public void everyKeyCapNameIsThreeLetters() {
+        for (KeyboardLayoutId id : LetterLayouts.ALL) {
+            org.junit.Assert.assertEquals(id.name() + " -> " + LetterLayouts.keyCapName(id),
+                3, LetterLayouts.keyCapName(id).length());
+        }
+    }
 }

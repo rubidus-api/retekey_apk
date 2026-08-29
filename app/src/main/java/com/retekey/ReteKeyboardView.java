@@ -807,10 +807,9 @@ public final class ReteKeyboardView extends View {
         KeyboardLayoutId destination = page == Page.LETTERS
             ? LetterLayouts.next(letterOrder(), letterLayoutId)
             : letterLayoutId;
-        String cap = LetterLayouts.keyCapName(destination);
-        // Two letters fit beside the ">"; three do not, so a three-letter cap drops the arrow and
-        // is drawn bold instead (owner's choice, 2026-08-24) — the weight is the arrow.
-        return cap.length() >= 3 ? cap : ">" + cap;
+        // Every cap is three letters now, shown in bold capitals with no arrow (owner's choice,
+        // 2026-08-29) — the weight and the case are the arrow.
+        return LetterLayouts.keyCapName(destination).toUpperCase(java.util.Locale.ROOT);
     }
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
@@ -867,8 +866,7 @@ public final class ReteKeyboardView extends View {
             fitLabel(label, right - left, bottom - top);
             float x = (left + right) * 0.5f;
             float y = top + (bottom - top) * 0.62f;
-            boolean boldToggleCap = LAYOUT_TOGGLE_KEY_ID.equals(key.stableKeyId())
-                && !label.startsWith(">");
+            boolean boldToggleCap = LAYOUT_TOGGLE_KEY_ID.equals(key.stableKeyId());
             if (latched || boldToggleCap) {
                 // An outline around the label, in the face's own strong ink: a held key is the one
                 // state that has to carry across a glance, and the weight says so before the
