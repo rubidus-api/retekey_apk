@@ -1039,38 +1039,42 @@ public final class KeyboardLayouts {
      * cannot do without.
      */
     private static KeyboardLayout persian() {
-        // Backspace ends the first row and Enter the third — each at the visual right edge, on
-        // separate rows the way every keyboard puts them (owner's request, 2026-08-27); the letter
-        // that makes room, ج, is the reading-order tail of ISIRI's first row and slides down to
-        // sit beside its family چ, keeping the relative order intact.
-        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
-        List<SoftwareKeySpec> first = new ArrayList<>(10);
-        for (char c : "حخهعغفقصض".toCharArray()) {
-            first.add(letter(String.valueOf(c), false));
+        // ★ 두 번째 판 (issue #4, @xmha97 제안 그대로, 2026-08-29). 첫 판은 좌우가 뒤집혀
+        // 있었다 — 읽기 시작점을 화면 오른쪽에 두었지만, 페르시아 키보드(하드웨어도 Gboard 도)는
+        // 물리 배열과 같은 시각 순서, 곧 ض 쪽이 왼쪽이다. 이 판은 보고자가 그려 준 배열이다:
+        // QWERTY 처럼 글자 세 줄, 표준 글자들이 제 위치에, ⌫/⏎ 는 줄 오른쪽 끝에, 그리고
+        // 저빈도 글자·타슈킬·페르시아 문장부호는 각 키의 보조 글자로 — 길게 눌러도, 위로 짧게
+        // 끌어도 나온다.
+        String[][] letters = {
+            {"ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ج", "ح"},
+            {"س", "ی", "ب", "ل", "ا", "ت", "ن", "م", "ک"},
+            {"ظ", "ط", "ز", "ر", "ذ", "د", "پ", "و"},
+        };
+        String[][] seconds = {
+            {"۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"},
+            {"ش", "ئ", "\u0651", "\u0640", "آ", "\u064F", "\u0650", "\u064E", "گ"},
+            {"ض", "ة", "ژ", "،", "؛", "»", "«", "؟"},
+        };
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        for (int r = 0; r < letters.length; r++) {
+            List<SoftwareKeySpec> row = new ArrayList<>(10);
+            for (int c = 0; c < letters[r].length; c++) {
+                row.add(letter(letters[r][c], false)
+                    .withLongPress(seconds[r][c])
+                    .withFlicks(null, seconds[r][c], null, null));
+            }
+            if (r == 1) {
+                row.add(backspaceKey());
+            }
+            if (r == 2) {
+                // The period carries چ, the letter the ten columns squeezed out of the top row.
+                row.add(letterPeriodKey()
+                    .withLongPress("چ")
+                    .withFlicks(null, "چ", null, null));
+                row.add(enterKey());
+            }
+            rows.add(KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0])));
         }
-        first.add(backspaceKey());
-        rows.add(KeyboardLayout.row(first.toArray(new SoftwareKeySpec[0])));
-        List<SoftwareKeySpec> second = new ArrayList<>(10);
-        for (char c : "کمنتالبیسش".toCharArray()) {
-            second.add(letter(String.valueOf(c), false));
-        }
-        rows.add(KeyboardLayout.row(second.toArray(new SoftwareKeySpec[0])));
-        List<SoftwareKeySpec> third = new ArrayList<>(10);
-        for (char c : "گچجوپدرزط".toCharArray()) {
-            third.add(letter(String.valueOf(c), false));
-        }
-        third.add(enterKey());
-        rows.add(KeyboardLayout.row(third.toArray(new SoftwareKeySpec[0])));
-        // The letters the ten columns squeezed out get a row of their own (visual left-to-right;
-        // it reads آ ث ذ ظ ژ ء أ إ ؤ ئ from the right); the flicks stay as the second path.
-        List<SoftwareKeySpec> fourth = new ArrayList<>(10);
-        for (char c : "ئؤإأءژظذثآ".toCharArray()) {
-            fourth.add(letter(String.valueOf(c), false));
-        }
-        rows.add(KeyboardLayout.row(fourth.toArray(new SoftwareKeySpec[0])));
-        List<List<SoftwareKeySpec>> held = withAccents(
-            withHolds(rows, new String[] {"۱۲۳۴۵۶۷۸۹۰", "۱۲۳۴۵۶۷۸۹۰", "۱۲۳۴۵۶۷۸"}),
-            LatinAccents.PERSIAN, false, java.util.Locale.ROOT);
         List<SoftwareKeySpec> bottom =
             new ArrayList<>(bottomRow(bottomRowCellFor(KeyboardLayoutId.FA_ISIRI)));
         for (int i = 0; i < bottom.size(); i++) {
@@ -1078,7 +1082,7 @@ public final class KeyboardLayouts {
                 bottom.set(i, bottom.get(i).withFlicks(null, "\u200c", null, null));
             }
         }
-        List<List<SoftwareKeySpec>> all = new ArrayList<>(held);
+        List<List<SoftwareKeySpec>> all = new ArrayList<>(rows);
         all.add(bottom);
         return KeyboardLayout.of(KeyboardLayoutId.FA_ISIRI, false, COLUMNS, all);
     }
@@ -1274,13 +1278,6 @@ public final class KeyboardLayouts {
             .withFlicks("\"", "ฯ", "\"", "฿");
     }
 
-    /** The Persian period: the Persian comma held, «» ؟ ؛ on the flicks. */
-    private static SoftwareKeySpec persianPeriodKey() {
-        return SoftwareKeySpec
-            .enabled("touch.text.period.letters", ".", SemanticInput.text("."))
-            .withLongPress("،")
-            .withFlicks("«", "؟", "»", "؛");
-    }
 
     /** The Hebrew period: the comma held, and geresh, gershayim and maqaf on the flicks. */
     private static SoftwareKeySpec hebrewPeriodKey() {
@@ -1403,6 +1400,9 @@ public final class KeyboardLayouts {
             case SR_CYRILLIC:
             case UR_PHONETIC:
             case KA_QWERTY:
+            case FA_ISIRI:
+                // The reporter's bottom row is QWERTY's own (issue #4): the period moved up
+                // beside the letters and Esc keeps its usual seat.
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             case ES_QWERTY:
                 // ñ took the home row's last cell and backspace took the period's: the period
@@ -1411,8 +1411,6 @@ public final class KeyboardLayouts {
             case HE_STANDARD:
                 // The letter rows are all letters: the period lives beside space.
                 return hebrewPeriodKey();
-            case FA_ISIRI:
-                return persianPeriodKey();
             case AR_101:
                 return arabicPeriodKey();
             case HY_EASTERN:

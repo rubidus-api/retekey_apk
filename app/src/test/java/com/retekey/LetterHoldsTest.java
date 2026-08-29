@@ -289,32 +289,36 @@ public final class LetterHoldsTest {
     }
 
     @Test
-    public void persianSitsOnIsirisPositionsInTenColumnsWithTheDottedTwinsUp() {
+    public void persianFollowsTheReportersArrangement() {
+        // issue #4 (@xmha97, 2026-08-29): the reporter's own four-row arrangement, hardware
+        // orientation (ص side on the visual left), secondaries on long-press AND up-flick.
         KeyboardLayout fa = KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, false);
-        assertEquals(Arrays.asList("ح", "خ", "ه", "ع", "غ", "ف", "ق", "ص", "ض", "⌫"), labels(fa, 0));
-        assertEquals(Arrays.asList("ک", "م", "ن", "ت", "ا", "ل", "ب", "ی", "س", "ش"), labels(fa, 1));
-        assertEquals(Arrays.asList("گ", "چ", "ج", "و", "پ", "د", "ر", "ز", "ط", "⏎"), labels(fa, 2));
+        assertEquals(Arrays.asList("ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ج", "ح"),
+            labels(fa, 0));
+        assertEquals(Arrays.asList("س", "ی", "ب", "ل", "ا", "ت", "ن", "م", "ک", "⌫"),
+            labels(fa, 1));
+        assertEquals(Arrays.asList("ظ", "ط", "ز", "ر", "ذ", "د", "پ", "و", ".", "⏎"),
+            labels(fa, 2));
         // One page, no Shift — Persian has no capitals.
         assertEquals(fa, KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, true));
         assertNull(fa.findById("touch.modifier.shift"));
-        // The dotted twins ride up off their plain letters; the hamza family rides alef and friends.
-        assertEquals("ث", fa.findById("touch.en.ت").flickText(CheonjiinInterpreter.Flick.UP));
-        assertEquals("ذ", fa.findById("touch.en.د").flickText(CheonjiinInterpreter.Flick.UP));
-        assertEquals("ظ", fa.findById("touch.en.ط").flickText(CheonjiinInterpreter.Flick.UP));
-        assertEquals("ژ", fa.findById("touch.en.ز").flickText(CheonjiinInterpreter.Flick.UP));
-        assertEquals("آ", fa.findById("touch.en.ا").flickText(CheonjiinInterpreter.Flick.UP));
-        assertEquals("ء", fa.findById("touch.en.ا").flickText(CheonjiinInterpreter.Flick.LEFT));
-        assertEquals("ؤ", fa.findById("touch.en.و").flickText(CheonjiinInterpreter.Flick.UP));
-        // The digits under the keys are Persian's own, ISIRI's primary layer.
-        assertEquals(Arrays.asList("۱"), fa.rows().get(0).get(0).longPressTexts());
-        assertEquals(Arrays.asList("۱"), fa.rows().get(1).get(0).longPressTexts());
-        // The period beside space carries Persian's punctuation; the space bar flicks up to ZWNJ.
-        SoftwareKeySpec period = fa.findById("touch.text.period.letters");
-        assertEquals(Arrays.asList("،"), period.longPressTexts());
-        assertEquals("«", period.flickText(CheonjiinInterpreter.Flick.LEFT));
-        assertEquals("؟", period.flickText(CheonjiinInterpreter.Flick.UP));
-        assertEquals("»", period.flickText(CheonjiinInterpreter.Flick.RIGHT));
-        assertEquals("؛", period.flickText(CheonjiinInterpreter.Flick.DOWN));
+        // Every secondary is reachable both ways: long-press and an upward drag.
+        String[][] seconds = {
+            {"۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"},
+            {"ش", "ئ", "\u0651", "\u0640", "آ", "\u064F", "\u0650", "\u064E", "گ"},
+            {"ض", "ة", "ژ", "،", "؛", "»", "«", "؟"},
+        };
+        for (int r = 0; r < seconds.length; r++) {
+            for (int c = 0; c < seconds[r].length; c++) {
+                SoftwareKeySpec key = fa.rows().get(r).get(c);
+                assertEquals(Arrays.asList(seconds[r][c]), key.longPressTexts());
+                assertEquals(seconds[r][c], key.flickText(CheonjiinInterpreter.Flick.UP));
+            }
+        }
+        // The period carries چ both ways; the space bar flicks up to the half-space.
+        SoftwareKeySpec period = fa.findById("touch.text.period");
+        assertEquals(Arrays.asList("چ"), period.longPressTexts());
+        assertEquals("چ", period.flickText(CheonjiinInterpreter.Flick.UP));
         SoftwareKeySpec space = fa.findById("touch.text.space");
         assertEquals("\u200c", space.flickText(CheonjiinInterpreter.Flick.UP));
         assertEquals(3, space.columnSpan());
@@ -439,12 +443,10 @@ public final class LetterHoldsTest {
             labels(KeyboardLayouts.of(KeyboardLayoutId.FR_AZERTY, false), 3));
         assertEquals(Arrays.asList("ά", "έ", "ή", "ί", "ό", "ύ", "ώ", "ϊ", "ϋ", "€"),
             labels(KeyboardLayouts.of(KeyboardLayoutId.EL_QWERTY, false), 3));
-        assertEquals(Arrays.asList("ئ", "ؤ", "إ", "أ", "ء", "ژ", "ظ", "ذ", "ث", "آ"),
-            labels(KeyboardLayouts.of(KeyboardLayoutId.FA_ISIRI, false), 3));
         for (KeyboardLayoutId id : Arrays.asList(
                 KeyboardLayoutId.DE_QWERTZ, KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.PL_QWERTY,
-                KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.FR_AZERTY, KeyboardLayoutId.EL_QWERTY,
-                KeyboardLayoutId.FA_ISIRI)) {
+                KeyboardLayoutId.PT_QWERTY, KeyboardLayoutId.FR_AZERTY,
+                KeyboardLayoutId.EL_QWERTY)) {
             assertEquals(String.valueOf(id), 5, KeyboardLayouts.of(id, false).rows().size());
         }
         // Turkish cases its new row the Turkish way; German's sharp s capitalises to ẞ.
@@ -453,7 +455,8 @@ public final class LetterHoldsTest {
         // And the four-row layouts stayed four rows.
         for (KeyboardLayoutId id : Arrays.asList(
                 KeyboardLayoutId.ES_QWERTY, KeyboardLayoutId.IT_QWERTY, KeyboardLayoutId.VI_TELEX,
-                KeyboardLayoutId.HE_STANDARD, KeyboardLayoutId.JA_ROMAJI, KeyboardLayoutId.EN_COLEMAK)) {
+                KeyboardLayoutId.HE_STANDARD, KeyboardLayoutId.JA_ROMAJI, KeyboardLayoutId.EN_COLEMAK,
+                KeyboardLayoutId.FA_ISIRI)) {
             assertEquals(String.valueOf(id), 4, KeyboardLayouts.of(id, false).rows().size());
         }
     }

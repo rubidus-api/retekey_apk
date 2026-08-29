@@ -1,0 +1,1 @@
+Persian: the layout was rebuilt to the arrangement proposed by a Persian typist in issue #4 - hardware orientation (the previous cut was mirrored), three letter rows like QWERTY with Backspace and Enter at the row ends, and the rarer letters, tashkil and Persian marks as each key's secondary, reachable by long-press and now also by an upward drag. The bottom row matches QWERTY's.
