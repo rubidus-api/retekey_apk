@@ -1,0 +1,1 @@
+Remote desktop: chord letters are now sent as bare keys inside the real-Ctrl frame. A letter carrying the Ctrl meta flag decodes to a control character, which the relay filtered out - so Ctrl+X/C/V/B arrived as Ctrl alone. The remote side's modifier state is set by the real Ctrl press, exactly the shape the relay's own Ctrl feature uses.

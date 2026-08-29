@@ -206,6 +206,15 @@ public final class CheckedEditorExecutor {
         //   ☞ 로컬 편집기는 **그대로** 둔다 — 거기서는 metaState 하나면 TextView 가 읽고,
         //     수식키를 따로 보내면 다른 앱의 단축키까지 깨울 수 있다.
         java.util.List<RawKey> frame = modifierFrame(capabilities, modifiers);
+        // ★★ 프레임이 있으면 본 키는 **맨 키**로 보낸다 (2026-08-29, 사용자 계측).
+        //   원격 키 테스터가 보여준 것: 우리 Ctrl 은 저쪽에 도착하는데 **글자가 안 온다**.
+        //   meta 를 실은 글자의 유니코드는 제어문자(Ctrl+B=0x02)가 되고, 릴레이는 그런
+        //   이벤트를 입력 문자가 아니라며 거른다. 릴레이 자체 Ctrl 기능이 잘 되는 이유가
+        //   정확히 이 모양이다 — Ctrl 상태 + 평범한 글자. 저쪽 OS 의 수식 상태는 프레임의
+        //   진짜 Ctrl down 이 이미 세워 두었으므로, 글자에 meta 를 겹쳐 실을 이유가 없다.
+        java.util.Set<KeyModifier> baseKeyModifiers = frame.isEmpty()
+            ? modifiers
+            : java.util.Collections.<KeyModifier>emptySet();
         java.util.Set<KeyModifier> held = java.util.EnumSet.noneOf(KeyModifier.class);
         for (RawKey modifierKey : frame) {
             held.add(modifierOf(modifierKey));
@@ -221,7 +230,7 @@ public final class CheckedEditorExecutor {
         }
         EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
             rawKey,
-            modifiers,
+            baseKeyModifiers,
             RawEditorKey.Action.DOWN
         )));
         if (down.isStaleSession()) {
@@ -232,7 +241,7 @@ public final class CheckedEditorExecutor {
         }
         EditorCallResult up = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
             rawKey,
-            modifiers,
+            baseKeyModifiers,
             RawEditorKey.Action.UP
         )));
         // 누른 역순으로 놓는다 — 실제 손가락이 그렇게 하고, 저쪽 OS 도 그 순서를 기대한다.

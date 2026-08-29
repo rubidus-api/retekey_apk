@@ -69,8 +69,11 @@ public final class RawKeyExecutionTest {
     /**
      * ★ 원격데스크톱 릴레이는 **metaState 를 안 본다** — 저쪽 OS 의 수식 상태를 세우는 것은
      * 진짜 Ctrl 키의 down/up 이다. 그래서 그 프로파일에서는 코드를 **수식키로 감싼다**:
-     * Ctrl down → C down/up → Ctrl up. 이것이 없으면 저쪽에는 그냥 `c` 가 찍힌다
-     * (사용자 보고 2026-08-29: 액션바 잘라내기·복사·붙여넣기와 Ctrl+X/C/V/A 가 원격에서만 죽었다).
+     * Ctrl down → C down/up → Ctrl up.
+     * ★★ 그리고 본 키는 **맨 키**다(사용자 계측 2026-08-29, 원격 키 테스터): meta 를 실은
+     * 글자는 유니코드가 제어문자(Ctrl+B=0x02)가 되어 릴레이가 걸러버려 저쪽에 Ctrl 만 도착했다.
+     * 수식 상태는 프레임의 진짜 Ctrl 이 세우므로, 글자는 평범한 글자로 보낸다 — 릴레이 자체
+     * Ctrl 기능이 잘 되는 모양(Ctrl 상태 + 맨 글자)과 같다.
      */
     @Test
     public void aRemoteDesktopChordIsFramedByRealModifierKeys() {
@@ -84,8 +87,8 @@ public final class RawKeyExecutionTest {
 
         Assert.assertEquals(Arrays.asList(
             "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:action=DOWN",
-            "sendRawKey:key=C:modifiers=[CTRL]:action=DOWN",
-            "sendRawKey:key=C:modifiers=[CTRL]:action=UP",
+            "sendRawKey:key=C:modifiers=[]:action=DOWN",
+            "sendRawKey:key=C:modifiers=[]:action=UP",
             "sendRawKey:key=CTRL_LEFT:modifiers=[]:action=UP"
         ), bridge.trace());
     }
@@ -104,8 +107,8 @@ public final class RawKeyExecutionTest {
         Assert.assertEquals(Arrays.asList(
             "sendRawKey:key=CTRL_LEFT:modifiers=[CTRL]:action=DOWN",
             "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL, SHIFT]:action=DOWN",
-            "sendRawKey:key=RIGHT:modifiers=[CTRL, SHIFT]:action=DOWN",
-            "sendRawKey:key=RIGHT:modifiers=[CTRL, SHIFT]:action=UP",
+            "sendRawKey:key=RIGHT:modifiers=[]:action=DOWN",
+            "sendRawKey:key=RIGHT:modifiers=[]:action=UP",
             "sendRawKey:key=SHIFT_LEFT:modifiers=[CTRL]:action=UP",
             "sendRawKey:key=CTRL_LEFT:modifiers=[]:action=UP"
         ), bridge.trace());
