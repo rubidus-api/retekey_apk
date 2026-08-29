@@ -567,6 +567,7 @@ public final class NotepadView extends LinearLayout {
 
     private Button headerButton(Context context, final NoteList.Sort column) {
         Button button = new Button(context, null, android.R.attr.borderlessButtonStyle);
+        button.setTextColor(palette.keyText);
         button.setAllCaps(false);
         button.setPadding(dp(4), 0, dp(4), 0);
         button.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
@@ -624,6 +625,7 @@ public final class NotepadView extends LinearLayout {
     private Button moveButton(String glyph, final String stamp, final int delta) {
         Button button = new Button(getContext(), null, android.R.attr.borderlessButtonStyle);
         button.setText(glyph);
+        button.setTextColor(palette.keyText);
         button.setAllCaps(false);
         button.setPadding(0, 0, 0, 0);
         button.setMinimumWidth(0);
@@ -655,6 +657,9 @@ public final class NotepadView extends LinearLayout {
     private Button toolButton(Context context, String label, OnClickListener listener) {
         Button button = new Button(context, null, android.R.attr.borderlessButtonStyle);
         button.setText(label);
+        // The platform's borderless default is a washed-out grey on this translucent panel;
+        // the body text is palette-coloured, and the toolbar must read as sharply as it does.
+        button.setTextColor(palette.keyText);
         button.setAllCaps(false);
         button.setPadding(dp(8), 0, dp(8), 0);
         button.setMinimumWidth(0);

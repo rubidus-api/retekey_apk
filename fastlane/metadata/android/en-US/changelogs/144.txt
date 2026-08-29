@@ -1,0 +1,1 @@
+Notepad: the toolbar buttons and list headers now use the keyboard's own text colour instead of the platform's washed-out grey, so the top of the screen reads as sharply as the note body.
