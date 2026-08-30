@@ -69,6 +69,12 @@ public enum ControlKey {
     META,
     ALT,
     /**
+     * The pad page's right Shift: a chording modifier that rides key events (Shift+arrow
+     * selection, Ctrl+Shift chords), latched like Ctrl/Meta/Alt. The plain SHIFT is different —
+     * it changes which layout the keyboard draws, so it lives with the layout.
+     */
+    RSHIFT,
+    /**
      * Latches the Tab key down, or lets it up again. Unlike the modifiers above this is not an
      * armed state waiting for a next key: the editor is told Tab is pressed and is not told
      * otherwise until this fires a second time. Tab itself types on a tap; only a hold latches.

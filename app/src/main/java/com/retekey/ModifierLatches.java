@@ -18,7 +18,7 @@ public final class ModifierLatches {
     /** The modifiers a finger can arm or lock. Shift is the same idea but changes which layout
      * the keyboard draws, so it lives with the layout rather than here. */
     public static final Set<ControlKey> KEYS =
-        Collections.unmodifiableSet(EnumSet.of(ControlKey.CTRL, ControlKey.META, ControlKey.ALT));
+        Collections.unmodifiableSet(EnumSet.of(ControlKey.CTRL, ControlKey.META, ControlKey.ALT, ControlKey.RSHIFT));
 
     private final EnumMap<ControlKey, LatchState> latches = new EnumMap<>(ControlKey.class);
 
@@ -67,6 +67,9 @@ public final class ModifierLatches {
                     break;
                 case META:
                     modifiers.add(KeyModifier.META);
+                    break;
+                case RSHIFT:
+                    modifiers.add(KeyModifier.SHIFT);
                     break;
                 default:
                     break;

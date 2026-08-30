@@ -83,14 +83,15 @@ public final class SpecialKeysPageTest {
     }
 
     @Test
-    public void koreanAndMediaSpecialKeysStayDisabled() {
-        // Lang is gone: its cell is Caps Lock now. The right-hand modifiers stay drawn and dead.
+    public void theRightHandModifiersAreRealLatches() {
+        // 2026-08-30: RAlt/RCt/RSh came alive — latches whose armed/locked state survives
+        // leaving the pad page, so the chord finishes with an ordinary letter on any layout.
+        assertEquals(ControlKey.ALT, NUMBERS.findById("touch.key.ralt").control());
+        assertEquals(ControlKey.CTRL, NUMBERS.findById("touch.key.rctrl").control());
+        assertEquals(ControlKey.RSHIFT, NUMBERS.findById("touch.key.rshift").control());
         for (String id : Arrays.asList(
             "touch.key.ralt", "touch.key.rctrl", "touch.key.rshift")) {
-            SoftwareKeySpec key = NUMBERS.findById(id);
-            assertNotNull(id, key);
-            assertFalse(id + " stays disabled", key.enabled());
-            assertFalse(key.isControl());
+            assertTrue(id, NUMBERS.findById(id).isControl());
         }
     }
 

@@ -412,17 +412,21 @@ public final class KeyboardLayouts {
         return naratgeulKey(key, label, span).withLongPress(hold);
     }
 
-    /** The modifier that owns this row's leftmost cell. */
+    /**
+     * The modifier that owns this row's leftmost cell. Top to bottom: Tab, Alt, Meta, Ctrl —
+     * flipped from the first arrangement (owner's request, 2026-08-30), so Ctrl, the most-used
+     * of the four, sits nearest the thumb and beside the bottom row's own Ctrl.
+     */
     private static SoftwareKeySpec phoneModifier(int row) {
         switch (row) {
             case 0:
-                return SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL);
-            case 1:
-                return SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META);
-            case 2:
-                return SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT);
-            default:
                 return tabKey();
+            case 1:
+                return SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT);
+            case 2:
+                return SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META);
+            default:
+                return SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL);
         }
     }
 
@@ -1540,7 +1544,12 @@ public final class KeyboardLayouts {
                 : rawKey("del", "Del", RawKey.FORWARD_DELETE)
         ));
         rows.add(KeyboardLayout.row(
-            disabled("ralt", "RAlt"), disabled("rctrl", "RCt"), disabled("rshift", "RSh"),
+            // The right-hand modifiers are real latches now (2026-08-30): a tap arms for one
+            // key, a hold locks — and the latch survives leaving this page, so the chord can be
+            // finished with an ordinary letter on any layout. RSh is the chording Shift.
+            SoftwareKeySpec.control("touch.key.ralt", "RAlt", ControlKey.ALT),
+            SoftwareKeySpec.control("touch.key.rctrl", "RCt", ControlKey.CTRL),
+            SoftwareKeySpec.control("touch.key.rshift", "RSh", ControlKey.RSHIFT),
             // Caps Lock where the dead Lang cell was, with Menu moved one to the right; the face
             // inverts while the lock is on, so the page says what state the editor is in.
             SoftwareKeySpec.control("touch.key.capslock", "Caps", ControlKey.CAPS_LOCK),

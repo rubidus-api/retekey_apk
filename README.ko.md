@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.148** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.148/retekey-0.1.148.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.148/retekey-0.1.148-legacy.apk)
+**ReteKey v0.1.149** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.149/retekey-0.1.149.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.149/retekey-0.1.149-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.148** —
-[retekey-0.1.148.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.148/retekey-0.1.148.apk) (617 KB; 안드로이드 4.0 빌드는 516 KB)
+현재 릴리즈: **v0.1.149** —
+[retekey-0.1.149.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.149/retekey-0.1.149.apk) (617 KB; 안드로이드 4.0 빌드는 517 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는

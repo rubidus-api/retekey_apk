@@ -25,7 +25,7 @@ public final class PadLayoutsTest {
         KeyboardLayout naratgeul = KeyboardLayouts.of(KeyboardLayoutId.KO_NARATGEUL, false);
         for (KeyboardLayout layout : Arrays.asList(ARROWS, KEYPAD)) {
             assertEquals(naratgeul.rows().size(), layout.rows().size());
-            assertEquals(Arrays.asList("Ctrl", "Meta", "Alt", "Tab"), column(layout));
+            assertEquals(Arrays.asList("Tab", "Alt", "Meta", "Ctrl"), column(layout));
             assertEquals("⌫", last(layout.rows().get(0)).label());
             assertEquals("space", last(layout.rows().get(1)).label());
             assertEquals("⏎", last(layout.rows().get(2)).label());

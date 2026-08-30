@@ -242,6 +242,14 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onChordLatch(BarSlot slot, boolean down) {
+                if (slot.kind() == BarSlot.Kind.BUILT_IN) {
+                    // A held modifier built-in: lock the latch, or let it up.
+                    ControlKey control = slot.action().modifierOrNull();
+                    if (control != null && keyboardView != null) {
+                        keyboardView.setModifierLockFromBar(control, down);
+                    }
+                    return;
+                }
                 sendBarChord(slot, down ? RawKeyPhase.HOLD : RawKeyPhase.RELEASE);
             }
         });
@@ -302,6 +310,16 @@ public class ReteKeyImeService extends InputMethodService {
                     break;
                 case PASTE:
                     performEditCommand(android.R.id.paste);
+                    break;
+                case MOD_CTRL:
+                case MOD_META:
+                case MOD_ALT:
+                case MOD_RCTRL:
+                case MOD_RALT:
+                case MOD_RSHIFT:
+                    if (keyboardView != null) {
+                        keyboardView.tapModifierFromBar(action.modifierOrNull());
+                    }
                     break;
                 case CLIPBOARD:
                     toggleClipboardPanel();

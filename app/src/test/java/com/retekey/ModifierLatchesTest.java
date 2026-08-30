@@ -118,4 +118,21 @@ public final class ModifierLatchesTest {
         assertFalse(ModifierLatches.handles(ControlKey.TAB_HOLD));
         assertFalse(ModifierLatches.handles(null));
     }
+
+    /** RSh(오른쪽 시프트)는 코드용 시프트 래치다 — 탭=일회성, 홀드=잠금, 소진 규칙 동일. */
+    @org.junit.Test
+    public void rightShiftLatchesAndMapsToTheShiftModifier() {
+        ModifierLatches latches = new ModifierLatches();
+        latches.tap(ControlKey.RSHIFT);
+        org.junit.Assert.assertTrue(latches.active().contains(KeyModifier.SHIFT));
+        latches.consumeOneShots();
+        org.junit.Assert.assertFalse(latches.active().contains(KeyModifier.SHIFT));
+        latches.hold(ControlKey.RSHIFT);
+        org.junit.Assert.assertTrue(latches.isLocked(ControlKey.RSHIFT));
+        latches.consumeOneShots();
+        org.junit.Assert.assertTrue("잠금은 소진되지 않는다",
+            latches.active().contains(KeyModifier.SHIFT));
+        latches.hold(ControlKey.RSHIFT);
+        org.junit.Assert.assertFalse(latches.active().contains(KeyModifier.SHIFT));
+    }
 }

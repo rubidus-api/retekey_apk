@@ -25,6 +25,13 @@ enum BarAction {
     END("end", "End"),
     PAGE_UP("pgup", "PgUp"),
     PAGE_DOWN("pgdn", "PgDn"),
+    /** The modifier latches, bar-side: a tap arms for one key, a hold locks. */
+    MOD_CTRL("lctrl", "Ctrl"),
+    MOD_META("lmeta", "Meta"),
+    MOD_ALT("lalt", "Alt"),
+    MOD_RCTRL("rctrl", "RCt"),
+    MOD_RALT("ralt", "RAlt"),
+    MOD_RSHIFT("rshift", "RSh"),
     /** The clipboard list the keyboard keeps of what was cut and copied through it. */
     CLIPBOARD("clip", "Clip"),
     /** The symbols page, from wherever you are. */
@@ -51,6 +58,24 @@ enum BarAction {
     }
 
     /** The raw key an action sends, or null where it is not a key at all. */
+    /** The modifier latch this action drives, or null for every other action. */
+    ControlKey modifierOrNull() {
+        switch (this) {
+            case MOD_CTRL:
+            case MOD_RCTRL:
+                return ControlKey.CTRL;
+            case MOD_META:
+                return ControlKey.META;
+            case MOD_ALT:
+            case MOD_RALT:
+                return ControlKey.ALT;
+            case MOD_RSHIFT:
+                return ControlKey.RSHIFT;
+            default:
+                return null;
+        }
+    }
+
     RawKey rawKey() {
         switch (this) {
             case LEFT:

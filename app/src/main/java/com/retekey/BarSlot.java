@@ -114,7 +114,12 @@ final class BarSlot {
 
     /** Whether holding this slot does something other than repeating the tap. */
     boolean canLatch() {
-        return kind == Kind.CHORD;
+        if (kind == Kind.CHORD) {
+            return true;
+        }
+        // A modifier built-in latches the same way a chord does: the hold locks it, and the
+        // bar button keeps its accent until it is let up.
+        return kind == Kind.BUILT_IN && action != null && action.modifierOrNull() != null;
     }
 
     private static String name(KeyModifier modifier) {

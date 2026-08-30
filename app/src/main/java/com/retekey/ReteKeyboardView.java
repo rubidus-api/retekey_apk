@@ -460,6 +460,24 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
+    /** A bar tap on a modifier: arm it for one key (or cancel an arming / clear a lock). */
+    public void tapModifierFromBar(ControlKey control) {
+        if (!ModifierLatches.handles(control)) {
+            return;
+        }
+        modifierLatches.tap(control);
+        invalidate();
+    }
+
+    /** A bar hold on a modifier: lock it down, or let it up, mirroring the keyboard's own hold. */
+    public void setModifierLockFromBar(ControlKey control, boolean down) {
+        if (!ModifierLatches.handles(control) || modifierLatches.isLocked(control) == down) {
+            return;
+        }
+        modifierLatches.hold(control);
+        invalidate();
+    }
+
     /** Clears transient one-shot and pointer state when the editor session changes. */
     public void resetLayerState() {
         shiftLayer.clear();
@@ -2022,6 +2040,7 @@ public final class ReteKeyboardView extends View {
             case CTRL:
             case META:
             case ALT:
+            case RSHIFT:
                 // A tap arms it for one key; a hold locks it. Both are view-local: what reaches
                 // the editor is the chord the next key makes.
                 modifierLatches.tap(control);

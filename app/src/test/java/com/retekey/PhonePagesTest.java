@@ -37,7 +37,7 @@ public final class PhonePagesTest {
     @Test
     public void theModifiersOwnTheLeftmostColumn() {
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
-            assertEquals(Arrays.asList("Ctrl", "Meta", "Alt", "Tab"), column(layout, 0));
+            assertEquals(Arrays.asList("Tab", "Alt", "Meta", "Ctrl"), column(layout, 0));
             for (List<SoftwareKeySpec> row : layout.rows()) {
                 assertEquals(1, row.get(0).columnSpan());
             }
@@ -62,10 +62,12 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void hanjaSitsBesideTabWhileHangulIsBeingTyped() {
+    public void hanjaSitsBesideCtrlWhileHangulIsBeingTyped() {
+        // 2026-08-30: the modifier column flipped to Tab/Alt/Meta/Ctrl top-to-bottom, so the
+        // bottom row's own cell is Ctrl now.
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
             List<SoftwareKeySpec> bottom = layout.rows().get(3);
-            assertEquals("Tab", bottom.get(0).label());
+            assertEquals("Ctrl", bottom.get(0).label());
             SoftwareKeySpec hanja = bottom.get(1);
             assertEquals("漢", hanja.label());
             assertEquals(ControlKey.HANJA, hanja.control());
@@ -157,12 +159,13 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void theCommitKeySitsBesideAlt() {
+    public void theCommitKeySitsBesideMeta() {
+        // 2026-08-30: the modifier column flipped, so row 2's own modifier is Meta now.
         SoftwareKeySpec commit = CHEONJIIN.rows().get(2).get(1);
         assertEquals("Next", commit.label());
         assertEquals(SemanticInput.Kind.FLUSH, commit.semanticInput().kind());
-        assertEquals("the cell beside Alt is one column", 1, commit.columnSpan());
-        assertEquals("Alt", CHEONJIIN.rows().get(2).get(0).label());
+        assertEquals("the cell beside Meta is one column", 1, commit.columnSpan());
+        assertEquals("Meta", CHEONJIIN.rows().get(2).get(0).label());
     }
 
     @Test
