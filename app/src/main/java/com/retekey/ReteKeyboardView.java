@@ -747,7 +747,8 @@ public final class ReteKeyboardView extends View {
         paint.setColor(aimed ? palette.background : palette.keyText);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(box * 0.5f);
-        canvas.drawText(label, centreX, centreY - (paint.descent() + paint.ascent()) / 2.0f, paint);
+        canvas.drawText(ltrForDisplay(label), centreX,
+            centreY - (paint.descent() + paint.ascent()) / 2.0f, paint);
     }
 
     private void ensureBaseBitmap(int width, int height) {
@@ -810,6 +811,17 @@ public final class ReteKeyboardView extends View {
         // Every cap is three letters now, shown in bold capitals with no arrow (owner's choice,
         // 2026-08-29) — the weight and the case are the arrow.
         return LetterLayouts.keyCapName(destination).toUpperCase(java.util.Locale.ROOT);
+    }
+
+    /**
+     * A hint or guide character, pinned to left-to-right for display. The guillemets « » are
+     * bidi-mirrored characters: shaped in a right-to-left context they render flipped, so on a
+     * Persian key the cap showed the opposite mark from the one the key types (issue #4,
+     * 2026-08-30). The LRM prefix is zero-width and only steers the shaping — the committed
+     * text is untouched.
+     */
+    private static String ltrForDisplay(String text) {
+        return text == null || text.isEmpty() ? text : "\u200e" + text;
     }
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
@@ -888,9 +900,9 @@ public final class ReteKeyboardView extends View {
             // it sat on the very edge and read as if it had slipped out of the key. A key with
             // several alternates shows its first — the one a still hold types — and a dot in the
             // bottom-right corner saying there are more along the strip.
-            String corner = key.hasLongPressHint()
+            String corner = ltrForDisplay(key.hasLongPressHint()
                 ? key.longPressHint()
-                : key.longPressTexts().get(0);
+                : key.longPressTexts().get(0));
             float hint = (bottom - top) * 0.20f;
             float inset = hint * 0.45f;
             paint.setColor(palette.hintOn(fill));

@@ -1,0 +1,1 @@
+Persian: the guillemet hints on the keys could render visually flipped on some devices - they are bidi-mirrored characters, and a right-to-left shaping context reverses them. Hint and guide labels are now pinned to left-to-right for display; what the keys type is unchanged.
