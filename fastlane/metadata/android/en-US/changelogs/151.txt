@@ -1,0 +1,1 @@
+Persian: the key caps now preview « and » the way they will actually look in Persian text. These are bidi-mirrored characters - the glyph the reader sees depends on the text direction - so caps on right-to-left layouts are now shaped in a right-to-left context, and left-to-right layouts keep theirs. What the keys type is unchanged.

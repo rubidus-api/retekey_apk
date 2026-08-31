@@ -765,7 +765,7 @@ public final class ReteKeyboardView extends View {
         paint.setColor(aimed ? palette.background : palette.keyText);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(box * 0.5f);
-        canvas.drawText(ltrForDisplay(label), centreX,
+        canvas.drawText(directionForDisplay(label), centreX,
             centreY - (paint.descent() + paint.ascent()) / 2.0f, paint);
     }
 
@@ -832,14 +832,33 @@ public final class ReteKeyboardView extends View {
     }
 
     /**
-     * A hint or guide character, pinned to left-to-right for display. The guillemets « » are
-     * bidi-mirrored characters: shaped in a right-to-left context they render flipped, so on a
-     * Persian key the cap showed the opposite mark from the one the key types (issue #4,
-     * 2026-08-30). The LRM prefix is zero-width and only steers the shaping — the committed
-     * text is untouched.
+     * A hint or guide character, shaped in the direction of the layout it sits on. The
+     * guillemets « » are bidi-mirrored characters: the glyph the user will *see in their text*
+     * depends on the text's direction, so the key cap must preview them in that same direction —
+     * an RTL layout's cap in an RTL context (the » that renders as « in Persian text shows « on
+     * the cap too), an LTR layout's in an LTR context (French « stays «). v0.1.148 pinned
+     * everything to LTR, which made the Persian caps show the opposite of what typing produces
+     * (issue #4, second report, 2026-08-31). The prefix mark is zero-width and display-only —
+     * the committed text is untouched.
      */
-    private static String ltrForDisplay(String text) {
-        return text == null || text.isEmpty() ? text : "\u200e" + text;
+    private String directionForDisplay(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        return (rtlLayout(layout().id()) ? "\u200f" : "\u200e") + text;
+    }
+
+    /** The layouts that write right to left; their caps preview characters in that direction. */
+    private static boolean rtlLayout(KeyboardLayoutId id) {
+        switch (id) {
+            case FA_ISIRI:
+            case AR_101:
+            case UR_PHONETIC:
+            case HE_STANDARD:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** The text to paint for a key: its label, or a word when the device has no glyph for it. */
@@ -918,7 +937,7 @@ public final class ReteKeyboardView extends View {
             // it sat on the very edge and read as if it had slipped out of the key. A key with
             // several alternates shows its first — the one a still hold types — and a dot in the
             // bottom-right corner saying there are more along the strip.
-            String corner = ltrForDisplay(key.hasLongPressHint()
+            String corner = directionForDisplay(key.hasLongPressHint()
                 ? key.longPressHint()
                 : key.longPressTexts().get(0));
             float hint = (bottom - top) * 0.20f;
