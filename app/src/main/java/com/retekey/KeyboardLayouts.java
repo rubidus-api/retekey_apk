@@ -1491,14 +1491,16 @@ public final class KeyboardLayouts {
             shiftKey(false),
             // The two marks that punctuate a clause hold the two that end one.
             text("semicolon", ";").withLongPress(","), text("colon", ":").withLongPress("."),
-            text("backtick", "`"),
+            // The tilde sits on the backtick, which is the key a physical keyboard shifts it from.
+            text("backtick", "`").withLongPress("~"),
             text("apostrophe", "'").withLongPress("="),
             text("quote", "\"").withLongPress("÷"),
             text("question", "?").withLongPress("×"),
-            text("tilde", "~").withLongPress("+"),
-            // Minus lives on the underscore's hold, where a physical keyboard puts it too, and
-            // the pair sits beside Enter rather than at the far end of the row.
-            text("underscore", "_").withLongPress("-"),
+            // Minus took the tilde's cell and its hold: a tap for minus, a hold for plus. The
+            // pair a physical keyboard puts on one key sits side by side here, beside Enter
+            // rather than at the far end of the row, and the underscore's hold is left empty.
+            text("minus", "-").withLongPress("+"),
+            text("underscore", "_"),
             enterKey()
         ));
         // The cell beside space was empty; Escape is the key this page had nowhere else to put.

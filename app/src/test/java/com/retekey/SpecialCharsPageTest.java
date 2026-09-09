@@ -2,6 +2,7 @@ package com.retekey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public final class SpecialCharsPageTest {
             labels(PAGE, 1)
         );
         assertEquals(
-            Arrays.asList("⇧", ";", ":", "`", "'", "\"", "?", "~", "_", "⏎"),
+            Arrays.asList("⇧", ";", ":", "`", "'", "\"", "?", "-", "_", "⏎"),
             labels(PAGE, 2)
         );
         assertEquals(
@@ -35,13 +36,25 @@ public final class SpecialCharsPageTest {
     }
 
     @Test
-    public void minusIsTheUnderscoresHold() {
-        // The pair a physical keyboard puts on one key stays on one key here too.
+    public void minusHasItsOwnKeyAndTheUnderscoreHoldsNothing() {
+        // Minus took the cell the tilde had; the tilde moved onto the backtick, which is the
+        // key a physical keyboard shifts it from. The underscore is left with nothing on its hold.
+        SoftwareKeySpec minus = PAGE.findById("touch.sym.minus");
+        assertNotNull(minus);
+        assertEquals("-", minus.label());
+        assertEquals("-", minus.semanticInput().text());
+
+        assertEquals(Arrays.asList("~"), PAGE.findById("touch.sym.backtick").longPressTexts());
+
         SoftwareKeySpec underscore = PAGE.findById("touch.sym.underscore");
         assertNotNull(underscore);
-        assertEquals(Arrays.asList("-"), underscore.longPressTexts());
-        assertTrue("backtick no longer carries minus",
-            PAGE.findById("touch.sym.backtick").longPressTexts().isEmpty());
+        assertTrue("the underscore's hold is empty", underscore.longPressTexts().isEmpty());
+        assertTrue("the underscore has no hold at all", !underscore.hasLongPress());
+    }
+
+    @Test
+    public void theTildeKeyIsGone() {
+        assertNull(PAGE.findById("touch.sym.tilde"));
     }
 
     @Test
@@ -86,11 +99,12 @@ public final class SpecialCharsPageTest {
     }
 
     @Test
-    public void theUnderscorePairSitsBesideEnter() {
+    public void theMinusUnderscorePairSitsBesideEnter() {
         List<SoftwareKeySpec> row = PAGE.rows().get(2);
         SoftwareKeySpec underscore = row.get(row.size() - 2);
         assertEquals("_", underscore.label());
-        assertEquals("-", underscore.longPressTexts().get(0));
+        assertEquals("the pair a keyboard puts on one key stays side by side",
+            "-", row.get(row.size() - 3).label());
         assertEquals("⏎", row.get(row.size() - 1).label());
         assertEquals("the row still starts with shift", "⇧", row.get(0).label());
     }

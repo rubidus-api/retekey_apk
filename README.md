@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.150** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.150/retekey-0.1.150.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.150/retekey-0.1.150-legacy.apk)
+**ReteKey v0.1.151** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.151/retekey-0.1.151.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.151/retekey-0.1.151-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.150** —
-[retekey-0.1.150.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.150/retekey-0.1.150.apk) (617 KB; the Android 4.0 build is 517 KB)
+Current release: **v0.1.151** —
+[retekey-0.1.151.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.151/retekey-0.1.151.apk) (617 KB; the Android 4.0 build is 517 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -303,7 +303,7 @@ cursor cluster, and back again:
 The `!#` key opens the special-characters page, where every key commits its symbol. Holding a key
 types its alternate immediately — there is no popup to aim at and nothing to drag to. The top row
 holds the digits it shares keys with on a physical keyboard, so `!` holds **1** and `)` holds **0**;
-`;` holds a comma and `:` a full stop; holding `_` types `-`. `Esc` sits beside the space bar:
+`;` holds a comma and `:` a full stop; holding `` ` `` types `~`, and holding `-` types `+`. `Esc` sits beside the space bar:
 
 ![Special characters page](assets/keyboard-chars.png)
 

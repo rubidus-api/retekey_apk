@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.150** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.150/retekey-0.1.150.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.150/retekey-0.1.150-legacy.apk)
+**ReteKey v0.1.151** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.151/retekey-0.1.151.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.151/retekey-0.1.151-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.150** —
-[retekey-0.1.150.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.150/retekey-0.1.150.apk) (617 KB; 안드로이드 4.0 빌드는 517 KB)
+현재 릴리즈: **v0.1.151** —
+[retekey-0.1.151.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.151/retekey-0.1.151.apk) (617 KB; 안드로이드 4.0 빌드는 517 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -292,7 +292,7 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 `!#` 키는 특수문자 페이지를 엽니다. 이 페이지에서는 모든 키가 자기 기호를 바로 입력합니다. 키를 길게
 누르면 보조 문자가 즉시 입력되고, 겨냥할 팝업도 끌어야 할 것도 없습니다. 윗줄 기호들은 물리 키보드에서
 같은 키를 쓰는 숫자를 품고 있어 `!`을 길게 누르면 **1**, `)`을 길게 누르면 **0**이 입력됩니다. `;`은
-쉼표를, `:`은 마침표를, `_`는 `-`를 품고 있습니다. 스페이스 옆에는 `Esc`가 있습니다:
+쉼표를, `:`은 마침표를, `` ` ``은 `~`를, `-`는 `+`를 품고 있습니다. 스페이스 옆에는 `Esc`가 있습니다:
 
 ![특수문자 페이지](assets/keyboard-chars.png)
 
