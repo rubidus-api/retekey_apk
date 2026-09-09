@@ -11,8 +11,9 @@ package com.retekey;
  * not consulted: judging "was this movement ours?" by predicted positions mis-fired on real
  * editors and thrashed the composer once before (manual §15.27 tells that story). The editor's
  * own composing span cannot mis-fire that way: while the keyboard is composing, its own edits
- * always leave the cursor at the end of that span, and reports without a span (a commit's
- * intermediate state, editors that never report one) are left alone.
+ * always leave the cursor collapsed at the end of that span — that is the whole test — and
+ * reports without a span (a commit's intermediate state, editors that never report one) are left
+ * alone.
  *
  * <p>Platform-neutral and stateless, so the rule is unit-tested directly.
  */
@@ -21,9 +22,17 @@ public final class CursorMovePolicy {
     }
 
     /**
-     * Whether to finish the composition in place and reset the composer. True only when the
-     * keyboard is composing, the editor reports a composing region, and the new selection lies
-     * (even partly) outside it — the one shape our own edits never produce.
+     * Whether to finish the composition in place and reset the composer. True whenever the
+     * keyboard is composing, the editor reports a composing region, and the selection is anything
+     * other than a collapsed cursor sitting at that region's end — the one shape our own edits
+     * produce, and the only one.
+     *
+     * <p>It used to ask a weaker question: is the cursor <em>outside</em> the region? A cursor at
+     * the region's own start passed that test as "inside, carry on", and for Hangul the preedit
+     * is one syllable, so "inside" and "immediately before" are the same place. Tapping just
+     * ahead of the syllable being composed therefore left it composing, and the next backspace
+     * decomposed it where it stood instead of deleting at the cursor (issue #5: 바다가자 with the
+     * cursor moved before 자 gave 바다가ㅈ). A one-character preedit has no inside to tap into.
      */
     public static boolean shouldAbandonComposition(
         boolean composing,
@@ -44,8 +53,9 @@ public final class CursorMovePolicy {
             // that never reports one. Resetting here would break composition per keystroke.
             return false;
         }
-        return newSelStart < candidatesStart || newSelStart > candidatesEnd
-            || newSelEnd < candidatesStart || newSelEnd > candidatesEnd;
+        // Composing places the cursor immediately after the preedit and never selects a range,
+        // so anything else in a report that carries a region is the user having moved it.
+        return newSelStart != newSelEnd || newSelStart != candidatesEnd;
     }
 
     /**

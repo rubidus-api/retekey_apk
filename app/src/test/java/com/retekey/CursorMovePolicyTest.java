@@ -73,9 +73,16 @@ public final class CursorMovePolicyTest {
     }
 
     @Test
-    public void aCursorInsideTheRegionKeepsComposing() {
-        // Tapping into the middle of one's own preedit continues it rather than settling it.
-        assertFalse(CursorMovePolicy.shouldAbandonComposition(true, 5, 5, 5, 6));
-        assertFalse(CursorMovePolicy.shouldAbandonComposition(true, 5, 6, 5, 6));
+    public void aCursorAtTheStartOfTheRegionIsAMovedCursor() {
+        // Issue #5: type 바다가자 and tap right before the last syllable. 자 composes at 3..4,
+        // so the cursor lands on 3 — the region's own start. That used to read as "inside the
+        // preedit, carry on", and backspace then decomposed 자 in place: 바다가ㅈ, from the end,
+        // wherever the cursor actually was. A one-character preedit has no inside to tap into.
+        assertTrue(CursorMovePolicy.shouldAbandonComposition(true, 3, 3, 3, 4));
+        assertTrue(CursorMovePolicy.shouldAbandonComposition(true, 5, 5, 5, 6));
+        // A longer preedit — Telex, romaji — has the same hole in its middle.
+        assertTrue(CursorMovePolicy.shouldAbandonComposition(true, 4, 4, 3, 6));
+        // A range covering the region is a selection, which composing never produces.
+        assertTrue(CursorMovePolicy.shouldAbandonComposition(true, 5, 6, 5, 6));
     }
 }

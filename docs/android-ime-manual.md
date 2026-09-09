@@ -1668,6 +1668,48 @@ composing span, or failing that its own text — never by comparing against posi
 predicted. And when a composition is abandoned, settle it in place first; text must never travel
 with the cursor.
 
+**The span test was still too weak.** "Outside the span" let a cursor sitting on the span's own
+start pass as ours, which for a one-syllable preedit is the position just before it — see 15.28.
+
+### 15.28 "Inside the preedit" is not a place you can tap
+
+**What happened.** Type 바다가자, move the cursor to just before the last syllable, press
+Backspace: the keyboard deleted from the end — 바다가ㅈ — instead of at the cursor. Only from that
+one spot. Move the cursor anywhere else first and Backspace behaved. (Reported as issue #5, and
+noticed a release earlier in issue #2.)
+
+**Why that one spot.** 15.27's rule asks whether the new selection lies *outside* the editor's
+composing span, and 자 was still composing at `3..4`. Tapping immediately before it puts the
+cursor at 3 — the span's own start — which is not outside it. So the composition was kept, and
+`HangulInputProcessor.delete()` handed Backspace to the composer, which decomposed 자 and wrote
+the result back over the span. The cursor was never consulted; `setComposingText` always replaces
+the composing region, wherever the cursor happens to be.
+
+The rule was written thinking of a preedit you could tap into the middle of. **A Hangul preedit is
+one syllable.** It has no middle: every position in it is either its end — where our own edits put
+the cursor — or its start, which is a place the user can only reach by moving the cursor there.
+
+**The fix.** Ask the exact question instead of the weaker one. Composing leaves the cursor
+collapsed at the span's end and never selects a range, so that is the only report our own edits
+produce:
+
+```java
+// before: outside the span?
+return newSelStart < candidatesStart || newSelStart > candidatesEnd
+    || newSelEnd < candidatesStart || newSelEnd > candidatesEnd;
+// after: exactly where our own edit would have left it?
+return newSelStart != newSelEnd || newSelStart != candidatesEnd;
+```
+
+This closes the same hole for longer preedits — Telex, romaji — where a tap can genuinely land in
+the middle.
+
+**Rule.** When you write a containment test, name the positions your own code actually produces
+and compare against those, not against a region you imagine the user moving in and out of. 15.27
+is this defect's mirror: that one abandoned a composition too eagerly and had to be reverted in a
+day; this one held on too long and took months to surface, because holding on looks like nothing
+at all until a cursor lands on the one boundary that reads as "still ours".
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
