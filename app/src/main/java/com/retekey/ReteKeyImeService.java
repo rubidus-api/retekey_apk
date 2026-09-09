@@ -335,8 +335,19 @@ public class ReteKeyImeService extends InputMethodService {
                 default:
                     RawKey key = action.rawKey();
                     if (key != null) {
+                        // The bar's arrows, Home/End and the page keys chord with whatever the
+                        // keyboard's own Ctrl, Alt, Meta and Shift are holding: they used to be
+                        // sent bare, so a locked Shift did nothing to them and Shift+arrow could
+                        // not select from the bar at all.
+                        java.util.Set<KeyModifier> mods = keyboardView == null
+                            ? java.util.EnumSet.noneOf(KeyModifier.class)
+                            : keyboardView.rawKeyModifiers();
                         dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-                            "touch.bar." + action.stored(), SemanticInput.rawKey(key)));
+                            "touch.bar." + action.stored(),
+                            SemanticInput.rawKey(key, mods)));
+                        if (keyboardView != null) {
+                            keyboardView.consumeRawKeyModifiers();
+                        }
                     }
                     break;
             }

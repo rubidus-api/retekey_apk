@@ -36,12 +36,21 @@ public final class SettingsActivity extends Activity {
     public static final String EXTRA_SCREEN = "com.retekey.settings.SCREEN";
 
     /**
+     * Present when the page wanted is that screen's <em>layout list</em> rather than its
+     * settings. The list is one row per layout and there are many; a settings page must not be a
+     * scroll past it.
+     */
+    public static final String EXTRA_LAYOUTS = "com.retekey.settings.LAYOUTS";
+
+    /**
      * Which screen this page edits. Set from {@link #EXTRA_SCREEN} on an orientation page; on the
      * main page it is the device's current orientation, which nothing there reads.
      */
     private ScreenOrientation editing;
-    /** True on Portrait settings or Landscape settings, false on the main page. */
+    /** True on any of the four per-screen pages, false on the general page. */
     private boolean orientationPage;
+    /** True on Layout (portrait) or Layout (landscape); false on an orientation's settings. */
+    private boolean layoutPage;
     private SeekBar slider;
     private TextView valueLabel;
     private String capturingKey;
@@ -59,6 +68,7 @@ public final class SettingsActivity extends Activity {
         super.onCreate(savedInstanceState);
         String requested = getIntent() == null ? null : getIntent().getStringExtra(EXTRA_SCREEN);
         orientationPage = requested != null;
+        layoutPage = orientationPage && getIntent().hasExtra(EXTRA_LAYOUTS);
         editing = ScreenOrientation.LANDSCAPE.name().equals(requested)
             ? ScreenOrientation.LANDSCAPE
             : ScreenOrientation.PORTRAIT.name().equals(requested)
@@ -69,10 +79,7 @@ public final class SettingsActivity extends Activity {
             // oriented controls still need a value to read when this page is not showing them.
             editing = OrientedPrefs.current(this);
         }
-        setTitle(orientationPage
-            ? (editing == ScreenOrientation.LANDSCAPE
-                ? R.string.settings_landscape_title : R.string.settings_portrait_title)
-            : R.string.settings_title);
+        setTitle(pageTitle());
         buildUi();
     }
 
@@ -94,13 +101,14 @@ public final class SettingsActivity extends Activity {
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        // Both pages are built from SettingsOutline, which is also what the unit tests read.
+        // Every page is built from SettingsOutline, which is also what the unit tests read.
+        List<SettingsOutline.Section> page = !orientationPage
+            ? SettingsOutline.MAIN
+            : layoutPage ? SettingsOutline.LAYOUT_PAGE : SettingsOutline.ORIENTATION_PAGE;
         if (orientationPage) {
-            root.addView(sectionHint(editing == ScreenOrientation.LANDSCAPE
-                ? R.string.settings_landscape_hint : R.string.settings_portrait_hint));
+            root.addView(sectionHint(pageHint()));
         }
-        for (SettingsOutline.Section section
-                : orientationPage ? SettingsOutline.ORIENTATION : SettingsOutline.MAIN) {
+        for (SettingsOutline.Section section : page) {
             addSection(root, section);
         }
 
@@ -109,9 +117,9 @@ public final class SettingsActivity extends Activity {
         scroller.addView(root);
         setContentView(scroller);
         ScreenFit.apply(scroller, root);
-        if (orientationPage) {
-            // Shows the stored height in the label the slider just got; the main page has no
-            // height control to fill, and storing one from it would be writing what it never read.
+        if (orientationPage && !layoutPage) {
+            // Shows the stored height in the label the slider just got. No other page builds a
+            // height control, and storing one from those would be writing what they never read.
             applyPercent(currentPercent());
         }
     }
@@ -120,12 +128,6 @@ public final class SettingsActivity extends Activity {
     /** Builds one section of the page. The order they arrive in is SettingsOutline's. */
     private void addSection(LinearLayout root, SettingsOutline.Section section) {
         switch (section) {
-            case PORTRAIT_PAGE:
-                addOrientationPageLink(root, ScreenOrientation.PORTRAIT);
-                break;
-            case LANDSCAPE_PAGE:
-                addOrientationPageLink(root, ScreenOrientation.LANDSCAPE);
-                break;
             case HEIGHT:
                 addHeightControls(root);
                 break;
@@ -146,6 +148,18 @@ public final class SettingsActivity extends Activity {
                 break;
             case ACTION_BAR:
                 addActionBarControls(root);
+                break;
+            case PORTRAIT_SETTINGS:
+                addPageLink(root, ScreenOrientation.PORTRAIT, false);
+                break;
+            case LANDSCAPE_SETTINGS:
+                addPageLink(root, ScreenOrientation.LANDSCAPE, false);
+                break;
+            case PORTRAIT_LAYOUTS:
+                addPageLink(root, ScreenOrientation.PORTRAIT, true);
+                break;
+            case LANDSCAPE_LAYOUTS:
+                addPageLink(root, ScreenOrientation.LANDSCAPE, true);
                 break;
             case REPEAT:
                 addRepeatControls(root);
@@ -362,25 +376,61 @@ public final class SettingsActivity extends Activity {
         return row;
     }
 
+    /** The name of this page, which is also how the reader knows what it is for. */
+    private int pageTitle() {
+        if (!orientationPage) {
+            return R.string.settings_title;
+        }
+        boolean landscape = editing == ScreenOrientation.LANDSCAPE;
+        if (layoutPage) {
+            return landscape
+                ? R.string.settings_layout_landscape_title
+                : R.string.settings_layout_portrait_title;
+        }
+        return landscape ? R.string.settings_landscape_title : R.string.settings_portrait_title;
+    }
+
+    /** The line under that name saying which screen it is about and what it holds. */
+    private int pageHint() {
+        boolean landscape = editing == ScreenOrientation.LANDSCAPE;
+        if (layoutPage) {
+            return landscape
+                ? R.string.settings_layout_landscape_hint
+                : R.string.settings_layout_portrait_hint;
+        }
+        return landscape ? R.string.settings_landscape_hint : R.string.settings_portrait_hint;
+    }
+
     /**
-     * Opens the settings for one screen orientation. Two buttons rather than one page with a
-     * toggle: which orientation you are editing is then the page you are on, and looking at the
-     * other one is opening it rather than remembering to come back and flip a switch.
+     * Opens one of the four per-screen pages. Four buttons rather than one page with a toggle:
+     * which screen you are setting is then the page you are on, and looking at the other one is
+     * opening it. The layout list is split off from the settings because it is one row per
+     * layout and there are 32 of them — a height slider must not sit above that.
      */
-    private void addOrientationPageLink(LinearLayout root, ScreenOrientation orientation) {
+    private void addPageLink(LinearLayout root, ScreenOrientation orientation, boolean layouts) {
         boolean landscape = orientation == ScreenOrientation.LANDSCAPE;
-        root.addView(sectionHeader(landscape
-            ? R.string.settings_landscape_title : R.string.settings_portrait_title));
-        root.addView(sectionHint(landscape
-            ? R.string.settings_landscape_hint : R.string.settings_portrait_hint));
+        int titleRes = layouts
+            ? (landscape
+                ? R.string.settings_layout_landscape_title
+                : R.string.settings_layout_portrait_title)
+            : (landscape ? R.string.settings_landscape_title : R.string.settings_portrait_title);
+        int hintRes = layouts
+            ? (landscape
+                ? R.string.settings_layout_landscape_hint
+                : R.string.settings_layout_portrait_hint)
+            : (landscape ? R.string.settings_landscape_hint : R.string.settings_portrait_hint);
+        root.addView(sectionHeader(titleRes));
+        root.addView(sectionHint(hintRes));
         Button open = new Button(this);
-        open.setText(landscape
-            ? R.string.settings_landscape_open : R.string.settings_portrait_open);
+        open.setText(getString(R.string.settings_page_open, getString(titleRes)));
         open.setAllCaps(false);
         open.setOnClickListener(view -> {
             android.content.Intent intent =
                 new android.content.Intent(this, SettingsActivity.class);
             intent.putExtra(EXTRA_SCREEN, orientation.name());
+            if (layouts) {
+                intent.putExtra(EXTRA_LAYOUTS, true);
+            }
             try {
                 startActivity(intent);
             } catch (RuntimeException ignored) {

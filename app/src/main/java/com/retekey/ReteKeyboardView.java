@@ -469,8 +469,16 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
-    /** A bar hold on a modifier: lock it down, or let it up, mirroring the keyboard's own hold. */
     public void setModifierLockFromBar(ControlKey control, boolean down) {
+        if (control == ControlKey.SHIFT) {
+            // Shift is the layout's own latch rather than one of the three, so a bar slot holding
+            // it locks the same state the Shift key does.
+            if (shiftLayer.isLocked() != down) {
+                shiftLayer.toggleLock();
+                invalidate();
+            }
+            return;
+        }
         if (!ModifierLatches.handles(control) || modifierLatches.isLocked(control) == down) {
             return;
         }
@@ -1566,11 +1574,33 @@ public final class ReteKeyboardView extends View {
         }
     }
 
-    /** Folds the armed Ctrl/Meta/Alt into a raw key so it forms a chord; other keys are unchanged. */
+    /**
+     * The modifiers a raw key is sent with: the armed or locked Ctrl, Meta and Alt, and Shift.
+     *
+     * <p>Shift is here because a raw key has no shifted character to pick — an arrow, Home, Page
+     * Down. On a letter the Shift key chooses a layer and that is the whole of its meaning; on a
+     * key that has no layer to choose, the only thing it can mean is the chord every keyboard
+     * makes with it, which is why Shift+arrow selects text. Without this the Shift key simply did
+     * nothing on those keys, on the pad page and on the action bar alike.
+     */
+    public Set<KeyModifier> rawKeyModifiers() {
+        return RawKeyModifiers.of(modifierLatches.active(), shiftLayer.isActive());
+    }
+
+    /** Spends whatever one-shot modifiers a raw key just used, Shift included. */
+    public void consumeRawKeyModifiers() {
+        consumeOneShotModifiers();
+        consumeOneShotShift();
+    }
+
+    /** Folds the active modifiers into a raw key so it forms a chord; other keys are unchanged. */
     private ProjectKeyEvent pressEventWithModifiers(SoftwareKeySpec key) {
         SemanticInput input = key.semanticInput();
-        Set<KeyModifier> mods = modifierLatches.active();
-        if (input.kind() != SemanticInput.Kind.RAW_KEY || mods.isEmpty()) {
+        if (input.kind() != SemanticInput.Kind.RAW_KEY) {
+            return key.pressEvent();
+        }
+        Set<KeyModifier> mods = rawKeyModifiers();
+        if (mods.isEmpty()) {
             return key.pressEvent();
         }
         return ProjectKeyEvent.softwareDown(key.stableKeyId(), input.withModifiers(mods));
