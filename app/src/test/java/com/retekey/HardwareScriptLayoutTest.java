@@ -32,6 +32,45 @@ public final class HardwareScriptLayoutTest {
     }
 
     @Test
+    public void thaiPattachoteTypesTheSameCharactersOnGlassAndOnKeys() {
+        assertEquals(thaiOf(softLetters(KeyboardLayoutId.TH_PATTACHOTE, new Locale("th"), true)),
+            thaiOf(tableLetters(KeyboardLayoutId.TH_PATTACHOTE, true)));
+    }
+
+    @Test
+    public void thaiPattachoteTypesTheSameLettersOnGlassAndOnKeysIgnoringMarks() {
+        // Thai has no case, so both halves of the physical table are characters in their own
+        // right: the base set and the second set the soft page offers as an up-flick.
+        assertEquals(softLetters(KeyboardLayoutId.TH_PATTACHOTE, new Locale("th")),
+            tableLetters(KeyboardLayoutId.TH_PATTACHOTE));
+    }
+
+    @Test
+    public void thaiPattachotesSecondSetIsTheSameOnBothSides() {
+        // The soft page offers the second set as an up-flick from the key holding its base; the
+        // physical table offers it under Shift. Same pairs, or one of the two was mistyped.
+        TreeSet<String> flicked = new TreeSet<>();
+        for (java.util.Map.Entry<String, String[]> entry : LatinAccents.THAI_PATTACHOTE.entrySet()) {
+            String up = entry.getValue()[1];
+            if (up != null && !up.trim().isEmpty()) {
+                flicked.add(up);
+            }
+        }
+        TreeSet<String> shifted = new TreeSet<>();
+        HardwareSemanticMapper mapper = HardwareLayoutTables.of(KeyboardLayoutId.TH_PATTACHOTE);
+        assertNotNull(mapper);
+        for (String key : allKeyIds()) {
+            SemanticInput input = mapper.map(key, true);
+            // Thai tone marks and vowel signs are combining marks, which isLetter() denies;
+            // they are characters this keyboard types, so the test counts the whole Thai block.
+            if (input != null && isThai(input.text())) {
+                shifted.add(input.text());
+            }
+        }
+        assertEquals(flicked, shifted);
+    }
+
+    @Test
     public void theKeysTheSourceNamesAreWhereTheSourcePutsThem() {
         // Spot checks quoted from Microsoft's own tables (KBDTUF, KBDBU): the ones a wrong row
         // offset would move. Turkish F's home row starts at u and its j is on the US j.
@@ -52,8 +91,32 @@ public final class HardwareScriptLayoutTest {
         assertEquals("ю", bds.map("hardware.key.z", false).text());
     }
 
-    /** Every letter the soft page shows, as a sorted set. */
+    /** True for anything in the Thai block, marks included. */
+    private static boolean isThai(String text) {
+        return text != null && text.length() == 1
+            && text.charAt(0) >= '\u0E00' && text.charAt(0) <= '\u0E7F';
+    }
+
+    private static TreeSet<String> thaiOf(TreeSet<String> all) {
+        TreeSet<String> thai = new TreeSet<>();
+        for (String one : all) {
+            if (isThai(one)) {
+                thai.add(one);
+            }
+        }
+        return thai;
+    }
+
     private static TreeSet<String> softLetters(KeyboardLayoutId id, Locale locale) {
+        return softLetters(id, locale, false);
+    }
+
+    private static TreeSet<String> tableLetters(KeyboardLayoutId id) {
+        return tableLetters(id, false);
+    }
+
+    /** Every letter the soft page shows, as a sorted set. */
+    private static TreeSet<String> softLetters(KeyboardLayoutId id, Locale locale, boolean marks) {
         TreeSet<String> letters = new TreeSet<>();
         KeyboardLayout page = KeyboardLayouts.of(id, false);
         for (java.util.List<SoftwareKeySpec> row : page.rows()) {
@@ -63,7 +126,7 @@ public final class HardwareScriptLayoutTest {
                     continue;
                 }
                 String text = key.semanticInput().text();
-                if (isLetter(text, locale)) {
+                if (marks ? isThai(text) : isLetter(text, locale)) {
                     letters.add(text);
                 }
             }
@@ -72,13 +135,14 @@ public final class HardwareScriptLayoutTest {
     }
 
     /** Every letter the physical table types unshifted, as a sorted set. */
-    private static TreeSet<String> tableLetters(KeyboardLayoutId id) {
+    private static TreeSet<String> tableLetters(KeyboardLayoutId id, boolean marks) {
         HardwareSemanticMapper mapper = HardwareLayoutTables.of(id);
         assertNotNull("no table for " + id, mapper);
         TreeSet<String> letters = new TreeSet<>();
         for (String key : allKeyIds()) {
             SemanticInput input = mapper.map(key, false);
-            if (input != null && isLetter(input.text(), Locale.ROOT)) {
+            if (input != null && (marks ? isThai(input.text())
+                    : isLetter(input.text(), Locale.ROOT))) {
                 letters.add(input.text());
             }
         }

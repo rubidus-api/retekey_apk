@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.159** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.159/retekey-0.1.159.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.159/retekey-0.1.159-legacy.apk)
+**ReteKey v0.1.160** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.160/retekey-0.1.160.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.160/retekey-0.1.160-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.159** —
-[retekey-0.1.159.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.159/retekey-0.1.159.apk) (627 KB; the Android 4.0 build is 522 KB)
+Current release: **v0.1.160** —
+[retekey-0.1.160.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.160/retekey-0.1.160.apk) (630 KB; the Android 4.0 build is 523 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -184,8 +184,8 @@ Seven letter layouts share that grid:
 | **Polish** | QWERTY; each letter's mark is one flick — ogonek down (ą ę), acute/stroke right (ć ń ó ś ź ł), dot up (ż) |
 | **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels a flick right (ά …), the diaereses down (ϊ ϋ) and both together up (ΐ ΰ); the question mark flicks up to the ano teleia. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
 | **Hindi(हिन्दी)** | InScript's positions as four letter rows plus a signs row, five rows in the same keyboard height. InScript's system rides the upward flicks: a matra flicks up to its independent vowel (ा↑आ), a plain consonant to its aspirate (क↑ख). The candra family shares one key (ॉ with ऑ ऍ ॅ), the sibilants share स (श up, ष down), the nasal signs share ं (ँ up, ः down), the danda doubles upward, and ₹ ़ ऽ ॐ have their own keys. Text commits as typed; your editor draws the conjuncts |
-| **Thai(ไทย)** | Kedmanee's (TIS 820) positions as **four letter rows** — the first five-row page, every row one fifth of the same keyboard height. Kedmanee's Shift layer rides the **upward flicks**, key for key (ุ↑ู, ำ↑ฎ, ื↑์ …); the letters the ten columns squeeze out ride their kin — the obsolete ฃ ฅ under ข ค, the twenty-word ใ under ไ, ง below its fellow velar ก, and ฟ carries ฤ ฝ ๅ ฦ on its four ways. Thai digits ๑–๙ ๐ are the held digits, and ๆ sits beside space with ฯ held and ฿ a flick down. No Shift, one page |
-| **Russian(Русский)** and friends | ЙЦУКЕН's three rows plus a fourth for х ъ ж э б ю ё and the quotes — ё also a flick up on е. **Ukrainian** swaps in і ї є with ґ (also г flicked up); **Bulgarian** comes both ways — the **Phonetic** layout its phones use and the official **BDS 5237**, whose order is nothing like QWERTY's; **Macedonian** and **Serbian** sit on their standard positions |
+| **Thai(ไทย)** | Kedmanee's (TIS 820) positions as **four letter rows** — the first five-row page, every row one fifth of the same keyboard height. Kedmanee's Shift layer rides the **upward flicks**, key for key (ุ↑ู, ำ↑ฎ, ื↑์ …); the letters the ten columns squeeze out ride their kin — the obsolete ฃ ฅ under ข ค, the twenty-word ใ under ไ, ง below its fellow velar ก, and ฟ carries ฤ ฝ ๅ ฦ on its four ways. Thai digits ๑–๙ ๐ are the held digits, and ๆ sits beside space with ฯ held and ฿ a flick down. No Shift, one page. **Pattachote**, the 1960s ergonomic standard, is offered beside it as a page of its own, its 33 base characters in rows of ten with the second set on the upward flicks |
+| **Russian(Русский)** and friends | ЙЦУКЕН's three rows plus a fourth for х ъ ж э б ю ё and the quotes — ё also a flick up on е. **Ukrainian** swaps in і ї є with ґ (also г flicked up); **Russian** also comes as a **Phonetic** page, the letters where their Latin sound is (screen only: Windows reaches five of its letters through dead keys, which this keyboard cannot compose yet); **Bulgarian** comes both ways — the **Phonetic** layout its phones use and the official **BDS 5237**, whose order is nothing like QWERTY's; **Macedonian** and **Serbian** sit on their standard positions |
 | **Arabic(العربية)** | the 101 layout's positions, reading from the right, with the hamza row below and the Shift layer's tashkil riding the upward flicks where the 101 puts them; the period holds ، with « ؟ » ؛ on its flicks. **Urdu** follows its phonetic layout, the paired letters (ج↑چ, د↑ڈ …) riding the flicks |
 | **Georgian(ქართული)** | its QWERTY-phonetic positions, one page, no case |
 | **Armenian(Հայերեն)** | the Eastern typewriter positions; ռ rides ր, the everyday ligature և rides ե, and the full stop is Armenian's own ։ with ՝ ՞ ՜ ՛ on its flicks |

@@ -107,6 +107,9 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout RU_SHIFTED = russian(true);
     private static final KeyboardLayout UK_BASE = ukrainian(false);
     private static final KeyboardLayout UK_SHIFTED = ukrainian(true);
+    private static final KeyboardLayout PATTACHOTE = thaiPattachote();
+    private static final KeyboardLayout RUP_BASE = russianPhonetic(false);
+    private static final KeyboardLayout RUP_SHIFTED = russianPhonetic(true);
     private static final KeyboardLayout BG_BASE = bulgarian(false);
     private static final KeyboardLayout BDS_BASE = bulgarianBds(false);
     private static final KeyboardLayout BDS_SHIFTED = bulgarianBds(true);
@@ -184,6 +187,8 @@ public final class KeyboardLayouts {
             case FA_ISIRI:
                 // Neither has Persian: one page.
                 return PERSIAN;
+            case TH_PATTACHOTE:
+                return PATTACHOTE;
             case TH_KEDMANEE:
                 // Nor Thai.
                 return THAI;
@@ -192,6 +197,8 @@ public final class KeyboardLayouts {
                 return HINDI;
             case RU_JCUKEN:
                 return shifted ? RU_SHIFTED : RU_BASE;
+            case RU_PHONETIC:
+                return shifted ? RUP_SHIFTED : RUP_BASE;
             case UK_JCUKEN:
                 return shifted ? UK_SHIFTED : UK_BASE;
             case BG_PHONETIC:
@@ -1219,6 +1226,64 @@ public final class KeyboardLayouts {
             LatinAccents.TURKISH);
     }
 
+    /**
+     * Thai Pattachote — the 1960s ergonomic standard, designed to spread the work across the
+     * fingers where Kedmanee had not. It sits beside Kedmanee rather than replacing it.
+     *
+     * <p>Base characters and their shifted partners come from Microsoft's KBDTH1 table
+     * (learn.microsoft.com/globalization/keyboards/kbdth1.html), key by key. The page holds the
+     * 33 base characters in rows of ten, and each shifted partner is an up-flick from the key
+     * that carries its base — the same shape Kedmanee's page uses, so the two read alike.
+     */
+    private static KeyboardLayout thaiPattachote() {
+        // Rows of ten, with backspace, shift, the period and enter taking a cell each the way the
+        // Cyrillic pages do: 33 base characters do not divide into rows of letters alone.
+        String[] rowSpecs = {
+            "\u0E47\u0E15\u0E22\u0E2D\u0E23\u0E48\u0E14\u0E21\u0E27\u0E41",
+            "\u0E49\u0E17\u0E07\u0E01\u0E31\u0E35\u0E32\u0E19\u0E40\b",
+            "\u0001\u0E44\u0E02\u0E1A\u0E1B\u0E25\u0E2B\u0E34.\n",
+            "\u0E04\u0E2A\u0E30\u0E08\u0E1E\u0E43\u0E0C«»—"};
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(rowSpecs.length);
+        for (String spec : rowSpecs) {
+            List<SoftwareKeySpec> row = new ArrayList<>(10);
+            for (char c : spec.toCharArray()) {
+                String one = String.valueOf(c);
+                switch (one) {
+                    case "\u0001": row.add(shiftKey(false)); break;
+                    case "\b": row.add(backspaceKey()); break;
+                    case "\n": row.add(enterKey()); break;
+                    case ".": row.add(letterPeriodKey()); break;
+                    default: row.add(letter(one, false));
+                }
+            }
+            rows.add(KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0])));
+        }
+        List<List<SoftwareKeySpec>> held = withAccents(
+            withHolds(rows, new String[] {
+                "\u0E51\u0E52\u0E53\u0E54\u0E55\u0E56\u0E57\u0E58\u0E59\u0E50"}),
+            LatinAccents.THAI_PATTACHOTE, false, java.util.Locale.ROOT);
+        List<List<SoftwareKeySpec>> all = new ArrayList<>(held);
+        all.add(bottomRow(bottomRowCellFor(KeyboardLayoutId.TH_PATTACHOTE)));
+        return KeyboardLayout.of(KeyboardLayoutId.TH_PATTACHOTE, false, COLUMNS, all);
+    }
+
+    /**
+     * Russian phonetic — the letters where their Latin sound is, after Windows' own Mnemonic
+     * layout (learn.microsoft.com/globalization/keyboards/kbdrum.html). It is the second way
+     * Russian is typed outside Russia, on a keyboard whose caps say QWERTY.
+     *
+     * <p>On glass every letter can have a key, so it does. Windows reaches ч щ э ё ю through dead
+     * keys — a first key that waits for a second — which this keyboard has no composer for yet
+     * (RFC-0011 G2-b); they sit on the fourth row here instead. That is also why there is no
+     * physical table for this layout: a keyboard that cannot type ч is not one to offer.
+     */
+    private static KeyboardLayout russianPhonetic(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.RU_PHONETIC, shifted, new java.util.Locale("ru"),
+            // 10 + 9 + 7 + 7 = the alphabet's 33 letters, none of them on a hold.
+            new String[] {"яшертыуиоп", "асдфгхйкл\b", "\u0001зжцвбнм.\n", "чщэёюъь«»—"},
+            java.util.Collections.<String, String[]>emptyMap());
+    }
+
     /** Bulgarian Phonetic — the layout Bulgarian phones actually use. */
     private static KeyboardLayout bulgarian(boolean shifted) {
         return scriptPage(KeyboardLayoutId.BG_PHONETIC, shifted, new java.util.Locale("bg"),
@@ -1437,6 +1502,7 @@ public final class KeyboardLayouts {
             case DE_QWERTZ:
             case TR_QWERTY:
             case TR_F:
+            case RU_PHONETIC:
             case BG_BDS:
             case FR_AZERTY:
             case EL_QWERTY:

@@ -138,6 +138,48 @@ final class LatinAccents {
      * Thai: Kedmanee's Shift layer, key for key, as the upward flick; the folded letters ride
      * their kin sideways and down. ฟ carries its whole family: ๅ left, ฤ up, ฦ right, ฝ down.
      */
+    /**
+     * Thai Pattachote's shifted half, reached the way Kedmanee's is: an up-flick from the key
+     * that carries the base character. Transcribed with the base layer from Microsoft's KBDTH1
+     * table, key by key, so the pairs are the standard's own pairs.
+     */
+    static final Map<String, String[]> THAI_PATTACHOTE = table(
+        "\u0E47", " |\u0E4A| | ",
+        "\u0E15", " |\u0E24| | ",
+        "\u0E22", " |\u0E46| | ",
+        "\u0E2D", " |\u0E0D| | ",
+        "\u0E23", " |\u0E29| | ",
+        "\u0E48", " |\u0E36| | ",
+        "\u0E14", " |\u0E1D| | ",
+        "\u0E21", " |\u0E0B| | ",
+        "\u0E27", " |\u0E16| | ",
+        "\u0E41", " |\u0E12| | ",
+        "\u0E43", " |\u0E2F| | ",
+        "\u0E0C", " |\u0E26| | ",
+        "\u0E49", " |\u0E4B| | ",
+        "\u0E17", " |\u0E18| | ",
+        "\u0E07", " |\u0E33| | ",
+        "\u0E01", " |\u0E13| | ",
+        "\u0E31", " |\u0E4C| | ",
+        "\u0E35", " |\u0E37| | ",
+        "\u0E32", " |\u0E1C| | ",
+        "\u0E19", " |\u0E0A| | ",
+        "\u0E40", " |\u0E42| | ",
+        "\u0E44", " |\u0E06| | ",
+        "\u0E02", " |\u0E11| | ",
+        "\u0E1A", " |\u0E0E| | ",
+        "\u0E1B", " |\u0E0F| | ",
+        "\u0E25", " |\u0E10| | ",
+        "\u0E2B", " |\u0E20| | ",
+        // Shift on this key is mai han-akat, not nikhahit: nikhahit sits on the ISO 102nd key,
+        // which a US keyboard does not have, and reading the row one cell early put it here.
+        "\u0E34", " |\u0E31| | ",
+        "\u0E04", " |\u0E28| | ",
+        "\u0E2A", " |\u0E2E| | ",
+        "\u0E30", " |\u0E1F| | ",
+        "\u0E08", " |\u0E09| | ",
+        "\u0E1E", " |\u0E2C| | ");
+
     static final Map<String, String[]> THAI = table(
         "บ", " |ฐ| | ",
         "ุ", " |ู| | ",

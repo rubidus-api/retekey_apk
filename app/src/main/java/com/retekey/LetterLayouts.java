@@ -40,8 +40,10 @@ public final class LetterLayouts {
         KeyboardLayoutId.JA_FLICK,
         KeyboardLayoutId.FA_ISIRI,
         KeyboardLayoutId.TH_KEDMANEE,
+        KeyboardLayoutId.TH_PATTACHOTE,
         KeyboardLayoutId.HI_INSCRIPT,
         KeyboardLayoutId.RU_JCUKEN,
+        KeyboardLayoutId.RU_PHONETIC,
         KeyboardLayoutId.UK_JCUKEN,
         KeyboardLayoutId.BG_PHONETIC,
         KeyboardLayoutId.BG_BDS,
@@ -113,10 +115,14 @@ public final class LetterLayouts {
                 return "fas";
             case TH_KEDMANEE:
                 return "tha";
+            case TH_PATTACHOTE:
+                return "ptc";
             case HI_INSCRIPT:
                 return "hin";
             case RU_JCUKEN:
                 return "rus";
+            case RU_PHONETIC:
+                return "rup";
             case UK_JCUKEN:
                 return "ukr";
             case BG_PHONETIC:
@@ -222,11 +228,15 @@ public final class LetterLayouts {
             case FA_ISIRI:
                 return "Persian(فارسی)";
             case TH_KEDMANEE:
-                return "Thai(ไทย)";
+                return "Thai Kedmanee(เกษมณี)";
+            case TH_PATTACHOTE:
+                return "Thai Pattachote(ปัตตะโชติ)";
             case HI_INSCRIPT:
                 return "Hindi(हिन्दी)";
             case RU_JCUKEN:
-                return "Russian(Русский)";
+                return "Russian ЙЦУКЕН(Русский)";
+            case RU_PHONETIC:
+                return "Russian Phonetic(Фонетич.)";
             case UK_JCUKEN:
                 return "Ukrainian(Українська)";
             case BG_PHONETIC:

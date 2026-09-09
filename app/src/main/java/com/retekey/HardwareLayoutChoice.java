@@ -42,6 +42,10 @@ public final class HardwareLayoutChoice {
     private static final List<KeyboardLayoutId> TURKISH = Collections.unmodifiableList(
         Arrays.asList(KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.TR_F));
 
+    /** Thai: Kedmanee, and the ergonomic Pattachote. */
+    private static final List<KeyboardLayoutId> THAI = Collections.unmodifiableList(
+        Arrays.asList(KeyboardLayoutId.TH_KEDMANEE, KeyboardLayoutId.TH_PATTACHOTE));
+
     /** Bulgarian: the phonetic layout phones use, and the official BDS 5237. */
     private static final List<KeyboardLayoutId> BULGARIAN = Collections.unmodifiableList(
         Arrays.asList(KeyboardLayoutId.BG_PHONETIC, KeyboardLayoutId.BG_BDS));
@@ -74,6 +78,15 @@ public final class HardwareLayoutChoice {
         }
         if ("bg".equals(language)) {
             return BULGARIAN;
+        }
+        if ("th".equals(language)) {
+            return THAI;
+        }
+        if ("ru".equals(language)) {
+            // Russian's phonetic layout is a screen layout only: Windows reaches five of its
+            // letters through dead keys, which this keyboard has no composer for, so a physical
+            // keyboard keeps ЙЦУКЕН and there is nothing to choose.
+            return Collections.singletonList(KeyboardLayoutId.RU_JCUKEN);
         }
         return Collections.singletonList(screenLayout);
     }

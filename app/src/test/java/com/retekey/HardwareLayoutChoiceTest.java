@@ -40,13 +40,32 @@ public final class HardwareLayoutChoiceTest {
     }
 
     @Test
-    public void aLanguageWithOneScriptLayoutKeepsIt() {
-        // Russian's physical layout is Russian; there is no second way to type Cyrillic here.
+    public void russianOffersNoChoiceBecauseItsPhoneticLayoutIsForTheScreenOnly() {
+        // Windows reaches five of that layout's letters through dead keys, which this keyboard
+        // has no composer for, so a physical keyboard keeps ЙЦУКЕН.
         assertEquals(Arrays.asList(KeyboardLayoutId.RU_JCUKEN),
-            HardwareLayoutChoice.candidates(KeyboardLayoutId.RU_JCUKEN));
+            HardwareLayoutChoice.candidates(KeyboardLayoutId.RU_PHONETIC));
+        assertFalse(HardwareLayoutChoice.isChoosable(KeyboardLayoutId.RU_PHONETIC));
         assertEquals(KeyboardLayoutId.RU_JCUKEN,
-            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.RU_JCUKEN));
-        assertFalse(HardwareLayoutChoice.isChoosable(KeyboardLayoutId.RU_JCUKEN));
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.RU_PHONETIC));
+    }
+
+    @Test
+    public void thaiOffersItsTwo() {
+        assertEquals(Arrays.asList(KeyboardLayoutId.TH_KEDMANEE, KeyboardLayoutId.TH_PATTACHOTE),
+            HardwareLayoutChoice.candidates(KeyboardLayoutId.TH_PATTACHOTE));
+        assertEquals(KeyboardLayoutId.TH_PATTACHOTE,
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.TH_PATTACHOTE));
+    }
+
+    @Test
+    public void aLanguageWithOneScriptLayoutKeepsIt() {
+        // Ukrainian's physical layout is Ukrainian; there is no second way to type it here.
+        assertEquals(Arrays.asList(KeyboardLayoutId.UK_JCUKEN),
+            HardwareLayoutChoice.candidates(KeyboardLayoutId.UK_JCUKEN));
+        assertEquals(KeyboardLayoutId.UK_JCUKEN,
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.UK_JCUKEN));
+        assertFalse(HardwareLayoutChoice.isChoosable(KeyboardLayoutId.UK_JCUKEN));
     }
 
     @Test
@@ -56,6 +75,7 @@ public final class HardwareLayoutChoiceTest {
         assertEquals(
             Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK,
                 KeyboardLayoutId.EN_COLEMAK, KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.TR_F,
+                KeyboardLayoutId.TH_KEDMANEE, KeyboardLayoutId.TH_PATTACHOTE,
                 KeyboardLayoutId.BG_PHONETIC, KeyboardLayoutId.BG_BDS),
             HardwareLayoutChoice.choosableLayouts());
     }

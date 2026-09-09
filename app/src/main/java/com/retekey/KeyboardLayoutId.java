@@ -36,10 +36,14 @@ public enum KeyboardLayoutId {
     FA_ISIRI,
     /** Thai on Kedmanee's positions: four letter rows, the Shift layer as upward flicks. */
     TH_KEDMANEE,
+    /** Thai Pattachote — the ergonomic standard beside Kedmanee. */
+    TH_PATTACHOTE,
     /** Hindi on InScript's positions: matra up to its vowel, plain up to its aspirate. */
     HI_INSCRIPT,
     /** Russian ЙЦУКЕН, its three rows plus a fourth for the letters ten columns squeeze out. */
     RU_JCUKEN,
+    /** Russian phonetic, after Windows' own Mnemonic layout. Screen only for now. */
+    RU_PHONETIC,
     /** Ukrainian: the ЙЦУКЕН frame with і ї є ґ. */
     UK_JCUKEN,
     /** Bulgarian Phonetic, the layout Bulgarian phones actually use. */
