@@ -43,6 +43,8 @@ public final class SettingsOutline {
         REPEAT,
         /** Shortcuts on a physical keyboard. */
         HARDWARE,
+        /** Which physical layout each on-screen layout uses. Not per orientation. */
+        HARDWARE_LAYOUTS,
         /** How much of the screen the keyboard takes. Per orientation. */
         HEIGHT,
         /** Which layouts are enabled, and their order. Per orientation. */
@@ -65,7 +67,8 @@ public final class SettingsOutline {
         Section.PORTRAIT_PAGE,
         Section.LANDSCAPE_PAGE,
         Section.REPEAT,
-        Section.HARDWARE));
+        Section.HARDWARE,
+        Section.HARDWARE_LAYOUTS));
 
     /** One orientation's own page — the same three settings, for whichever screen it is. */
     public static final List<Section> ORIENTATION = Collections.unmodifiableList(Arrays.asList(

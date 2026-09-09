@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.154** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154-legacy.apk)
+**ReteKey v0.1.155** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.155/retekey-0.1.155.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.155/retekey-0.1.155-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.154** —
-[retekey-0.1.154.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154.apk) (619 KB; the Android 4.0 build is 518 KB)
+Current release: **v0.1.155** —
+[retekey-0.1.155.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.155/retekey-0.1.155.apk) (624 KB; the Android 4.0 build is 520 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -499,6 +499,7 @@ The settings screen uses stock controls only and follows the system theme:
 - **Key-press feedback** — visual, vibration, and sound strengths, each 0–100% (30, 10 and 10 by default).
 - **Key auto-repeat** — on/off, start delay, and repeat interval.
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.
+- **Physical keyboard layouts** — which layout a plugged-in or Bluetooth keyboard follows while a given layout is on the screen. **The two need not match**: you can type Dvorak on the screen and Colemak on the keys, or leave the keys as their caps are printed. A layout's three-letter abbreviation says which side it is on — **capitals for the screen** (as the layout key paints them), **lower case for the keys**. Only layouts with more than one physical form are listed, which today is English's three; Korean has one, 2벌식, which 천지인 and 나랏글 already use, and a 3벌식 layout would join it. Stored per layout, not per orientation — a physical keyboard is the same keyboard whichever way the phone is held.
 
 A **Back to main screen** button at the top returns to the app's main screen at any time.
 

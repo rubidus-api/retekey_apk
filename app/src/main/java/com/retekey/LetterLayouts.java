@@ -157,6 +157,28 @@ public final class LetterLayouts {
         return keyCapName(id) + "-" + baseName(id);
     }
 
+    /**
+     * The name of a layout <em>on the screen</em>: its three letters in capitals, as the layout
+     * key paints them. Capitals mean the glass, lower case means a physical keyboard
+     * ({@link #hardwareName}) — the two are now offered side by side, and a name that reads the
+     * same in both places would make a pair like "QWERTY on screen, Dvorak on the keys" a matter
+     * of reading which column it was in.
+     */
+    public static String screenName(KeyboardLayoutId id) {
+        if (id == null) {
+            return "";
+        }
+        return keyCapName(id).toUpperCase(java.util.Locale.ROOT) + "-" + baseName(id);
+    }
+
+    /** The name of a layout <em>on a physical keyboard</em>: its three letters in lower case. */
+    public static String hardwareName(KeyboardLayoutId id) {
+        if (id == null) {
+            return "";
+        }
+        return keyCapName(id).toLowerCase(java.util.Locale.ROOT) + "-" + baseName(id);
+    }
+
     private static String baseName(KeyboardLayoutId id) {
         switch (id) {
             case EN_QWERTY:

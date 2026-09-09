@@ -49,6 +49,9 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_floating_enabled">Use the floating keyboard on this screen</string>
     <string name="settings_preview">Preview</string>
+    <string name="settings_hwlayout_label">Physical keyboard layouts</string>
+    <string name="settings_hwlayout_hint">Which layout a plugged-in or Bluetooth keyboard follows while a layout is on the screen. They need not match: you can type Dvorak on the screen and Colemak on the keys. Only layouts with more than one physical form are listed — Korean has one, 2벌식, which 천지인 and 나랏글 already use.</string>
+    <string name="settings_hwlayout_row">On screen: %1$s — physical keyboard:</string>
     <string name="settings_portrait_title">Portrait settings</string>
     <string name="settings_portrait_hint">Height, layouts and the floating panel, as they are for a screen held upright.</string>
     <string name="settings_portrait_open">Open portrait settings</string>

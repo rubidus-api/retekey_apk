@@ -476,7 +476,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Names the layout the globe key just moved to, so a five-way cycle is not a guessing game. */
     private void announceLayout(KeyboardLayoutId id) {
-        showFunctionToast(LetterLayouts.displayName(id));
+        showFunctionToast(LetterLayouts.screenName(id));
     }
 
     private SharedPreferences viewPrefs() {
@@ -849,6 +849,9 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.resetPhoneInterpreters();
         }
         reloadHardwareBindings();
+        // Settings may also have changed which physical layout this screen layout uses; the
+        // mapper reads that preference, so re-picking it here is what makes the change take.
+        applyHardwareMode();
         if (keyboardView != null) {
             // Settings may have turned the current layout off while the keyboard was away.
             keyboardView.reloadLetterLayouts();
@@ -1247,11 +1250,30 @@ public class ReteKeyImeService extends InputMethodService {
                 && keyboardView.letterLayoutId() == KeyboardLayoutId.FA_ISIRI) {
             hardwareMapper = PersianHardwareMapper.INSTANCE;
         } else if (!usesRawKeyCompatibility() && keyboardView != null
-                && HardwareLayoutTables.of(keyboardView.letterLayoutId()) != null) {
-            hardwareMapper = HardwareLayoutTables.of(keyboardView.letterLayoutId());
+                && HardwareLayoutTables.of(physicalLayoutFor(keyboardView.letterLayoutId()))
+                    != null) {
+            hardwareMapper =
+                HardwareLayoutTables.of(physicalLayoutFor(keyboardView.letterLayoutId()));
         } else {
             hardwareMapper = HardwareSemanticMapper.none();
         }
+    }
+
+    /**
+     * The physical layout to use while {@code screenLayout} is on the screen — the user's choice
+     * where the language offers one, and otherwise the screen layout itself, which is what the
+     * keyboard always did. English is the language that offers one: its three layouts type the
+     * same alphabet, so which of them a physical keyboard follows is a preference rather than
+     * something the script decides.
+     */
+    private KeyboardLayoutId physicalLayoutFor(KeyboardLayoutId screenLayout) {
+        if (screenLayout == null || !HardwareLayoutChoice.isChoosable(screenLayout)) {
+            return screenLayout;
+        }
+        return HardwareLayoutChoice.resolve(
+            getSharedPreferences("retekey_view", MODE_PRIVATE)
+                .getString(HardwareLayoutChoice.prefKey(screenLayout), null),
+            screenLayout);
     }
 
     /** Re-reads the user's physical-key shortcuts for 한/영 and 한자 from preferences. */

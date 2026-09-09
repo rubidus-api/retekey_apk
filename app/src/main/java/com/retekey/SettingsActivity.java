@@ -153,6 +153,9 @@ public final class SettingsActivity extends Activity {
             case HARDWARE:
                 addHardwareControls(root);
                 break;
+            case HARDWARE_LAYOUTS:
+                addHardwareLayoutControls(root);
+                break;
             default:
                 break;
         }
@@ -300,6 +303,63 @@ public final class SettingsActivity extends Activity {
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         button.setLayoutParams(params);
         return button;
+    }
+
+    /**
+     * Which physical layout each on-screen layout uses. Only the layouts with more than one
+     * candidate appear: a language with a single physical form has nothing to choose, and a
+     * control with one value is a sentence pretending to be a setting. Today that is English —
+     * Korean joins it when a 3벌식 layout exists.
+     *
+     * <p>It sits here rather than in each layout's row on an orientation page because a physical
+     * keyboard is the same keyboard whichever way the phone is held: putting it there would put a
+     * setting that is not per orientation on a page that promises everything on it is.
+     */
+    private void addHardwareLayoutControls(LinearLayout root) {
+        List<KeyboardLayoutId> choosable = HardwareLayoutChoice.choosableLayouts();
+        if (choosable.isEmpty()) {
+            return;
+        }
+        root.addView(sectionHeader(R.string.settings_hwlayout_label));
+        root.addView(sectionHint(R.string.settings_hwlayout_hint));
+        for (KeyboardLayoutId screen : choosable) {
+            root.addView(hardwareLayoutRow(screen), matchWidth());
+        }
+    }
+
+    /** One on-screen layout, and a button per physical layout it can be paired with. */
+    private LinearLayout hardwareLayoutRow(KeyboardLayoutId screen) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(0, dp(10), 0, dp(4));
+
+        TextView title = new TextView(this);
+        title.setText(getString(R.string.settings_hwlayout_row,
+            LetterLayouts.screenName(screen)));
+        row.addView(title);
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        KeyboardLayoutId chosen = HardwareLayoutChoice.resolve(
+            prefs().getString(HardwareLayoutChoice.prefKey(screen), null), screen);
+        for (KeyboardLayoutId candidate : HardwareLayoutChoice.candidates(screen)) {
+            Button button = new Button(this);
+            String label = LetterLayouts.hardwareName(candidate);
+            // The chosen one is marked in the label itself: no colour is hardcoded on this
+            // screen, so the mark has to be something the theme cannot take away.
+            button.setText(candidate == chosen ? "\u25cf " + label : label);
+            button.setAllCaps(false);
+            button.setEnabled(candidate != chosen);
+            button.setOnClickListener(view -> {
+                prefs().edit()
+                    .putString(HardwareLayoutChoice.prefKey(screen), candidate.name())
+                    .apply();
+                buildUi();
+            });
+            buttons.addView(button);
+        }
+        row.addView(buttons, matchWidth());
+        return row;
     }
 
     /**
@@ -495,7 +555,7 @@ public final class SettingsActivity extends Activity {
         row.setMinimumHeight(dp(ROW_HEIGHT_DP));
 
         CheckBox enabled = new CheckBox(this);
-        enabled.setText(LetterLayouts.displayName(id));
+        enabled.setText(LetterLayouts.screenName(id));
         enabled.setChecked(on);
         enabled.setOnClickListener(view -> toggleLayout(id));
         row.addView(enabled, new LinearLayout.LayoutParams(

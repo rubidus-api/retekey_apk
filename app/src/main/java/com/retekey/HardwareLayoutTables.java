@@ -18,6 +18,91 @@ final class HardwareLayoutTables {
     private static final Map<KeyboardLayoutId, Map<String, String[]>> TABLES = new HashMap<>();
 
     static {
+        // Dvorak and Colemak are not language tables: their language is English and their keys
+        // are ASCII. They are here because a physical keyboard's caps say QWERTY, and someone
+        // typing Dvorak on the screen may want Dvorak — or Colemak — under their fingers too.
+        // Which one is used is the user's choice per screen layout (HardwareLayoutChoice), not
+        // the screen layout's own identity, which is why these two are registered like any other
+        // table but reached through that choice.
+        //
+        // Each entry is a US key position and what the layout types there, unshifted then
+        // shifted. The letter half of both tables is checked against this app's own soft Dvorak
+        // and Colemak pages by HardwareLatinLayoutTest; the punctuation half is the standard
+        // layouts', written out here.
+        register(KeyboardLayoutId.EN_DVORAK, new String[] {
+            // top row: ' , . p y f g c r l / =
+            "hardware.key.q|'|\"",
+            "hardware.key.w|,|<",
+            "hardware.key.e|.|>",
+            "hardware.key.r|p|P",
+            "hardware.key.t|y|Y",
+            "hardware.key.y|f|F",
+            "hardware.key.u|g|G",
+            "hardware.key.i|c|C",
+            "hardware.key.o|r|R",
+            "hardware.key.p|l|L",
+            "hardware.keycode.71|/|?",
+            "hardware.keycode.72|=|+",
+            // home row: a o e u i d h t n s -
+            "hardware.key.a|a|A",
+            "hardware.key.s|o|O",
+            "hardware.key.d|e|E",
+            "hardware.key.f|u|U",
+            "hardware.key.g|i|I",
+            "hardware.key.h|d|D",
+            "hardware.key.j|h|H",
+            "hardware.key.k|t|T",
+            "hardware.key.l|n|N",
+            "hardware.keycode.74|s|S",
+            "hardware.keycode.75|-|_",
+            // bottom row: ; q j k x b m w v z
+            "hardware.key.z|;|:",
+            "hardware.key.x|q|Q",
+            "hardware.key.c|j|J",
+            "hardware.key.v|k|K",
+            "hardware.key.b|x|X",
+            "hardware.key.n|b|B",
+            "hardware.key.m|m|M",
+            "hardware.keycode.55|w|W",
+            "hardware.keycode.56|v|V",
+            "hardware.keycode.76|z|Z",
+            // the two keys Dvorak moves the brackets to
+            "hardware.keycode.69|[|{",
+            "hardware.keycode.70|]|}",
+        });
+        register(KeyboardLayoutId.EN_COLEMAK, new String[] {
+            // top row: q w f p g j l u y ;  — only the moved keys need an entry, but every
+            // letter is listed so the soft-layout check has something to compare against.
+            "hardware.key.q|q|Q",
+            "hardware.key.w|w|W",
+            "hardware.key.e|f|F",
+            "hardware.key.r|p|P",
+            "hardware.key.t|g|G",
+            "hardware.key.y|j|J",
+            "hardware.key.u|l|L",
+            "hardware.key.i|u|U",
+            "hardware.key.o|y|Y",
+            "hardware.key.p|;|:",
+            // home row: a r s t d h n e i o
+            "hardware.key.a|a|A",
+            "hardware.key.s|r|R",
+            "hardware.key.d|s|S",
+            "hardware.key.f|t|T",
+            "hardware.key.g|d|D",
+            "hardware.key.h|h|H",
+            "hardware.key.j|n|N",
+            "hardware.key.k|e|E",
+            "hardware.key.l|i|I",
+            "hardware.keycode.74|o|O",
+            // bottom row: z x c v b k m — Colemak leaves , . / where QWERTY has them
+            "hardware.key.z|z|Z",
+            "hardware.key.x|x|X",
+            "hardware.key.c|c|C",
+            "hardware.key.v|v|V",
+            "hardware.key.b|b|B",
+            "hardware.key.n|k|K",
+            "hardware.key.m|m|M",
+        });
         register(KeyboardLayoutId.EL_QWERTY, new String[] {  // KBDHE, by scan code = US position
             "hardware.key.a|α|Α",
             "hardware.key.b|β|Β",
