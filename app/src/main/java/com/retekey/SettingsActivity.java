@@ -59,6 +59,12 @@ public final class SettingsActivity extends Activity {
     private LinearLayout hanjaList;
     private LinearLayout unicodeList;
     private LinearLayout layoutList;
+    /**
+     * The language groups the reader has opened on the layout page. Groups start shut: there are
+     * thirty-six layouts in a dozen families, and a list that begins by showing all of them is
+     * the thing this page was split off to stop being.
+     */
+    private final java.util.Set<String> openLanguages = new java.util.HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -506,22 +512,49 @@ public final class SettingsActivity extends Activity {
             }
         }
         for (java.util.Map.Entry<String, List<KeyboardLayoutId>> entry : groups.entrySet()) {
+            String tag = entry.getKey();
+            boolean open = openLanguages.contains(tag);
             layoutList.addView(
-                languageGroupHeader(LetterLayouts.languageGroupLabel(entry.getKey())),
+                languageGroupHeader(tag, LetterLayouts.languageGroupLabel(tag),
+                    open, entry.getValue().size()),
                 matchWidth());
+            if (!open) {
+                continue;
+            }
             for (KeyboardLayoutId id : entry.getValue()) {
                 layoutList.addView(layoutRow(id, order, false), matchWidth());
             }
         }
     }
 
-    /** A small bold heading over a language's layouts in the not-yet-enabled list. */
-    private TextView languageGroupHeader(String label) {
+    /**
+     * One language's heading on the layout page: a row that opens and shuts the layouts under it,
+     * saying how many there are and which way it is. Tapping the heading is the only control —
+     * the whole row is the target, so it does not need a finger's-width arrow of its own.
+     */
+    private TextView languageGroupHeader(String tag, String label, boolean open, int count) {
         TextView header = new TextView(this);
-        header.setText(label);
+        header.setText(getString(open
+            ? R.string.settings_layouts_group_open
+            : R.string.settings_layouts_group_shut, label, count));
         Compat.setTextAppearance(header, android.R.style.TextAppearance_DeviceDefault_Small);
         header.setTypeface(header.getTypeface(), android.graphics.Typeface.BOLD);
         header.setPadding(0, dp(10), 0, dp(2));
+        header.setMinHeight(dp(40));
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setClickable(true);
+        header.setFocusable(true);
+        android.util.TypedValue background = new android.util.TypedValue();
+        if (getTheme().resolveAttribute(
+                android.R.attr.selectableItemBackground, background, true)) {
+            header.setBackgroundResource(background.resourceId);
+        }
+        header.setOnClickListener(view -> {
+            if (!openLanguages.remove(tag)) {
+                openLanguages.add(tag);
+            }
+            refreshLayoutList();
+        });
         return header;
     }
 

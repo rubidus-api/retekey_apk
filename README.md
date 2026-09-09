@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.160** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.160/retekey-0.1.160.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.160/retekey-0.1.160-legacy.apk)
+**ReteKey v0.1.161** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.161/retekey-0.1.161.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.161/retekey-0.1.161-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.160** —
-[retekey-0.1.160.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.160/retekey-0.1.160.apk) (630 KB; the Android 4.0 build is 523 KB)
+Current release: **v0.1.161** —
+[retekey-0.1.161.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.161/retekey-0.1.161.apk) (631 KB; the Android 4.0 build is 524 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -495,7 +495,7 @@ The settings screen uses stock controls only and follows the system theme:
 - **Portrait settings** and **Landscape settings** — the keyboard's height and the floating panel are **remembered separately for a screen held upright and one held sideways**, and each screen has a page of its own. Which orientation you are setting is the page you are on.
   - **Keyboard height** — how much of the screen's height the keyboard takes, from 1% to 50%. The number on the slider is the number on the screen: 25% is a quarter of it. A keyboard set before this was a percentage keeps exactly the size it had.
   - **Floating keyboard** — whether to use it on this screen, and how solid it is (1–100%).
-- **Layout (portrait)** and **Layout (landscape)** — which layouts the layout key walks through, and their order, kept separately for each screen. They have pages of their own rather than sharing the settings above: the list is one row per layout, and there are many. Each of these pages also carries **which layout a plugged-in or Bluetooth keyboard follows** while one of them is on the screen — **the two need not match**: type Dvorak on the screen and Colemak on the keys, or leave the keys as their caps are printed. A layout's three-letter abbreviation says which side it is on: **capitals for the screen**, as the layout key paints them, **lower case for the keys**. Only layouts with more than one physical form are offered — today English's three; Korean has one, 2벌식, which 천지인 and 나랏글 already use. The pairing is kept per screen too, like the list it sits under.
+- **Layout (portrait)** and **Layout (landscape)** — which layouts the layout key walks through, and their order, kept separately for each screen. They have pages of their own rather than sharing the settings above: the list is one row per layout, and there are many. The layouts you have not enabled are grouped by language and each group starts shut, so the page opens as a dozen names rather than three dozen rows. Each of these pages also carries **which layout a plugged-in or Bluetooth keyboard follows** while one of them is on the screen — **the two need not match**: type Dvorak on the screen and Colemak on the keys, or leave the keys as their caps are printed. A layout's three-letter abbreviation says which side it is on: **capitals for the screen**, as the layout key paints them, **lower case for the keys**. Only layouts with more than one physical form are offered — today English's three; Korean has one, 2벌식, which 천지인 and 나랏글 already use. The pairing is kept per screen too, like the list it sits under.
 - **Key-press feedback** — visual, vibration, and sound strengths, each 0–100% (30, 10 and 10 by default).
 - **Key auto-repeat** — on/off, start delay, and repeat interval.
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.

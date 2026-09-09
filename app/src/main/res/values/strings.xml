@@ -54,6 +54,8 @@
     <string name="settings_hwlayout_row">On screen: %1$s — physical keyboard:</string>
     <string name="settings_portrait_hint">Keyboard height and the floating panel, as they are for a screen held upright. The layouts for this screen have a page of their own.</string>
     <string name="settings_landscape_hint">Keyboard height and the floating panel, as they are for a screen held sideways. The layouts for this screen have a page of their own.</string>
+    <string name="settings_layouts_group_shut">▸ %1$s  (%2$d)</string>
+    <string name="settings_layouts_group_open">▾ %1$s  (%2$d)</string>
     <string name="settings_layout_portrait_title">Layout (portrait)</string>
     <string name="settings_layout_portrait_hint">Which layouts the layout key walks through, and their order, for a screen held upright.</string>
     <string name="settings_layout_landscape_title">Layout (landscape)</string>
