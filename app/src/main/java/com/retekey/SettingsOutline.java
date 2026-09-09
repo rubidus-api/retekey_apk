@@ -70,8 +70,10 @@ public final class SettingsOutline {
     /** One orientation's own page — the same three settings, for whichever screen it is. */
     public static final List<Section> ORIENTATION = Collections.unmodifiableList(Arrays.asList(
         Section.HEIGHT,
-        Section.LAYOUTS,
-        Section.FLOATING));
+        Section.FLOATING,
+        // Last: one row per layout with a tick and two arrows, and there are 32 layouts. Anywhere
+        // but the foot of the page, the settings under it are a long scroll past a list.
+        Section.LAYOUTS));
 
     private SettingsOutline() {
     }

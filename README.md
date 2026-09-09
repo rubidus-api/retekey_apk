@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.153** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.153/retekey-0.1.153.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.153/retekey-0.1.153-legacy.apk)
+**ReteKey v0.1.154** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.153** —
-[retekey-0.1.153.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.153/retekey-0.1.153.apk) (619 KB; the Android 4.0 build is 518 KB)
+Current release: **v0.1.154** —
+[retekey-0.1.154.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154.apk) (619 KB; the Android 4.0 build is 518 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -494,8 +494,8 @@ The settings screen uses stock controls only and follows the system theme:
 - **Colour scheme** — System, Light, or Dark. System is the default and follows the device; the other two hold whichever you pick, for the keyboard and for the app's own screens alike. On Android 12+ the colours themselves still come from the system's Material You palette.
 - **Portrait settings** and **Landscape settings** — height, the layouts and their order, and the floating keyboard are **remembered separately for a screen held upright and one held sideways**, and each screen has a page of its own, opened from the main settings page. Which orientation you are setting is the page you are on, and reading the other one is opening it — you never turn the device to reach a setting.
   - **Keyboard height** — how much of the screen's height the keyboard takes, from 1% to 50%. The number on the slider is the number on the screen: 25% is a quarter of it. A keyboard set before this was a percentage keeps exactly the size it had.
-  - **Keyboard layouts** — which layouts the layout key walks through, and their order.
   - **Floating keyboard** — whether to use it on this screen, and how solid it is (1–100%).
+  - **Keyboard layouts** — which layouts the layout key walks through, and their order. Last on the page: it is one row per layout, and there are many.
 - **Key-press feedback** — visual, vibration, and sound strengths, each 0–100% (30, 10 and 10 by default).
 - **Key auto-repeat** — on/off, start delay, and repeat interval.
 - **Physical keyboard shortcuts** — register and remove KO/EN and Hanja keys.

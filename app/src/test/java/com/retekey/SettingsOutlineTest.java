@@ -48,6 +48,13 @@ public final class SettingsOutlineTest {
     }
 
     @Test
+    public void theLayoutListIsTheLastThingOnAnOrientationPage() {
+        // It is far taller than everything else on the page put together.
+        List<Section> page = SettingsOutline.ORIENTATION;
+        assertEquals(Section.LAYOUTS, page.get(page.size() - 1));
+    }
+
+    @Test
     public void everySectionIsBuiltOnExactlyOnePage() {
         List<Section> all = SettingsOutline.everything();
         assertEquals(EnumSet.allOf(Section.class).size(), all.size());

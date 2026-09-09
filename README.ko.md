@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.153** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.153/retekey-0.1.153.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.153/retekey-0.1.153-legacy.apk)
+**ReteKey v0.1.154** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.153** —
-[retekey-0.1.153.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.153/retekey-0.1.153.apk) (619 KB; 안드로이드 4.0 빌드는 518 KB)
+현재 릴리즈: **v0.1.154** —
+[retekey-0.1.154.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.154/retekey-0.1.154.apk) (619 KB; 안드로이드 4.0 빌드는 518 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -484,8 +484,8 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
   - **키보드 높이** — 키보드가 화면 세로의 몇 퍼센트를 차지할지 1%부터 50%까지 정하십니다. 슬라이더에
     적힌 숫자가 곧 화면에서 보이는 그 비율이며, 25%면 화면의 사분의 일입니다. 퍼센트로 바뀌기 전에
     맞춰 두신 높이는 그대로 유지됩니다.
-  - **자판 목록** — 자판 키가 돌아가며 보여 줄 자판과 그 순서를 고릅니다.
   - **플로팅 키보드** — 이 화면 방향에서 쓸지 여부와 얼마나 진하게 보일지(1–100%)를 정합니다.
+  - **자판 목록** — 자판 키가 돌아가며 보여 줄 자판과 그 순서를 고릅니다. 자판 하나에 한 줄씩이라 목록이 길어서, 페이지 맨 아래에 둡니다.
 - **입력 피드백** — 시각·진동·소리의 세기를 각각 0–100%로 정합니다(기본값은 30, 10, 10입니다).
 - **키 자동 반복** — 켜고 끄기, 시작 지연, 반복 간격을 정합니다.
 - **물리 키보드 단축키** — 한/영과 한자 키를 등록하고 지웁니다.
