@@ -1710,6 +1710,29 @@ is this defect's mirror: that one abandoned a composition too eagerly and had to
 day; this one held on too long and took months to surface, because holding on looks like nothing
 at all until a cursor lands on the one boundary that reads as "still ours".
 
+### 15.29 A latch with two owners
+
+**What happened.** The action bar's Ctrl/Alt/Meta slots lock on a hold, the way the pad's modifier
+keys do. Press one again to let it up and the modifier did come off — but the slot stayed painted
+locked, and it could never be locked again.
+
+**Why.** Two objects were keeping the same fact. `ModifierLatches` in the keyboard view holds the
+real state; `ActionBarView` keeps a `latched` set of its own, because it has to paint the slot and
+decide whether the next hold should latch. A press on a locked built-in went through
+`listener.onAction(...)`, which taps the keyboard's latch — correct, the modifier came off — while
+nothing told the bar, whose set still held the slot. From then on `paint()` drew the accent
+unconditionally and `press()` refused to schedule a new latch, because both ask
+`latched.contains(slot)`.
+
+**The fix.** The press that lets a locked slot up goes through `setLatched(false)`, which is the
+one path that changes both: it updates the bar's set and calls `onChordLatch(slot, false)`, which
+unlocks the keyboard's latch. `onAction` is left for the slots that are not currently down.
+
+**Rule.** When a second object must cache a fact it does not own, give it exactly one path in and
+one path out, and route every press through them. A latch that can be cleared by two routes will
+be cleared by the one that only tells half the program — and a stuck modifier looks, to the user,
+exactly like a key held down that they cannot let up.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

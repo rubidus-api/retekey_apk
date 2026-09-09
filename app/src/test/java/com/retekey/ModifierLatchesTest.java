@@ -135,4 +135,20 @@ public final class ModifierLatchesTest {
         latches.hold(ControlKey.RSHIFT);
         org.junit.Assert.assertFalse(latches.active().contains(KeyModifier.SHIFT));
     }
+
+    @Test
+    public void aHeldModifierIsLetUpByPressingItAgain() {
+        // The action bar's modifier slots lock on a hold and let up on the next press, which
+        // arrives as a tap. A lock that a tap could not clear would be a key stuck down.
+        ModifierLatches latches = new ModifierLatches();
+        latches.hold(ControlKey.CTRL);
+        assertTrue(latches.isLocked(ControlKey.CTRL));
+        latches.tap(ControlKey.CTRL);
+        assertFalse(latches.isLocked(ControlKey.CTRL));
+        assertFalse(latches.isActive(ControlKey.CTRL));
+        // And it can be locked again afterwards, which is what the bar's own bookkeeping used to
+        // prevent: it kept the slot in its latched set for ever.
+        latches.hold(ControlKey.CTRL);
+        assertTrue(latches.isLocked(ControlKey.CTRL));
+    }
 }

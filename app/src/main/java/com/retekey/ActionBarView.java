@@ -182,6 +182,13 @@ final class ActionBarView extends HorizontalScrollView {
             }
             switch (slot.kind()) {
                 case BUILT_IN:
+                    if (slot.canLatch() && latched.contains(slot)) {
+                        // A locked modifier: this press lets it up. Going through onAction would
+                        // clear the latch the keyboard holds and leave this view still believing
+                        // the slot was down — painted locked, and never latchable again.
+                        setLatched(false);
+                        break;
+                    }
                     listener.onAction(slot.action());
                     break;
                 case TEXT:
