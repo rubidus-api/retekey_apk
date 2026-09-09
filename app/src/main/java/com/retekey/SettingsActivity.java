@@ -29,8 +29,19 @@ import java.util.List;
 public final class SettingsActivity extends Activity {
     private static final String PREFS = "retekey_view";
 
-    /** Which screen's settings this page is showing; the device's own, until the user picks. */
+    /**
+     * Names the screen an orientation page edits — {@link ScreenOrientation#name()}. Absent on
+     * the main page, which is how the two are told apart.
+     */
+    public static final String EXTRA_SCREEN = "com.retekey.settings.SCREEN";
+
+    /**
+     * Which screen this page edits. Set from {@link #EXTRA_SCREEN} on an orientation page; on the
+     * main page it is the device's current orientation, which nothing there reads.
+     */
     private ScreenOrientation editing;
+    /** True on Portrait settings or Landscape settings, false on the main page. */
+    private boolean orientationPage;
     private SeekBar slider;
     private TextView valueLabel;
     private String capturingKey;
@@ -46,8 +57,22 @@ public final class SettingsActivity extends Activity {
         // from, and it is only ever different from the manifest's when the user has picked one.
         ScreenTheme.apply(this);
         super.onCreate(savedInstanceState);
-        setTitle(R.string.settings_title);
-        editing = OrientedPrefs.current(this);
+        String requested = getIntent() == null ? null : getIntent().getStringExtra(EXTRA_SCREEN);
+        orientationPage = requested != null;
+        editing = ScreenOrientation.LANDSCAPE.name().equals(requested)
+            ? ScreenOrientation.LANDSCAPE
+            : ScreenOrientation.PORTRAIT.name().equals(requested)
+                ? ScreenOrientation.PORTRAIT
+                : null;
+        if (editing == null) {
+            // The main page: nothing on it depends on which way the screen is held, but the
+            // oriented controls still need a value to read when this page is not showing them.
+            editing = OrientedPrefs.current(this);
+        }
+        setTitle(orientationPage
+            ? (editing == ScreenOrientation.LANDSCAPE
+                ? R.string.settings_landscape_title : R.string.settings_portrait_title)
+            : R.string.settings_title);
         buildUi();
     }
 
@@ -69,10 +94,75 @@ public final class SettingsActivity extends Activity {
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        addThemeControls(root);
-        addSystemBandControls(root);
-        addOrientationControls(root);
+        // Both pages are built from SettingsOutline, which is also what the unit tests read.
+        if (orientationPage) {
+            root.addView(sectionHint(editing == ScreenOrientation.LANDSCAPE
+                ? R.string.settings_landscape_hint : R.string.settings_portrait_hint));
+        }
+        for (SettingsOutline.Section section
+                : orientationPage ? SettingsOutline.ORIENTATION : SettingsOutline.MAIN) {
+            addSection(root, section);
+        }
 
+        // The controls are taller than a phone screen, so make the whole screen scroll.
+        ScrollView scroller = new ScrollView(this);
+        scroller.addView(root);
+        setContentView(scroller);
+        ScreenFit.apply(scroller, root);
+        if (orientationPage) {
+            // Shows the stored height in the label the slider just got; the main page has no
+            // height control to fill, and storing one from it would be writing what it never read.
+            applyPercent(currentPercent());
+        }
+    }
+
+
+    /** Builds one section of the page. The order they arrive in is SettingsOutline's. */
+    private void addSection(LinearLayout root, SettingsOutline.Section section) {
+        switch (section) {
+            case PORTRAIT_PAGE:
+                addOrientationPageLink(root, ScreenOrientation.PORTRAIT);
+                break;
+            case LANDSCAPE_PAGE:
+                addOrientationPageLink(root, ScreenOrientation.LANDSCAPE);
+                break;
+            case HEIGHT:
+                addHeightControls(root);
+                break;
+            case LAYOUTS:
+                addLayoutControls(root);
+                break;
+            case FLOATING:
+                addFloatingControls(root);
+                break;
+            case THEME:
+                addThemeControls(root);
+                break;
+            case SYSTEM_BAND:
+                addSystemBandControls(root);
+                break;
+            case FEEDBACK:
+                addFeedbackControls(root);
+                break;
+            case ACTION_BAR:
+                addActionBarControls(root);
+                break;
+            case REPEAT:
+                addRepeatControls(root);
+                break;
+            case HARDWARE:
+                addHardwareControls(root);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * How much of the screen the keyboard takes, with its own Default beside it. That button used
+     * to sit alone at the foot of the page, where it read as a reset for everything on it.
+     */
+    private void addHeightControls(LinearLayout root) {
         root.addView(sectionHeader(R.string.settings_height_label));
         root.addView(sectionHint(R.string.settings_height_hint));
 
@@ -92,6 +182,18 @@ public final class SettingsActivity extends Activity {
         });
         root.addView(slider, matchWidth());
 
+        Button reset = new Button(this);
+        reset.setText(R.string.settings_reset_height);
+        reset.setAllCaps(false);
+        reset.setOnClickListener(this::resetHeight);
+        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        resetParams.gravity = Gravity.END;
+        root.addView(reset, resetParams);
+    }
+
+    /** What a key press does besides typing: a flash, a buzz, a click. */
+    private void addFeedbackControls(LinearLayout root) {
         root.addView(sectionHeader(R.string.settings_feedback_label));
         root.addView(sectionHint(R.string.settings_feedback_hint));
         addPercentSlider(root, R.string.settings_visual,
@@ -100,30 +202,8 @@ public final class SettingsActivity extends Activity {
             KeyFeedback.KEY_HAPTIC, KeyFeedback.DEFAULT_HAPTIC);
         addPercentSlider(root, R.string.settings_sound,
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
-
-        addLayoutControls(root);
-        addActionBarControls(root);
-        addFloatingControls(root);
-        addRepeatControls(root);
-        addHardwareControls(root);
-
-        Button reset = new Button(this);
-        reset.setText(R.string.settings_reset);
-        reset.setOnClickListener(this::resetHeight);
-        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT);
-        resetParams.topMargin = dp(20);
-        resetParams.gravity = Gravity.END;
-        root.addView(reset, resetParams);
-
-        // The controls are taller than a phone screen, so make the whole screen scroll.
-        ScrollView scroller = new ScrollView(this);
-        scroller.addView(root);
-        setContentView(scroller);
-        ScreenFit.apply(scroller, root);
-        applyPercent(currentPercent());
     }
+
 
     /**
      * How much room the system's own bottom buttons get. Automatic works it out from the insets,
@@ -223,43 +303,48 @@ public final class SettingsActivity extends Activity {
     }
 
     /**
-     * Picks which screen the oriented settings below are for. A keyboard held sideways wants a
-     * different height and often a different set of layouts, and rotating the phone to change them
-     * would mean losing sight of the setting you came for.
+     * Opens the settings for one screen orientation. Two buttons rather than one page with a
+     * toggle: which orientation you are editing is then the page you are on, and looking at the
+     * other one is opening it rather than remembering to come back and flip a switch.
      */
-    private void addOrientationControls(LinearLayout root) {
-        root.addView(sectionHeader(R.string.settings_orientation_label));
-        root.addView(sectionHint(R.string.settings_orientation_hint));
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.addView(orientationButton(
-            ScreenOrientation.PORTRAIT, R.string.settings_orientation_portrait));
-        row.addView(orientationButton(
-            ScreenOrientation.LANDSCAPE, R.string.settings_orientation_landscape));
-        root.addView(row, matchWidth());
-    }
-
-    private Button orientationButton(ScreenOrientation orientation, int titleRes) {
-        Button button = new Button(this);
-        String title = getString(titleRes);
-        // The one being edited is marked in the label itself: no colour is hardcoded anywhere on
-        // this screen, so the mark has to be something the theme cannot take away.
-        button.setText(editing == orientation ? "● " + title : title);
-        button.setAllCaps(false);
-        button.setEnabled(editing != orientation);
-        button.setOnClickListener(view -> {
-            editing = orientation;
-            buildUi();
+    private void addOrientationPageLink(LinearLayout root, ScreenOrientation orientation) {
+        boolean landscape = orientation == ScreenOrientation.LANDSCAPE;
+        root.addView(sectionHeader(landscape
+            ? R.string.settings_landscape_title : R.string.settings_portrait_title));
+        root.addView(sectionHint(landscape
+            ? R.string.settings_landscape_hint : R.string.settings_portrait_hint));
+        Button open = new Button(this);
+        open.setText(landscape
+            ? R.string.settings_landscape_open : R.string.settings_portrait_open);
+        open.setAllCaps(false);
+        open.setOnClickListener(view -> {
+            android.content.Intent intent =
+                new android.content.Intent(this, SettingsActivity.class);
+            intent.putExtra(EXTRA_SCREEN, orientation.name());
+            try {
+                startActivity(intent);
+            } catch (RuntimeException ignored) {
+                // Nothing to open; the button is the only way in, so failing silently is enough.
+            }
         });
-        return button;
+        root.addView(open, matchWidth());
     }
 
     /** Returns to the app's main screen, whichever entry point opened these settings. */
     private Button backButton() {
         Button back = new Button(this);
-        back.setText(R.string.settings_back);
+        // An orientation page was opened from the settings page, not from the main screen.
+        back.setText(orientationPage
+            ? R.string.settings_back_to_settings : R.string.settings_back);
         back.setAllCaps(false);
-        back.setOnClickListener(view -> goToMainScreen());
+        // An orientation page came from the main settings page, so its way out is back to it.
+        back.setOnClickListener(view -> {
+            if (orientationPage) {
+                finish();
+            } else {
+                goToMainScreen();
+            }
+        });
         return back;
     }
 
@@ -280,6 +365,10 @@ public final class SettingsActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
+            if (orientationPage) {
+                finish();
+                return true;
+            }
             goToMainScreen();
             return true;
         }
@@ -512,10 +601,17 @@ public final class SettingsActivity extends Activity {
             metrics.density);
     }
 
+    /**
+     * Stores a height and shows it. The label exists only where the height slider does — the main
+     * page has neither since the oriented settings moved to their own pages — so writing the
+     * value must not depend on having something to write it in.
+     */
     private void applyPercent(int percent) {
         int clamped = KeyboardHeightPercent.clamp(percent);
         KeyboardHeightPrefs.setPercent(prefs(), editing, clamped);
-        valueLabel.setText(getString(R.string.settings_height_value, clamped));
+        if (valueLabel != null) {
+            valueLabel.setText(getString(R.string.settings_height_value, clamped));
+        }
     }
 
     /** Adds a titled 0–100% slider bound to a 0–1 float preference. */

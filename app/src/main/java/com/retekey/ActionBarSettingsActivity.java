@@ -60,7 +60,7 @@ public final class ActionBarSettingsActivity extends Activity {
         root.setPadding(pad, pad, pad, pad);
 
         Button back = new Button(this);
-        back.setText(R.string.bar_settings_back);
+        back.setText(R.string.settings_back_to_settings);
         back.setAllCaps(false);
         back.setOnClickListener(view -> finish());
         root.addView(back, matchWidth());
