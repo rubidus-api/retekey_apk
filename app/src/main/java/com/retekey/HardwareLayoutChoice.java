@@ -14,8 +14,9 @@ import java.util.List;
  * identity, which left English with no say at all: Dvorak on the screen still typed QWERTY on the
  * keyboard, because English needs no remapping to be typed. Someone who types Dvorak on glass may
  * want Dvorak under their fingers — or Colemak, or the caps as printed. That is a preference, and
- * it is stored per screen layout (not per screen orientation: a physical keyboard is the same
- * keyboard whichever way the phone is held).
+ * it is stored per screen layout and per screen orientation, on that screen's own layout page: a
+ * phone docked in landscape can answer to a different physical keyboard from the same phone held
+ * upright, and the pairing sits beside the list of layouts it pairs with.
  *
  * <p>Candidates are the layouts of the <em>same language</em> that a physical keyboard can
  * actually type. English has three; Korean has one — 2벌식, which is what 천지인 and 나랏글 already

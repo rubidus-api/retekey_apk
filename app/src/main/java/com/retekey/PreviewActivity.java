@@ -75,9 +75,33 @@ public final class PreviewActivity extends Activity {
         addDivider(list);
         addListItem(list, R.string.preview_open_bar_settings, this::openActionBarSettings);
         addDivider(list);
+        // The per-screen pages are reached from here rather than from inside the settings page:
+        // one of them is not a part of another, and a door inside a door is a door people do not
+        // find (owner's request).
+        addListItem(list, R.string.settings_portrait_title,
+            view -> openScreenPage(ScreenOrientation.PORTRAIT, false));
+        addDivider(list);
+        addListItem(list, R.string.settings_landscape_title,
+            view -> openScreenPage(ScreenOrientation.LANDSCAPE, false));
+        addDivider(list);
+        addListItem(list, R.string.settings_layout_portrait_title,
+            view -> openScreenPage(ScreenOrientation.PORTRAIT, true));
+        addDivider(list);
+        addListItem(list, R.string.settings_layout_landscape_title,
+            view -> openScreenPage(ScreenOrientation.LANDSCAPE, true));
+        addDivider(list);
 
-        setContentView(root);
-        ScreenFit.apply(root, root);
+        // The list outgrew the screen when the per-screen pages joined it, and a row that cannot
+        // be scrolled to is a row that is not there. The typing field stays at the top of the
+        // scroller, so it is still the first thing under the hint.
+        android.widget.ScrollView scroller = new android.widget.ScrollView(this);
+        // The height must be WRAP_CONTENT and said out loud: a scroller's default for its child
+        // is the viewport's own height, which measures the list to the screen and clips whatever
+        // does not fit instead of scrolling to it.
+        scroller.addView(root, new android.widget.FrameLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        setContentView(scroller);
+        ScreenFit.apply(scroller, root);
     }
 
     /** A tap-to-select list row with the platform's selectable-item touch feedback. */
@@ -115,6 +139,16 @@ public final class PreviewActivity extends Activity {
 
     private void openSettings(View view) {
         startActivity(new Intent(this, SettingsActivity.class));
+    }
+
+    /** One screen's own page: its settings, or its layouts. */
+    private void openScreenPage(ScreenOrientation orientation, boolean layouts) {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        intent.putExtra(SettingsActivity.EXTRA_SCREEN, orientation.name());
+        if (layouts) {
+            intent.putExtra(SettingsActivity.EXTRA_LAYOUTS, true);
+        }
+        startActivity(intent);
     }
 
     /** The action bar's own screen, which is long enough to deserve its own way in. */

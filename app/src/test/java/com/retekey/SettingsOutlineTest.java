@@ -34,12 +34,13 @@ public final class SettingsOutlineTest {
     }
 
     @Test
-    public void aLayoutPageIsTheListAndNothingElse() {
-        // The list is one row per layout and there are 32 of them; anything sharing its page is
-        // something the reader must scroll past a list to reach.
-        assertEquals(Arrays.asList(Section.LAYOUTS), SettingsOutline.LAYOUT_PAGE);
+    public void aLayoutPageCarriesNoSettingsOfItsOwn() {
+        // The list is one row per layout and there are 32 of them; height and the floating panel
+        // must not sit above that, which is why they have a page beside it rather than on it.
         assertFalse("a settings page is not a scroll past a list",
             SettingsOutline.ORIENTATION_PAGE.contains(Section.LAYOUTS));
+        assertFalse(SettingsOutline.LAYOUT_PAGE.contains(Section.HEIGHT));
+        assertFalse(SettingsOutline.LAYOUT_PAGE.contains(Section.FLOATING));
     }
 
     @Test
@@ -54,15 +55,23 @@ public final class SettingsOutlineTest {
     }
 
     @Test
-    public void theFourPagesAreOpenedTogetherBelowTheActionBar() {
-        // Settings before layouts, portrait before landscape: comparing either pair is opening
-        // the one next to it. Below the action bar's page, where the owner placed them.
-        List<Section> main = SettingsOutline.MAIN;
-        int bar = main.indexOf(Section.ACTION_BAR);
-        assertEquals(Section.PORTRAIT_SETTINGS, main.get(bar + 1));
-        assertEquals(Section.LANDSCAPE_SETTINGS, main.get(bar + 2));
-        assertEquals(Section.PORTRAIT_LAYOUTS, main.get(bar + 3));
-        assertEquals(Section.LANDSCAPE_LAYOUTS, main.get(bar + 4));
+    public void theGeneralPageIsSettingsRatherThanDoors() {
+        // The way into the action bar's page and into each screen's own pages is the app's main
+        // screen: none of them is a submenu of another (owner's request).
+        assertEquals(
+            Arrays.asList(Section.THEME, Section.SYSTEM_BAND, Section.FEEDBACK, Section.REPEAT,
+                Section.HARDWARE),
+            SettingsOutline.MAIN);
+    }
+
+    @Test
+    public void theHardwarePairingSitsWithTheLayoutsItPairs() {
+        // Which physical layout answers to which on-screen layout is kept per screen too, so it
+        // belongs on that screen's layout page rather than anywhere general.
+        assertTrue(SettingsOutline.LAYOUT_PAGE.contains(Section.HARDWARE_LAYOUTS));
+        assertTrue(Section.HARDWARE_LAYOUTS.isPerOrientation());
+        assertEquals("the list comes first, the pairing reads as a note on it",
+            Section.LAYOUTS, SettingsOutline.LAYOUT_PAGE.get(0));
     }
 
     @Test

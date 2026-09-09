@@ -1282,8 +1282,11 @@ public class ReteKeyImeService extends InputMethodService {
             return screenLayout;
         }
         return HardwareLayoutChoice.resolve(
-            getSharedPreferences("retekey_view", MODE_PRIVATE)
-                .getString(HardwareLayoutChoice.prefKey(screenLayout), null),
+            OrientedPrefs.getString(
+                getSharedPreferences("retekey_view", MODE_PRIVATE),
+                HardwareLayoutChoice.prefKey(screenLayout),
+                OrientedPrefs.current(this),
+                null),
             screenLayout);
     }
 

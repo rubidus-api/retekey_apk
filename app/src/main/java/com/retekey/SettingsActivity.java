@@ -146,21 +146,6 @@ public final class SettingsActivity extends Activity {
             case FEEDBACK:
                 addFeedbackControls(root);
                 break;
-            case ACTION_BAR:
-                addActionBarControls(root);
-                break;
-            case PORTRAIT_SETTINGS:
-                addPageLink(root, ScreenOrientation.PORTRAIT, false);
-                break;
-            case LANDSCAPE_SETTINGS:
-                addPageLink(root, ScreenOrientation.LANDSCAPE, false);
-                break;
-            case PORTRAIT_LAYOUTS:
-                addPageLink(root, ScreenOrientation.PORTRAIT, true);
-                break;
-            case LANDSCAPE_LAYOUTS:
-                addPageLink(root, ScreenOrientation.LANDSCAPE, true);
-                break;
             case REPEAT:
                 addRepeatControls(root);
                 break;
@@ -262,26 +247,6 @@ public final class SettingsActivity extends Activity {
         return button;
     }
 
-    /**
-     * The action bar has a screen of its own. What it carries — built-in actions, text the user
-     * wrote, key combinations they assembled — is a list with its own editing, and putting all of
-     * that on a screen that is already long made both harder to read.
-     */
-    private void addActionBarControls(LinearLayout root) {
-        root.addView(sectionHeader(R.string.settings_bar_label));
-        root.addView(sectionHint(R.string.settings_bar_hint));
-        Button open = new Button(this);
-        open.setText(R.string.settings_bar_open);
-        open.setAllCaps(false);
-        open.setOnClickListener(view -> {
-            try {
-                startActivity(new android.content.Intent(this, ActionBarSettingsActivity.class));
-            } catch (RuntimeException ignored) {
-                // Nothing to open; the button is the only way in, so failing silently is enough.
-            }
-        });
-        root.addView(open, matchWidth());
-    }
 
     /**
      * Picks light, dark, or whatever the device is set to. The keyboard reads the same preference
@@ -355,7 +320,9 @@ public final class SettingsActivity extends Activity {
         LinearLayout buttons = new LinearLayout(this);
         buttons.setOrientation(LinearLayout.HORIZONTAL);
         KeyboardLayoutId chosen = HardwareLayoutChoice.resolve(
-            prefs().getString(HardwareLayoutChoice.prefKey(screen), null), screen);
+            OrientedPrefs.getString(
+                prefs(), HardwareLayoutChoice.prefKey(screen), editing, null),
+            screen);
         for (KeyboardLayoutId candidate : HardwareLayoutChoice.candidates(screen)) {
             Button button = new Button(this);
             String label = LetterLayouts.hardwareName(candidate);
@@ -365,9 +332,8 @@ public final class SettingsActivity extends Activity {
             button.setAllCaps(false);
             button.setEnabled(candidate != chosen);
             button.setOnClickListener(view -> {
-                prefs().edit()
-                    .putString(HardwareLayoutChoice.prefKey(screen), candidate.name())
-                    .apply();
+                OrientedPrefs.putString(
+                    prefs(), HardwareLayoutChoice.prefKey(screen), editing, candidate.name());
                 buildUi();
             });
             buttons.addView(button);
@@ -401,44 +367,6 @@ public final class SettingsActivity extends Activity {
         return landscape ? R.string.settings_landscape_hint : R.string.settings_portrait_hint;
     }
 
-    /**
-     * Opens one of the four per-screen pages. Four buttons rather than one page with a toggle:
-     * which screen you are setting is then the page you are on, and looking at the other one is
-     * opening it. The layout list is split off from the settings because it is one row per
-     * layout and there are 32 of them — a height slider must not sit above that.
-     */
-    private void addPageLink(LinearLayout root, ScreenOrientation orientation, boolean layouts) {
-        boolean landscape = orientation == ScreenOrientation.LANDSCAPE;
-        int titleRes = layouts
-            ? (landscape
-                ? R.string.settings_layout_landscape_title
-                : R.string.settings_layout_portrait_title)
-            : (landscape ? R.string.settings_landscape_title : R.string.settings_portrait_title);
-        int hintRes = layouts
-            ? (landscape
-                ? R.string.settings_layout_landscape_hint
-                : R.string.settings_layout_portrait_hint)
-            : (landscape ? R.string.settings_landscape_hint : R.string.settings_portrait_hint);
-        root.addView(sectionHeader(titleRes));
-        root.addView(sectionHint(hintRes));
-        Button open = new Button(this);
-        open.setText(getString(R.string.settings_page_open, getString(titleRes)));
-        open.setAllCaps(false);
-        open.setOnClickListener(view -> {
-            android.content.Intent intent =
-                new android.content.Intent(this, SettingsActivity.class);
-            intent.putExtra(EXTRA_SCREEN, orientation.name());
-            if (layouts) {
-                intent.putExtra(EXTRA_LAYOUTS, true);
-            }
-            try {
-                startActivity(intent);
-            } catch (RuntimeException ignored) {
-                // Nothing to open; the button is the only way in, so failing silently is enough.
-            }
-        });
-        root.addView(open, matchWidth());
-    }
 
     /** Returns to the app's main screen, whichever entry point opened these settings. */
     private Button backButton() {

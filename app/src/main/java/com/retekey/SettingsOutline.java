@@ -35,21 +35,11 @@ public final class SettingsOutline {
         SYSTEM_BAND,
         /** Visual, haptic and sound feedback on a key press. */
         FEEDBACK,
-        /** The strip of actions above the keys — opens its own page. */
-        ACTION_BAR,
-        /** Opens the settings for a screen held upright. */
-        PORTRAIT_SETTINGS,
-        /** Opens the settings for a screen held sideways. */
-        LANDSCAPE_SETTINGS,
-        /** Opens the layout list for a screen held upright. */
-        PORTRAIT_LAYOUTS,
-        /** Opens the layout list for a screen held sideways. */
-        LANDSCAPE_LAYOUTS,
         /** Auto-repeat while a key is held. */
         REPEAT,
         /** Shortcuts on a physical keyboard. */
         HARDWARE,
-        /** Which physical layout each on-screen layout uses. Not per orientation. */
+        /** Which physical layout each on-screen layout uses, on this screen. */
         HARDWARE_LAYOUTS,
         /** How much of the screen the keyboard takes. On an orientation's settings page. */
         HEIGHT,
@@ -60,31 +50,35 @@ public final class SettingsOutline {
 
         /** Whether this section's value is stored separately for each screen orientation. */
         public boolean isPerOrientation() {
-            return this == HEIGHT || this == FLOATING || this == LAYOUTS;
+            return this == HEIGHT || this == FLOATING || this == LAYOUTS
+                || this == HARDWARE_LAYOUTS;
         }
     }
 
-    /** The general settings page, in the order it builds. */
+    /**
+     * The general settings page, in the order it builds. It holds settings, not doors: the way
+     * into the action bar's page and into each screen's own pages is the app's main screen, so
+     * none of them is a submenu of another (owner's request).
+     */
     public static final List<Section> MAIN = Collections.unmodifiableList(Arrays.asList(
         Section.THEME,
         Section.SYSTEM_BAND,
         Section.FEEDBACK,
-        Section.ACTION_BAR,
-        Section.PORTRAIT_SETTINGS,
-        Section.LANDSCAPE_SETTINGS,
-        Section.PORTRAIT_LAYOUTS,
-        Section.LANDSCAPE_LAYOUTS,
         Section.REPEAT,
-        Section.HARDWARE,
-        Section.HARDWARE_LAYOUTS));
+        Section.HARDWARE));
 
     /** One orientation's settings page: the two small things kept per screen. */
     public static final List<Section> ORIENTATION_PAGE = Collections.unmodifiableList(
         Arrays.asList(Section.HEIGHT, Section.FLOATING));
 
-    /** One orientation's layout page: the list, and nothing else to scroll past. */
-    public static final List<Section> LAYOUT_PAGE =
-        Collections.unmodifiableList(Arrays.asList(Section.LAYOUTS));
+    /**
+     * One orientation's layout page: which layouts this screen walks through, and — for the ones
+     * that have more than one physical form — which layout a plugged-in keyboard follows while
+     * each is up. That pairing is kept per screen too, so a phone docked in landscape can answer
+     * to a different physical layout from the same phone held upright.
+     */
+    public static final List<Section> LAYOUT_PAGE = Collections.unmodifiableList(
+        Arrays.asList(Section.LAYOUTS, Section.HARDWARE_LAYOUTS));
 
     private SettingsOutline() {
     }
