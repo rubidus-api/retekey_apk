@@ -20,6 +20,8 @@ public enum KeyboardLayoutId {
     DE_QWERTZ,
     /** Turkish Q, ten columns: ü ı ö ş ğ ç held; Shift follows Turkish casing (i → İ, ı → I). */
     TR_QWERTY,
+    /** Turkish F — the national standard arrangement, alongside the QWERTY-shaped Q. */
+    TR_F,
     /** French AZERTY, 10/10/6: the accents held under the vowels and ç under c. */
     FR_AZERTY,
     /** Greek, on the PC layout's positions: ; ς up top, the tone vowels held. */
@@ -42,6 +44,8 @@ public enum KeyboardLayoutId {
     UK_JCUKEN,
     /** Bulgarian Phonetic, the layout Bulgarian phones actually use. */
     BG_PHONETIC,
+    /** Bulgarian BDS 5237 — the official standard, alongside the phonetic layout. */
+    BG_BDS,
     /** Macedonian on its standard positions. */
     MK_STANDARD,
     /** Serbian Cyrillic on its standard positions. */

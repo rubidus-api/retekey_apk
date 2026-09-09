@@ -103,6 +103,94 @@ final class HardwareLayoutTables {
             "hardware.key.n|k|K",
             "hardware.key.m|m|M",
         });
+        // Turkish F (KBDTUF) and Bulgarian BDS 5237 (KBDBU), transcribed from Microsoft's own
+        // layout tables, which give every key by codepoint. Both are alternatives to a layout
+        // this keyboard already had — Turkish Q and Bulgarian Phonetic — so which one a physical
+        // keyboard follows is the user's choice (HardwareLayoutChoice), not the language's.
+        // The letters are cross-checked against the soft pages by HardwareScriptLayoutTest.
+        register(KeyboardLayoutId.TR_F, new String[] {
+            // f g ğ ı o d r n h p q w
+            "hardware.key.q|f|F",
+            "hardware.key.w|g|G",
+            "hardware.key.e|ğ|Ğ",
+            "hardware.key.r|ı|I",
+            "hardware.key.t|o|O",
+            "hardware.key.y|d|D",
+            "hardware.key.u|r|R",
+            "hardware.key.i|n|N",
+            "hardware.key.o|h|H",
+            "hardware.key.p|p|P",
+            "hardware.keycode.71|q|Q",
+            "hardware.keycode.72|w|W",
+            // u i e a ü t k m l y ş, then x on the key ISO calls #
+            "hardware.key.a|u|U",
+            "hardware.key.s|i|İ",
+            "hardware.key.d|e|E",
+            "hardware.key.f|a|A",
+            "hardware.key.g|ü|Ü",
+            "hardware.key.h|t|T",
+            "hardware.key.j|k|K",
+            "hardware.key.k|m|M",
+            "hardware.key.l|l|L",
+            "hardware.keycode.74|y|Y",
+            "hardware.keycode.75|ş|Ş",
+            "hardware.keycode.73|x|X",
+            // j ö v c ç z s b . ,
+            "hardware.key.z|j|J",
+            "hardware.key.x|ö|Ö",
+            "hardware.key.c|v|V",
+            "hardware.key.v|c|C",
+            "hardware.key.b|ç|Ç",
+            "hardware.key.n|z|Z",
+            "hardware.key.m|s|S",
+            "hardware.keycode.55|b|B",
+            "hardware.keycode.56|.|:",
+            "hardware.keycode.76|,|;",
+            // the two keys either side of the digits
+            "hardware.keycode.69|/|?",
+            "hardware.keycode.70|-|_",
+        });
+        register(KeyboardLayoutId.BG_BDS, new String[] {
+            // , у е и ш щ к с д з ц ;
+            "hardware.key.q|,|ы",
+            "hardware.key.w|у|У",
+            "hardware.key.e|е|Е",
+            "hardware.key.r|и|И",
+            "hardware.key.t|ш|Ш",
+            "hardware.key.y|щ|Щ",
+            "hardware.key.u|к|К",
+            "hardware.key.i|с|С",
+            "hardware.key.o|д|Д",
+            "hardware.key.p|з|З",
+            "hardware.keycode.71|ц|Ц",
+            "hardware.keycode.72|;|§",
+            // ь я а о ж г т н в м ч
+            "hardware.key.a|ь|Ь",
+            "hardware.key.s|я|Я",
+            "hardware.key.d|а|А",
+            "hardware.key.f|о|О",
+            "hardware.key.g|ж|Ж",
+            "hardware.key.h|г|Г",
+            "hardware.key.j|т|Т",
+            "hardware.key.k|н|Н",
+            "hardware.key.l|в|В",
+            "hardware.keycode.74|м|М",
+            "hardware.keycode.75|ч|Ч",
+            // ю й ъ э ф х п р л б
+            "hardware.key.z|ю|Ю",
+            "hardware.key.x|й|Й",
+            "hardware.key.c|ъ|Ъ",
+            "hardware.key.v|э|Э",
+            "hardware.key.b|ф|Ф",
+            "hardware.key.n|х|Х",
+            "hardware.key.m|п|П",
+            "hardware.keycode.55|р|Р",
+            "hardware.keycode.56|л|Л",
+            "hardware.keycode.76|б|Б",
+            // BDS puts the full stop and the hyphen where a US keyboard has the digits' neighbours
+            "hardware.keycode.69|-|І",
+            "hardware.keycode.70|.|V",
+        });
         register(KeyboardLayoutId.EL_QWERTY, new String[] {  // KBDHE, by scan code = US position
             "hardware.key.a|α|Α",
             "hardware.key.b|β|Β",

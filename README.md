@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.158** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.158/retekey-0.1.158.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.158/retekey-0.1.158-legacy.apk)
+**ReteKey v0.1.159** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.159/retekey-0.1.159.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.159/retekey-0.1.159-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.158** —
-[retekey-0.1.158.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.158/retekey-0.1.158.apk) (624 KB; the Android 4.0 build is 520 KB)
+Current release: **v0.1.159** —
+[retekey-0.1.159.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.159/retekey-0.1.159.apk) (627 KB; the Android 4.0 build is 522 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -185,7 +185,7 @@ Seven letter layouts share that grid:
 | **Greek** | each letter on its PC position — `; ς ε ρ τ υ θ ι ο π` up top (`;` is the Greek question mark, holding the ano teleia `·`), tone vowels a flick right (ά …), the diaereses down (ϊ ϋ) and both together up (ΐ ΰ); the question mark flicks up to the ano teleia. Indonesian, Malay, Filipino and Swahili need nothing beyond QWERTY — use it as is |
 | **Hindi(हिन्दी)** | InScript's positions as four letter rows plus a signs row, five rows in the same keyboard height. InScript's system rides the upward flicks: a matra flicks up to its independent vowel (ा↑आ), a plain consonant to its aspirate (क↑ख). The candra family shares one key (ॉ with ऑ ऍ ॅ), the sibilants share स (श up, ष down), the nasal signs share ं (ँ up, ः down), the danda doubles upward, and ₹ ़ ऽ ॐ have their own keys. Text commits as typed; your editor draws the conjuncts |
 | **Thai(ไทย)** | Kedmanee's (TIS 820) positions as **four letter rows** — the first five-row page, every row one fifth of the same keyboard height. Kedmanee's Shift layer rides the **upward flicks**, key for key (ุ↑ู, ำ↑ฎ, ื↑์ …); the letters the ten columns squeeze out ride their kin — the obsolete ฃ ฅ under ข ค, the twenty-word ใ under ไ, ง below its fellow velar ก, and ฟ carries ฤ ฝ ๅ ฦ on its four ways. Thai digits ๑–๙ ๐ are the held digits, and ๆ sits beside space with ฯ held and ฿ a flick down. No Shift, one page |
-| **Russian(Русский)** and friends | ЙЦУКЕН's three rows plus a fourth for х ъ ж э б ю ё and the quotes — ё also a flick up on е. **Ukrainian** swaps in і ї є with ґ (also г flicked up); **Bulgarian** is the Phonetic layout its phones use; **Macedonian** and **Serbian** sit on their standard positions |
+| **Russian(Русский)** and friends | ЙЦУКЕН's three rows plus a fourth for х ъ ж э б ю ё and the quotes — ё also a flick up on е. **Ukrainian** swaps in і ї є with ґ (also г flicked up); **Bulgarian** comes both ways — the **Phonetic** layout its phones use and the official **BDS 5237**, whose order is nothing like QWERTY's; **Macedonian** and **Serbian** sit on their standard positions |
 | **Arabic(العربية)** | the 101 layout's positions, reading from the right, with the hamza row below and the Shift layer's tashkil riding the upward flicks where the 101 puts them; the period holds ، with « ؟ » ؛ on its flicks. **Urdu** follows its phonetic layout, the paired letters (ج↑چ, د↑ڈ …) riding the flicks |
 | **Georgian(ქართული)** | its QWERTY-phonetic positions, one page, no case |
 | **Armenian(Հայերեն)** | the Eastern typewriter positions; ռ rides ր, the everyday ligature և rides ե, and the full stop is Armenian's own ։ with ՝ ՞ ՜ ՛ on its flicks |
@@ -195,7 +195,7 @@ Seven letter layouts share that grid:
 | **Hebrew** | the standard layout's positions, reading from the right (ק ר א ט ו ן ם פ across the top). Hebrew has no capitals, so there is no Shift and one page; backspace is two columns wide in the corner the letters leave free, and the period sits beside space — the comma held, geresh gershayim maqaf on its flicks. The text direction is the editor's own — the keyboard needs nothing special |
 | **French (AZERTY)** | AZERTY as phones draw it, 10/10/6: `azertyuiop` / `qsdfghjklm` / `⇧ w x c v b n ⌫ . ⏎`. The fifteen accented letters ride flicks the mark's own way — è left, ê up, é right, ë down, and so on for every vowel, æ œ to the right, ç ÿ down; the period flicks to « , » and a still hold anywhere is still the digit or symbol |
 | **German** | QWERTZ in ten columns — y and z swapped, ü ö ä a flick up on u o a, ß a flick down on s (ẞ with Shift) |
-| **Turkish** | Q layout in ten columns — ü ö ğ a flick up, ş ç ı a flick down; Shift follows Turkish casing, so i → İ and ı → I |
+| **Turkish** | Two: **Q** in ten columns — ü ö ğ a flick up, ş ç ı a flick down — and **F**, the Turkish Standards Institution's own 1955 arrangement, built around the letter frequencies of Turkish and still what Turkish typists are trained on. Shift follows Turkish casing in both, so i → İ and ı → I |
 | **Vietnamese (Telex)** | QWERTY as it is; the **Telex** rules make the letters as you type — `aa→â ee→ê oo→ô aw→ă ow→ơ uw→ư dd→đ`, a lone `w` is `ư`, tones `s f r x j` (sắc huyền hỏi ngã nặng), `z` takes a tone off, and a mark or tone key pressed again gives the letter itself. The word composes under the cursor and commits on space or punctuation; backspace takes back one keystroke. A physical keyboard types Telex too. â ă ê ô ơ ư đ also ride flicks on their letters for anyone who does not know Telex |
 | **Cheonjiin(천지인)** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **Next** key — starts the next letter |
 | **Naratgeul(나랏글)** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |

@@ -38,6 +38,14 @@ public final class HardwareLayoutChoice {
     private static final List<KeyboardLayoutId> KOREAN = Collections.unmodifiableList(
         Arrays.asList(KeyboardLayoutId.KO_DUBEOLSIK));
 
+    /** Turkish: the QWERTY-shaped Q, and the national standard F. */
+    private static final List<KeyboardLayoutId> TURKISH = Collections.unmodifiableList(
+        Arrays.asList(KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.TR_F));
+
+    /** Bulgarian: the phonetic layout phones use, and the official BDS 5237. */
+    private static final List<KeyboardLayoutId> BULGARIAN = Collections.unmodifiableList(
+        Arrays.asList(KeyboardLayoutId.BG_PHONETIC, KeyboardLayoutId.BG_BDS));
+
     private HardwareLayoutChoice() {
     }
 
@@ -60,6 +68,12 @@ public final class HardwareLayoutChoice {
         }
         if ("ko".equals(language)) {
             return KOREAN;
+        }
+        if ("tr".equals(language)) {
+            return TURKISH;
+        }
+        if ("bg".equals(language)) {
+            return BULGARIAN;
         }
         return Collections.singletonList(screenLayout);
     }
@@ -93,6 +107,9 @@ public final class HardwareLayoutChoice {
         if (candidates.isEmpty()) {
             return screenLayout;
         }
+        // The default is what the keyboard did before there was a choice: each script layout
+        // answered to its own table, and English — which needs no remapping at all — answered to
+        // the caps as printed.
         return candidates.contains(screenLayout) && !"en".equals(
             LetterLayouts.languageTag(screenLayout))
             ? screenLayout

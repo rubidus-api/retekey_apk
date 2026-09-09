@@ -32,6 +32,7 @@ public final class LetterLayouts {
         KeyboardLayoutId.VI_TELEX,
         KeyboardLayoutId.DE_QWERTZ,
         KeyboardLayoutId.TR_QWERTY,
+        KeyboardLayoutId.TR_F,
         KeyboardLayoutId.FR_AZERTY,
         KeyboardLayoutId.EL_QWERTY,
         KeyboardLayoutId.HE_STANDARD,
@@ -43,6 +44,7 @@ public final class LetterLayouts {
         KeyboardLayoutId.RU_JCUKEN,
         KeyboardLayoutId.UK_JCUKEN,
         KeyboardLayoutId.BG_PHONETIC,
+        KeyboardLayoutId.BG_BDS,
         KeyboardLayoutId.MK_STANDARD,
         KeyboardLayoutId.SR_CYRILLIC,
         KeyboardLayoutId.AR_101,
@@ -95,6 +97,8 @@ public final class LetterLayouts {
                 return "deu";
             case TR_QWERTY:
                 return "tur";
+            case TR_F:
+                return "trf";
             case FR_AZERTY:
                 return "fra";
             case EL_QWERTY:
@@ -117,6 +121,8 @@ public final class LetterLayouts {
                 return "ukr";
             case BG_PHONETIC:
                 return "bul";
+            case BG_BDS:
+                return "bds";
             case MK_STANDARD:
                 return "mkd";
             case SR_CYRILLIC:
@@ -200,7 +206,9 @@ public final class LetterLayouts {
             case DE_QWERTZ:
                 return "German(Deutsch)";
             case TR_QWERTY:
-                return "Turkish(Türkçe)";
+                return "Turkish Q(Türkçe Q)";
+            case TR_F:
+                return "Turkish F(Türkçe F)";
             case FR_AZERTY:
                 return "French AZERTY(Français)";
             case EL_QWERTY:
@@ -222,7 +230,9 @@ public final class LetterLayouts {
             case UK_JCUKEN:
                 return "Ukrainian(Українська)";
             case BG_PHONETIC:
-                return "Bulgarian(Български)";
+                return "Bulgarian Phonetic(Фонетична)";
+            case BG_BDS:
+                return "Bulgarian BDS(БДС)";
             case MK_STANDARD:
                 return "Macedonian(Македонски)";
             case SR_CYRILLIC:

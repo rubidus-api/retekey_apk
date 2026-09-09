@@ -51,11 +51,32 @@ public final class HardwareLayoutChoiceTest {
 
     @Test
     public void onlyTheLayoutsWithSomethingToChooseAreOffered() {
-        // The settings page lists these and nothing else; today that is English's three.
+        // The layout page lists these and nothing else: the languages that really do have more
+        // than one physical arrangement. A language with one has nothing to choose.
         assertEquals(
             Arrays.asList(KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK,
-                KeyboardLayoutId.EN_COLEMAK),
+                KeyboardLayoutId.EN_COLEMAK, KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.TR_F,
+                KeyboardLayoutId.BG_PHONETIC, KeyboardLayoutId.BG_BDS),
             HardwareLayoutChoice.choosableLayouts());
+    }
+
+    @Test
+    public void turkishAndBulgarianEachOfferTheirTwo() {
+        // Turkish Q is the QWERTY-shaped one; F is the national standard. Bulgarian ships the
+        // phonetic layout its phones use and the official BDS 5237.
+        assertEquals(Arrays.asList(KeyboardLayoutId.TR_QWERTY, KeyboardLayoutId.TR_F),
+            HardwareLayoutChoice.candidates(KeyboardLayoutId.TR_F));
+        assertEquals(Arrays.asList(KeyboardLayoutId.BG_PHONETIC, KeyboardLayoutId.BG_BDS),
+            HardwareLayoutChoice.candidates(KeyboardLayoutId.BG_PHONETIC));
+        // Each keeps its own arrangement when nothing is chosen: a script layout always answered
+        // to its own table, and that must not change under anyone.
+        assertEquals(KeyboardLayoutId.TR_F,
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.TR_F));
+        assertEquals(KeyboardLayoutId.BG_BDS,
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.BG_BDS));
+        // And the pairing the owner asked for is possible: Q on the screen, F on the keys.
+        assertEquals(KeyboardLayoutId.TR_F,
+            HardwareLayoutChoice.resolve("TR_F", KeyboardLayoutId.TR_QWERTY));
     }
 
     @Test

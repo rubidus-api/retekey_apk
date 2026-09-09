@@ -108,6 +108,10 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout UK_BASE = ukrainian(false);
     private static final KeyboardLayout UK_SHIFTED = ukrainian(true);
     private static final KeyboardLayout BG_BASE = bulgarian(false);
+    private static final KeyboardLayout BDS_BASE = bulgarianBds(false);
+    private static final KeyboardLayout BDS_SHIFTED = bulgarianBds(true);
+    private static final KeyboardLayout TRF_BASE = turkishF(false);
+    private static final KeyboardLayout TRF_SHIFTED = turkishF(true);
     private static final KeyboardLayout BG_SHIFTED = bulgarian(true);
     private static final KeyboardLayout MK_BASE = macedonian(false);
     private static final KeyboardLayout MK_SHIFTED = macedonian(true);
@@ -166,6 +170,8 @@ public final class KeyboardLayouts {
                 return shifted ? VI_SHIFTED : VI_BASE;
             case DE_QWERTZ:
                 return shifted ? DE_SHIFTED : DE_BASE;
+            case TR_F:
+                return shifted ? TRF_SHIFTED : TRF_BASE;
             case TR_QWERTY:
                 return shifted ? TR_SHIFTED : TR_BASE;
             case FR_AZERTY:
@@ -190,6 +196,8 @@ public final class KeyboardLayouts {
                 return shifted ? UK_SHIFTED : UK_BASE;
             case BG_PHONETIC:
                 return shifted ? BG_SHIFTED : BG_BASE;
+            case BG_BDS:
+                return shifted ? BDS_SHIFTED : BDS_BASE;
             case MK_STANDARD:
                 return shifted ? MK_SHIFTED : MK_BASE;
             case SR_CYRILLIC:
@@ -1177,6 +1185,40 @@ public final class KeyboardLayouts {
             LatinAccents.UKRAINIAN);
     }
 
+    /**
+     * Bulgarian BDS 5237 — the country's official standard, and the arrangement its typists learn.
+     * The phone keeps BDS's own order and lets the overflow fall to a fourth row: the standard is
+     * 12/11/10 across a physical keyboard, and ten columns cannot hold that.
+     *
+     * <p>Transcribed from Microsoft's own layout table for KBDBU (learn.microsoft.com,
+     * globalization/keyboards/kbdbu.html), which lists every key by codepoint. The letters here
+     * and the physical table in HardwareLayoutTables are checked against each other by
+     * HardwareScriptLayoutTest.
+     */
+    private static KeyboardLayout bulgarianBds(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.BG_BDS, shifted, new java.util.Locale("bg"),
+            // ы is not a Bulgarian letter: BDS carries it for Russian text, on the shifted half
+            // of one key, so it belongs on the physical table and not on a page of letters.
+            new String[] {"уеишщксдзц", "ьяожгтнвм\b", "\u0001юйъэфхп.\n", "ачрлб«»—?!"},
+            java.util.Collections.<String, String[]>emptyMap());
+    }
+
+    /**
+     * Turkish F — the Turkish Standards Institution's own layout, designed in 1955 around the
+     * letter frequencies of Turkish, and still the one Turkish typists are trained on. Ten columns
+     * hold the first three rows' worth; q w x y ş b fall to a fourth row, as they do on the
+     * Cyrillic pages.
+     *
+     * <p>Transcribed from Microsoft's layout table for KBDTUF
+     * (learn.microsoft.com/globalization/keyboards/kbdtuf.html). Capitals follow Turkish: i → İ
+     * and ı → I, which the locale-aware letter key already does.
+     */
+    private static KeyboardLayout turkishF(boolean shifted) {
+        return scriptPage(KeyboardLayoutId.TR_F, shifted, new java.util.Locale("tr"),
+            new String[] {"fgğıodrnhp", "uieaütkml\b", "\u0001jövcçzs.\n", "yşbqwx«»—,"},
+            LatinAccents.TURKISH);
+    }
+
     /** Bulgarian Phonetic — the layout Bulgarian phones actually use. */
     private static KeyboardLayout bulgarian(boolean shifted) {
         return scriptPage(KeyboardLayoutId.BG_PHONETIC, shifted, new java.util.Locale("bg"),
@@ -1394,6 +1436,8 @@ public final class KeyboardLayouts {
             case VI_TELEX:
             case DE_QWERTZ:
             case TR_QWERTY:
+            case TR_F:
+            case BG_BDS:
             case FR_AZERTY:
             case EL_QWERTY:
             case JA_ROMAJI:
