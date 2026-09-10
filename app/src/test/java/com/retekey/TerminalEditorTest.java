@@ -29,7 +29,9 @@ import org.junit.Test;
  */
 public final class TerminalEditorTest {
     private static final CheckedEditorExecutor EXECUTOR = new CheckedEditorExecutor();
-    private static final EditorBounds CURSOR = EditorBounds.of(1, 1, -1, -1);
+    // A terminal does not say where its cursor is; the keyboard is told -1 and must cope. Using
+    // a known cursor here would have tested a phone that does not exist.
+    private static final EditorBounds CURSOR = EditorBounds.unknown();
 
     /** Termux with enforce-char-based-input = true: the view reports TYPE_NULL. */
     private static EditorProfile charBased() {
