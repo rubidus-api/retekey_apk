@@ -56,7 +56,8 @@ public final class AndroidEditorProfileClassifier {
             editorInfo.actionId,
             platformApi
         );
-        if (isTerminal(editorInfo.packageName)) {
+        if (isTerminal(editorInfo.packageName)
+                || looksLikeATerminal(editorInfo, profile)) {
             return profile.asTerminal();
         }
         if (isRemoteDesktop(editorInfo.packageName)
@@ -65,6 +66,34 @@ public final class AndroidEditorProfileClassifier {
             return profile.withDeleteByKeyEvents();
         }
         return profile;
+    }
+
+    /**
+     * Whether this editor looks like a terminal without being one this build knows by name.
+     *
+     * <p>A terminal that reports a text field is indistinguishable from a login form by input
+     * type alone — both say "visible password, no suggestions" — but not by what else they say. A
+     * text field knows where its cursor is and puts it in {@code initialSelStart}; a terminal has
+     * no buffer to have a cursor in and leaves it at -1, which is the same thing this keyboard
+     * has always used to recognise one (manual §7). Taking the two signals together names the
+     * shape instead of naming the app, which is what makes it work in the terminals nobody
+     * thought to list (issue #7).
+     *
+     * <p>Being wrong in this direction is cheap: an ordinary field treated as a terminal is typed
+     * into by commits rather than composition and deleted with a key event, which it also
+     * understands. Being wrong the other way is the bug.
+     */
+    private static boolean looksLikeATerminal(EditorInfo editorInfo, EditorProfile profile) {
+        if (profile.capabilities().deletionMode() != EditorCapabilities.DeletionMode.RICH_TEXT) {
+            return false;
+        }
+        boolean noCursor = editorInfo.initialSelStart < 0 || editorInfo.initialSelEnd < 0;
+        int variation = editorInfo.inputType & InputType.TYPE_MASK_VARIATION;
+        boolean terminalShape =
+            (editorInfo.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT
+                && variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                && (editorInfo.inputType & InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS) != 0;
+        return noCursor && terminalShape;
     }
 
     /** Whether this package's editor is a terminal (see the set above). */

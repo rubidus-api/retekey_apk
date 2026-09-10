@@ -1773,9 +1773,19 @@ a login form. A plan of commits and deletes is accepted whole. And being private
 meaning what it should: never read this field, never remember what was typed in it — composing was
 never the leak.
 
-**Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. And when a
-capability is switched on by a list of package names, ask what the list is standing in for: here it
-was standing in for "has no composing region", which two other kinds of editor also are.
+**And the name list was not enough either.** The first cut recognised a text-reporting terminal by
+package name, which passes its own unit tests and fails on the first terminal nobody listed. What
+every terminal has in common is not its name: it is that it does not know where its cursor is —
+there is no buffer for one to be in — while a text field always does. `initialSelStart` at -1
+together with the visible-password-no-suggestions shape names the *kind* instead of the *app*.
+This was found by putting a terminal-shaped editor on the far side of the real framework and
+typing into it (the instrumentation build's `TerminalHostActivity`): the unit tests were green and
+the device was not.
+
+**Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
+capability is switched on by a list of package names, ask what the list is standing in for — here
+it was standing in for "has no composing region", which two other kinds of editor also are. And
+when a fix depends on recognising something, test it against something it does not recognise.
 
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 

@@ -130,17 +130,41 @@ public final class AndroidEditorProfileClassifierTest {
     }
 
     @Test
-    public void anOrdinaryVisiblePasswordFieldIsNotATerminal() {
-        // A login form with "show password" ticked reports exactly what Termux reports with
-        // char-based input off. Only the name tells them apart, so only the name may.
+    public void aTerminalNobodyListedIsRecognisedByItsShape() {
+        // The name list only ever covers the terminals someone thought of. What every terminal
+        // has in common is that it does not know where its cursor is — it has no buffer for one
+        // to be in — while a text field always does. Verified on a device: without this, a
+        // terminal from an unlisted app still swallowed every Korean syllable (issue #7).
         android.view.inputmethod.EditorInfo info = new android.view.inputmethod.EditorInfo();
         info.inputType = android.text.InputType.TYPE_CLASS_TEXT
-            | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
-        info.packageName = "com.example.shop";
+            | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+        info.packageName = "org.example.someterminal";
+        info.initialSelStart = -1;
+        info.initialSelEnd = -1;
 
         EditorCapabilities capabilities =
             AndroidEditorProfileClassifier.classify(info, 33).capabilities();
-        Assert.assertTrue(capabilities.hasSurroundingText());
+        Assert.assertFalse(capabilities.hasSurroundingText());
+        Assert.assertTrue(capabilities.deleteByKeyEvents());
+    }
+
+    @Test
+    public void anOrdinaryVisiblePasswordFieldIsNotATerminal() {
+        // A login form with "show password" ticked reports the same input type as a terminal.
+        // What it also reports is a cursor, which is what tells the two apart.
+        android.view.inputmethod.EditorInfo info = new android.view.inputmethod.EditorInfo();
+        info.inputType = android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+        info.packageName = "com.example.shop";
+        info.initialSelStart = 0;
+        info.initialSelEnd = 0;
+
+        EditorCapabilities capabilities =
+            AndroidEditorProfileClassifier.classify(info, 33).capabilities();
+        Assert.assertTrue("an ordinary field keeps its composing region",
+            capabilities.hasSurroundingText());
         Assert.assertTrue("still never read, never remembered", capabilities.isSensitive());
     }
 }

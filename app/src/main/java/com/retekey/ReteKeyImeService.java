@@ -1102,7 +1102,12 @@ public class ReteKeyImeService extends InputMethodService {
             && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
     }
 
-    private void dispatchSoftwareInput(ProjectKeyEvent event) {
+    /**
+     * Package-private rather than private so the instrumentation build can press a key without a
+     * finger: this emulator gives an IME window no drawing surface, so the only way to test the
+     * soft path end to end is to hand the service the same event a touch would have produced.
+     */
+    void dispatchSoftwareInput(ProjectKeyEvent event) {
         if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
             return;
         }
