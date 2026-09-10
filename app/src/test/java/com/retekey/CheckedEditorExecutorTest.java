@@ -433,22 +433,45 @@ public final class CheckedEditorExecutorTest {
     }
 
     @Test
-    public void sensitiveEditorRejectsComposingBeforeResolvingConnection() {
+    public void aSensitiveEditorIsComposedIntoLikeAnyOther() {
+        // It did not use to be: composing was refused outright in a password field, which meant
+        // Korean could not be typed into one at all — nor into a terminal, which reports the
+        // visible-password variation to turn suggestions off (issue #7). Being private is about
+        // what the keyboard reads and remembers, not about whether it may compose.
         AtomicInteger resolves = new AtomicInteger();
         TransitionPlan<String> plan = plan(
             1,
             0,
-            Collections.singletonList(KeyAction.setComposingText("private"))
+            Collections.singletonList(KeyAction.setComposingText("가"))
         );
 
         ExecutionResult result = EXECUTOR.execute(
             plan,
-            ExecutionContext.active(
-                1,
-                0,
-                CURSOR,
-                EditorCapabilities.richText(true, false)
-            ),
+            ExecutionContext.active(1, 0, CURSOR, EditorCapabilities.richText(true, false)),
+            () -> {
+                resolves.incrementAndGet();
+                return EditorEndpoint.of(1, new FakeEditorBridge());
+            }
+        );
+
+        Assert.assertEquals(1, resolves.get());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+    }
+
+    @Test
+    public void anUnsupportedEditorIsRefusedBeforeTheConnectionIsResolved() {
+        // The check that is still worth making early: nothing is asked of an editor that cannot
+        // take it, and asking costs a connection lookup.
+        AtomicInteger resolves = new AtomicInteger();
+        TransitionPlan<String> plan = plan(
+            1,
+            0,
+            Collections.singletonList(KeyAction.setComposingText("가"))
+        );
+
+        ExecutionResult result = EXECUTOR.execute(
+            plan,
+            ExecutionContext.active(1, 0, CURSOR, EditorCapabilities.unsupported()),
             () -> {
                 resolves.incrementAndGet();
                 return EditorEndpoint.of(1, new FakeEditorBridge());
@@ -456,10 +479,7 @@ public final class CheckedEditorExecutorTest {
         );
 
         Assert.assertEquals(0, resolves.get());
-        Assert.assertEquals(
-            ExecutionResult.Reason.SENSITIVE_OPERATION_PROHIBITED,
-            result.reason()
-        );
+        Assert.assertEquals(ExecutionResult.Reason.UNSUPPORTED_EDITOR, result.reason());
     }
 
     @Test

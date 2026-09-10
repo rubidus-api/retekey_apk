@@ -104,4 +104,43 @@ public final class AndroidEditorProfileClassifierTest {
         org.junit.Assert.assertTrue(
             plain.withDeleteByKeyEvents().capabilities().deleteByKeyEvents());
     }
+
+    @Test
+    public void aTerminalIsRecognisedInBothOfTheShapesItReports() {
+        // Termux reports TYPE_NULL when enforce-char-based-input is on and an ordinary
+        // visible-password text field when it is off. Both are the same thing behind the
+        // connection: a program on a pipe, with no composing region and no buffer (issue #7).
+        android.view.inputmethod.EditorInfo charBased = new android.view.inputmethod.EditorInfo();
+        charBased.inputType = android.text.InputType.TYPE_NULL;
+        charBased.packageName = "com.termux";
+        android.view.inputmethod.EditorInfo textBased = new android.view.inputmethod.EditorInfo();
+        textBased.inputType = android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+        textBased.packageName = "com.termux";
+
+        for (android.view.inputmethod.EditorInfo info : new android.view.inputmethod.EditorInfo[] {
+                charBased, textBased}) {
+            EditorCapabilities capabilities =
+                AndroidEditorProfileClassifier.classify(info, 33).capabilities();
+            Assert.assertFalse(info.inputType + " has no buffer", capabilities.hasSurroundingText());
+            Assert.assertTrue(info.inputType + " composes by commits",
+                capabilities.deleteByKeyEvents());
+        }
+    }
+
+    @Test
+    public void anOrdinaryVisiblePasswordFieldIsNotATerminal() {
+        // A login form with "show password" ticked reports exactly what Termux reports with
+        // char-based input off. Only the name tells them apart, so only the name may.
+        android.view.inputmethod.EditorInfo info = new android.view.inputmethod.EditorInfo();
+        info.inputType = android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
+        info.packageName = "com.example.shop";
+
+        EditorCapabilities capabilities =
+            AndroidEditorProfileClassifier.classify(info, 33).capabilities();
+        Assert.assertTrue(capabilities.hasSurroundingText());
+        Assert.assertTrue("still never read, never remembered", capabilities.isSensitive());
+    }
 }

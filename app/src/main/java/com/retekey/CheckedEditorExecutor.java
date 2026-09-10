@@ -60,9 +60,13 @@ public final class CheckedEditorExecutor {
         // so typed characters actually land.
         // A raw Enter (KEYCODE_ENTER) and raw keys go out as key events on ANY editor — that is how
         // Enter reaches a terminal, and how a normal field sees a real Enter press.
+        // The single-action raw path handles exactly one action; a plan of several — the shape
+        // materialised composition takes — goes through the ordinary path, which walks them in
+        // order and, for an editor with no buffer, deletes by key event anyway.
         if (isSingleRawKey(plan.actions())
             || isSingleRawEnter(plan.actions())
-            || (rawEditor && !isSingleCommitText(plan.actions()))) {
+            || (rawEditor && plan.actions().size() == 1
+                && !isSingleCommitText(plan.actions()))) {
             return executeRawCompatibility(plan, endpoint, context.capabilities());
         }
         return executeRichPlan(plan, context, endpoint);
@@ -85,20 +89,43 @@ public final class CheckedEditorExecutor {
         // deletes relative to the editor's own cursor, so it works whether or not the IME knows
         // the position. Refusing it here is what made backspace stop working in terminals once
         // they reported an unknown selection.
-        if (context.capabilities().isSensitive()
-            && containsAction(plan.actions(), KeyAction.Kind.SET_COMPOSING_TEXT)) {
-            return notDispatched(
-                plan,
-                ExecutionResult.Reason.SENSITIVE_OPERATION_PROHIBITED
-            );
-        }
+        // Composing is not what makes a field private. A sensitive field is one this keyboard
+        // must not *read* and must not remember — both still hold below — but refusing to compose
+        // in one means Korean cannot be typed there at all, and a terminal reports the
+        // visible-password variation precisely because it wants no suggestions (issue #7).
         if (context.capabilities().deletionMode()
             == EditorCapabilities.DeletionMode.RAW_KEY
-            && !isSingleRawCompatibleAction(plan.actions())
-            && !isSingleCommitText(plan.actions())) {
+            && !isTerminalWritable(plan.actions())) {
             return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
         }
         return null;
+    }
+
+    /**
+     * Whether every action in this plan is one an editor with no composing region can take:
+     * committed text, a delete, a key. Composition arrives already rewritten into these
+     * (HangulInputProcessor's by-commits path), and it arrives as a plan of several actions —
+     * take back what was materialised, then commit what replaces it — so the old rule of "one
+     * action, and only these kinds" refused every Korean syllable in a terminal (issue #7).
+     */
+    private static boolean isTerminalWritable(List<KeyAction> actions) {
+        if (actions.isEmpty()) {
+            return false;
+        }
+        for (KeyAction action : actions) {
+            switch (action.kind()) {
+                case COMMIT_TEXT:
+                case DELETE_BACKWARD:
+                case DELETE_RECENT:
+                case RAW_ENTER:
+                case RAW_KEY:
+                case PERFORM_EDITOR_ACTION:
+                    break;
+                default:
+                    return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isSingleRawCompatibleAction(List<KeyAction> actions) {
@@ -107,6 +134,10 @@ public final class CheckedEditorExecutor {
         }
         KeyAction.Kind kind = actions.get(0).kind();
         return kind == KeyAction.Kind.DELETE_BACKWARD
+            // Taking back what we just committed is how a syllable is rewritten where there is no
+            // composing region. Refusing it left the terminal with the first jamo of every
+            // syllable still on screen, and left backspace with nothing to do (issue #7).
+            || kind == KeyAction.Kind.DELETE_RECENT
             || kind == KeyAction.Kind.RAW_ENTER
             || kind == KeyAction.Kind.RAW_KEY
             || kind == KeyAction.Kind.PERFORM_EDITOR_ACTION;
@@ -576,8 +607,13 @@ public final class CheckedEditorExecutor {
                 return executeRichDelete(endpoint, bounds, capabilities);
             case DELETE_RECENT: {
                 // Our own just-committed characters: the surrounding-text call is reliable here
-                // on every editor, remote-desktop dummies included, and cannot be key-filtered.
+                // on every editor, remote-desktop dummies included, and cannot be key-filtered —
+                // except a terminal, where nothing behind the connection holds text for it to
+                // act on, so the take-back has to be backspace key events like any other delete.
                 int count = action.recentCount();
+                if (!capabilities.hasSurroundingText()) {
+                    return executeRawDeleteFallback(endpoint, count);
+                }
                 EditorCallResult recent = guardedCall(
                     endpoint,
                     () -> bridge.deleteSurroundingTextInCodePoints(count, 0)
@@ -602,6 +638,11 @@ public final class CheckedEditorExecutor {
         EditorCapabilities capabilities
     ) {
         EditorBridge bridge = endpoint.bridge();
+        if (!capabilities.hasSurroundingText()) {
+            // A terminal: nothing behind the connection holds text, so there is no ordering
+            // question to solve and nothing to read back. The key event is the deletion.
+            return executeRawDeleteFallback(endpoint, 1);
+        }
         if (capabilities.deleteByKeyEvents()) {
             // A remote-desktop editor relays over two pipes — text operations and key events —
             // and the pipes are not ordered against each other: a key-event backspace can land

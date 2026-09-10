@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.161** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.161/retekey-0.1.161.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.161/retekey-0.1.161-legacy.apk)
+**ReteKey v0.1.162** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.162/retekey-0.1.162.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.162/retekey-0.1.162-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.161** —
-[retekey-0.1.161.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.161/retekey-0.1.161.apk) (631 KB; the Android 4.0 build is 524 KB)
+Current release: **v0.1.162** —
+[retekey-0.1.162.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.162/retekey-0.1.162.apk) (631 KB; the Android 4.0 build is 524 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -486,6 +486,13 @@ A binding may be a lone key or a modifier chord; a modifier pressed on its own r
 Modifier chords the IME does not claim are passed through, so application shortcuts keep working,
 and a soft `Ctrl` plus a letter sends a real chord — terminals receive the control code, editors
 run select-all/copy/paste/undo.
+
+**Terminals.** A terminal is a program on the other side of a pipe, not a text box: it has no
+composing region to underline and no buffer to delete out of. Korean is therefore **written as it
+is built** — each syllable is taken back and re-sent as it grows — and every deletion is a real
+backspace key, so Korean works in `vim` and over `ssh`, in Termux and in the SSH clients, in
+either of Termux's input modes. (Password fields are composed into too; a field being private
+means this keyboard never reads it and never remembers it, which is unchanged.)
 
 ## Settings
 

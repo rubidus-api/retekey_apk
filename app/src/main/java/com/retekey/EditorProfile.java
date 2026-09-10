@@ -81,7 +81,9 @@ public final class EditorProfile {
         int standardActionId
     ) {
         return new EditorProfile(
-            EditorCapabilities.rawKey(),
+            // A TYPE_NULL editor has no composing region and no buffer — that is what TYPE_NULL
+            // says. Composition is materialised as commits, and every delete is a key event.
+            EditorCapabilities.rawKey().asTerminal(),
             false,
             noEnterAction,
             customActionPresent,
@@ -109,6 +111,18 @@ public final class EditorProfile {
     public EditorProfile withDeleteByKeyEvents() {
         return new EditorProfile(
             capabilities.withDeleteByKeyEvents(),
+            multiline,
+            noEnterAction,
+            customActionPresent,
+            customActionId,
+            standardActionId
+        );
+    }
+
+    /** The same editor, known to be a terminal: no composing region, no buffer, keys for deletes. */
+    public EditorProfile asTerminal() {
+        return new EditorProfile(
+            capabilities.asTerminal(),
             multiline,
             noEnterAction,
             customActionPresent,

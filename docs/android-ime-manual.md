@@ -1733,6 +1733,50 @@ one path out, and route every press through them. A latch that can be cleared by
 be cleared by the one that only tells half the program — and a stuck modifier looks, to the user,
 exactly like a key held down that they cannot let up.
 
+### 15.30 A terminal is a fourth kind of editor
+
+**What happened.** Typing into Termux was broken in both of the modes it offers, and each looked
+like a different bug. With `enforce-char-based-input = true` a Korean syllable appeared only once
+it closed, and Backspace did nothing at all. With it off, Backspace worked and Korean did nothing
+whatever. (Issue #7.)
+
+**One shape, two disguises.** Termux reports `TYPE_NULL` in the first mode and an ordinary
+`TYPE_TEXT_VARIATION_VISIBLE_PASSWORD` field with no suggestions in the second. Neither describes
+what is actually there: a program on the other side of a pipe. There is no text view, so there is
+**no composing region** — whatever the IME marks as composing is invisible until it is committed —
+and **no buffer**, so a surrounding-text delete lands on the connection's own dummy `Editable` and
+stops there. This keyboard knew three kinds of editor: rich text, TYPE_NULL as "send keys", and
+the remote-desktop shape. A terminal is a fourth, and each of the three failed it differently.
+
+**Three separate refusals, one per symptom.**
+
+1. *Composition never reached the screen.* Composition is already rewritten into commits for
+   editors with no composing region — the remote-desktop path — but that was switched on only for
+   four package names. `TYPE_NULL` did not turn it on, so every `setComposingText` was refused as
+   an unsupported operation and only the closing commit got through. **Hence "syllables appear
+   only when finished".**
+2. *Deletes were refused, then unreachable.* A materialised syllable is rewritten by taking back
+   what was put on screen and committing what replaces it — two actions in one plan. A raw-key
+   editor accepted only *single* actions of a short list that did not include the take-back, so
+   the whole plan was refused; and the take-back, when it was allowed, used
+   `deleteSurroundingTextInCodePoints`, which a terminal never sees. **Hence "backspace does
+   nothing".**
+3. *A visible-password field was never composed into.* Composing was refused outright wherever the
+   field was marked private. A terminal reports that variation to turn suggestions off, and so
+   does every login form with "show password" ticked. **Hence "Korean does nothing" — and Korean
+   could not be typed into any password field in any app.**
+
+**The fix.** A terminal is named in the model: `EditorCapabilities.asTerminal()` — no composing
+region, no buffer, deletion by key event. `TYPE_NULL` means it by definition; terminals that report
+a text field are recognised by package, because nothing in the `EditorInfo` distinguishes them from
+a login form. A plan of commits and deletes is accepted whole. And being private went back to
+meaning what it should: never read this field, never remember what was typed in it — composing was
+never the leak.
+
+**Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. And when a
+capability is switched on by a list of package names, ask what the list is standing in for: here it
+was standing in for "has no composing region", which two other kinds of editor also are.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

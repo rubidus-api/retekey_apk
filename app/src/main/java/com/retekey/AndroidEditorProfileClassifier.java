@@ -21,6 +21,27 @@ public final class AndroidEditorProfileClassifier {
             "com.google.chromoting"
         ));
 
+    /**
+     * Apps whose editor is a terminal: a program on the other side of a pipe, not a text view.
+     * They forward committed text and key events and swallow everything else, so there is no
+     * composing region to underline and no buffer for a surrounding-text delete to reach.
+     *
+     * <p>A terminal that reports {@code TYPE_NULL} says so itself and needs no entry here. Termux
+     * has a setting for that — {@code enforce-char-based-input} — and reports an ordinary
+     * visible-password text field when it is off, which is indistinguishable from a login form
+     * that has "show password" ticked. The name is the only thing that tells them apart, and
+     * getting it wrong in either direction breaks typing (issue #7).
+     */
+    private static final java.util.Set<String> TERMINAL_PACKAGES =
+        new java.util.HashSet<>(java.util.Arrays.asList(
+            "com.termux",
+            "com.termux.window",
+            "jackpal.androidterm",
+            "org.connectbot",
+            "com.sonelli.juicessh",
+            "com.server.auditor.ssh.client"
+        ));
+
     private AndroidEditorProfileClassifier() {
     }
 
@@ -35,12 +56,20 @@ public final class AndroidEditorProfileClassifier {
             editorInfo.actionId,
             platformApi
         );
+        if (isTerminal(editorInfo.packageName)) {
+            return profile.asTerminal();
+        }
         if (isRemoteDesktop(editorInfo.packageName)
                 && profile.capabilities().deletionMode()
                     == EditorCapabilities.DeletionMode.RICH_TEXT) {
             return profile.withDeleteByKeyEvents();
         }
         return profile;
+    }
+
+    /** Whether this package's editor is a terminal (see the set above). */
+    static boolean isTerminal(String packageName) {
+        return packageName != null && TERMINAL_PACKAGES.contains(packageName);
     }
 
     /** Whether this package's editor is a remote-desktop window (see the set above). */

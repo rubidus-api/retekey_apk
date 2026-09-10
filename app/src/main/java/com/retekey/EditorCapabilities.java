@@ -26,6 +26,13 @@ public final class EditorCapabilities {
      * on their side, so nothing is deleted twice.
      */
     private boolean deleteByKeyEvents;
+    /**
+     * Nothing behind this editor holds text the IME can edit — a terminal. Its InputConnection is
+     * a dummy buffer that forwards <em>commits</em> and key events to a program on the other side
+     * and swallows everything else, so a surrounding-text delete reaches the local dummy and stops
+     * there. Every deletion, our own take-backs included, has to be a backspace key event.
+     */
+    private boolean noSurroundingText;
 
     private EditorCapabilities(
         boolean supported,
@@ -76,6 +83,24 @@ public final class EditorCapabilities {
 
     public boolean deleteByKeyEvents() {
         return deleteByKeyEvents;
+    }
+
+    /**
+     * A terminal: no composing region, no editable buffer, deletion only by key event. TYPE_NULL
+     * says this outright, and terminals that report a text field say it by being terminals.
+     */
+    public EditorCapabilities asTerminal() {
+        EditorCapabilities copy = new EditorCapabilities(
+            true, sensitive, allowLegacyCodeUnitFallback, allowRawDeleteFallback,
+            DeletionMode.RAW_KEY);
+        copy.deleteByKeyEvents = true;
+        copy.noSurroundingText = true;
+        return copy;
+    }
+
+    /** Whether a surrounding-text call reaches anything (see {@link #noSurroundingText}). */
+    public boolean hasSurroundingText() {
+        return !noSurroundingText;
     }
 
     public static EditorCapabilities unsupported() {
