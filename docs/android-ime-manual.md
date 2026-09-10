@@ -1782,6 +1782,14 @@ This was found by putting a terminal-shaped editor on the far side of the real f
 typing into it (the instrumentation build's `TerminalHostActivity`): the unit tests were green and
 the device was not.
 
+**What real Termux reports.** Measured on 0.118.3, Android 13: the terminal view reports
+`inputType=0x0` (TYPE_NULL) and `initialSelStart=-1`, **and it keeps reporting TYPE_NULL with
+`enforce-char-based-input=false` written into `~/.termux/termux.properties` and the app
+restarted.** So the two modes a user sees are not always two `EditorInfo` shapes; a build that
+reports the visible-password shape exists — that is the other half of the report — but this one
+does not, which is why the shape rule matters and why a name list would have been enough here and
+useless elsewhere.
+
 **Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
 capability is switched on by a list of package names, ask what the list is standing in for — here
 it was standing in for "has no composing region", which two other kinds of editor also are. And
