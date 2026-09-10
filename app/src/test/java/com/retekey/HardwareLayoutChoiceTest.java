@@ -12,18 +12,29 @@ import org.junit.Test;
 public final class HardwareLayoutChoiceTest {
 
     @Test
-    public void englishOffersTheThreeItHasAndDefaultsToTheCapsAsPrinted() {
+    public void englishOffersTheThreeItHasAndEachAnswersToItself() {
         List<KeyboardLayoutId> expected = Arrays.asList(
             KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.EN_DVORAK, KeyboardLayoutId.EN_COLEMAK);
         for (KeyboardLayoutId screen : expected) {
             assertEquals(screen + " offers all three", expected,
                 HardwareLayoutChoice.candidates(screen));
             assertTrue(screen + " is a choice", HardwareLayoutChoice.isChoosable(screen));
-            // Before this setting existed a physical keyboard typed what its caps said, whatever
-            // the screen layout was. Upgrading must not change anyone's typing.
-            assertEquals(screen + " defaults to the caps as printed",
-                KeyboardLayoutId.EN_QWERTY, HardwareLayoutChoice.defaultFor(screen));
+            // Choosing Colemak on the screen and finding QWERTY under your fingers is not a sane
+            // default. English used to be the one language that did that, because before there
+            // were Dvorak and Colemak tables the caps as printed was all a keyboard could do.
+            assertEquals(screen + " answers to itself",
+                screen, HardwareLayoutChoice.defaultFor(screen));
         }
+    }
+
+    @Test
+    public void aLayoutWithNoPhysicalFormFallsToItsLanguagesFirst() {
+        // 천지인 and 나랏글 are shapes for thumbs; no keyboard has them, so a physical keyboard
+        // types the one Korean layout that does exist.
+        assertEquals(KeyboardLayoutId.KO_DUBEOLSIK,
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.KO_CHEONJIIN));
+        assertEquals(KeyboardLayoutId.KO_DUBEOLSIK,
+            HardwareLayoutChoice.defaultFor(KeyboardLayoutId.KO_NARATGEUL));
     }
 
     @Test
@@ -103,16 +114,20 @@ public final class HardwareLayoutChoiceTest {
     public void aStoredChoiceIsUsedAndNonsenseFallsBack() {
         assertEquals(KeyboardLayoutId.EN_COLEMAK,
             HardwareLayoutChoice.resolve("EN_COLEMAK", KeyboardLayoutId.EN_DVORAK));
-        // Nothing stored yet.
-        assertEquals(KeyboardLayoutId.EN_QWERTY,
+        // Nothing stored yet: the screen layout answers to itself.
+        assertEquals(KeyboardLayoutId.EN_DVORAK,
             HardwareLayoutChoice.resolve(null, KeyboardLayoutId.EN_DVORAK));
-        assertEquals(KeyboardLayoutId.EN_QWERTY,
+        assertEquals(KeyboardLayoutId.EN_DVORAK,
             HardwareLayoutChoice.resolve("", KeyboardLayoutId.EN_DVORAK));
-        // A name from another version, or one that is not a candidate for this language.
-        assertEquals(KeyboardLayoutId.EN_QWERTY,
+        // A name from another version, or one that is not a candidate for this language, falls
+        // back to that same default rather than to nothing.
+        assertEquals(KeyboardLayoutId.EN_DVORAK,
             HardwareLayoutChoice.resolve("EN_WORKMAN", KeyboardLayoutId.EN_DVORAK));
-        assertEquals(KeyboardLayoutId.EN_QWERTY,
+        assertEquals(KeyboardLayoutId.EN_DVORAK,
             HardwareLayoutChoice.resolve("RU_JCUKEN", KeyboardLayoutId.EN_DVORAK));
+        // And a QWERTY screen still answers to QWERTY, which is the same rule.
+        assertEquals(KeyboardLayoutId.EN_QWERTY,
+            HardwareLayoutChoice.resolve(null, KeyboardLayoutId.EN_QWERTY));
     }
 
     @Test

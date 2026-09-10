@@ -120,13 +120,14 @@ public final class HardwareLayoutChoice {
         if (candidates.isEmpty()) {
             return screenLayout;
         }
-        // The default is what the keyboard did before there was a choice: each script layout
-        // answered to its own table, and English — which needs no remapping at all — answered to
-        // the caps as printed.
-        return candidates.contains(screenLayout) && !"en".equals(
-            LetterLayouts.languageTag(screenLayout))
-            ? screenLayout
-            : candidates.get(0);
+        // A layout answers to itself. Choosing Colemak on the screen and finding QWERTY under
+        // your fingers is not a sane default in any language, and English used to be the one
+        // exception here — it defaulted to the caps as printed, because before there were Dvorak
+        // and Colemak tables that was the only thing a physical keyboard could do. There are
+        // tables now, so the rule is the same rule everywhere (owner's decision, 2026-09-10).
+        // A layout with no physical form of its own — 천지인, a flick grid — falls to the first
+        // candidate its language has, which for Korean is 2벌식.
+        return candidates.contains(screenLayout) ? screenLayout : candidates.get(0);
     }
 
     /**

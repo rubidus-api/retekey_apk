@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.163** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.163/retekey-0.1.163.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.163/retekey-0.1.163-legacy.apk)
+**ReteKey v0.1.164** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.164/retekey-0.1.164.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.164/retekey-0.1.164-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.163** —
-[retekey-0.1.163.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.163/retekey-0.1.163.apk) (631 KB; 안드로이드 4.0 빌드는 524 KB)
+현재 릴리즈: **v0.1.164** —
+[retekey-0.1.164.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.164/retekey-0.1.164.apk) (631 KB; 안드로이드 4.0 빌드는 524 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -494,7 +494,9 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
   방향마다 따로 정합니다. 위의 설정과 한 페이지를 쓰지 않고 따로 둔 까닭은, 이 목록이 자판 하나에 한
   줄씩이라 길기 때문입니다. 아직 켜지 않은 자판은 언어별로 묶여 있고 각 묶음은 접힌 채로 열리므로, 서른 줄이 아니라 열두 개의 언어 이름으로 시작합니다. 이 페이지에는 **연결한 물리 키보드가 따를 배치**도 함께 있습니다. 어떤
   자판이 화면에 떠 있을 때 유선이나 블루투스 키보드가 어느 배치를 쓸지 정하는 것으로, **둘이 같을
-  필요는 없습니다** — 화면은 드보락, 손끝은 콜맥으로 둘 수 있고 키에 새겨진 대로 두어도 됩니다. 세 글자
+  필요는 없습니다** — 화면은 드보락, 손끝은 콜맥으로 둘 수 있고 키에 새겨진 대로 두어도 됩니다.
+  **따로 정하지 않으면 자판은 자기 자신을 따릅니다** — 화면이 콜맥이면 키도 콜맥입니다. 천지인처럼 제
+  물리 형태가 없는 자판은 그 언어에 있는 것을 따릅니다. 세 글자
   약어가 어느 쪽인지 말해 줍니다: **화면은 대문자**(자판 키에 그렇게 찍힙니다), **물리 키보드는
   소문자**. 물리 형태가 둘 이상인 자판만 나오며, 지금은 영어의 셋입니다. 한국어는 2벌식 하나뿐이고
   천지인·나랏글도 이미 그것을 씁니다. 이 짝도 위의 목록처럼 화면 방향마다 따로 기억됩니다.
