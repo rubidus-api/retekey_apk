@@ -733,9 +733,11 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.resetPhoneInterpreters();
         }
         if (passThroughChord(event)) {
+            endSyllableBeforeDelegating(event);
             return super.onKeyDown(keyCode, event);
         }
-        if (usesRawKeyCompatibility()) {
+        if (!hardwareThroughComposer()) {
+            endSyllableBeforeDelegating(event);
             return super.onKeyDown(keyCode, event);
         }
         // A physical keyboard types through the same composers as the screen: with the Vietnamese
@@ -751,6 +753,7 @@ public class ReteKeyImeService extends InputMethodService {
             if (!result.isHandled() && event.getAction() == KeyEvent.ACTION_DOWN
                     && event.getRepeatCount() == 0) {
                 endLatinWordBeforeDelegating(event);
+                endSyllableBeforeDelegating(event);
             }
             return result.isHandled() || super.onKeyDown(keyCode, event);
         }
@@ -774,7 +777,7 @@ public class ReteKeyImeService extends InputMethodService {
         if (passThroughChord(event)) {
             return super.onKeyUp(keyCode, event);
         }
-        if (usesRawKeyCompatibility()) {
+        if (!hardwareThroughComposer()) {
             return super.onKeyUp(keyCode, event);
         }
         // A physical keyboard types through the same composers as the screen: with the Vietnamese
@@ -808,7 +811,7 @@ public class ReteKeyImeService extends InputMethodService {
         if (passThroughChord(event)) {
             return super.onKeyMultiple(keyCode, count, event);
         }
-        if (usesRawKeyCompatibility()) {
+        if (!hardwareThroughComposer()) {
             return super.onKeyMultiple(keyCode, count, event);
         }
         // A physical keyboard types through the same composers as the screen: with the Vietnamese
@@ -1158,6 +1161,37 @@ public class ReteKeyImeService extends InputMethodService {
         }
     }
 
+    /** Whether a physical key goes through the dispatcher here (see TerminalHardwareKeys). */
+    private boolean hardwareThroughComposer() {
+        return TerminalHardwareKeys.throughComposer(
+            usesRawKeyCompatibility(), hardwareMapper != HardwareSemanticMapper.none());
+    }
+
+    /**
+     * Ends the syllable being built before a physical key goes to an editor that takes
+     * composition as commits — a terminal, a remote-desktop window. The syllable is already on
+     * the far side; ending it only drops this keyboard's claim on it, so the next jamo does not
+     * take back what a Space, an arrow or Enter typed after it (TerminalHardwareKeys).
+     */
+    private void endSyllableBeforeDelegating(KeyEvent event) {
+        if (!TerminalHardwareKeys.endSyllableFirst(
+                editorProfile != null && editorProfile.capabilities().deleteByKeyEvents(),
+                inputProcessor.isComposing(),
+                event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0,
+                KeyEvent.isModifierKey(event.getKeyCode()))) {
+            return;
+        }
+        DispatchResult flushed = dispatcher.dispatch(
+            ProjectKeyEvent.softwareDown("hardware.flush", SemanticInput.flush()));
+        if (flushed.actions().isEmpty()) {
+            return;
+        }
+        ExecutionResult result = execute(flushed);
+        if (result == null || result.isFailure()) {
+            inputProcessor.reset();
+        }
+    }
+
     /**
      * The kana pad's ゛゜小 key: the character before the cursor moves along its cycle — か to が,
      * は through ば to ぱ, a vowel to its small form. Nothing before the cursor, or a character
@@ -1258,14 +1292,17 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Selects the physical-key mapper for the current Hangul mode and editor kind. */
     private void applyHardwareMode() {
-        if (!usesRawKeyCompatibility() && hardwareKoreanMode) {
+        // A terminal gets the same mapper as any editor: its mapped keys are typed through the
+        // composer and committed, and the keys no mapper claims still pass straight through
+        // (TerminalHardwareKeys). It used to get none, so Korean did nothing there (issue #7).
+        if (hardwareKoreanMode) {
             hardwareMapper = DubeolsikHardwareMapper.INSTANCE;
-        } else if (!usesRawKeyCompatibility() && wantedLatinComposer() != null) {
+        } else if (wantedLatinComposer() != null) {
             hardwareMapper = LatinHardwareMapper.INSTANCE;
-        } else if (!usesRawKeyCompatibility() && keyboardView != null
+        } else if (keyboardView != null
                 && keyboardView.letterLayoutId() == KeyboardLayoutId.FA_ISIRI) {
             hardwareMapper = PersianHardwareMapper.INSTANCE;
-        } else if (!usesRawKeyCompatibility() && keyboardView != null
+        } else if (keyboardView != null
                 && HardwareLayoutTables.of(physicalLayoutFor(keyboardView.letterLayoutId()))
                     != null) {
             hardwareMapper =
@@ -1344,8 +1381,11 @@ public class ReteKeyImeService extends InputMethodService {
         return false;
     }
 
-    /** Flips physical-keyboard Hangul composing on/off, finalising any half-formed syllable. */
-    private void toggleHardwareKorean() {
+    /**
+     * Flips physical-keyboard Hangul composing on/off, finalising any half-formed syllable.
+     * Package-private so the instrumentation build can switch modes without a bound 한/영 key.
+     */
+    void toggleHardwareKorean() {
         finishComposingInEditor();
         inputProcessor.reset();
         dispatcher.reset();

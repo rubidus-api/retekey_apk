@@ -66,7 +66,7 @@ public final class TerminalEditorTest {
         // ㄱ, then ㅏ: the syllable must appear as it is built, not only when it closes. On a
         // terminal that means the ㄱ is taken back and 가 put in its place.
         assertEquals(
-            java.util.Arrays.asList("commitText:ㄱ", "sendRawKey:BACKSPACE", "commitText:가"),
+            java.util.Arrays.asList("commitText:ㄱ", "erase:DEL", "commitText:가"),
             typed(charBased()));
     }
 
@@ -97,7 +97,7 @@ public final class TerminalEditorTest {
     @Test
     public void koreanReachesATextBasedTerminal() {
         assertEquals(
-            java.util.Arrays.asList("commitText:ㄱ", "sendRawKey:BACKSPACE", "commitText:가"),
+            java.util.Arrays.asList("commitText:ㄱ", "erase:DEL", "commitText:가"),
             typed(textBased()));
     }
 
@@ -128,9 +128,12 @@ public final class TerminalEditorTest {
                     seen.add("setComposingText:" + action.text());
                 } else if (action.kind() == KeyAction.Kind.DELETE_BACKWARD
                         || action.kind() == KeyAction.Kind.DELETE_RECENT) {
-                    seen.add(bridge.trace().toString().contains("BACKSPACE")
-                        ? "sendRawKey:BACKSPACE"
-                        : "deleteSurrounding");
+                    // A take-back in a terminal is the erase character committed as text, on the
+                    // same channel as the syllable after it (see executeTerminalErase).
+                    String calls = bridge.trace().toString();
+                    seen.add(calls.contains("BACKSPACE") ? "sendRawKey:BACKSPACE"
+                        : calls.contains("deleteSurrounding") ? "deleteSurrounding"
+                        : "erase:DEL");
                 }
             }
         }

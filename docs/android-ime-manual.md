@@ -1790,6 +1790,34 @@ reports the visible-password shape exists — that is the other half of the repo
 does not, which is why the shape rule matters and why a name list would have been enough here and
 useless elsewhere.
 
+**Physical keyboards, the half left open.** A terminal used to get every physical key passed
+straight through — `onKeyDown` returned early for a RAW_KEY editor, and `applyHardwareMode` gave
+it no mapper — so that Ctrl-C and the arrows reach the program. That also kept Korean from a
+Bluetooth or USB keyboard out of the composer. Now a terminal gets the same mapper as any editor
+(`TerminalHardwareKeys`): a key the current layout maps — a Korean or a Colemak letter — is typed
+through the composer and materialised like a soft key, and every key no mapper claims (Ctrl
+chords, arrows, Enter, Esc, Tab, Space in Korean mode) still passes through untouched. English on a
+QWERTY keyboard maps nothing and keeps the plain passthrough. One trap came with it: a passed-through
+key must **end the syllable first** (`endSyllableBeforeDelegating`). The syllable is already on the
+far side, so ending it writes nothing — but without it, 가 + Space + ㄴ redraws 가 as 간 by taking
+back one character, and the character it takes back is the Space. This also holds for
+remote-desktop windows, which materialise composition the same way. `TerminalHardwareKeyTest`
+records the hazard and the fix.
+
+**The take-back rode the wrong channel (0.1.165).** The 0.1.162 device check typed two syllables
+into real Termux and passed. An eight-syllable word — 한글입력대한민국 — came out garbled 0 times in
+11 intact, from soft keys and physical keys alike. A redraw is a take-back and a commit in one
+plan, and the take-back went out as a backspace **key event**: that travels the view's input-event
+queue, while `commitText` is written to the terminal at once (Termux's `sendTextToTerminal`), so
+the commit overtook the key and the late backspace erased it. The take-back is now the terminal's
+own erase character — DEL, `0x7f`, the exact byte Termux's Backspace key sends — committed as text
+on the same channel as the syllable after it (`executeTerminalErase`): 11 of 11 intact. A lone
+Backspace the user presses stays a key event; nothing follows it in its plan, and a real key lets
+the terminal pick its own erase byte. `deleteSurroundingText` is no way out: Termux turns it into
+the same key events. The old path also passed the take-back's count where the prior-operation count
+belonged, so it always sent one backspace — harmless for a one-code-point syllable, wrong for a
+Telex word. **Rule:** test a terminal with a long word; two channels that race lose only under load.
+
 **Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
 capability is switched on by a list of package names, ask what the list is standing in for — here
 it was standing in for "has no composing region", which two other kinds of editor also are. And

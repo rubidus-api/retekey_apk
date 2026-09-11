@@ -609,10 +609,10 @@ public final class CheckedEditorExecutor {
                 // Our own just-committed characters: the surrounding-text call is reliable here
                 // on every editor, remote-desktop dummies included, and cannot be key-filtered —
                 // except a terminal, where nothing behind the connection holds text for it to
-                // act on, so the take-back has to be backspace key events like any other delete.
+                // act on, so the take-back is the terminal's own erase character, sent as text.
                 int count = action.recentCount();
                 if (!capabilities.hasSurroundingText()) {
-                    return executeRawDeleteFallback(endpoint, count);
+                    return executeTerminalErase(endpoint, count);
                 }
                 EditorCallResult recent = guardedCall(
                     endpoint,
@@ -632,6 +632,31 @@ public final class CheckedEditorExecutor {
         }
     }
 
+    /**
+     * Deletes {@code count} characters in a terminal by committing its own erase character, DEL
+     * (0x7f) — the exact byte Termux's Backspace key sends.
+     *
+     * <p>A backspace key event reaches the same bytes, but it travels the view's input-event
+     * queue while committed text is written to the terminal at once. A syllable redrawn as it
+     * grows is a take-back followed by a commit in one plan, and the commit overtook the key:
+     * under the emulator, 0 of 11 eight-syllable words reached Termux intact (issue #7). On the
+     * text channel the erase cannot be reordered against the syllable that follows it. A lone
+     * Backspace the user presses still goes out as a key event (executeRawCompatibility): nothing
+     * follows it in its plan, and a real key lets the terminal choose its own erase byte.
+     */
+    private static ActionExecution executeTerminalErase(EditorEndpoint endpoint, int count) {
+        EditorBridge bridge = endpoint.bridge();
+        StringBuilder erase = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            erase.append((char) 0x7f);
+        }
+        String text = erase.toString();
+        EditorCallResult result = guardedCall(endpoint, () -> bridge.commitText(text, 1));
+        return result.isSucceeded()
+            ? ActionExecution.dispatched(1, 1)
+            : ActionExecution.failure(reasonForOperation(result), 1, !result.isStaleSession());
+    }
+
     private static ActionExecution executeRichDelete(
         EditorEndpoint endpoint,
         EditorBounds bounds,
@@ -639,9 +664,10 @@ public final class CheckedEditorExecutor {
     ) {
         EditorBridge bridge = endpoint.bridge();
         if (!capabilities.hasSurroundingText()) {
-            // A terminal: nothing behind the connection holds text, so there is no ordering
-            // question to solve and nothing to read back. The key event is the deletion.
-            return executeRawDeleteFallback(endpoint, 1);
+            // A terminal, with this delete one step of a larger plan (a correction): nothing
+            // behind the connection holds text to read back, and a key event here could be
+            // overtaken by the commit that follows it — so the erase character goes as text.
+            return executeTerminalErase(endpoint, 1);
         }
         if (capabilities.deleteByKeyEvents()) {
             // A remote-desktop editor relays over two pipes — text operations and key events —
