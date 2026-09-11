@@ -50,6 +50,10 @@ public final class TerminalEditorTest {
         android.view.inputmethod.EditorInfo info = new android.view.inputmethod.EditorInfo();
         info.inputType = inputType;
         info.packageName = "com.termux";
+        // Measured on Termux 0.118.3: the terminal view reports no cursor, in either mode. Its
+        // own toolbar EditText does report one, and must not be taken for the terminal.
+        info.initialSelStart = -1;
+        info.initialSelEnd = -1;
         return info;
     }
 

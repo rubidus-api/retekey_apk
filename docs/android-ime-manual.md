@@ -1818,6 +1818,15 @@ the same key events. The old path also passed the take-back's count where the pr
 belonged, so it always sent one backspace — harmless for a one-code-point syllable, wrong for a
 Telex word. **Rule:** test a terminal with a long word; two channels that race lose only under load.
 
+**A terminal app is not only its terminal (0.1.166).** Termux's toolbar carries a plain `EditText`,
+and `com.termux` is on the name list, so every field in the app was classified as a terminal. While
+the take-back was a key event that field absorbed it and nobody noticed; once it became DEL as text,
+the field kept the character and 바다가 stood there as ㅂ␡바␡받␡바다… (reported against 0.1.165, on
+both of the reporter's phones). The name list is now held to the same signal as the shape rule: a
+listed package counts as a terminal only where the editor reports **no cursor**. A field that says
+where its cursor is has a buffer, whatever app it belongs to. **Rule:** a per-app rule must still
+ask what the *editor* is; an app that is one thing usually also contains the other.
+
 **Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
 capability is switched on by a list of package names, ask what the list is standing in for — here
 it was standing in for "has no composing region", which two other kinds of editor also are. And

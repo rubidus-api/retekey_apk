@@ -174,6 +174,8 @@ public final class TerminalHardwareKeyTest {
         android.view.inputmethod.EditorInfo info = new android.view.inputmethod.EditorInfo();
         info.inputType = inputType;
         info.packageName = "com.termux";
+        info.initialSelStart = -1;
+        info.initialSelEnd = -1;
         return info;
     }
 }

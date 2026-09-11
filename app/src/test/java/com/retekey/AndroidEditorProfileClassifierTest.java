@@ -110,14 +110,20 @@ public final class AndroidEditorProfileClassifierTest {
         // Termux reports TYPE_NULL when enforce-char-based-input is on and an ordinary
         // visible-password text field when it is off. Both are the same thing behind the
         // connection: a program on a pipe, with no composing region and no buffer (issue #7).
+        // Measured on Termux 0.118.3: the terminal view reports no cursor in either mode, which
+        // is what separates it from the app's own toolbar text field.
         android.view.inputmethod.EditorInfo charBased = new android.view.inputmethod.EditorInfo();
         charBased.inputType = android.text.InputType.TYPE_NULL;
         charBased.packageName = "com.termux";
+        charBased.initialSelStart = -1;
+        charBased.initialSelEnd = -1;
         android.view.inputmethod.EditorInfo textBased = new android.view.inputmethod.EditorInfo();
         textBased.inputType = android.text.InputType.TYPE_CLASS_TEXT
             | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
         textBased.packageName = "com.termux";
+        textBased.initialSelStart = -1;
+        textBased.initialSelEnd = -1;
 
         for (android.view.inputmethod.EditorInfo info : new android.view.inputmethod.EditorInfo[] {
                 charBased, textBased}) {
@@ -147,6 +153,26 @@ public final class AndroidEditorProfileClassifierTest {
             AndroidEditorProfileClassifier.classify(info, 33).capabilities();
         Assert.assertFalse(capabilities.hasSurroundingText());
         Assert.assertTrue(capabilities.deleteByKeyEvents());
+    }
+
+    @Test
+    public void anOrdinaryFieldInsideATerminalAppIsNotATerminal() {
+        // Termux's own toolbar has a plain EditText, and the app's name is on the terminal list.
+        // Treating that field as a terminal sent it the erase character as text, so v0.1.165 left
+        // every half-built syllable standing with a DEL between them (reported by @llsant). A
+        // field that reports a cursor is a field, whatever app it belongs to.
+        android.view.inputmethod.EditorInfo info = new android.view.inputmethod.EditorInfo();
+        info.inputType = android.text.InputType.TYPE_CLASS_TEXT;
+        info.packageName = "com.termux";
+        info.initialSelStart = 0;
+        info.initialSelEnd = 0;
+
+        EditorCapabilities capabilities =
+            AndroidEditorProfileClassifier.classify(info, 33).capabilities();
+        Assert.assertTrue("it has a buffer and a composing region",
+            capabilities.hasSurroundingText());
+        Assert.assertFalse("so composition is not materialised into it",
+            capabilities.deleteByKeyEvents());
     }
 
     @Test

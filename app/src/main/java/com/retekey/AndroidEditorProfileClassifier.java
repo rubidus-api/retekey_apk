@@ -56,8 +56,8 @@ public final class AndroidEditorProfileClassifier {
             editorInfo.actionId,
             platformApi
         );
-        if (isTerminal(editorInfo.packageName)
-                || looksLikeATerminal(editorInfo, profile)) {
+        if (looksLikeATerminal(editorInfo, profile)
+                || (isTerminal(editorInfo.packageName) && hasNoCursor(editorInfo))) {
             return profile.asTerminal();
         }
         if (isRemoteDesktop(editorInfo.packageName)
@@ -87,13 +87,26 @@ public final class AndroidEditorProfileClassifier {
         if (profile.capabilities().deletionMode() != EditorCapabilities.DeletionMode.RICH_TEXT) {
             return false;
         }
-        boolean noCursor = editorInfo.initialSelStart < 0 || editorInfo.initialSelEnd < 0;
+        boolean noCursor = hasNoCursor(editorInfo);
         int variation = editorInfo.inputType & InputType.TYPE_MASK_VARIATION;
         boolean terminalShape =
             (editorInfo.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT
                 && variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                 && (editorInfo.inputType & InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS) != 0;
         return noCursor && terminalShape;
+    }
+
+    /**
+     * Whether this editor never says where its cursor is — the mark of a view with no buffer to
+     * have one in. A text field always reports a cursor, even an empty one at 0.
+     *
+     * <p>The name list is held to this too: a terminal app also has ordinary text fields, and
+     * Termux's own toolbar input is one. Treating that field as a terminal wrote the erase
+     * character into it as text, leaving every half-built syllable on screen with a DEL between
+     * them (reported against v0.1.165).
+     */
+    private static boolean hasNoCursor(EditorInfo editorInfo) {
+        return editorInfo.initialSelStart < 0 || editorInfo.initialSelEnd < 0;
     }
 
     /** Whether this package's editor is a terminal (see the set above). */
