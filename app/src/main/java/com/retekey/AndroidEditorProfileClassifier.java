@@ -28,9 +28,9 @@ public final class AndroidEditorProfileClassifier {
      *
      * <p>A terminal that reports {@code TYPE_NULL} says so itself and needs no entry here. Termux
      * has a setting for that — {@code enforce-char-based-input} — and reports an ordinary
-     * visible-password text field when it is off, which is indistinguishable from a login form
-     * that has "show password" ticked. The name is the only thing that tells them apart, and
-     * getting it wrong in either direction breaks typing (issue #7).
+     * visible-password text field when it is off, which by input type alone is indistinguishable
+     * from a login form that has "show password" ticked. This list names the terminals known here;
+     * {@link #looksLikeATerminal} recognises the rest by shape (issue #7).
      */
     private static final java.util.Set<String> TERMINAL_PACKAGES =
         new java.util.HashSet<>(java.util.Arrays.asList(
