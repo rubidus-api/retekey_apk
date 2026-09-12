@@ -98,6 +98,19 @@ public final class TerminalHardwareKeyTest {
             rig.bridge.trace());
     }
 
+    @Test
+    public void aSyllableTheEditorRefusedIsNotTakenBackFromTheNextOne() {
+        // The commit of ㄱ is rejected, so nothing of it is on screen. Before this, the composer
+        // went on believing it was: the next update took a character back — one that belonged to
+        // whatever stood before the cursor — and that is the shape of 바다가 arriving as 받닥다.
+        Rig rig = new Rig();
+        rig.bridge.returnAt(2, EditorCallResult.rejected());
+
+        assertTrue("the editor refused it: " + rig.press("r"),
+            rig.lastRun.get(0).startsWith("refused:"));
+        assertEquals(Arrays.asList("commit:가"), rig.press("k"));
+    }
+
     /** A terminal, the dispatcher in front of it, and a record of what reaches it. */
     private static final class Rig {
         private final EditorProfile profile = AndroidEditorProfileClassifier.classify(
@@ -106,10 +119,13 @@ public final class TerminalHardwareKeyTest {
         private final InputDispatcher dispatcher = new InputDispatcher(processor);
         private final FakeEditorBridge bridge = new FakeEditorBridge();
 
+        List<String> lastRun = new ArrayList<>();
+
         List<String> press(String letter) {
             String id = "hardware.key." + letter;
-            return run(dispatcher.dispatch(hardwareDown(id,
+            lastRun = run(dispatcher.dispatch(hardwareDown(id,
                 DubeolsikHardwareMapper.INSTANCE.map(id, false))));
+            return lastRun;
         }
 
         List<String> backspace() {
@@ -140,6 +156,12 @@ public final class TerminalHardwareKeyTest {
             ExecutionResult outcome = EXECUTOR.execute(
                 plan, ExecutionContext.active(1, 0, CURSOR, profile.capabilities()),
                 () -> EditorEndpoint.of(1, bridge));
+            // What the service does with the answer: a plan that did not reach the editor leaves
+            // the composer's record of the screen false, and only the difference is ever sent.
+            if (MaterializedCompositionPolicy.shouldForgetWhatWasWritten(
+                    profile.capabilities().deleteByKeyEvents(), outcome.outcome())) {
+                processor.forgetMaterialized();
+            }
             if (outcome.outcome() != ExecutionResult.Outcome.DISPATCHED) {
                 seen.add("refused:" + outcome.reason());
                 return seen;

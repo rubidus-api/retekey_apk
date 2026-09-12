@@ -1939,11 +1939,27 @@ public class ReteKeyImeService extends InputMethodService {
                 ScaffoldSessionState.EMPTY,
                 predicted
             );
-            return sessionController.execute(plan, this::currentEndpoint);
+            ExecutionResult executed = sessionController.execute(plan, this::currentEndpoint);
+            forgetWhatWasNotWritten(executed);
+            return executed;
         } catch (RuntimeException crash) {
             // The keyboard must survive any single bad editor interaction.
             inputProcessor.reset();
             return null;
+        }
+    }
+
+    /**
+     * Keeps the composer's record of what it wrote honest where composition is materialised as
+     * commits (MaterializedCompositionPolicy). A plan the editor refused leaves that record
+     * claiming characters that are not on screen, and since only the difference is ever sent,
+     * the claim survives and the next syllable takes back text it never wrote.
+     */
+    private void forgetWhatWasNotWritten(ExecutionResult executed) {
+        if (MaterializedCompositionPolicy.shouldForgetWhatWasWritten(
+                editorProfile != null && editorProfile.capabilities().deleteByKeyEvents(),
+                executed == null ? null : executed.outcome())) {
+            inputProcessor.forgetMaterialized();
         }
     }
 

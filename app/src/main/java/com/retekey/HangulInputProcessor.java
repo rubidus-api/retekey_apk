@@ -42,6 +42,22 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
      */
     private String materialized = "";
 
+    /**
+     * Drops the claim that the materialised text is on screen, for use after a plan that did not
+     * reach the editor. The syllable itself is kept, so typing continues; what is dropped is the
+     * belief that its characters are already written. The next update therefore commits the whole
+     * preedit and takes back nothing — this keyboard must never delete characters it is not sure
+     * it wrote. Nothing is sent from here.
+     *
+     * <p>An ordinary editor needs none of this: every update repaints the whole preedit through
+     * setComposingText, so a lost call heals itself. Where composition is materialised as commits
+     * only the difference is sent, so a stale belief survives and the next syllable eats the text
+     * before it.
+     */
+    public void forgetMaterialized() {
+        materialized = "";
+    }
+
     /** Clears the composing syllable at a session boundary. */
     public void reset() {
         composer.reset();
