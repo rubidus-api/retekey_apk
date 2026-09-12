@@ -1840,6 +1840,21 @@ the right to take them back ends. The cost is that a syllable cannot be resumed 
 terminal or a remote desktop. Ordinary editors are untouched: they have a composing region and
 report cursor moves, so they never needed a clock.
 
+**And then the clock turned out to be unnecessary for remote desktop (0.1.168).** The reason the
+cursor-move verdict was off there was an assumption, never a measurement: that a remote client's
+dummy buffer reports noise. Measured against the Microsoft client (Windows App 11.0.26071.13915)
+driving a real Windows 11 VM from the emulator, it reports plainly. While typing, each commit
+steps its selection forward by one — 1, 2, 3, 4 — and nothing moves on its own, not in twelve
+seconds of sitting still. A click on the remote screen sends it back to 0, which no key of ours
+did. What made the old attempt misfire (일 arriving as 이ㄹ) was comparing a report against the
+*present* cursor: two keys can be typed before the first report lands, so an echo looks like a
+jump. `MaterializedCursorMoves` compares against a queue of *expectations* instead — where each
+dispatched write should have left the cursor — and a report matching any of them is an echo,
+however late. A report matching none is the user. Verified on that VM: composing 바, clicking
+elsewhere and typing ㅌ leaves 바 where it stands and starts ㅌ fresh; without the click the same
+two keys still compose 밭. Terminals have no such signal — they report no cursor at all — so there
+the 1.5 s clock remains the only handle.
+
 **Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
 capability is switched on by a list of package names, ask what the list is standing in for — here
 it was standing in for "has no composing region", which two other kinds of editor also are. And

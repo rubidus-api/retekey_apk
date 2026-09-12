@@ -39,8 +39,20 @@ static EditorBounds after(EditorBounds current, KeyAction action) {
                     -1,
                     -1
                 );
-            case DELETE_RECENT:
-                return EditorBounds.unknown();
+            case DELETE_RECENT: {
+                // Taking back what this keyboard just committed: exactly recentCount characters
+                // before the cursor go, and the cursor moves back with them. Predictable because
+                // the text is this keyboard's own preedit — Hangul or Latin letters, one UTF-16
+                // unit each — which is what makes a foreign cursor move recognisable in an editor
+                // that materialises composition (issue #7).
+                if (current.hasSelectedText() || current.hasComposingRange()) {
+                    return EditorBounds.unknown();
+                }
+                int back = current.selectionStart() - action.recentCount();
+                return back < 0
+                    ? EditorBounds.unknown()
+                    : EditorBounds.of(back, back, -1, -1);
+            }
             case DELETE_BACKWARD:
                 if (current.hasComposingRange()) {
                     return EditorBounds.unknown();

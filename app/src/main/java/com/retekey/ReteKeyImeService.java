@@ -50,6 +50,11 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
     private boolean hanjaCandidatesShown;
+    /**
+     * Where our own writes should have left the cursor in an editor that materialises composition,
+     * so a report that matches none of them can be read as the user moving it (issue #7).
+     */
+    private final MaterializedCursorMoves materializedCursor = new MaterializedCursorMoves();
     private final android.os.Handler mainHandler =
         new android.os.Handler(android.os.Looper.getMainLooper());
     private boolean floatingMode;
@@ -849,6 +854,7 @@ public class ReteKeyImeService extends InputMethodService {
         mainHandler.removeCallbacks(settleIdleSyllable);
         dispatcher.reset();
         inputProcessor.reset();
+        materializedCursor.reset();
         editorProfile = AndroidEditorProfileClassifier.classify(
             attribute,
             Build.VERSION.SDK_INT
@@ -1010,13 +1016,18 @@ public class ReteKeyImeService extends InputMethodService {
                 );
                 return;
             }
-            // A remote-desktop editor never has a composing region — composition is
-            // materialised as committed text — and its dummy buffer reports selection changes of
-            // its own accord, so a cursor-move verdict there is noise that resets the composer
-            // mid-syllable (일 became 이ㄹ, 전 stopped at 저 depending on when the report landed).
+            // An editor that materialises composition — a remote-desktop window — has no
+            // composing region to judge by, and its dummy buffer's own reports once made the
+            // verdict noise that reset the composer mid-syllable (일 became 이ㄹ). Its reports are
+            // readable against what our own writes should have left, though (measured against the
+            // Microsoft client, 2026-09-13): every echo matches an expectation, and a click on the
+            // remote screen matches none.
             boolean remoteDesktop = editorProfile != null
                 && editorProfile.capabilities().deleteByKeyEvents();
-            boolean abandon = !remoteDesktop && CursorMovePolicy.shouldAbandonComposition(
+            boolean movedOnTheFarSide = remoteDesktop
+                && materializedCursor.isForeignMove(newSelStart, newSelEnd)
+                && inputProcessor.isComposing();
+            boolean abandon = movedOnTheFarSide || !remoteDesktop && CursorMovePolicy.shouldAbandonComposition(
                 inputProcessor.isComposing(),
                 newSelStart,
                 newSelEnd,
@@ -1160,6 +1171,24 @@ public class ReteKeyImeService extends InputMethodService {
         if (result == null || result.isFailure()) {
             latin.reset();
         }
+    }
+
+    /**
+     * Remembers where a dispatched write should leave the cursor, for an editor that materialises
+     * composition. A write whose outcome the editor decides — a raw key, Enter — predicts nothing,
+     * and that drops the expectations rather than inventing one (MaterializedCursorMoves).
+     */
+    private void noteWhereThisWriteLeavesTheCursor(ExecutionResult executed, EditorBounds predicted) {
+        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+            return;
+        }
+        if (executed == null || executed.outcome() != ExecutionResult.Outcome.DISPATCHED) {
+            return;
+        }
+        materializedCursor.expect(
+            predicted != null && predicted.hasSelection() && !predicted.hasSelectedText()
+                ? predicted.selectionStart()
+                : -1);
     }
 
     /** Whether a physical key goes through the dispatcher here (see TerminalHardwareKeys). */
@@ -1942,6 +1971,7 @@ public class ReteKeyImeService extends InputMethodService {
             );
             ExecutionResult executed = sessionController.execute(plan, this::currentEndpoint);
             forgetWhatWasNotWritten(executed);
+            noteWhereThisWriteLeavesTheCursor(executed, predicted);
             armIdleSyllableSettle();
             return executed;
         } catch (RuntimeException crash) {
