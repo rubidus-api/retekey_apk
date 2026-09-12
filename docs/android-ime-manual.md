@@ -1827,6 +1827,19 @@ listed package counts as a terminal only where the editor reports **no cursor**.
 where its cursor is has a buffer, whatever app it belongs to. **Rule:** a per-app rule must still
 ask what the *editor* is; an app that is one thing usually also contains the other.
 
+**A syllable cannot wait forever there (0.1.167).** In a remote-desktop window the owner moved the
+pointer away mid-syllable and typed on: the syllable was re-inserted at the new place, one
+character of what stood there eaten to make room. Same shape as llsant's Termux-arrow report. The
+cause is structural, not a slip: a materialised syllable is held open so it can be redrawn, and the
+cursor moved where no report reaches this keyboard — a terminal reports no cursor at all, and a
+remote client's dummy buffer reports only echoes of our own commits, which is why the cursor-move
+verdict is off for these editors (64f1b60; turning it back on made 일 arrive as 이ㄹ). With no
+signal, the remaining handle is time: `IdleSyllableSettle`, 1500 ms with no input, drops the claim.
+Nothing is written — the characters are already on the far side — so the text does not move; only
+the right to take them back ends. The cost is that a syllable cannot be resumed across a pause in a
+terminal or a remote desktop. Ordinary editors are untouched: they have a composing region and
+report cursor moves, so they never needed a clock.
+
 **Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
 capability is switched on by a list of package names, ask what the list is standing in for — here
 it was standing in for "has no composing region", which two other kinds of editor also are. And

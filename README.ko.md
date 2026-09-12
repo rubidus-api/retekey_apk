@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.166** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.166/retekey-0.1.166.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.166/retekey-0.1.166-legacy.apk)
+**ReteKey v0.1.167** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.167/retekey-0.1.167.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.167/retekey-0.1.167-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.166** —
-[retekey-0.1.166.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.166/retekey-0.1.166.apk) (632 KB; 안드로이드 4.0 빌드는 524 KB)
+현재 릴리즈: **v0.1.167** —
+[retekey-0.1.167.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.167/retekey-0.1.167.apk) (632 KB; 안드로이드 4.0 빌드는 524 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -477,7 +477,9 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 `ssh` 에서, Termux 의 두 입력 모드 모두에서, SSH 클라이언트들에서 한글이 됩니다. (비밀번호 칸에도
 조합합니다. 사적인 칸이라는 것은 이 키보드가 **읽지 않고 기억하지 않는다**는 뜻이고, 그건 그대로입니다.)
 물리 키보드로도 터미널에 같은 방식으로 한글을 칩니다. 자판이 쓰지 않는 키 — Ctrl 조합, 방향키, Enter,
-Esc, Tab — 는 여전히 프로그램으로 그대로 갑니다.
+Esc, Tab — 는 여전히 프로그램으로 그대로 갑니다. 만들다 만 음절은 1.5초가 지나면 놓습니다. 그래야 키보드가
+볼 수 없는 방법으로 커서가 움직여도 — 원격 데스크톱의 클릭, 터미널 자체의 방향키 버튼 — 음절이 새 자리로
+끌려가지 않습니다.
 
 ## 설정
 

@@ -846,6 +846,7 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.setNumericField(
                 attribute != null && NumericFieldPolicy.wantsKeypad(attribute.inputType));
         }
+        mainHandler.removeCallbacks(settleIdleSyllable);
         dispatcher.reset();
         inputProcessor.reset();
         editorProfile = AndroidEditorProfileClassifier.classify(
@@ -1941,6 +1942,7 @@ public class ReteKeyImeService extends InputMethodService {
             );
             ExecutionResult executed = sessionController.execute(plan, this::currentEndpoint);
             forgetWhatWasNotWritten(executed);
+            armIdleSyllableSettle();
             return executed;
         } catch (RuntimeException crash) {
             // The keyboard must survive any single bad editor interaction.
@@ -1962,6 +1964,36 @@ public class ReteKeyImeService extends InputMethodService {
             inputProcessor.forgetMaterialized();
         }
     }
+
+    /**
+     * Starts (or restarts) the wait after which a syllable being built in an editor that
+     * materialises composition is let go of — see {@link IdleSyllableSettle}. Every key resets
+     * the wait, so it only ever expires in a pause.
+     */
+    private void armIdleSyllableSettle() {
+        mainHandler.removeCallbacks(settleIdleSyllable);
+        if (IdleSyllableSettle.shouldArm(
+                editorProfile != null && editorProfile.capabilities().deleteByKeyEvents(),
+                inputProcessor.isComposing())) {
+            mainHandler.postDelayed(settleIdleSyllable, IdleSyllableSettle.DELAY_MS);
+        }
+    }
+
+    /**
+     * The syllable has waited long enough. Nothing is written — in these editors its characters
+     * are already on the far side — this keyboard only stops claiming it may take them back, so a
+     * cursor moved where no report reaches us (a click in a remote desktop, Termux's own arrows)
+     * cannot drag the syllable to the new place.
+     */
+    private final Runnable settleIdleSyllable = () -> {
+        if (!sessionActive || !inputProcessor.isComposing()) {
+            return;
+        }
+        inputProcessor.reset();
+        if (keyboardView != null) {
+            keyboardView.resetPhoneInterpreters();
+        }
+    };
 
     /**
      * The character before the cursor, for a 나랏글 transformation arriving with nothing
@@ -2018,6 +2050,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void finishSession() {
+        mainHandler.removeCallbacks(settleIdleSyllable);
         if (sessionActive) {
             sessionController.finish();
             sessionActive = false;
