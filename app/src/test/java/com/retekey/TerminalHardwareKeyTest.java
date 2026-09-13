@@ -111,15 +111,40 @@ public final class TerminalHardwareKeyTest {
         assertEquals(Arrays.asList("commit:가"), rig.press("k"));
     }
 
+    @Test
+    public void withTheStripAPassedKeyWritesTheSyllableBeforeItself() {
+        // The same hazard, answered the other way. Nothing of 가 is in the terminal while it is
+        // being built, so ending it before Space does write it — and the Space lands after it.
+        Rig rig = new Rig(true);
+        assertEquals("nothing reaches the terminal while the syllable is on the strip",
+            new ArrayList<String>(), rig.press("r"));
+        assertEquals(new ArrayList<String>(), rig.press("k"));
+        assertTrue(rig.passesThrough("space"));
+        assertEquals("ending the syllable is what puts it in the terminal",
+            Arrays.asList("commit:가"), rig.endSyllable());
+        assertEquals(new ArrayList<String>(), rig.press("s"));
+        assertEquals("and the next one is still being built", "ㄴ", rig.composing());
+    }
+
     /** A terminal, the dispatcher in front of it, and a record of what reaches it. */
     private static final class Rig {
-        private final EditorProfile profile = AndroidEditorProfileClassifier.classify(
-            termux(InputType.TYPE_NULL), 33);
+        private EditorProfile profile;
         private final HangulInputProcessor processor = new HangulInputProcessor(() -> profile);
         private final InputDispatcher dispatcher = new InputDispatcher(processor);
         private final FakeEditorBridge bridge = new FakeEditorBridge();
 
         List<String> lastRun = new ArrayList<>();
+
+        Rig() {
+            this(false);
+        }
+
+        /** {@code onStrip}: the syllable is built on the keyboard's strip, not in the terminal. */
+        Rig(boolean onStrip) {
+            EditorProfile terminal = AndroidEditorProfileClassifier.classify(
+                termux(InputType.TYPE_NULL), 33);
+            profile = onStrip ? terminal.composingOffScreen() : terminal;
+        }
 
         List<String> press(String letter) {
             String id = "hardware.key." + letter;
@@ -131,6 +156,10 @@ public final class TerminalHardwareKeyTest {
         List<String> backspace() {
             return run(dispatcher.dispatch(hardwareDown("hardware.edit.backspace",
                 SemanticInput.deleteBackward())));
+        }
+
+        String composing() {
+            return processor.composingText();
         }
 
         boolean passesThrough(String name) {

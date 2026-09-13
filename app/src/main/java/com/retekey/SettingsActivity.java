@@ -158,6 +158,9 @@ public final class SettingsActivity extends Activity {
             case HARDWARE:
                 addHardwareControls(root);
                 break;
+            case TERMINAL:
+                addTerminalControls(root);
+                break;
             case HARDWARE_LAYOUTS:
                 addHardwareLayoutControls(root);
                 break;
@@ -744,6 +747,22 @@ public final class SettingsActivity extends Activity {
         addMsSlider(root, R.string.settings_repeat_interval, KeyRepeatSettings.KEY_INTERVAL_MS,
             KeyRepeatSettings.MIN_INTERVAL_MS, KeyRepeatSettings.MAX_INTERVAL_MS,
             KeyRepeatSettings.DEFAULT_INTERVAL_MS);
+    }
+
+    // ---- Terminals ----
+
+    private void addTerminalControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_terminal_label));
+        root.addView(sectionHint(R.string.settings_terminal_hint));
+
+        CheckBox onStrip = new CheckBox(this);
+        onStrip.setText(R.string.settings_terminal_on_strip);
+        onStrip.setChecked(prefs().getBoolean(
+            TerminalCompositionSettings.KEY_ON_STRIP,
+            TerminalCompositionSettings.DEFAULT_ON_STRIP));
+        onStrip.setOnCheckedChangeListener((b, checked) -> prefs().edit()
+            .putBoolean(TerminalCompositionSettings.KEY_ON_STRIP, checked).apply());
+        root.addView(onStrip);
     }
 
     /** A titled millisecond slider bound to an int preference clamped to [min, max]. */

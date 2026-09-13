@@ -75,6 +75,8 @@ public class ReteKeyImeService extends InputMethodService {
     private FloatingKeyboardBounds hanjaBounds;
     /** True while the candidate list is the floating panel, in place of the keyboard. */
     private boolean hanjaFloating;
+    private ComposingStripView composingStrip;
+    private boolean composingStripShown;
     private FloatingKeyboardFrame floatingFrame;
     /** True while the code-point pad is the floating panel, in place of the keyboard. */
     private boolean unicodeFloating;
@@ -859,6 +861,10 @@ public class ReteKeyImeService extends InputMethodService {
             attribute,
             Build.VERSION.SDK_INT
         );
+        if (TerminalCompositionSettings.appliesTo(editorProfile, composeTerminalOnStrip())) {
+            editorProfile = editorProfile.composingOffScreen();
+        }
+        showComposingStrip("");
         sessionController.start(
             ScaffoldSessionState.EMPTY,
             initialBounds(attribute),
@@ -913,9 +919,77 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Commits any active composing region as normal text; a no-op when nothing is composing. */
     private void finishComposingInEditor() {
+        commitSyllableHeldOnTheStrip();
         InputConnection inputConnection = getCurrentInputConnection();
         if (inputConnection != null) {
             inputConnection.finishComposingText();
+        }
+    }
+
+    /**
+     * Sends the syllable the strip is holding, for an editor that never sees the preedit. There
+     * the editor's own composing region holds nothing, so leaving the field, switching language
+     * or turning Korean off would simply drop the syllable: it has to be written first.
+     */
+    private void commitSyllableHeldOnTheStrip() {
+        if (editorProfile == null
+                || !editorProfile.capabilities().composesOffScreen()
+                || !inputProcessor.isComposing()) {
+            return;
+        }
+        DispatchResult flushed = dispatcher.dispatch(
+            ProjectKeyEvent.softwareDown("strip.flush", SemanticInput.flush()));
+        if (!flushed.actions().isEmpty()) {
+            execute(flushed);
+        }
+        showComposingStrip("");
+    }
+
+    /** Where a terminal's half-built syllable is shown — the keyboard's strip, or the terminal. */
+    private boolean composeTerminalOnStrip() {
+        try {
+            return viewPrefs().getBoolean(
+                TerminalCompositionSettings.KEY_ON_STRIP,
+                TerminalCompositionSettings.DEFAULT_ON_STRIP);
+        } catch (RuntimeException unavailable) {
+            return TerminalCompositionSettings.DEFAULT_ON_STRIP;
+        }
+    }
+
+    @Override
+    public View onCreateCandidatesView() {
+        composingStrip = new ComposingStripView(this);
+        return composingStrip;
+    }
+
+    /**
+     * Puts the syllable being built on the keyboard's own strip, and takes the strip away again
+     * when there is nothing to show. Android keeps the candidates view on screen even while the
+     * keyboard itself is hidden, which is what makes this work with a plugged-in keyboard.
+     */
+    private void showComposingStrip(String text) {
+        boolean show = text != null && !text.isEmpty();
+        if (composingStrip != null) {
+            composingStrip.showComposing(text);
+        }
+        // Only a change is passed on. Hiding the candidates view also hides the whole window when
+        // no keyboard was asked for, which with a plugged-in keyboard would take the Hanja panel
+        // or the code-point pad down with it on every field this keyboard enters.
+        if (show == composingStripShown) {
+            return;
+        }
+        composingStripShown = show;
+        try {
+            setCandidatesViewShown(show);
+        } catch (RuntimeException tornDown) {
+            // No window to show it in; the strip reappears with the next session.
+        }
+    }
+
+    /** Refreshes the strip from the composer after a write, for an off-screen editor only. */
+    private void updateComposingStrip() {
+        if (editorProfile != null && editorProfile.capabilities().composesOffScreen()) {
+            showComposingStrip(inputProcessor.composingText());
         }
     }
 
@@ -1205,7 +1279,9 @@ public class ReteKeyImeService extends InputMethodService {
      */
     private void endSyllableBeforeDelegating(KeyEvent event) {
         if (!TerminalHardwareKeys.endSyllableFirst(
-                editorProfile != null && editorProfile.capabilities().deleteByKeyEvents(),
+                editorProfile != null
+                    && (editorProfile.capabilities().deleteByKeyEvents()
+                        || editorProfile.capabilities().composesOffScreen()),
                 inputProcessor.isComposing(),
                 event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0,
                 KeyEvent.isModifierKey(event.getKeyCode()))) {
@@ -1851,11 +1927,17 @@ public class ReteKeyImeService extends InputMethodService {
         if (panel.isEmpty()) {
             return false;
         }
+        // The panel's bounds are its own; the region Android wants is the window's. They differ
+        // by whatever sits above the input view — the composing strip, when a terminal is up —
+        // and without this the floating keyboard answers touches that high above itself.
+        int[] atWindow = new int[2];
+        floatingFrame.getLocationInWindow(atWindow);
+        panel.offset(atWindow[0], atWindow[1]);
         outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
         outInsets.touchableRegion.set(panel);
         // The editor keeps its full height: a floating keyboard covers the app rather than
         // pushing it, which is the point of being able to move it out of the way.
-        int windowBottom = floatingFrame.getHeight();
+        int windowBottom = atWindow[1] + floatingFrame.getHeight();
         outInsets.contentTopInsets = windowBottom;
         outInsets.visibleTopInsets = windowBottom;
         return true;
@@ -1973,6 +2055,7 @@ public class ReteKeyImeService extends InputMethodService {
             forgetWhatWasNotWritten(executed);
             noteWhereThisWriteLeavesTheCursor(executed, predicted);
             armIdleSyllableSettle();
+            updateComposingStrip();
             return executed;
         } catch (RuntimeException crash) {
             // The keyboard must survive any single bad editor interaction.
@@ -2003,7 +2086,9 @@ public class ReteKeyImeService extends InputMethodService {
     private void armIdleSyllableSettle() {
         mainHandler.removeCallbacks(settleIdleSyllable);
         if (IdleSyllableSettle.shouldArm(
-                editorProfile != null && editorProfile.capabilities().deleteByKeyEvents(),
+                editorProfile != null
+                    && editorProfile.capabilities().deleteByKeyEvents()
+                    && !editorProfile.capabilities().composesOffScreen(),
                 inputProcessor.isComposing())) {
             mainHandler.postDelayed(settleIdleSyllable, IdleSyllableSettle.DELAY_MS);
         }
@@ -2020,6 +2105,7 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         inputProcessor.reset();
+        showComposingStrip("");
         if (keyboardView != null) {
             keyboardView.resetPhoneInterpreters();
         }
@@ -2086,6 +2172,7 @@ public class ReteKeyImeService extends InputMethodService {
             sessionActive = false;
         }
         inputProcessor.reset();
+        showComposingStrip("");
         editorProfile = EditorProfile.unsupported();
         if (editorFailureToast != null) {
             editorFailureToast.cancel();

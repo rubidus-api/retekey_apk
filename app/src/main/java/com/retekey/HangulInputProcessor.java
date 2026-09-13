@@ -94,13 +94,43 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
     @Override
     public DispatchResult process(SemanticInput input) {
         DispatchResult result = dispatch(input);
+        if (composesOffScreen()) {
+            return offScreen(result);
+        }
         return composeByCommits() ? byCommits(result) : result;
     }
 
     /** Whether the editor wants composition materialised as commits (remote-desktop clients). */
     private boolean composeByCommits() {
         EditorProfile profile = editorProfile.get();
-        return profile != null && profile.capabilities().deleteByKeyEvents();
+        return profile != null
+            && profile.capabilities().deleteByKeyEvents()
+            && !profile.capabilities().composesOffScreen();
+    }
+
+    /** Whether the preedit is kept out of the editor entirely — shown on the keyboard's strip. */
+    private boolean composesOffScreen() {
+        EditorProfile profile = editorProfile.get();
+        return profile != null && profile.capabilities().composesOffScreen();
+    }
+
+    /**
+     * Rewrites a plan for an editor that never sees the preedit: the composing updates are
+     * dropped, and only what the composer commits — closed syllables, deletions of text that is
+     * already on screen, raw keys — is left. Finishing goes too: a raw-key editor refuses both
+     * composing calls, and a plan carrying one that is refused takes the whole plan down with it.
+     */
+    private DispatchResult offScreen(DispatchResult result) {
+        List<KeyAction> out = new ArrayList<>(result.actions().size());
+        for (KeyAction action : result.actions()) {
+            if (action.kind() == KeyAction.Kind.SET_COMPOSING_TEXT
+                    || action.kind() == KeyAction.Kind.FINISH_COMPOSING) {
+                continue;
+            }
+            out.add(action);
+        }
+        materialized = "";
+        return result.isHandled() ? DispatchResult.handled(out) : DispatchResult.delegate(out);
     }
 
     /**

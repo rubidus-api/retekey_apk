@@ -119,6 +119,18 @@ public final class EditorProfile {
         );
     }
 
+    /** The same editor, with the preedit kept on the keyboard's own strip instead of in it. */
+    public EditorProfile composingOffScreen() {
+        return new EditorProfile(
+            capabilities.composingOffScreen(),
+            multiline,
+            noEnterAction,
+            customActionPresent,
+            customActionId,
+            standardActionId
+        );
+    }
+
     /** The same editor, known to be a terminal: no composing region, no buffer, keys for deletes. */
     public EditorProfile asTerminal() {
         return new EditorProfile(

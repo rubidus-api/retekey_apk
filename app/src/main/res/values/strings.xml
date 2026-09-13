@@ -71,6 +71,9 @@
     <string name="settings_visual">Visual highlight</string>
     <string name="settings_percent_value">%1$d%%</string>
 
+    <string name="settings_terminal_label">Terminals</string>
+    <string name="settings_terminal_hint">A terminal cannot underline a syllable while you build it. Either the keyboard shows it on its own strip and sends it when it closes, or it is typed into the terminal and taken back with every stroke.</string>
+    <string name="settings_terminal_on_strip">Show the syllable on the keyboard\'s strip</string>
     <string name="settings_repeat_label">Key auto-repeat</string>
     <string name="settings_repeat_hint">Holding a key repeats it — space, enter, backspace, and the arrow keys. Keys that hold an alternate character type that instead.</string>
     <string name="settings_repeat_enabled">Enable auto-repeat</string>

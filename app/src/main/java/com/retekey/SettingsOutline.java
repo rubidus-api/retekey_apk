@@ -39,6 +39,8 @@ public final class SettingsOutline {
         REPEAT,
         /** Shortcuts on a physical keyboard. */
         HARDWARE,
+        /** Where a terminal's half-built syllable is shown. */
+        TERMINAL,
         /** Which physical layout each on-screen layout uses, on this screen. */
         HARDWARE_LAYOUTS,
         /** How much of the screen the keyboard takes. On an orientation's settings page. */
@@ -65,7 +67,8 @@ public final class SettingsOutline {
         Section.SYSTEM_BAND,
         Section.FEEDBACK,
         Section.REPEAT,
-        Section.HARDWARE));
+        Section.HARDWARE,
+        Section.TERMINAL));
 
     /** One orientation's settings page: the two small things kept per screen. */
     public static final List<Section> ORIENTATION_PAGE = Collections.unmodifiableList(

@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.168** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.168/retekey-0.1.168.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.168/retekey-0.1.168-legacy.apk)
+**ReteKey v0.1.169** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.169/retekey-0.1.169.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.169/retekey-0.1.169-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.168** —
-[retekey-0.1.168.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.168/retekey-0.1.168.apk) (633 KB; the Android 4.0 build is 525 KB)
+Current release: **v0.1.169** —
+[retekey-0.1.169.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.169/retekey-0.1.169.apk) (635 KB; the Android 4.0 build is 526 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -488,17 +488,19 @@ and a soft `Ctrl` plus a letter sends a real chord — terminals receive the con
 run select-all/copy/paste/undo.
 
 **Terminals.** A terminal is a program on the other side of a pipe, not a text box: it has no
-composing region to underline and no buffer to delete out of. Korean is therefore **written as it
-is built** — each syllable is taken back and re-sent as it grows. The take-back is the terminal's
-own erase character (DEL), sent on the same channel as the text so the two cannot arrive out of
-order, and a Backspace you press is a real backspace key. So Korean works in `vim` and over `ssh`,
+composing region to underline and no buffer to delete out of. So the syllable you are building is
+**shown on the keyboard's own strip** and sent to the terminal once it is finished; nothing is
+ever taken back. Backspace inside a syllable edits the strip, and a Backspace with nothing on it
+is a real backspace key. (A setting, **Terminals** on the general page, brings back the older
+way: the syllable is typed into the terminal as it grows and taken back with each stroke, using
+the terminal's own erase character.) So Korean works in `vim` and over `ssh`,
 in Termux and in the SSH clients, in
 either of Termux's input modes. (Password fields are composed into too; a field being private
 means this keyboard never reads it and never remembers it, which is unchanged.) A physical keyboard
 types Korean into a terminal the same way; the keys the layout does not use — Ctrl chords, arrows,
-Enter, Esc, Tab — still go straight to the program. A syllable left unfinished for a second and a
-half is let go of there, so that moving the cursor by something the keyboard cannot see — a click
-in a remote desktop, a terminal's own arrow buttons — does not drag it to the new place.
+Enter, Esc, Tab — still go straight to the program, after the syllable before them. With the
+older way turned on, a syllable left unfinished for a second and a half is let go of, so that a
+terminal's own arrow buttons, which the keyboard cannot see, do not drag it to a new place.
 
 ## Settings
 

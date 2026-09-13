@@ -1855,6 +1855,31 @@ elsewhere and typing ㅌ leaves 바 where it stands and starts ㅌ fresh; withou
 two keys still compose 밭. Terminals have no such signal — they report no cursor at all — so there
 the 1.5 s clock remains the only handle.
 
+**Then the take-back itself went, for terminals (0.1.169).** Every terminal defect above — the
+key overtaken by the commit, DEL landing in a text field, the flicker the reporter saw, an arrow
+button dragging a syllable — is a cost of one choice: drawing the syllable into a place that
+cannot hold a composing region, and taking it back with each jamo. A terminal can instead be left
+out of composition altogether. `EditorCapabilities.composingOffScreen()` marks the editor;
+`HangulInputProcessor` then drops `SET_COMPOSING_TEXT` and `FINISH_COMPOSING` from every plan
+(a raw-key editor refuses both, and a refused call takes the whole plan with it) and sends only
+what closes. The half-built syllable is shown on `ComposingStripView`, the IME's *candidates
+view* — chosen over a floating panel because Android puts the candidates view on screen even
+while the keyboard itself is hidden, which is exactly the plugged-in-keyboard case. Nothing is
+ever taken back, so there is nothing for a hidden cursor move to misplace, and the 1.5 s clock no
+longer arms there: 바, a pause, ㄷ composes 받 again. What changes meaning is every path that
+used to assume the syllable was already on the far side. Ending a syllable — before a passed-through
+physical key, on leaving the field, switching language or turning Korean off — now *writes* it
+(`commitSyllableHeldOnTheStrip`), or it would be dropped. The floating keyboard's touchable region
+is now offset by the panel's position in the window, since a strip above the input view pushes it
+down. The old drawing is kept behind a setting (**Terminals** on the general page) because
+seeing the syllable inside the terminal was what the reporter valued. Measured in Termux 0.118.3
+on the emulator: eight-syllable words 11/11 intact at 120 and 300 ms per key; ㄱㅏㄴ + Backspace
+gives 가 with no DEL byte written; physical 가 Space 나 gives `가 나`; leaving for the home screen
+mid-syllable kept it 7 times in 8 — the one loss, on the first try, did not recur, and a
+connection the app has already closed would lose it the same way. What the emulator cannot show:
+the strip itself (an IME window has no drawing surface there) and the floating keyboard's touches
+with the strip up.
+
 **Rule.** When two symptoms in one app look like two bugs, ask what the app *is* first. When a
 capability is switched on by a list of package names, ask what the list is standing in for — here
 it was standing in for "has no composing region", which two other kinds of editor also are. And

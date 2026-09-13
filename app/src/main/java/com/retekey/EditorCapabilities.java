@@ -33,6 +33,7 @@ public final class EditorCapabilities {
      * there. Every deletion, our own take-backs included, has to be a backspace key event.
      */
     private boolean noSurroundingText;
+    private boolean composesOffScreen;
 
     private EditorCapabilities(
         boolean supported,
@@ -78,6 +79,7 @@ public final class EditorCapabilities {
         EditorCapabilities copy = new EditorCapabilities(
             supported, sensitive, allowLegacyCodeUnitFallback, allowRawDeleteFallback, deletionMode);
         copy.deleteByKeyEvents = true;
+        copy.composesOffScreen = composesOffScreen;
         return copy;
     }
 
@@ -95,7 +97,28 @@ public final class EditorCapabilities {
             DeletionMode.RAW_KEY);
         copy.deleteByKeyEvents = true;
         copy.noSurroundingText = true;
+        copy.composesOffScreen = composesOffScreen;
         return copy;
+    }
+
+    /**
+     * A copy that keeps the composing text to itself: the preedit is shown on the keyboard's own
+     * strip and only closed syllables are committed. For a terminal, where there is no composing
+     * region to draw into and drawing it as commits means taking those characters back again —
+     * with every race, flicker and stray cursor that entails (issue #7).
+     */
+    public EditorCapabilities composingOffScreen() {
+        EditorCapabilities copy = new EditorCapabilities(
+            supported, sensitive, allowLegacyCodeUnitFallback, allowRawDeleteFallback, deletionMode);
+        copy.deleteByKeyEvents = deleteByKeyEvents;
+        copy.noSurroundingText = noSurroundingText;
+        copy.composesOffScreen = true;
+        return copy;
+    }
+
+    /** Whether the preedit is kept out of the editor entirely (see {@link #composingOffScreen}). */
+    public boolean composesOffScreen() {
+        return composesOffScreen;
     }
 
     /** Whether a surrounding-text call reaches anything (see {@link #noSurroundingText}). */
