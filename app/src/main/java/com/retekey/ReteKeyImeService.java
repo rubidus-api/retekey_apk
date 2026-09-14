@@ -969,6 +969,15 @@ public class ReteKeyImeService extends InputMethodService {
      */
     private void showComposingStrip(String text) {
         boolean show = text != null && !text.isEmpty();
+        if (floatingFrame != null) {
+            // A floating keyboard on screen shows it in its own bar instead (see
+            // FloatingKeyboardFrame#setComposingText); the strip is for when there is no panel.
+            boolean onTheBar = floatingMode && isInputViewShown();
+            floatingFrame.setComposingText(onTheBar ? text : "");
+            if (onTheBar) {
+                show = false;
+            }
+        }
         if (composingStrip != null) {
             composingStrip.showComposing(text);
         }
@@ -981,9 +990,43 @@ public class ReteKeyImeService extends InputMethodService {
         composingStripShown = show;
         try {
             setCandidatesViewShown(show);
+            if (show) {
+                revealCandidatesArea();
+            }
         } catch (RuntimeException tornDown) {
             // No window to show it in; the strip reappears with the next session.
         }
+    }
+
+    /**
+     * Makes every view around the strip visible. The framework sets the area that holds the
+     * candidates view to the candidates' visibility when the window is laid out, and
+     * setCandidatesViewShown later changes only the candidates frame inside it — so a strip shown
+     * after the keyboard came up stayed inside a hidden area. On a phone that is a strip nobody can
+     * see (reported against 0.1.169, both phones, docked and floating).
+     */
+    private void revealCandidatesArea() {
+        if (composingStrip == null || getWindow() == null || getWindow().getWindow() == null) {
+            return;
+        }
+        View decor = getWindow().getWindow().getDecorView();
+        android.view.ViewParent parent = composingStrip.getParent();
+        while (parent instanceof View && parent != decor) {
+            View area = (View) parent;
+            if (area.getVisibility() != View.VISIBLE) {
+                area.setVisibility(View.VISIBLE);
+            }
+            parent = area.getParent();
+        }
+    }
+
+    /**
+     * A hidden strip takes no room. The default keeps its space, which left an empty band above
+     * the keys in every app — the candidates view exists for the whole window, not just terminals.
+     */
+    @Override
+    public int getCandidatesHiddenVisibility() {
+        return View.GONE;
     }
 
     /** Refreshes the strip from the composer after a write, for an off-screen editor only. */

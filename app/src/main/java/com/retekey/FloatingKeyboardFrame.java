@@ -55,6 +55,8 @@ public final class FloatingKeyboardFrame extends ViewGroup {
 
     private KeyboardPalette palette;
     private FloatingKeyboardBounds bounds;
+    /** The syllable being built for an editor that cannot show it, drawn in the bar's free middle. */
+    private String composing = "";
     private OnClose onClose;
     private OnBoundsChanged onBoundsChanged;
 
@@ -74,6 +76,20 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         // the whole child rather than to the panel behind it.
         panel.setAlpha(panelAlpha / 255.0f);
         addView(panel);
+    }
+
+    /**
+     * Shows the syllable being built in the title bar, between the cross-over key and the close
+     * key. A floating keyboard's window covers the whole screen, so the system's candidates strip
+     * would sit at the top of the screen, far from the keys, and push the panel down as it came
+     * and went; the bar is already where the eye is.
+     */
+    public void setComposingText(String text) {
+        String next = text == null ? "" : text;
+        if (!next.equals(composing)) {
+            composing = next;
+            invalidate();
+        }
     }
 
     public void setOnClose(OnClose listener) {
@@ -189,6 +205,15 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         drawGlyph(canvas, crossCell, LegacyGlyphs.label(bounds.isLeft() ? "›" : "‹", sdk));
         drawGlyph(canvas, closeCell, LegacyGlyphs.label("✕", sdk));
         drawGlyph(canvas, resizeCell, LegacyGlyphs.label("⇲", sdk));
+        if (!composing.isEmpty() && closeCell.left > crossCell.right) {
+            canvas.save();
+            canvas.clipRect(crossCell.right, crossCell.top, closeCell.left, crossCell.bottom);
+            text.setTextSize(dp(18));
+            text.setTextAlign(Paint.Align.LEFT);
+            float baseline = crossCell.centerY() - (text.descent() + text.ascent()) / 2.0f;
+            canvas.drawText(composing, crossCell.right + dp(8), baseline, text);
+            canvas.restore();
+        }
     }
 
     private void drawGlyph(Canvas canvas, Rect cell, String glyph) {

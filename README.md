@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.169** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.169/retekey-0.1.169.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.169/retekey-0.1.169-legacy.apk)
+**ReteKey v0.1.170** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.170/retekey-0.1.170.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.170/retekey-0.1.170-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.169** —
-[retekey-0.1.169.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.169/retekey-0.1.169.apk) (635 KB; the Android 4.0 build is 526 KB)
+Current release: **v0.1.170** —
+[retekey-0.1.170.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.170/retekey-0.1.170.apk) (636 KB; the Android 4.0 build is 526 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -489,7 +489,7 @@ run select-all/copy/paste/undo.
 
 **Terminals.** A terminal is a program on the other side of a pipe, not a text box: it has no
 composing region to underline and no buffer to delete out of. So the syllable you are building is
-**shown on the keyboard's own strip** and sent to the terminal once it is finished; nothing is
+**shown on the keyboard's own strip** (on a floating keyboard, in its title bar) and sent to the terminal once it is finished; nothing is
 ever taken back. Backspace inside a syllable edits the strip, and a Backspace with nothing on it
 is a real backspace key. (A setting, **Terminals** on the general page, brings back the older
 way: the syllable is typed into the terminal as it grows and taken back with each stroke, using
