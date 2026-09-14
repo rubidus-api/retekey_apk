@@ -24,7 +24,7 @@ import android.view.ViewGroup;
  *
  * <p>The title bar carries, left to right: the move handle, the cross-over key that reads
  * {@code >} on the left half and {@code <} on the right, then at the far end the close key and the
- * resize handle.
+ * resize handle. Dragging anywhere on the bar that is not one of those keys moves the panel.
  */
 public final class FloatingKeyboardFrame extends ViewGroup {
     /** Notified when the user closes the floating keyboard with the bar's ✕ key. */
@@ -262,9 +262,9 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                     notifyBounds();
                     return true;
                 }
-                dragMode = contains(resizeCell, x, y) ? DRAG_RESIZE
-                    : contains(moveCell, x, y) ? DRAG_MOVE
-                    : DRAG_NONE;
+                // The handle is where a move is shown to start, but the whole bar is where a
+                // thumb looks for one: anything in it that is not a key moves the panel.
+                dragMode = contains(resizeCell, x, y) ? DRAG_RESIZE : DRAG_MOVE;
                 dragAnchorX = x;
                 dragAnchorY = y;
                 return dragMode != DRAG_NONE;

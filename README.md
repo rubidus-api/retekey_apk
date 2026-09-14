@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.170** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.170/retekey-0.1.170.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.170/retekey-0.1.170-legacy.apk)
+**ReteKey v0.1.171** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.170** —
-[retekey-0.1.170.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.170/retekey-0.1.170.apk) (636 KB; the Android 4.0 build is 526 KB)
+Current release: **v0.1.171** —
+[retekey-0.1.171.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171.apk) (636 KB; the Android 4.0 build is 526 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -375,7 +375,7 @@ read, so the panel always takes the half worth having. The other half stays your
 
 | Key | Does |
 |---|---|
-| ☰ | drag to move the panel, anywhere within its half |
+| ☰ | drag to move the panel, anywhere within its half — dragging any free part of the bar does the same |
 | ‹ / › | send the panel to the other half, mirrored about the centre line |
 | ✕ | leave floating mode and go back to the ordinary keyboard |
 | ⇲ | drag to resize the panel |
