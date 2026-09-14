@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.171** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171-legacy.apk)
+**ReteKey v0.1.172** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.171** —
-[retekey-0.1.171.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171.apk) (636 KB; 안드로이드 4.0 빌드는 526 KB)
+현재 릴리즈: **v0.1.172** —
+[retekey-0.1.172.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172.apk) (639 KB; 안드로이드 4.0 빌드는 528 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -381,6 +381,11 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 메뉴 페이지의 **Memo** 키를 누르면 키보드 위로 메모장이 열립니다. 열려 있는 동안 창이 화면 전체를
 차지하고, 키 위쪽은 모두 메모가 됩니다. 반투명이라 옮겨 적고 있는 앱이 뒤로 계속 보입니다. 이때
 치는 글자는 그 앱이 아니라 메모로 들어가며, 한글도 메모장이 직접 조합합니다.
+
+편집 키도 뒤의 앱이 아니라 메모에 적용됩니다. 화면의 **Ctrl** 과 A·C·X·V·Z·Y(한글 자판에서는 그 글자
+자리의 키 — Ctrl+ㅊ 이 Ctrl+C 입니다), 그리고 액션바의 방향키·Home/End·페이지 키·단어 선택·모두 선택·
+잘라내기·복사·붙여넣기가 모두 메모에서 동작합니다. Shift 와 이동 키를 함께 쓰면 선택되고, Ctrl 과
+방향키를 함께 쓰면 단어 단위로 움직입니다.
 
 메모의 **첫 줄은 일시와 제목**입니다. `20260713-1448` 형식으로 글을 만든 순간이 찍히고 다시
 고쳐지지 않으며, 그 옆에 제목을 적습니다. 둘째 줄부터가 본문이고, **모두 선택은 본문만** 잡습니다.

@@ -182,7 +182,8 @@ public final class NotepadView extends LinearLayout {
         }));
 
         // The editing set, on the selection when there is one and on the whole field when there
-        // is not: the keyboard's own edit keys reach the app underneath, not this panel.
+        // is not. The keyboard's own edit keys, Ctrl chords and the action bar do the same here
+        // (applyKey); these links stay for a hand that is already on the panel.
         noteLinks.addView(toolButton(context, "Cp", new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -340,6 +341,213 @@ public final class NotepadView extends LinearLayout {
             return;
         }
         type("\n");
+    }
+
+    /**
+     * Carries out an editing key on the focused field — the chords and movement keys that, before
+     * this, went past the note to the app behind it. {@code extend} is Shift: a movement grows the
+     * selection instead of collapsing it.
+     */
+    public void applyKey(NotepadKeys.Command command, boolean extend) {
+        EditText target = focusedField();
+        Editable editable = target.getText();
+        switch (command) {
+            case SELECT_ALL:
+                selectBodyOrTitle(target);
+                return;
+            case COPY:
+                copySelection(false);
+                return;
+            case CUT:
+                copySelection(true);
+                return;
+            case PASTE:
+                pasteClipboard();
+                return;
+            case UNDO:
+                undoEdit();
+                return;
+            case REDO:
+                redoEdit();
+                return;
+            case TAB:
+                type("\t");
+                return;
+            case BACKSPACE:
+                deleteBackward();
+                return;
+            case FORWARD_DELETE:
+                deleteForward();
+                return;
+            case NEW_LINE:
+                newLine();
+                return;
+            default:
+                break;
+        }
+        if (!NotepadKeys.isMovement(command)) {
+            return;
+        }
+        preeditLength = 0;
+        int anchor = Math.max(0, target.getSelectionStart());
+        int cursor = Math.max(0, target.getSelectionEnd());
+        int length = editable.length();
+        android.text.Layout layout = target.getLayout();
+        int moved;
+        switch (command) {
+            case LEFT:
+                moved = !extend && anchor != cursor ? Math.min(anchor, cursor) : cursor - 1;
+                break;
+            case RIGHT:
+                moved = !extend && anchor != cursor ? Math.max(anchor, cursor) : cursor + 1;
+                break;
+            case WORD_LEFT:
+                moved = NotepadKeys.wordLeft(editable, cursor);
+                break;
+            case WORD_RIGHT:
+                moved = NotepadKeys.wordRight(editable, cursor);
+                break;
+            case UP:
+            case DOWN:
+            case PAGE_UP:
+            case PAGE_DOWN:
+                moved = verticalMove(layout, cursor, command, length);
+                break;
+            case LINE_START:
+                moved = layout == null ? lineEdge(editable, cursor, false)
+                    : layout.getLineStart(layout.getLineForOffset(cursor));
+                break;
+            case LINE_END:
+                moved = layout == null ? lineEdge(editable, cursor, true)
+                    : visibleLineEnd(layout, editable, cursor);
+                break;
+            case TEXT_START:
+                moved = 0;
+                break;
+            default:
+                moved = length;
+                break;
+        }
+        moved = Math.max(0, Math.min(length, moved));
+        if (extend) {
+            target.setSelection(anchor, moved);
+        } else {
+            target.setSelection(moved);
+        }
+    }
+
+    /** Runs a context-menu editing command — the action bar's and the ☰ page's edit keys. */
+    public boolean editCommand(int contextMenuId) {
+        if (contextMenuId == android.R.id.selectAll) {
+            applyKey(NotepadKeys.Command.SELECT_ALL, false);
+        } else if (contextMenuId == android.R.id.copy) {
+            applyKey(NotepadKeys.Command.COPY, false);
+        } else if (contextMenuId == android.R.id.cut) {
+            applyKey(NotepadKeys.Command.CUT, false);
+        } else if (contextMenuId == android.R.id.paste) {
+            applyKey(NotepadKeys.Command.PASTE, false);
+        } else if (android.os.Build.VERSION.SDK_INT >= 24
+                && contextMenuId == android.R.id.undo) {
+            applyKey(NotepadKeys.Command.UNDO, false);
+        } else if (android.os.Build.VERSION.SDK_INT >= 24
+                && contextMenuId == android.R.id.redo) {
+            applyKey(NotepadKeys.Command.REDO, false);
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    /** Selects the word the cursor is in, the action bar's word key. */
+    public void selectWord() {
+        EditText target = focusedField();
+        Editable editable = target.getText();
+        int cursor = Math.max(0, target.getSelectionEnd());
+        int start = NotepadKeys.wordLeft(editable, cursor);
+        if (cursor < editable.length() && Character.isLetterOrDigit(editable.charAt(cursor))) {
+            start = cursor == 0 || !Character.isLetterOrDigit(editable.charAt(cursor - 1))
+                ? cursor : start;
+        }
+        int end = NotepadKeys.wordRight(editable, start);
+        if (end > start) {
+            target.setSelection(start, end);
+        }
+    }
+
+    private void selectBodyOrTitle(EditText target) {
+        if (target == titleField) {
+            titleField.setSelection(0, titleField.getText().length());
+        } else {
+            selectBody();
+        }
+    }
+
+    private void deleteForward() {
+        EditText target = focusedField();
+        Editable editable = target.getText();
+        int start = Math.max(0, target.getSelectionStart());
+        int end = Math.max(start, target.getSelectionEnd());
+        if (start != end) {
+            editable.delete(start, end);
+        } else if (end < editable.length()) {
+            editable.delete(start, start + 1);
+        } else {
+            return;
+        }
+        preeditLength = 0;
+        recordState();
+        storeOpenNote();
+    }
+
+    private int verticalMove(android.text.Layout layout, int cursor,
+                             NotepadKeys.Command command, int length) {
+        if (layout == null) {
+            return command == NotepadKeys.Command.UP || command == NotepadKeys.Command.PAGE_UP
+                ? 0 : length;
+        }
+        int line = layout.getLineForOffset(cursor);
+        int step = command == NotepadKeys.Command.UP || command == NotepadKeys.Command.DOWN
+            ? 1 : Math.max(1, visibleLines());
+        boolean up = command == NotepadKeys.Command.UP || command == NotepadKeys.Command.PAGE_UP;
+        int target = up ? line - step : line + step;
+        if (target < 0) {
+            return 0;
+        }
+        if (target >= layout.getLineCount()) {
+            return length;
+        }
+        return layout.getOffsetForHorizontal(target, layout.getPrimaryHorizontal(cursor));
+    }
+
+    private int visibleLines() {
+        EditText target = focusedField();
+        int lineHeight = Math.max(1, target.getLineHeight());
+        View scroller = (View) bodyField.getParent();
+        int height = scroller == null ? target.getHeight() : scroller.getHeight();
+        return Math.max(1, height / lineHeight - 1);
+    }
+
+    private static int visibleLineEnd(android.text.Layout layout, CharSequence text, int cursor) {
+        int end = layout.getLineEnd(layout.getLineForOffset(cursor));
+        // A wrapped or ended line reports the offset after its newline; End stops before it.
+        if (end > 0 && end <= text.length() && text.charAt(end - 1) == '\n') {
+            end--;
+        }
+        return end;
+    }
+
+    private static int lineEdge(CharSequence text, int cursor, boolean forward) {
+        int i = Math.max(0, Math.min(cursor, text.length()));
+        if (forward) {
+            while (i < text.length() && text.charAt(i) != '\n') {
+                i++;
+            }
+        } else {
+            while (i > 0 && text.charAt(i - 1) != '\n') {
+                i--;
+            }
+        }
+        return i;
     }
 
     /** Selects the body — the note without its first line, which is what "all" means here. */

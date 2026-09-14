@@ -300,7 +300,10 @@ public class ReteKeyImeService extends InputMethodService {
         try {
             switch (action) {
                 case SELECT_WORD:
-                    if (!selectWordByRemoteChords()) {
+                    if (notepad != null && notepad.isWriting()) {
+                        flushNotepadComposition();
+                        notepad.selectWord();
+                    } else if (!selectWordByRemoteChords()) {
                         selectWordAroundCursor();
                     }
                     break;
@@ -572,6 +575,12 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Runs an editor context-menu command (copy/paste/undo) on the focused editor. */
     private void performEditCommand(int contextMenuId) {
+        if (notepad != null && notepad.isWriting()) {
+            // The note is where the user is editing; the app behind must not get the command.
+            flushNotepadComposition();
+            notepad.editCommand(contextMenuId);
+            return;
+        }
         if (editCommandAsRemoteChord(contextMenuId)) {
             return;
         }
@@ -1778,8 +1787,33 @@ public class ReteKeyImeService extends InputMethodService {
             case FLUSH:
                 flushNotepadComposition();
                 return true;
+            case RAW_KEY:
+                consumeRawKeyForNotepad(input);
+                return true;
             default:
                 return false;
+        }
+    }
+
+    /**
+     * A raw key while a note is open — a Ctrl chord from the keys, an arrow or Home from the
+     * action bar, a held Tab. Every one is the note's: before, they fell past it to the app behind,
+     * so Ctrl+C copied from the app and the bar's arrows moved a cursor nobody could see. A key
+     * the note has no use for is swallowed rather than sent on. A hold acts once and its release
+     * does nothing, since nothing in the note stays pressed.
+     */
+    private void consumeRawKeyForNotepad(SemanticInput input) {
+        if (input.rawKeyPhase() == RawKeyPhase.RELEASE) {
+            return;
+        }
+        NotepadKeys.Command command = NotepadKeys.of(input.rawKey(), input.modifiers());
+        if (command == NotepadKeys.Command.NONE) {
+            return;
+        }
+        flushNotepadComposition();
+        notepad.applyKey(command, NotepadKeys.extendsSelection(input.modifiers()));
+        if (command == NotepadKeys.Command.COPY || command == NotepadKeys.Command.CUT) {
+            rememberClipSoon();
         }
     }
 

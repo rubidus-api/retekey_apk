@@ -1516,21 +1516,14 @@ public final class ReteKeyboardView extends View {
             return false;
         }
         SemanticInput input = key.semanticInput();
-        if (input == null || input.kind() != SemanticInput.Kind.TEXT) {
+        if (input == null) {
             return false;
         }
-        String text = input.text();
-        if (text == null || text.length() != 1) {
-            return false;
-        }
-        char letter = Character.toUpperCase(text.charAt(0));
-        if (letter < 'A' || letter > 'Z') {
-            return false;
-        }
-        RawKey rawKey;
-        try {
-            rawKey = RawKey.valueOf(String.valueOf(letter));
-        } catch (IllegalArgumentException notALetterKey) {
+        RawKey rawKey = input.kind() == SemanticInput.Kind.JAMO
+            // A Korean key chords as the letter in its place (ChordLetters): Ctrl+ㅊ is Ctrl+C.
+            ? ChordLetters.forKeyId(key.stableKeyId())
+            : latinLetterKey(input);
+        if (rawKey == null) {
             return false;
         }
         sink.accept(ProjectKeyEvent.softwareDown(
@@ -1539,6 +1532,25 @@ public final class ReteKeyboardView extends View {
         consumeOneShotShift();
         invalidate();
         return true;
+    }
+
+    private static RawKey latinLetterKey(SemanticInput input) {
+        if (input.kind() != SemanticInput.Kind.TEXT) {
+            return null;
+        }
+        String text = input.text();
+        if (text == null || text.length() != 1) {
+            return null;
+        }
+        char letter = Character.toUpperCase(text.charAt(0));
+        if (letter < 'A' || letter > 'Z') {
+            return null;
+        }
+        try {
+            return RawKey.valueOf(String.valueOf(letter));
+        } catch (IllegalArgumentException notALetterKey) {
+            return null;
+        }
     }
 
     /**

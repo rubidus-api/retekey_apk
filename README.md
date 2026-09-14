@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.171** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171-legacy.apk)
+**ReteKey v0.1.172** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.171** —
-[retekey-0.1.171.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.171/retekey-0.1.171.apk) (636 KB; the Android 4.0 build is 526 KB)
+Current release: **v0.1.172** —
+[retekey-0.1.172.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172.apk) (639 KB; the Android 4.0 build is 528 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -393,6 +393,11 @@ The menu page's **Memo** key opens a notepad above the keyboard. The window take
 while it is open, and everything above the keys is the note — translucent, so the app you are
 copying from is still readable behind it. What you type goes into the note rather than into that
 app, Hangul included: the notepad composes syllables itself.
+
+The editing keys work on the note too, not on the app behind it: a soft **Ctrl** with A, C, X, V,
+Z or Y (on the Korean page, the key in that letter's place — Ctrl+ㅊ is Ctrl+C), and the action
+bar's arrows, Home/End, page keys, word and select-all, cut, copy and paste. Shift with a movement
+key selects, and Ctrl with an arrow jumps a word.
 
 A note's **first line is its stamp and its title**: `20260713-1448`, written the moment the note is
 made and never edited, with the title beside it. Everything from the second line down is the body,
