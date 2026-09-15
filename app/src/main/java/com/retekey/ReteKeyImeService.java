@@ -1253,6 +1253,28 @@ public class ReteKeyImeService extends InputMethodService {
         finishComposingInEditor();
         inputProcessor.reset();
         hideHanjaCandidatesIfShown();
+        closePanelsWithTheKeyboard();
+    }
+
+    @Override
+    public void onWindowHidden() {
+        super.onWindowHidden();
+        closePanelsWithTheKeyboard();
+    }
+
+    /**
+     * The notepad and the clipboard list belong to the keyboard being up. Left open behind a
+     * dismissed keyboard, they came back in its place the next time any field asked for it — and
+     * in an editor that cannot give the keyboard the whole screen, that was a panel trying to open
+     * and failing on every keystroke (issue #8). Closing them here saves the note as usual.
+     */
+    private void closePanelsWithTheKeyboard() {
+        if (notepad != null) {
+            closeNotepad();
+        }
+        if (clipboardPanel != null) {
+            closeClipboardPanel();
+        }
     }
 
     @Override

@@ -120,9 +120,11 @@ public final class ReteKeyboardView extends View {
     /**
      * How far a finger must go for a drag to be a drag. Kept small so the letter arrives at once —
      * that is the whole reason to drag rather than tap twice — but above the touch slop so an
-     * ordinary press cannot become one by accident.
+     * ordinary press cannot become one by accident. It was 14 dp; taps whose fingertip slid 14–20
+     * dp — ordinary when typing fast — came out as flicked letters on 천지인 (emulator,
+     * 2026-09-16). A meant flick travels well past 18 dp on a key two columns wide.
      */
-    private static final float FLICK_DP = 14.0f;
+    private static final float FLICK_DP = 18.0f;
     /**
      * How long a 12-key run waits before the next press of the same key starts a new letter rather
      * than cycling. A phone does the same, and it is what lets 삶 be followed by ㅇ — the key that
@@ -1077,11 +1079,12 @@ public final class ReteKeyboardView extends View {
         // modifier chord is two fingers down at once, and must remain one.
         settlePendingTaps();
         KeyboardLayout layout = layout();
-        int rowIndex = rowAt(layout, y);
-        int keyIndex = keyIndexAt(layout, rowIndex, x);
-        if (rowIndex < 0 || keyIndex < 0) {
+        int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y);
+        if (target == null) {
             return;
         }
+        int rowIndex = target[0];
+        int keyIndex = target[1];
         // Every pixel of the keyboard belongs to a key. The gap drawn around each face is a gap in
         // the picture only: a touch target with dead space between the keys throws away roughly a
         // third of the area, and every tap that lands there is a keystroke the user has to repeat.
@@ -1154,12 +1157,12 @@ public final class ReteKeyboardView extends View {
             if (!escapedKey(layout, touch, x, y)) {
                 continue;
             }
-            int rowIndex = rowAt(layout, y);
-            int keyIndex = keyIndexAt(layout, rowIndex, x);
-            if (rowIndex < 0 || keyIndex < 0
-                || (rowIndex == touch.row && keyIndex == touch.key)) {
+            int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y);
+            if (target == null || (target[0] == touch.row && target[1] == touch.key)) {
                 continue;
             }
+            int rowIndex = target[0];
+            int keyIndex = target[1];
             removeCallbacks(touch.onHold);
             removeCallbacks(touch.onRepeat);
             touch.row = rowIndex;

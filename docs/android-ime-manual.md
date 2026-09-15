@@ -2084,6 +2084,41 @@ it already made for a trailing editor action.
 Wherever a composer can put two kinds of action in one plan, test that plan end to end; and treat a
 caught exception on the typing path as a failure a test must be able to see.
 
+### 15.35 A near miss that changes the page
+
+**What happened.** Measured on the emulator by tapping 천지인 and 나랏글 sentences at jittered
+points (σ a quarter of a key), whole sentences went wrong from one tap on. The utility column sits
+directly beside the first Hangul column: a tap aimed at ㅣ landed on **123**, one aimed at ㄹ landed
+on **Move**, and every key after it typed digits or moved the cursor. A tap aimed at the space bar
+landed on ⌫ above it and erased a character. Separately, a tap whose fingertip slid 14–20 dp —
+ordinary when typing fast — came out as a flicked letter on 천지인, because a drag of 14 dp already
+counted as a flick (0.1.176).
+
+**The fix.** `TouchTargets` resolves every touch. A costly key — one that changes the page or
+overlay (123, Move, 漢, the layer and layout keys) or erases (⌫) — gives the strip of its cell
+nearest an ordinary key, `YIELD` = 35 % of its width or height, to that key; a finger has to mean it
+to reach the costly key, and every pixel still belongs to some key. The flick distance went from 14
+dp to 18 dp; deliberate drags of 22 and 30 dp still flick. Same seeds, before and after: 25 % jitter
+16 → 8 wrong characters on 천지인 and 14 → 8 on 나랏글, with no sentence lost after a stray tap;
+slides up to 20 dp 21 → 6 on 천지인.
+
+**Rule.** Weigh a miss by what it costs, not by where the line was drawn. A key whose accidental
+press damages more than one character should be harder to hit by accident than the keys around it.
+
+### 15.36 A panel that outlives the keyboard
+
+**What happened.** The notepad and the clipboard list stayed open when the keyboard was dismissed,
+and came back in its place the next time a field asked for the keyboard. In Termux that became a
+loop (issue #8): the notepad makes the IME window take the screen, Termux answers by asking for the
+keyboard to be hidden (the input-method history shows `HIDE_SOFT_INPUT` from `TermuxActivity`), and
+the next keystroke brought the notepad back to be hidden again.
+
+**The fix.** `onFinishInputView` and `onWindowHidden` close both panels, saving the note as usual.
+In Termux, Memo now simply closes with the keyboard; making the notepad usable there would need it
+to cover the terminal without resizing it.
+
+**Rule.** A panel that replaces the keyboard lives exactly as long as the keyboard is on screen.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2207,4 +2242,6 @@ allow` first.
   (§15.33).
 - [ ] `InteractionMatrixTest` passes, and `scripts/interaction-matrix.sh` on the emulator lane
   reports 0 failing cells (§14).
+- [ ] On the 12-key pages a near miss beside 123, Move or ⌫ types the Hangul key or space, and a 16
+  dp slide is a tap (§15.35).
 - [ ] This manual was updated for whatever changed.
