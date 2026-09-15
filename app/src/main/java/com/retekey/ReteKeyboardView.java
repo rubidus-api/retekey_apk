@@ -410,7 +410,8 @@ public final class ReteKeyboardView extends View {
                     && (letterLayoutId == KeyboardLayoutId.KO_CHEONJIIN
                         || letterLayoutId == KeyboardLayoutId.KO_NARATGEUL
                         || letterLayoutId == KeyboardLayoutId.JA_FLICK)) {
-                    return KeyboardLayouts.phone(letterLayoutId, phoneOverlay);
+                    return KeyboardLayouts.phone(
+                        letterLayoutId, phoneOverlay, shiftLayer.isActive());
                 }
                 return KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
         }

@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.172** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172-legacy.apk)
+**ReteKey v0.1.173** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.172** —
-[retekey-0.1.172.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.172/retekey-0.1.172.apk) (639 KB; the Android 4.0 build is 528 KB)
+Current release: **v0.1.173** —
+[retekey-0.1.173.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173.apk) (640 KB; the Android 4.0 build is 528 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -164,7 +164,7 @@ there: 漢 for Hanja on 2-beolsik, `Esc` on QWERTY, Dvorak and Colemak — a rea
 a different shape: the modifiers own the leftmost column, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
 with `!#` and the layout key closing the bottom row. The cell beside Tab carries 漢 on both of them while Hangul is being typed, which converts on a
-tap; under an overlay there is no reading to convert and the cell is blank. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
+tap; under an overlay there is no reading to convert, so a **Shift** takes that column instead — beside Ctrl on 천지인, and in the empty cell beside Meta on 나랏글 — tapped for one key (Shift+arrow selects) or held to stay down. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
 phone keypad's digits on them, **Move** the cursor cluster (arrows, Home/End, PgUp/PgDn, Ins, Esc,
 Del); the same key puts the Hangul back. 천지인 puts Next beside Alt and flanks ㅇㅁ with `.,` and
 `!?`, which work the way the Hangul keys around them do: tapping moves through the characters on the
@@ -200,8 +200,8 @@ Seven letter layouts share that grid:
 | **Cheonjiin(천지인)** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key types at once what the taps would reach. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **Next** key — starts the next letter |
 | **Naratgeul(나랏글)** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
-| **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. Off until you turn it on in settings |
-| **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold. Off until you turn it on in settings |
+| **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. **Shift** sits beside Meta: tap it for one key, so Shift+arrow selects, or hold it to keep it down. Off until you turn it on in settings |
+| **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold, with **Shift** beside Meta as on Arrows. Off until you turn it on in settings |
 
 The layout key — captioned with the layout it goes to next (`2BS`, `QWE`, `DVO`, `CJI`, `NRG`,
 `ARW`, `NUM`, in bold capitals) — walks the layouts you ticked in settings, in the order you put them there, naming

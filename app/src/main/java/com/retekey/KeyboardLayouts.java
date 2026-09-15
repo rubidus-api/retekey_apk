@@ -127,25 +127,35 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout HY_SHIFTED = armenian(true);
     private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
     private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
-    private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE);
-    private static final KeyboardLayout JA_FLICK_DIGITS = kanaFlick(PhoneOverlay.DIGITS);
-    private static final KeyboardLayout JA_FLICK_NAV = kanaFlick(PhoneOverlay.NAV);
+    private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE, false);
+    private static final KeyboardLayout JA_FLICK_DIGITS = kanaFlick(PhoneOverlay.DIGITS, false);
+    private static final KeyboardLayout JA_FLICK_NAV = kanaFlick(PhoneOverlay.NAV, false);
+    private static final KeyboardLayout JA_FLICK_DIGITS_SHIFTED = kanaFlick(PhoneOverlay.DIGITS, true);
+    private static final KeyboardLayout JA_FLICK_NAV_SHIFTED = kanaFlick(PhoneOverlay.NAV, true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
-        padLayout(KeyboardLayoutId.PAD_ARROWS, false);
+        padLayout(KeyboardLayoutId.PAD_ARROWS, false, false);
+    private static final KeyboardLayout PAD_ARROWS_SHIFTED =
+        padLayout(KeyboardLayoutId.PAD_ARROWS, false, true);
     private static final KeyboardLayout PAD_KEYPAD_LAYOUT =
-        padLayout(KeyboardLayoutId.PAD_KEYPAD, true);
+        padLayout(KeyboardLayoutId.PAD_KEYPAD, true, false);
+    private static final KeyboardLayout PAD_KEYPAD_SHIFTED =
+        padLayout(KeyboardLayoutId.PAD_KEYPAD, true, true);
     private static final KeyboardLayout CHARS = buildSpecialChars();
     private static final KeyboardLayout KEYS_NUMBERS = buildSpecialKeys(NumpadMode.NUMBERS);
     private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
     private static final KeyboardLayout KEYS_FUNCTIONS = buildSpecialKeys(NumpadMode.FUNCTIONS);
     private static final KeyboardLayout MENU = buildMenu();
     private static final KeyboardLayout UNICODE_ENTRY = buildUnicodeEntry();
-    private static final KeyboardLayout CHEONJIIN_DIGITS = cheonjiin(PhoneOverlay.DIGITS);
-    private static final KeyboardLayout CHEONJIIN_NAV = cheonjiin(PhoneOverlay.NAV);
-    private static final KeyboardLayout NARATGEUL_DIGITS = naratgeul(PhoneOverlay.DIGITS);
-    private static final KeyboardLayout NARATGEUL_NAV = naratgeul(PhoneOverlay.NAV);
+    private static final KeyboardLayout CHEONJIIN_DIGITS = cheonjiin(PhoneOverlay.DIGITS, false);
+    private static final KeyboardLayout CHEONJIIN_NAV = cheonjiin(PhoneOverlay.NAV, false);
+    private static final KeyboardLayout NARATGEUL_DIGITS = naratgeul(PhoneOverlay.DIGITS, false);
+    private static final KeyboardLayout NARATGEUL_NAV = naratgeul(PhoneOverlay.NAV, false);
+    private static final KeyboardLayout CHEONJIIN_DIGITS_SHIFTED = cheonjiin(PhoneOverlay.DIGITS, true);
+    private static final KeyboardLayout CHEONJIIN_NAV_SHIFTED = cheonjiin(PhoneOverlay.NAV, true);
+    private static final KeyboardLayout NARATGEUL_DIGITS_SHIFTED = naratgeul(PhoneOverlay.DIGITS, true);
+    private static final KeyboardLayout NARATGEUL_NAV_SHIFTED = naratgeul(PhoneOverlay.NAV, true);
 
     private KeyboardLayouts() {
     }
@@ -229,9 +239,9 @@ public final class KeyboardLayouts {
             case KO_NARATGEUL:
                 return NARATGEUL;
             case PAD_ARROWS:
-                return PAD_ARROWS_LAYOUT;
+                return shifted ? PAD_ARROWS_SHIFTED : PAD_ARROWS_LAYOUT;
             case PAD_KEYPAD:
-                return PAD_KEYPAD_LAYOUT;
+                return shifted ? PAD_KEYPAD_SHIFTED : PAD_KEYPAD_LAYOUT;
             case SPECIAL_CHARS:
                 return CHARS;
             default:
@@ -248,7 +258,12 @@ public final class KeyboardLayouts {
      * is a mode on top of a layout rather than a layout. These are stops on the globe key, off
      * unless the user turns them on.
      */
-    private static KeyboardLayout padLayout(KeyboardLayoutId id, boolean digits) {
+    /**
+     * The Keypad and Arrows pages. The cell beside Meta is Shift, the way it is on the left of a
+     * letter page: a tap is one Shift for the next key — Shift+arrow selects — and a hold keeps it
+     * down until it is pressed again.
+     */
+    private static KeyboardLayout padLayout(KeyboardLayoutId id, boolean digits, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneGap("pad0", 1),
             padLayoutCell(digits, 0), padLayoutCell(digits, 1), padLayoutCell(digits, 2),
@@ -256,7 +271,7 @@ public final class KeyboardLayouts {
         rows.add(phoneRow(1, phoneGap("pad1", 1),
             padLayoutCell(digits, 3), padLayoutCell(digits, 4), padLayoutCell(digits, 5),
             phoneSpaceKey()));
-        rows.add(phoneRow(2, phoneGap("pad2", 1),
+        rows.add(phoneRow(2, shiftKey(shifted),
             padLayoutCell(digits, 6), padLayoutCell(digits, 7), padLayoutCell(digits, 8),
             letterPeriodKey(),
             enterKey()));
@@ -264,7 +279,7 @@ public final class KeyboardLayouts {
             padLayoutCell(digits, 9), padLayoutCell(digits, 10), padLayoutCell(digits, 11));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
-        return KeyboardLayout.of(id, false, COLUMNS, rows);
+        return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }
 
     /**
@@ -292,27 +307,32 @@ public final class KeyboardLayouts {
 
     /** A 12-key page under an overlay: its cells as digits or the cursor cluster. */
     public static KeyboardLayout phone(KeyboardLayoutId id, PhoneOverlay overlay) {
+        return phone(id, overlay, false);
+    }
+
+    /** The same, with Shift down — which only the keypad and cursor overlays have a key for. */
+    public static KeyboardLayout phone(KeyboardLayoutId id, PhoneOverlay overlay, boolean shifted) {
         if (overlay == null) {
             throw new IllegalArgumentException("overlay must not be null");
         }
         if (id == KeyboardLayoutId.KO_CHEONJIIN) {
             switch (overlay) {
-                case DIGITS: return CHEONJIIN_DIGITS;
-                case NAV: return CHEONJIIN_NAV;
+                case DIGITS: return shifted ? CHEONJIIN_DIGITS_SHIFTED : CHEONJIIN_DIGITS;
+                case NAV: return shifted ? CHEONJIIN_NAV_SHIFTED : CHEONJIIN_NAV;
                 default: return CHEONJIIN;
             }
         }
         if (id == KeyboardLayoutId.KO_NARATGEUL) {
             switch (overlay) {
-                case DIGITS: return NARATGEUL_DIGITS;
-                case NAV: return NARATGEUL_NAV;
+                case DIGITS: return shifted ? NARATGEUL_DIGITS_SHIFTED : NARATGEUL_DIGITS;
+                case NAV: return shifted ? NARATGEUL_NAV_SHIFTED : NARATGEUL_NAV;
                 default: return NARATGEUL;
             }
         }
         if (id == KeyboardLayoutId.JA_FLICK) {
             switch (overlay) {
-                case DIGITS: return JA_FLICK_DIGITS;
-                case NAV: return JA_FLICK_NAV;
+                case DIGITS: return shifted ? JA_FLICK_DIGITS_SHIFTED : JA_FLICK_DIGITS;
+                case NAV: return shifted ? JA_FLICK_NAV_SHIFTED : JA_FLICK_NAV;
                 default: return JA_FLICK_LAYOUT;
             }
         }
@@ -457,14 +477,15 @@ public final class KeyboardLayouts {
     }
 
     /**
-     * 漢 on the 12-key pads, in the cell beside Tab. It is one of only three places Hanja
+     * 漢 on the 12-key pads, in the cell beside Ctrl. It is one of only three places Hanja
      * conversion can be reached from, so it belongs where Hangul is being typed — and nowhere else:
      * while an overlay has turned the pad into a keypad or a cursor cluster there is no reading in
-     * front of the cursor to convert, so the cell is blank there.
+     * front of the cursor to convert, so the cell is Shift there, as on the Keypad and Arrows
+     * pages: Shift+arrow selects.
      */
-    private static SoftwareKeySpec phoneHanjaKey(PhoneOverlay overlay) {
+    private static SoftwareKeySpec phoneHanjaKey(PhoneOverlay overlay, boolean shifted) {
         if (overlay != PhoneOverlay.NONE) {
-            return phoneGap("hanja", 1);
+            return shiftKey(shifted);
         }
         return SoftwareKeySpec.control("touch.phone.hanja", "漢", ControlKey.HANJA);
     }
@@ -601,10 +622,10 @@ public final class KeyboardLayouts {
      * bottom letter row. Ten Hangul keys leave the second column empty throughout.
      */
     private static KeyboardLayout cheonjiin() {
-        return cheonjiin(PhoneOverlay.NONE);
+        return cheonjiin(PhoneOverlay.NONE, false);
     }
 
-    private static KeyboardLayout cheonjiin(PhoneOverlay overlay) {
+    private static KeyboardLayout cheonjiin(PhoneOverlay overlay, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
             padCell(overlay, 0, cheonjiinKey(CheonjiinInterpreter.Key.I, "ㅣ", PadHolds.digit(0))),
@@ -623,13 +644,13 @@ public final class KeyboardLayouts {
             letterPeriodKey(),
             enterKey()));
         // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it and 漢 beside Tab.
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay),
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay, shifted),
             padCell(overlay, 9, phoneCycleKey("period", ".,")),
             padCell(overlay, 10, cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", PadHolds.digit(10))),
             padCell(overlay, 11, phoneCycleKey("exclaim", "!?")));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
-        return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, false, COLUMNS, rows);
+        return KeyboardLayout.of(KeyboardLayoutId.KO_CHEONJIIN, shifted, COLUMNS, rows);
     }
 
     /**
@@ -637,10 +658,10 @@ public final class KeyboardLayouts {
      * on the bottom letter row. Twelve Hangul keys need the second column, so ㅡ takes it there.
      */
     private static KeyboardLayout naratgeul() {
-        return naratgeul(PhoneOverlay.NONE);
+        return naratgeul(PhoneOverlay.NONE, false);
     }
 
-    private static KeyboardLayout naratgeul(PhoneOverlay overlay) {
+    private static KeyboardLayout naratgeul(PhoneOverlay overlay, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
             padCell(overlay, 0, naratgeulKey(NaratgeulInterpreter.Key.GIYEOK, "ㄱ", 2, PadHolds.digit(0))),
@@ -652,19 +673,22 @@ public final class KeyboardLayouts {
             padCell(overlay, 4, naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, PadHolds.digit(4))),
             padCell(overlay, 5, naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, PadHolds.digit(5))),
             phoneSpaceKey()));
-        rows.add(phoneRow(2, phoneGap("r2", 1),
+        // 나랏글 has no Next key, so its keypad and cursor overlays put Shift in this empty cell —
+        // the same place the Keypad and Arrows pages have it — and leave 漢's cell blank.
+        rows.add(phoneRow(2, overlay == PhoneOverlay.NONE ? phoneGap("r2", 1) : shiftKey(shifted),
             padCell(overlay, 6, naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, PadHolds.digit(6))),
             padCell(overlay, 7, naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, PadHolds.digit(7))),
             padCell(overlay, 8, naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, PadHolds.digit(8))),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay),
+        List<SoftwareKeySpec> bottom = phoneRow(3,
+            overlay == PhoneOverlay.NONE ? phoneHanjaKey(overlay, shifted) : phoneGap("hanja", 1),
             padCell(overlay, 9, naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, PadHolds.digit(9))),
             padCell(overlay, 10, naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, PadHolds.digit(10))),
             padCell(overlay, 11, naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, PadHolds.digit(11))));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
-        return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, false, COLUMNS, rows);
+        return KeyboardLayout.of(KeyboardLayoutId.KO_NARATGEUL, shifted, COLUMNS, rows);
     }
 
     /**
@@ -674,7 +698,7 @@ public final class KeyboardLayouts {
      * always the あ-column kana and every press is one character; the digits ride the holds the
      * way they do on every 12-key page.
      */
-    private static KeyboardLayout kanaFlick(PhoneOverlay overlay) {
+    private static KeyboardLayout kanaFlick(PhoneOverlay overlay, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
             padCell(overlay, 0, kanaKey(KanaFlick.Key.A, PadHolds.digit(0))),
@@ -692,7 +716,8 @@ public final class KeyboardLayouts {
             padCell(overlay, 8, kanaKey(KanaFlick.Key.RA, PadHolds.digit(8))),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3, vacatedCell("kana"),
+        List<SoftwareKeySpec> bottom = phoneRow(3,
+            overlay == PhoneOverlay.NONE ? vacatedCell("kana") : shiftKey(shifted),
             padCell(overlay, 9, SoftwareKeySpec
                 .control("touch.kana.modifier", "゛゜小", ControlKey.KANA_MODIFIER)
                 .withColumnSpan(2)),
@@ -700,7 +725,7 @@ public final class KeyboardLayouts {
             padCell(overlay, 11, phoneCycleKey("kana-punct", "、。？！")));
         bottom.addAll(phoneBottomPageKeys());
         rows.add(bottom);
-        return KeyboardLayout.of(KeyboardLayoutId.JA_FLICK, false, COLUMNS, rows);
+        return KeyboardLayout.of(KeyboardLayoutId.JA_FLICK, shifted, COLUMNS, rows);
     }
 
     /** One kana key: its tap character as label and text, the pad digit held under it. */

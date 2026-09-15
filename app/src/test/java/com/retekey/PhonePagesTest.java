@@ -77,18 +77,51 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void hanjaIsNotOfferedWhileAnOverlayCoversThePad() {
+    public void anOverlayPutsShiftWhereHanjaWas() {
         // Under the keypad or the cursor cluster there is no reading in front of the cursor to
-        // convert, so the cell is blank rather than a key that cannot work.
-        for (KeyboardLayoutId id
-                : Arrays.asList(KeyboardLayoutId.KO_CHEONJIIN, KeyboardLayoutId.KO_NARATGEUL)) {
+        // convert, so 漢's cell is Shift instead: Shift+arrow selects from the cursor cluster, and
+        // a hold keeps it down, the way the letter pages' own Shift does (owner's request).
+        // Shift takes the column's empty cell: the third row on 나랏글, which has no Next key
+        // there, and 漢's row on 천지인 and the kana pad, where Next is.
+        for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.KO_CHEONJIIN,
+                KeyboardLayoutId.KO_NARATGEUL, KeyboardLayoutId.JA_FLICK)) {
+            int row = id == KeyboardLayoutId.KO_NARATGEUL ? 2 : 3;
             for (PhoneOverlay overlay : Arrays.asList(PhoneOverlay.DIGITS, PhoneOverlay.NAV)) {
                 SoftwareKeySpec cell =
-                    KeyboardLayouts.phone(id, overlay).rows().get(3).get(1);
-                assertFalse(id + " " + overlay, cell.enabled());
-                assertFalse(id + " " + overlay, cell.isControl());
+                    KeyboardLayouts.phone(id, overlay).rows().get(row).get(1);
+                assertEquals(id + " " + overlay, ControlKey.SHIFT, cell.control());
+                assertEquals("⇧", cell.label());
+                assertEquals("⇧•",
+                    KeyboardLayouts.phone(id, overlay, true).rows().get(row).get(1).label());
+                int shifts = 0;
+                for (List<SoftwareKeySpec> keys : KeyboardLayouts.phone(id, overlay).rows()) {
+                    for (SoftwareKeySpec key : keys) {
+                        if (key.isControl() && key.control() == ControlKey.SHIFT) {
+                            shifts++;
+                        }
+                    }
+                }
+                assertEquals(id + " " + overlay + " has one Shift", 1, shifts);
             }
         }
+    }
+
+    @Test
+    public void theKeypadAndArrowsPagesHaveShiftBesideMeta() {
+        for (KeyboardLayoutId id
+                : Arrays.asList(KeyboardLayoutId.PAD_KEYPAD, KeyboardLayoutId.PAD_ARROWS)) {
+            List<SoftwareKeySpec> third = KeyboardLayouts.of(id, false).rows().get(2);
+            assertEquals("Meta", third.get(0).label());
+            assertEquals(id.name(), ControlKey.SHIFT, third.get(1).control());
+            assertEquals("⇧•", KeyboardLayouts.of(id, true).rows().get(2).get(1).label());
+        }
+    }
+
+    @Test
+    public void theHangulPageItselfKeepsHanja() {
+        assertEquals(ControlKey.HANJA, KeyboardLayouts
+            .phone(KeyboardLayoutId.KO_CHEONJIIN, PhoneOverlay.NONE, true)
+            .rows().get(3).get(1).control());
     }
 
     @Test
