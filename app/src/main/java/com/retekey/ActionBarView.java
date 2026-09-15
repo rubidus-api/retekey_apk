@@ -22,7 +22,8 @@ import java.util.Set;
  * costs the height of one short row and is never a mode.
  *
  * <p>Three kinds of slot sit side by side, and holding one does something different for each:
- * a built-in action does it once, text repeats while the finger is down the way a held key does,
+ * a built-in action does it once — except the keys, arrows to page keys, which repeat — text
+ * repeats while the finger is down the way a held key does,
  * and a key combination latches — pressed and left down until the slot is pressed again, which is
  * the only way an on-screen key can be held at all.
  */
@@ -38,6 +39,13 @@ final class ActionBarView extends HorizontalScrollView {
 
         /** A chord pressed and left down, or let up again. */
         void onChordLatch(BarSlot slot, boolean down);
+
+        /**
+         * A finger has come down on a slot that types ({@code true}) or lifted off it again. What
+         * modifiers are down is read once, here, so a held arrow keeps its Ctrl for every repeat
+         * and a one-shot toggle is spent by the press rather than by its first repeat.
+         */
+        void onPress(boolean down);
     }
 
     /** How tall the strip is. Shorter than a key row: it is a shelf, not another row of keys. */
@@ -124,8 +132,13 @@ final class ActionBarView extends HorizontalScrollView {
         private final Runnable repeat = new Runnable() {
             @Override
             public void run() {
+                repeated = true;
                 if (listener != null) {
-                    listener.onText(slot.text());
+                    if (slot.kind() == BarSlot.Kind.TEXT) {
+                        listener.onText(slot.text());
+                    } else {
+                        listener.onAction(slot.action());
+                    }
                 }
                 handler.postDelayed(this, Math.max(20, repeatIntervalMs));
             }
@@ -159,10 +172,26 @@ final class ActionBarView extends HorizontalScrollView {
             }
         }
 
+        /** Whether this slot types something a hold should repeat. */
+        private boolean repeats() {
+            return slot.kind() == BarSlot.Kind.TEXT
+                || (slot.kind() == BarSlot.Kind.BUILT_IN && slot.action() != null
+                    && slot.action().rawKey() != null);
+        }
+
+        private boolean pressing;
+        /** Set once a hold has repeated: the lift then types nothing more, as with a real key. */
+        private boolean repeated;
+
         private void press() {
             held = false;
+            repeated = false;
             paint(true);
-            if (slot.kind() == BarSlot.Kind.TEXT) {
+            if (repeats() && listener != null) {
+                pressing = true;
+                listener.onPress(true);
+            }
+            if (repeats()) {
                 handler.postDelayed(repeat, Math.max(50, repeatDelayMs));
             } else if (slot.canLatch() && !latched.contains(slot)) {
                 handler.postDelayed(latch, Math.max(50, repeatDelayMs));
@@ -173,10 +202,21 @@ final class ActionBarView extends HorizontalScrollView {
             handler.removeCallbacks(repeat);
             handler.removeCallbacks(latch);
             paint(false);
+            try {
+                deliver(insideThePress);
+            } finally {
+                if (pressing && listener != null) {
+                    pressing = false;
+                    listener.onPress(false);
+                }
+            }
+        }
+
+        private void deliver(boolean insideThePress) {
             if (!insideThePress || listener == null) {
                 return;
             }
-            if (held) {
+            if (held || repeated) {
                 // The hold already did what it does; the lift only ends it.
                 return;
             }

@@ -76,6 +76,10 @@ public class ReteKeyImeService extends InputMethodService {
     /** True while the candidate list is the floating panel, in place of the keyboard. */
     private boolean hanjaFloating;
     private ComposingStripView composingStrip;
+    /** Modifier keys held on a physical keyboard, for action-bar keys pressed meanwhile. */
+    private final HeldHardwareModifiers heldHardware = new HeldHardwareModifiers();
+    /** The modifiers the action-bar press under the finger was made with, or null between presses. */
+    private java.util.Set<KeyModifier> pressModifiers;
     private boolean composingStripShown;
     private FloatingKeyboardFrame floatingFrame;
     /** True while the code-point pad is the floating panel, in place of the keyboard. */
@@ -102,6 +106,8 @@ public class ReteKeyImeService extends InputMethodService {
     private SystemBandFrame bandFrame;
     /** What the keyboard remembers of what was cut and copied through it. */
     private ClipHistory clips = ClipHistory.empty();
+    /** Whether {@link #clips} has been read from storage yet — until then it is not the list. */
+    private boolean clipsLoaded;
 
     @Override
     public View onCreateInputView() {
@@ -248,6 +254,18 @@ public class ReteKeyImeService extends InputMethodService {
             }
 
             @Override
+            public void onPress(boolean down) {
+                if (down) {
+                    pressModifiers = liveBarModifiers();
+                    if (keyboardView != null) {
+                        keyboardView.consumeRawKeyModifiers();
+                    }
+                } else {
+                    pressModifiers = null;
+                }
+            }
+
+            @Override
             public void onChordLatch(BarSlot slot, boolean down) {
                 if (slot.kind() == BarSlot.Kind.BUILT_IN) {
                     // A held modifier built-in: lock the latch, or let it up.
@@ -264,14 +282,47 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /** One press on the action bar. */
-    /** A text slot: what the user wrote, typed as if the keys had been pressed. */
+    /**
+     * The modifiers an action-bar key goes out with: the bar's and the keyboard's own toggles, and
+     * whatever is held on a physical keyboard. Read once when the finger comes down and kept for
+     * the whole press, so every repeat of a held arrow is still Ctrl+arrow.
+     */
+    private java.util.Set<KeyModifier> barModifiers() {
+        return pressModifiers != null ? pressModifiers : liveBarModifiers();
+    }
+
+    private java.util.Set<KeyModifier> liveBarModifiers() {
+        return BarKeyChord.union(
+            keyboardView == null ? null : keyboardView.rawKeyModifiers(),
+            heldHardware.held());
+    }
+
+    /** Spends one-shot toggles after a bar key used them — unless its press already did. */
+    private void spendBarModifiers() {
+        if (pressModifiers == null && keyboardView != null) {
+            keyboardView.consumeRawKeyModifiers();
+        }
+    }
+
+    /**
+     * A text slot: what the user wrote, typed as if the keys had been pressed. A single letter or
+     * digit under Ctrl, Alt or Meta is that chord instead (BarKeyChord), and Shift capitalises it.
+     */
     private void typeBarText(String text) {
         if (text == null || text.isEmpty()) {
             return;
         }
         try {
-            dispatchSoftwareInput(
-                ProjectKeyEvent.softwareDown("touch.bar.text", SemanticInput.text(text)));
+            java.util.Set<KeyModifier> mods = barModifiers();
+            RawKey chord = BarKeyChord.chordKey(text, mods);
+            if (chord != null) {
+                dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                    "touch.bar.text.chord", SemanticInput.rawKey(chord, mods)));
+            } else {
+                dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                    "touch.bar.text", SemanticInput.text(BarKeyChord.typed(text, mods))));
+            }
+            spendBarModifiers();
         } catch (RuntimeException ignored) {
             // A bar press must never crash the keyboard, whatever the editor does with it.
         }
@@ -288,9 +339,17 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         try {
+            // A tap adds whatever else is down to the slot's own modifiers; the two halves of a
+            // latched chord keep to the slot's, so the release matches the press.
+            java.util.Set<KeyModifier> mods = phase == RawKeyPhase.TAP
+                ? BarKeyChord.union(slot.modifiers(), barModifiers())
+                : slot.modifiers();
             dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
                 "touch.bar.chord",
-                SemanticInput.rawKey(slot.key(), slot.modifiers(), phase)));
+                SemanticInput.rawKey(slot.key(), mods, phase)));
+            if (phase == RawKeyPhase.TAP) {
+                spendBarModifiers();
+            }
         } catch (RuntimeException ignored) {
             // As above: a chord the editor refuses must not take the keyboard with it.
         }
@@ -349,15 +408,12 @@ public class ReteKeyImeService extends InputMethodService {
                         // keyboard's own Ctrl, Alt, Meta and Shift are holding: they used to be
                         // sent bare, so a locked Shift did nothing to them and Shift+arrow could
                         // not select from the bar at all.
-                        java.util.Set<KeyModifier> mods = keyboardView == null
-                            ? java.util.EnumSet.noneOf(KeyModifier.class)
-                            : keyboardView.rawKeyModifiers();
+                        // A physical keyboard's held modifiers count too (barModifiers).
+                        java.util.Set<KeyModifier> mods = barModifiers();
                         dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
                             "touch.bar." + action.stored(),
                             SemanticInput.rawKey(key, mods)));
-                        if (keyboardView != null) {
-                            keyboardView.consumeRawKeyModifiers();
-                        }
+                        spendBarModifiers();
                     }
                     break;
             }
@@ -410,6 +466,16 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void rememberCurrentClip() {
+        recordSystemClip(true);
+    }
+
+    /**
+     * Adds what is on Android's clipboard to the keyboard's list. {@code fromThisField}: the copy
+     * came from the field being typed in, whose own sensitivity then decides; otherwise the clip
+     * came from elsewhere and only its own marking does — a password manager marks what it copies
+     * as sensitive, and that is never kept.
+     */
+    private void recordSystemClip(boolean fromThisField) {
         try {
             android.content.ClipboardManager manager = Compat.systemService(
                 this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
@@ -420,8 +486,17 @@ public class ReteKeyImeService extends InputMethodService {
             if (data == null || data.getItemCount() == 0) {
                 return;
             }
+            boolean sensitive = isMarkedSensitive(data)
+                || (fromThisField && editorProfile.capabilities().isSensitive());
+            // The list lives in storage; the first record after the keyboard starts has to add to
+            // it, not to an empty one it would then write over the whole saved history with.
+            loadClipsOnce();
             CharSequence text = data.getItemAt(0).coerceToText(this);
-            ClipHistory updated = clips.record(text, editorProfile.capabilities().isSensitive());
+            ClipHistory before = clips;
+            ClipHistory updated = clips.record(text, sensitive);
+            if (updated != before && clipboardPanel != null) {
+                clipboardPanel.show(updated.clips());
+            }
             if (updated != clips) {
                 clips = updated;
                 ClipStore.save(this, clips);
@@ -429,6 +504,24 @@ public class ReteKeyImeService extends InputMethodService {
         } catch (RuntimeException ignored) {
             // Reading the clipboard is best-effort: a ROM that refuses must not break Copy.
         }
+    }
+
+    private void loadClipsOnce() {
+        if (!clipsLoaded) {
+            clips = ClipStore.load(this);
+            clipsLoaded = true;
+        }
+    }
+
+    /** Whether the app that copied this marked it private (Android 13's sensitive-content flag). */
+    private static boolean isMarkedSensitive(android.content.ClipData data) {
+        android.content.ClipDescription description = data.getDescription();
+        if (description == null || android.os.Build.VERSION.SDK_INT < 24) {
+            return false;
+        }
+        android.os.PersistableBundle extras = description.getExtras();
+        return extras != null && (extras.getBoolean("android.content.extra.IS_SENSITIVE", false)
+            || extras.getBoolean("android.clipboard.extra.IS_SENSITIVE", false));
     }
 
     /** How long the editor is given to act on a cut or copy before the clipboard is read. */
@@ -441,6 +534,10 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         clips = ClipStore.load(this);
+        clipsLoaded = true;
+        // What is on Android's clipboard now is the first thing anyone opening the list expects to
+        // see, whether or not the keyboard was watching when it was copied.
+        recordSystemClip(false);
         clipboardPanel = new ClipboardPanelView(this);
         setInputView(onCreateInputView());
         updateInputViewShown();
@@ -452,11 +549,26 @@ public class ReteKeyImeService extends InputMethodService {
         updateInputViewShown();
     }
 
+    private void putOnSystemClipboard(String text) {
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager != null) {
+                manager.setPrimaryClip(android.content.ClipData.newPlainText("ReteKey", text));
+            }
+        } catch (RuntimeException ignored) {
+            // Typing the clip still works without it.
+        }
+    }
+
     private ClipboardPanelView buildClipboardPanel() {
         final ClipboardPanelView panel = clipboardPanel;
         panel.setListener(new ClipboardPanelView.Listener() {
             @Override
             public void onPaste(String text) {
+                // The picked clip becomes the clipboard as well, so the app's own Paste and the
+                // next paste elsewhere agree with what was just chosen.
+                putOnSystemClipboard(text);
                 dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
                     "touch.bar.clip.paste", SemanticInput.text(text)));
                 closeClipboardPanel();
@@ -729,6 +841,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        heldHardware.onKey(keyCode, true);
         if (event.getRepeatCount() == 0 && handleHardwareFunctionKey(keyCode, event)) {
             return true;
         }
@@ -787,6 +900,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        heldHardware.onKey(keyCode, false);
         if (isBoundFunctionKey(keyCode, event)) {
             return true;
         }
@@ -1058,6 +1172,15 @@ public class ReteKeyImeService extends InputMethodService {
         dispatcher.reset();
         finishSession();
         try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager != null) {
+                manager.removePrimaryClipChangedListener(systemClipChanged);
+            }
+        } catch (RuntimeException ignored) {
+            // Never registered; nothing to unhook.
+        }
+        try {
             viewPrefs().unregisterOnSharedPreferenceChangeListener(barPrefsListener);
         } catch (RuntimeException ignored) {
             // Never registered, or the preferences are already gone; nothing to unhook.
@@ -1071,7 +1194,25 @@ public class ReteKeyImeService extends InputMethodService {
         // Held for the life of the service: the registration in SharedPreferences is weak, and a
         // listener that is collected is a setting that appears not to work.
         viewPrefs().registerOnSharedPreferenceChangeListener(barPrefsListener);
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager != null) {
+                manager.addPrimaryClipChangedListener(systemClipChanged);
+            }
+        } catch (RuntimeException ignored) {
+            // A ROM that will not let the keyboard watch the clipboard still has the list; it
+            // then fills from what is copied through the keyboard and what is there when it opens.
+        }
     }
+
+    /**
+     * Anything copied anywhere joins the keyboard's clip list — not only what was copied through
+     * the keyboard's own Copy. Before, the list and Android's clipboard were two different things:
+     * a phrase copied in a browser never appeared in it (owner's report).
+     */
+    private final android.content.ClipboardManager.OnPrimaryClipChangedListener systemClipChanged =
+        () -> mainHandler.post(() -> recordSystemClip(false));
 
     /**
      * Puts a freshly built input view on screen. The framework keeps the one it was given, so any

@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.173** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173-legacy.apk)
+**ReteKey v0.1.174** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.174/retekey-0.1.174.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.174/retekey-0.1.174-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.173** —
-[retekey-0.1.173.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173.apk) (640 KB; the Android 4.0 build is 528 KB)
+Current release: **v0.1.174** —
+[retekey-0.1.174.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.174/retekey-0.1.174.apk) (643 KB; the Android 4.0 build is 530 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -539,8 +539,8 @@ Stage one carries the things that need nothing remembered:
 | **Word** | selects the word around the cursor — the run between spaces or punctuation, in Korean as in English |
 | **All** | select all |
 | **Cut** / **Copy** / **Paste** | the editor's own three |
-| **← → ↑ ↓** | move the cursor |
-| **Home** / **End** / **PgUp** / **PgDn** | jump |
+| **← → ↑ ↓** | move the cursor; hold to repeat |
+| **Home** / **End** / **PgUp** / **PgDn** | jump; hold to repeat |
 | **Clip** | the clipboard list, below |
 | **Sym** | the symbols page, from wherever you are |
 | **Memo** | raises the notepad |
@@ -556,6 +556,12 @@ Two kinds of slot are yours to make:
 Give either one a label and that is what the bar says; leave it blank and it shows the text itself,
 or the combination's name.
 
+Every key on the bar chords with the modifiers that are down, wherever they are held: the bar's own
+Ctrl/Alt/Meta slots, the keyboard's Ctrl, Alt, Meta and Shift, and a physical keyboard's. Hold Ctrl
+on a keyboard and tap the bar's → to jump a word; arm Ctrl and tap a text slot of `c` to copy —
+a text slot of one letter or digit goes out as that key, and Shift alone capitalises it. A one-shot
+toggle is spent by the press, so a held arrow keeps its Ctrl for every repeat.
+
 Macros are the stage after this one.
 
 **Word** needs the editor to say where the cursor is. A few — some terminals — never do, and there
@@ -565,14 +571,17 @@ the button does nothing rather than selecting the wrong thing.
 
 ![The clipboard list over the keyboard](assets/keyboard-clipboard.png)
 
-**Clip** opens what the keyboard remembers of what was cut and copied *through its own bar*. Tap a
+**Clip** opens what the keyboard remembers of what was cut and copied — through its own bar and in
+any other app, since it follows Android's clipboard. The clip on the clipboard now is at the top when
+the list opens, and a clip you pick becomes the clipboard as well as being typed. Tap a
 clip to paste it; ☆ pins it so it is never aged out; ✕ forgets one and **Clear** forgets all the
 unpinned ones.
 
 What it will not do matters as much as what it will:
 
-- **Nothing is recorded from a password or other sensitive field.** Those must not survive the
-  keystroke, and a clipboard list is exactly where they would.
+- **Nothing is recorded from a password or other sensitive field**, nor anything an app marks as
+  sensitive when it copies it (password managers do). Those must not survive the keystroke, and a
+  clipboard list is exactly where they would.
 - Twenty unpinned clips are kept, newest first; pinned ones do not count towards that.
 - Copying the same thing twice moves it up rather than storing it twice.
 - A clip longer than 4000 characters is truncated: this is for pasting a line back, not for storing

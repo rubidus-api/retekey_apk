@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.173** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173-legacy.apk)
+**ReteKey v0.1.174** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.174/retekey-0.1.174.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.174/retekey-0.1.174-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.173** —
-[retekey-0.1.173.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.173/retekey-0.1.173.apk) (640 KB; 안드로이드 4.0 빌드는 528 KB)
+현재 릴리즈: **v0.1.174** —
+[retekey-0.1.174.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.174/retekey-0.1.174.apk) (643 KB; 안드로이드 4.0 빌드는 530 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -549,6 +549,12 @@ bar settings** 입니다. 거기서 켜고 무엇을 올릴지 정하십시오. 
 
 이름을 붙이시면 바에 그 이름이 나오고, 비워 두시면 문자열 자체나 조합 이름이 나옵니다.
 
+바의 모든 키는 어디에서 눌러 둔 수정자와도 조합됩니다. 바 자신의 Ctrl/Alt/Meta 칸, 키보드의 Ctrl·Alt·
+Meta·Shift, 그리고 물리 키보드의 수정자까지입니다. 물리 키보드의 Ctrl 을 누른 채 바의 → 를 누르면 단어
+단위로 움직이고, Ctrl 을 켜 두고 `c` 한 글자짜리 문자열 칸을 누르면 복사가 됩니다 — 글자나 숫자 하나짜리
+문자열 칸은 그 키로 나가고, Shift 만 있으면 대문자가 됩니다. 한 번짜리 토글은 누르는 순간 쓰이므로, 방향키를
+길게 누르면 반복되는 동안 내내 Ctrl 이 유지됩니다. 방향키·Home/End·PgUp/PgDn 도 길게 누르면 반복됩니다.
+
 매크로는 다음 단계입니다.
 
 **Word**는 편집기가 커서 위치를 알려 주어야 동작합니다. 알려 주지 않는 편집기(일부 터미널)에서는
@@ -558,12 +564,15 @@ bar settings** 입니다. 거기서 켜고 무엇을 올릴지 정하십시오. 
 
 ![키보드 위의 클립보드 목록](assets/keyboard-clipboard.png)
 
-**Clip**을 누르면 이 키보드의 **바를 통해** 잘라내거나 복사한 것들이 나옵니다. 항목을 누르면 붙여넣고,
+**Clip**을 누르면 잘라내거나 복사한 것들이 나옵니다. 안드로이드 클립보드를 따라가므로 이 키보드의 바에서
+한 것뿐 아니라 다른 앱에서 복사한 것도 들어오고, 목록을 열면 지금 클립보드에 있는 것이 맨 위에 있습니다.
+목록에서 고른 항목은 입력되면서 클립보드에도 들어갑니다. 항목을 누르면 붙여넣고,
 ☆는 고정(오래되어도 지워지지 않음), ✕는 하나 지우기, **Clear**는 고정하지 않은 것 전부 지우기입니다.
 
 하지 않는 일도 그만큼 중요합니다.
 
-- **비밀번호 등 민감한 입력창에서는 아무것도 기록하지 않습니다.** 그런 값이 남을 곳으로 클립보드
+- **비밀번호 등 민감한 입력창에서는 아무것도 기록하지 않고**, 복사한 앱이 민감하다고 표시한
+  내용(비밀번호 관리자가 그렇게 합니다)도 기록하지 않습니다. 그런 값이 남을 곳으로 클립보드
   목록만 한 데가 없기 때문입니다.
 - 고정하지 않은 항목은 최신 20개까지만 남습니다. 고정한 항목은 이 수에 들어가지 않습니다.
 - 같은 것을 두 번 복사하면 새로 쌓이지 않고 맨 위로 올라옵니다.
