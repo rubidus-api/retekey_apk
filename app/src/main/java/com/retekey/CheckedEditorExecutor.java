@@ -53,6 +53,23 @@ public final class CheckedEditorExecutor {
             );
         }
 
+        if (endsInAKeyAfterWrites(plan.actions())) {
+            // A key pressed while a syllable is still being built: the syllable is written first,
+            // then the key goes out. The batched path cannot send a key event, and a plan of both
+            // used to throw there — the service caught it, so the syllable landed and the key was
+            // lost: 가 then Enter in Termux wrote 가 and ran nothing (interaction matrix, 0.1.175).
+            List<KeyAction> actions = plan.actions();
+            ExecutionResult written = executeInternal(
+                subPlan(plan, actions.subList(0, actions.size() - 1)), context, endpointProvider);
+            if (written.isFailure()) {
+                return written;
+            }
+            return executeRawCompatibility(
+                subPlan(plan, actions.subList(actions.size() - 1, actions.size())),
+                endpoint,
+                context.capabilities());
+        }
+
         boolean rawEditor = context.capabilities().deletionMode()
             == EditorCapabilities.DeletionMode.RAW_KEY;
         // A raw-key editor (a terminal like Termius reporting TYPE_NULL) uses key events for
@@ -145,6 +162,33 @@ public final class CheckedEditorExecutor {
 
     private static boolean isSingleCommitText(List<KeyAction> actions) {
         return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.COMMIT_TEXT;
+    }
+
+    /** Writes of text followed by one key event — the shape a flush before a key takes. */
+    private static boolean endsInAKeyAfterWrites(List<KeyAction> actions) {
+        if (actions.size() < 2) {
+            return false;
+        }
+        KeyAction.Kind last = actions.get(actions.size() - 1).kind();
+        if (last != KeyAction.Kind.RAW_KEY && last != KeyAction.Kind.RAW_ENTER) {
+            return false;
+        }
+        for (int i = 0; i < actions.size() - 1; i++) {
+            switch (actions.get(i).kind()) {
+                case RAW_KEY:
+                case RAW_ENTER:
+                case PERFORM_EDITOR_ACTION:
+                    return false;
+                default:
+                    break;
+            }
+        }
+        return true;
+    }
+
+    private static <S> TransitionPlan<S> subPlan(TransitionPlan<S> plan, List<KeyAction> actions) {
+        return TransitionPlan.of(plan.generation(), plan.baseRevision(), plan.disposition(),
+            plan.proposedState(), plan.expectedBounds(), new java.util.ArrayList<>(actions));
     }
 
     private static boolean isSingleRawKey(List<KeyAction> actions) {

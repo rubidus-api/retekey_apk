@@ -1123,6 +1123,28 @@ session's clipboard and a screenshot taken inside the guest (§15a.7, §15a.8). 
 still cannot tell you is how a real finger and a real screen behave — size, feel, and whether a
 strip is legible — so those stay on the device checklist.
 
+**Type every cell of the interaction matrix, not the one you changed.** Most defects this keyboard
+shipped lived in a combination nobody typed: a syllable redrawn in a terminal, a key passed through
+mid-syllable, an arrow pressed right after a syllable. Two matrices now run them together:
+
+- `InteractionMatrixTest` (JVM, every build): five editor kinds — rich text, remote desktop,
+  terminal with the strip, terminal drawn, Termux's text mode — × fourteen ways of typing, each
+  ending in one expected screen that every editor must show. The keys go through the real
+  dispatcher, composer and executor; the editors are models in `SimulatedEditors`, each rule citing
+  the behaviour it copies; the parts of the service a JVM cannot run (passing a key through, leaving
+  the field, reacting to a selection report) are reproduced with a pointer to the method each
+  copies. It prints the whole table and names every failing cell.
+- `scripts/interaction-matrix.sh` (emulator lane, instrumentation build, about nine minutes): the
+  cells only a real editor and a real IME window answer — real Termux in both modes, the strip's
+  view tree, the notepad, touches on the action bar with physical modifiers held, the clipboard
+  list, the pads. It prints a PASS/FAIL table and exits with the number of failing cells.
+
+**Prove a matrix catches something.** When a cell is added for a defect, run it once against the
+code before the fix and see it fail; a cell that has only ever passed may be testing its own model.
+And when a cell fails, reproduce it on a real editor before trusting it: the first run of the JVM
+matrix failed twelve cells, of which the Enter row was the model's fault (a multi-line field asks
+for no Enter action) and the rest were a real defect (§15.34).
+
 ## 15. Anti-patterns, with the failures that taught them
 
 ### 15.1 A strict expectation ledger that can latch
@@ -2042,6 +2064,26 @@ it.
 **Rule.** A convenience copy of system state must follow the system, in both directions. And a cache
 that is lazily loaded must be loaded before its first write, not only before its first read.
 
+### 15.34 A key that arrives while a syllable is still being built
+
+**What happened.** A key event pressed while a syllable was still composing — the action bar's
+arrow, a soft Ctrl chord, a pad's Tab or Esc, a raw Enter — was planned as two actions: commit the
+syllable, then send the key. The executor's batched path could commit but could not send a key
+event, and threw; the service caught the exception, reset the composer and showed a failure. The
+syllable had already landed, so what the user saw was the key doing nothing: 가 and then Enter in
+Termux wrote 가 and ran no command. It hit rich-text fields and the terminal strip alike, and only
+the remote-desktop and drawn-terminal paths escaped, because there the syllable was already on
+screen and the plan was the key alone. The first run of the interaction matrix found it; real Termux
+confirmed it (0.1.175).
+
+**The fix.** `CheckedEditorExecutor` recognises a plan of writes followed by one key event, runs the
+writes as a plan of their own, and then sends the key through the single-key path — the same split
+it already made for a trailing editor action.
+
+**Rule.** An exception caught to keep the keyboard alive is also a defect hidden from everyone.
+Wherever a composer can put two kinds of action in one plan, test that plan end to end; and treat a
+caught exception on the typing path as a failure a test must be able to see.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2163,4 +2205,6 @@ allow` first.
   with the modifiers of the press (§15.32).
 - [ ] The clip list follows the system clipboard both ways and survives the keyboard restarting
   (§15.33).
+- [ ] `InteractionMatrixTest` passes, and `scripts/interaction-matrix.sh` on the emulator lane
+  reports 0 failing cells (§14).
 - [ ] This manual was updated for whatever changed.
