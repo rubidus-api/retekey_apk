@@ -575,6 +575,34 @@ via `onKeyShortcut`, a terminal receives the control code.
 sendRawKey(KeyEvent.KEYCODE_B, KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON);
 ```
 
+**A modifier held on a physical keyboard applies to on-screen keys too.** One hand can hold Ctrl on
+a keyboard while the other taps an arrow on the action bar; that arrow must go out as Ctrl+arrow,
+exactly as the keyboard's own arrow would. The IME sees every modifier key's down and up, so keep a
+record of them — per key code, so that letting go of left Shift while right Shift is down still
+leaves Shift held — and update it on the first line of `onKeyDown` and `onKeyUp`, before any early
+return, or a pass-through path will miss the release:
+
+```java
+@Override
+public boolean onKeyDown(int keyCode, KeyEvent event) {
+    heldHardware.onKey(keyCode, true);          // before anything can return
+    ...
+}
+
+// An on-screen key's modifiers: the soft latches, the bar's, and the physical keyboard's.
+Set<KeyModifier> mods = union(keyboardView.rawKeyModifiers(), heldHardware.held());
+```
+
+Read that set **once, when the finger comes down**, and keep it for the whole press. A key that
+repeats while held otherwise loses a one-shot Ctrl on its first repeat — the latch is spent by the
+first key event — and the rest of the hold goes out bare (§15.32).
+
+**A soft modifier chords by the key's place, not by what it types.** On a physical Korean keyboard
+Ctrl+C is the key that types ㅊ, and that is the key people press. An on-screen page that types jamo
+must map its keys to the Latin letter in the same place before building the chord, or an armed Ctrl
+on the Korean page types ㅊ instead of copying — in every app. ReteKey keeps that table beside the
+layout (`ChordLetters`) and a unit test checks that the 26 letter keys map to 26 different letters.
+
 Left and right modifiers are distinct key codes (`KEYCODE_CTRL_LEFT` = 113,
 `KEYCODE_CTRL_RIGHT` = 114), which is what makes "Right Ctrl toggles the language, Left Ctrl still
 does Ctrl+C" possible.
@@ -648,6 +676,42 @@ private void showCandidates(String reading, List<Item> items) {
 Hide the strip when the user types anything else, and on `onStartInput` / `onFinishInputView`, or a
 stale strip will outlive the text it referred to. If you support number-key selection, intercept
 those keys *before* the "any other key hides the strip" rule.
+
+Four rules this project paid for with a strip nobody could see (issue #7, 0.1.170):
+
+- **Showing the strip is not enough to make it visible.** `InputMethodService` lays its candidates
+  frame inside a *full-screen area* whose visibility it sets from the candidates' visibility at the
+  moment the window is laid out. A later `setCandidatesViewShown(true)` changes only the inner
+  frame, so a strip shown after the keys came up sits, switched on and filled in, inside a hidden
+  parent. Walk up from your view and make every hidden ancestor visible when you show it.
+- **Return `View.GONE` from `getCandidatesHiddenVisibility()`.** The default is `INVISIBLE`, which
+  keeps the strip's height; since the candidates view exists for the whole window, not just the
+  editors that use it, every app gets an empty band above the keys.
+- **Call `setCandidatesViewShown` only when the state changes.** Hiding the candidates view while no
+  input view was requested hides the whole window, which takes down any other panel that window was
+  showing — a Hanja list with a hardware keyboard, for one.
+- **A floating keyboard cannot use it.** A floating panel's window covers the screen, so the strip
+  lands at the top of the display under the status bar, and each time it appears the panel below
+  shrinks by its height and the keys resize. Draw the text in the panel itself instead — ReteKey
+  uses the panel's title bar.
+
+```java
+private void revealCandidatesArea() {
+    View decor = getWindow().getWindow().getDecorView();
+    ViewParent parent = strip.getParent();
+    while (parent instanceof View && parent != decor) {
+        View area = (View) parent;
+        if (area.getVisibility() != View.VISIBLE) area.setVisibility(View.VISIBLE);
+        parent = area.getParent();
+    }
+}
+
+@Override public int getCandidatesHiddenVisibility() { return View.GONE; }
+```
+
+None of this shows on a headless emulator's screen. It does show in the view tree: dump the IME
+window's decor view with each view's visibility, size and position (§14), and a parent marked `I`
+above a visible strip is the whole bug.
 
 ## 11. Drawing a custom keyboard
 
@@ -954,6 +1018,15 @@ Rules:
 - Keep every `WindowInsets` reference in one class if the app still runs on API 14–19, where the
   type does not exist.
 
+**A floating panel lives in a window the size of the screen.** Two consequences:
+
+- The touchable region you hand the framework in `onComputeInsets` is in **window** coordinates. A
+  panel's bounds are its own; offset them by `getLocationInWindow`, because anything the framework
+  adds above the input view — a candidates strip — moves the panel down, and the region would
+  otherwise answer touches that far above the keys.
+- **The whole title bar is the move handle.** A small handle at one end of a bar that is mostly
+  empty is a target people miss. Every part of the bar that is not a key (cross over, close, resize)
+  starts a move (0.1.171).
 
 ## 13. Settings and persistence
 
@@ -1024,6 +1097,31 @@ adb logcat -d | grep -E "FATAL|AndroidRuntime"
 Anything visual or input-interactive must be verified on a real device. When a regression appears,
 build a **known-good tag** and install it on the same emulator: if the known-good build produces
 identical symptoms, the symptom is the environment, not your change.
+
+**An instrumentation build turns the emulator into a measuring instrument.** It cannot show the
+keyboard, but it can press it and read back what happened. ReteKey keeps a gitignored
+`instrumentation` source set whose service subclass registers a broadcast receiver; each command
+below was added to settle a question this manual now answers:
+
+- **Type through the real soft path.** Hand `dispatchSoftwareInput` the event a touch would have
+  produced (`keys=cho0,jung0,RAW:C:CTRL`), with a gap between keys so editor reports interleave as
+  they do under a thumb. Read the result back from the editor — a file the shell wrote in Termux
+  (`run-as com.termux cat`), or a field's text and selection by reflection.
+- **Photograph the IME window without a surface.** `decor.draw(new Canvas(bitmap))` renders the
+  window's views into a bitmap you can pull and look at; a dump of the view tree (class, visibility,
+  size, position) explains what the picture shows. This is how the invisible strip and the floating
+  panel's layout were seen (§10).
+- **Touch the IME's own views.** `MotionEvent`s dispatched to an action-bar slot or a floating frame
+  run the real touch code — tap, hold, repeat, drag — which `adb input` cannot reach.
+- **Hold a physical key.** Call `onKeyDown`/`onKeyUp` with a modifier and leave it down between
+  commands; `adb input keyevent` times out under TCG and cannot hold anything.
+- **Read and write the clipboard** from the IME process, which Android allows for the current IME.
+
+For a remote desktop, measure the far side too: the Microsoft client installed on the emulator,
+connected to a Windows VM, with a scheduled task in the logged-on session reading or setting the
+session's clipboard and a screenshot taken inside the guest (§15a.7, §15a.8). What the emulator
+still cannot tell you is how a real finger and a real screen behave — size, feel, and whether a
+strip is legible — so those stay on the device checklist.
 
 ## 15. Anti-patterns, with the failures that taught them
 
@@ -1887,6 +1985,63 @@ capability is switched on by a list of package names, ask what the list is stand
 it was standing in for "has no composing region", which two other kinds of editor also are. And
 when a fix depends on recognising something, test it against something it does not recognise.
 
+### 15.31 A panel of the keyboard's own that lets keys fall through
+
+**What happened.** The notepad is a panel the keyboard draws over the app, with its own text fields.
+While a note was open, the service routed letters, jamo, Backspace and Enter into it — and nothing
+else. Ctrl chords from the soft Ctrl, the action bar's arrows and Home/End, a held Tab, and the
+bar's select-all, word, cut, copy and paste all went past the note to the app behind it: Ctrl+C
+copied from a field the user could not see, and the bar's arrows moved a cursor nobody was looking
+at (0.1.172).
+
+**The fix.** Every input kind is the panel's while it is open. `NotepadKeys` reads a raw key plus
+modifiers into a command (Ctrl+A/C/X/V/Z/Y, Shift+Insert, arrows, Ctrl+arrow word jumps, Home/End,
+page keys, Tab, Delete), `NotepadView.applyKey` carries it out on the focused field — Shift extends
+the selection — and the context-menu commands from the bar go to `NotepadView.editCommand`. A key
+the panel has no use for is swallowed, not forwarded; a hold acts once and its release does nothing.
+
+**Rule.** A panel that takes the keyboard's text must take all of it. List the input kinds the
+dispatcher can produce and decide for each one what the panel does with it; "everything else goes to
+the app" is how a panel leaks.
+
+### 15.32 Modifiers read from one place, and spent by the first repeat
+
+**What happened.** The action bar's arrows chorded with the keyboard's own latches but not with a
+Ctrl held on a physical keyboard; its text slots chorded with nothing at all, so a slot of `c` under
+Ctrl typed `c`; and the arrows did not repeat while held. When repeat was added, a one-shot Ctrl
+armed before the press chorded the first step and was then spent, so the rest of the hold moved
+character by character (0.1.174). The keypad pages had the opposite gap: no Shift at all, so an
+arrow could not select from them (0.1.173).
+
+**The fix.** Three sources, one union: the bar's modifier slots, the keyboard's latches, and the
+physical keyboard's held keys (`HeldHardwareModifiers`, §9). The bar reports when a finger comes
+down and lifts (`onPress`); the service reads the union then, spends the one-shot latches once, and
+uses that set for every event of the press. A text slot of one letter or digit is a key: under
+Ctrl/Alt/Meta it is sent as the chord, and Shift alone capitalises it (`BarKeyChord`). The keypad
+and cursor pads got a Shift in their empty cell, behaving like the letter pages' own.
+
+**Rule.** A key is a key wherever it is drawn. Whatever modifiers can be down, from whatever source,
+apply to it; and state that belongs to a press is read when the press starts, not on every event the
+press produces.
+
+### 15.33 A history that shadows the clipboard
+
+**What happened.** The keyboard's clip list recorded a clip only after its own Copy or Cut. A phrase
+copied in a browser never appeared in it, and a clip picked from it was typed but never became the
+clipboard, so the app's own Paste disagreed with the list — two clipboards that looked like one
+(owner's report). Fixing that exposed a second defect: the list was read from storage only when the
+panel opened, so the first clip recorded after the keyboard started was added to an empty list and
+saved over the whole history (0.1.174).
+
+**The fix.** Register an `OnPrimaryClipChangedListener` in `onCreate` and record every change; read
+the current clip when the list opens; put a picked clip on the clipboard before typing it. Skip a
+clip the copying app marks sensitive (`ClipDescription` extras, Android 13) as well as anything
+copied from a sensitive field. Load the stored list before the first record, whichever path records
+it.
+
+**Rule.** A convenience copy of system state must follow the system, in both directions. And a cache
+that is lazily loaded must be loaded before its first write, not only before its first read.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -1962,6 +2117,30 @@ Guessing from this side produced three plausible-but-wrong releases; one measure
 side settled each question in minutes. If a remote-desktop path misbehaves, instrument the far
 end first.
 
+### 15a.8 Clipboard sharing is the client's, and it works — measure before "fixing" it
+
+Copy and paste between a remote desktop and other Android apps was reported as not shared. Measured
+with the Microsoft client (Windows App 11.0.26071.13915) on the emulator against a Windows 11 VM,
+with a scheduled task in the session reading and setting its clipboard (2026-09-14):
+
+| Case | Result |
+|---|---|
+| Client's clipboard redirection **off** | nothing crosses, either way |
+| Redirection on, remote copy → Android | arrives, even with the client in the background |
+| Redirection on, copy in another app → return to the client | arrives within seconds of returning |
+| Copy in another app while the client stays in the background | does not cross until the client is in front — Android 10+ lets no background app read the clipboard |
+| The keyboard's bar Select all + Copy in a remote Notepad | reaches the remote and the Android clipboard |
+| Copy in another app, return, the keyboard's bar Paste | lands in the remote Notepad |
+
+So the sharing is the client's, switched per connection (a URI with `redirectclipboard:i:1` prompts
+for it), and the keyboard's chords take part in it correctly. An IME cannot read the remote
+clipboard at all. The one thing it could add is typing the Android clip on Paste instead of sending
+Ctrl+V — which crosses even with redirection off, but pastes a stale Android clip over a copy made
+inside the remote session; that is a setting to offer, not a default. On the emulator, the client's
+redirection prompt asks for all-files access through a settings screen the ATD image lacks and
+silently drops the connection; `appops set --uid com.microsoft.rdc.androidx MANAGE_EXTERNAL_STORAGE
+allow` first.
+
 ## 16. Pre-release checklist
 
 - [ ] The IME appears in the keyboard list (manifest permission, action, and `method.xml` correct).
@@ -1976,4 +2155,12 @@ end first.
 - [ ] Unit tests cover the Android-free core **and** parse the shipped data files.
 - [ ] Anything visual or input-interactive was verified on a real device, not an emulator.
 - [ ] Typing, backspace, chords, and paste were exercised in a **remote-desktop** client (§15a).
+- [ ] A candidates strip is visible with the keys up, docked and floating, and a hidden one takes no
+  room in any app (§10). Checked in the view tree, since no screen will show it on an emulator.
+- [ ] A panel the keyboard owns (notepad) consumes every key and editing command while it is open
+  (§15.31).
+- [ ] On-screen and action-bar keys chord with soft, bar and physical modifiers; held keys repeat
+  with the modifiers of the press (§15.32).
+- [ ] The clip list follows the system clipboard both ways and survives the keyboard restarting
+  (§15.33).
 - [ ] This manual was updated for whatever changed.
