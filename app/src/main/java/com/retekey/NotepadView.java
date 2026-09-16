@@ -63,6 +63,7 @@ public final class NotepadView extends LinearLayout {
 
     private Runnable onClose;
     private Runnable onChanged;
+    private TextTaker onSendToApp;
     /**
      * How many characters at the cursor are a syllable still being composed. The notepad has no
      * editor to hold a preedit for it, so it keeps the composing text in the note itself and
@@ -202,6 +203,15 @@ public final class NotepadView extends LinearLayout {
                 pasteClipboard();
             }
         }));
+        // Into the app, not into the note: the selection if there is one, otherwise the whole
+        // note, typed at the app's own cursor the way a key is — so it lands in a terminal or a
+        // remote desktop as well, where a paste would not (the user asked for this, 2026-09-16).
+        noteLinks.addView(toolButton(context, "Send", new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendToApp();
+            }
+        }));
         noteLinks.addView(toolButton(context, "Del", new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -263,6 +273,19 @@ public final class NotepadView extends LinearLayout {
     /** Called whenever the notes change, so the host can write them out. */
     public void setOnChanged(Runnable listener) {
         this.onChanged = listener;
+    }
+
+    /** Takes a piece of text out of the panel and into whatever the keyboard is typing into. */
+    public interface TextTaker {
+        void take(String text);
+    }
+
+    /**
+     * Called when the user asks for the note to be typed into the app at its cursor. The host
+     * sends it the way a key does, so it arrives in a terminal or a remote desktop too.
+     */
+    public void setOnSendToApp(TextTaker listener) {
+        this.onSendToApp = listener;
     }
 
     public NoteList notes() {
@@ -586,6 +609,29 @@ public final class NotepadView extends LinearLayout {
      * Copies the selection, or the whole field when nothing is selected — which is what "copy the
      * body" means when the cursor is just sitting in it. Cutting is the same, and then removes it.
      */
+    /**
+     * Hands the note to the host to type into the app at its cursor: the selected part if the
+     * user selected one, the whole note otherwise. The host closes the panel first — while the
+     * notepad is up it takes every key for itself, and the text is meant for what is behind it.
+     */
+    private void sendToApp() {
+        if (onSendToApp == null) {
+            return;
+        }
+        EditText target = focusedField();
+        Editable editable = target.getText();
+        int start = Math.max(0, target.getSelectionStart());
+        int end = Math.max(start, target.getSelectionEnd());
+        if (start == end) {
+            start = 0;
+            end = editable.length();
+        }
+        if (end <= start) {
+            return;
+        }
+        onSendToApp.take(editable.subSequence(start, end).toString());
+    }
+
     private void copySelection(boolean cut) {
         EditText target = focusedField();
         Editable editable = target.getText();

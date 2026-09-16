@@ -1899,6 +1899,15 @@ public class ReteKeyImeService extends InputMethodService {
         final NotepadView panel = notepad;
         panel.setOnClose(this::closeNotepad);
         panel.setOnChanged(() -> NoteStore.save(this, panel.notes()));
+        // Send: the note goes into the app as typed input, the same road a key takes, so a
+        // terminal or a remote desktop receives it like anything else the keyboard types.
+        panel.setOnSendToApp(text -> {
+            // The notepad takes every key while it is up, so it comes down first; then the note
+            // goes out the road a key takes, which a terminal and a remote desktop understand.
+            closeNotepad();
+            dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                "touch.note.send", SemanticInput.text(text)));
+        });
         return panel;
     }
 

@@ -134,14 +134,17 @@ public final class KeyboardLayouts {
     private static final KeyboardLayout JA_FLICK_NAV_SHIFTED = kanaFlick(PhoneOverlay.NAV, true);
     private static final KeyboardLayout CHEONJIIN = cheonjiin();
     private static final KeyboardLayout NARATGEUL = naratgeul();
+    // Both Hangul pads carry Shift now, so their own page has a held-Shift face as well.
+    private static final KeyboardLayout CHEONJIIN_SHIFTED = cheonjiin(PhoneOverlay.NONE, true);
+    private static final KeyboardLayout NARATGEUL_SHIFTED = naratgeul(PhoneOverlay.NONE, true);
     private static final KeyboardLayout PAD_ARROWS_LAYOUT =
         padLayout(KeyboardLayoutId.PAD_ARROWS, false, false);
     private static final KeyboardLayout PAD_ARROWS_SHIFTED =
         padLayout(KeyboardLayoutId.PAD_ARROWS, false, true);
     private static final KeyboardLayout PAD_KEYPAD_LAYOUT =
         padLayout(KeyboardLayoutId.PAD_KEYPAD, true, false);
-    private static final KeyboardLayout IPA_BASE = ipa(false);
-    private static final KeyboardLayout IPA_SECOND = ipa(true);
+    private static final KeyboardLayout IPA_SYMBOLS = ipa(false);
+    private static final KeyboardLayout IPA_LETTERS = ipa(true);
     private static final KeyboardLayout PAD_KEYPAD_SHIFTED =
         padLayout(KeyboardLayoutId.PAD_KEYPAD, true, true);
     private static final KeyboardLayout CHARS = buildSpecialChars();
@@ -237,15 +240,15 @@ public final class KeyboardLayouts {
             case KO_DUBEOLSIK:
                 return shifted ? KO_SHIFTED : KO_BASE;
             case KO_CHEONJIIN:
-                return CHEONJIIN;
+                return shifted ? CHEONJIIN_SHIFTED : CHEONJIIN;
             case KO_NARATGEUL:
-                return NARATGEUL;
+                return shifted ? NARATGEUL_SHIFTED : NARATGEUL;
             case PAD_ARROWS:
                 return shifted ? PAD_ARROWS_SHIFTED : PAD_ARROWS_LAYOUT;
             case PAD_KEYPAD:
                 return shifted ? PAD_KEYPAD_SHIFTED : PAD_KEYPAD_LAYOUT;
             case ETC_IPA:
-                return shifted ? IPA_SECOND : IPA_BASE;
+                return shifted ? IPA_LETTERS : IPA_SYMBOLS;
             case SPECIAL_CHARS:
                 return CHARS;
             default:
@@ -314,7 +317,7 @@ public final class KeyboardLayouts {
         return phone(id, overlay, false);
     }
 
-    /** The same, with Shift down — which only the keypad and cursor overlays have a key for. */
+    /** The same, with Shift down — the Hangul pads and both overlays have a key for it. */
     public static KeyboardLayout phone(KeyboardLayoutId id, PhoneOverlay overlay, boolean shifted) {
         if (overlay == null) {
             throw new IllegalArgumentException("overlay must not be null");
@@ -323,14 +326,14 @@ public final class KeyboardLayouts {
             switch (overlay) {
                 case DIGITS: return shifted ? CHEONJIIN_DIGITS_SHIFTED : CHEONJIIN_DIGITS;
                 case NAV: return shifted ? CHEONJIIN_NAV_SHIFTED : CHEONJIIN_NAV;
-                default: return CHEONJIIN;
+                default: return shifted ? CHEONJIIN_SHIFTED : CHEONJIIN;
             }
         }
         if (id == KeyboardLayoutId.KO_NARATGEUL) {
             switch (overlay) {
                 case DIGITS: return shifted ? NARATGEUL_DIGITS_SHIFTED : NARATGEUL_DIGITS;
                 case NAV: return shifted ? NARATGEUL_NAV_SHIFTED : NARATGEUL_NAV;
-                default: return NARATGEUL;
+                default: return shifted ? NARATGEUL_SHIFTED : NARATGEUL;
             }
         }
         if (id == KeyboardLayoutId.JA_FLICK) {
@@ -484,12 +487,13 @@ public final class KeyboardLayouts {
      * 漢 on the 12-key pads, in the cell beside Ctrl. It is one of only three places Hanja
      * conversion can be reached from, so it belongs where Hangul is being typed — and nowhere else:
      * while an overlay has turned the pad into a keypad or a cursor cluster there is no reading in
-     * front of the cursor to convert, so the cell is Shift there, as on the Keypad and Arrows
-     * pages: Shift+arrow selects.
+     * front of the cursor to convert, so the cell is left empty there. Shift is not put here any
+     * more: it is one cell up on both pages now, in the same place whatever the overlay, so
+     * Shift+arrow selects from the cursor cluster without the key moving under the finger.
      */
     private static SoftwareKeySpec phoneHanjaKey(PhoneOverlay overlay, boolean shifted) {
         if (overlay != PhoneOverlay.NONE) {
-            return shiftKey(shifted);
+            return phoneGap("hanja", 1);
         }
         return SoftwareKeySpec.control("touch.phone.hanja", "漢", ControlKey.HANJA);
     }
@@ -587,8 +591,8 @@ public final class KeyboardLayouts {
 
     /**
      * Ends the syllable being composed and starts the next one, without typing anything. It sits
-     * beside Alt, in the one-column cell the pad key left, so the bottom row can carry the
-     * punctuation that flanks ㅇㅁ.
+     * on 천지인's bottom row, to the left of ㅇㅁ, where the full stop used to be: that punctuation
+     * is on the key beside Enter, and the cell Next had is Shift's now.
      */
     private static SoftwareKeySpec commitKey() {
         return SoftwareKeySpec
@@ -641,15 +645,17 @@ public final class KeyboardLayouts {
             padCell(overlay, 4, cheonjiinKey(CheonjiinInterpreter.Key.NIEUN, "ㄴㄹ", PadHolds.digit(4))),
             padCell(overlay, 5, cheonjiinKey(CheonjiinInterpreter.Key.DIGEUT, "ㄷㅌ", PadHolds.digit(5))),
             phoneSpaceKey()));
-        rows.add(phoneRow(2, commitKey(),
+        rows.add(phoneRow(2, shiftKey(shifted),
             padCell(overlay, 6, cheonjiinKey(CheonjiinInterpreter.Key.BIEUP, "ㅂㅍ", PadHolds.digit(6))),
             padCell(overlay, 7, cheonjiinKey(CheonjiinInterpreter.Key.SIOT, "ㅅㅎ", PadHolds.digit(7))),
             padCell(overlay, 8, cheonjiinKey(CheonjiinInterpreter.Key.JIEUT, "ㅈㅊ", PadHolds.digit(8))),
             letterPeriodKey(),
             enterKey()));
-        // ㅇㅁ sits under ㅅㅎ, with punctuation either side of it and 漢 beside Tab.
+        // ㅇㅁ sits under ㅅㅎ, Next on its left and ! ? on its right, with 漢 beside Tab. The
+        // full stop and comma are on the key beside Enter, so this cell carries Next instead:
+        // Shift took Next's old place above (the user's arrangement, 2026-09-16).
         List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay, shifted),
-            padCell(overlay, 9, phoneCycleKey("period", ".,")),
+            padCell(overlay, 9, commitKey().withColumnSpan(2)),
             padCell(overlay, 10, cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", PadHolds.digit(10))),
             padCell(overlay, 11, phoneCycleKey("exclaim", "!?")));
         bottom.addAll(phoneBottomPageKeys());
@@ -677,16 +683,16 @@ public final class KeyboardLayouts {
             padCell(overlay, 4, naratgeulKey(NaratgeulInterpreter.Key.MIEUM, "ㅁ", 2, PadHolds.digit(4))),
             padCell(overlay, 5, naratgeulKey(NaratgeulInterpreter.Key.O, "ㅗ", 2, PadHolds.digit(5))),
             phoneSpaceKey()));
-        // 나랏글 has no Next key, so its keypad and cursor overlays put Shift in this empty cell —
-        // the same place the Keypad and Arrows pages have it — and leave 漢's cell blank.
-        rows.add(phoneRow(2, overlay == PhoneOverlay.NONE ? phoneGap("r2", 1) : shiftKey(shifted),
+        // The cell above 漢 is Shift — the same place the Keypad and Arrows pages have it, and
+        // where 천지인 now has it too. It used to be empty on the plain page and Shift only under
+        // an overlay; the user asked for one Shift that is always in the same cell.
+        rows.add(phoneRow(2, shiftKey(shifted),
             padCell(overlay, 6, naratgeulKey(NaratgeulInterpreter.Key.SIOT, "ㅅ", 2, PadHolds.digit(6))),
             padCell(overlay, 7, naratgeulKey(NaratgeulInterpreter.Key.IEUNG, "ㅇ", 2, PadHolds.digit(7))),
             padCell(overlay, 8, naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, PadHolds.digit(8))),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3,
-            overlay == PhoneOverlay.NONE ? phoneHanjaKey(overlay, shifted) : phoneGap("hanja", 1),
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay, shifted),
             padCell(overlay, 9, naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, PadHolds.digit(9))),
             padCell(overlay, 10, naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, PadHolds.digit(10))),
             padCell(overlay, 11, naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, PadHolds.digit(11))));
@@ -1055,16 +1061,21 @@ public final class KeyboardLayouts {
      * <p>Each key holds one more symbol of its own family, so the pair that is easy to confuse —
      * ʃ and ɕ, x and χ, ɹ and ɻ — sits under the same finger rather than on another page.
      */
-    private static KeyboardLayout ipa(boolean second) {
-        String[][] pages = second ? ipaSecondPage() : ipaFirstPage();
+    /**
+     * The phonetic page. The symbols sit at the letters they sound like ({@link IpaKeys}) and
+     * Shift turns to the plain letters, because a transcription needs both and switching layouts
+     * every other character is not typing.
+     */
+    private static KeyboardLayout ipa(boolean letters) {
+        String[][] cells = letters ? IpaKeys.LETTERS : IpaKeys.SYMBOLS;
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
-        rows.add(ipaRow(pages[0], null, null));
-        rows.add(ipaRow(pages[1], null, backspaceKey()));
-        rows.add(ipaRow(pages[2], shiftKey(second), enterKey()));
-        return letterPage(KeyboardLayoutId.ETC_IPA, second, rows, null);
+        rows.add(ipaRow(cells[0], null, null));
+        rows.add(ipaRow(cells[1], null, backspaceKey()));
+        rows.add(ipaRow(cells[2], shiftKey(letters), enterKey()));
+        return letterPage(KeyboardLayoutId.ETC_IPA, letters, rows, null);
     }
 
-    /** One IPA row: "symbol hold" pairs, with the row's own first and last cells around them. */
+    /** One IPA row: "typed held held…" cells, with the row's own first and last keys around them. */
     private static List<SoftwareKeySpec> ipaRow(String[] cells, SoftwareKeySpec first,
                                                 SoftwareKeySpec last) {
         List<SoftwareKeySpec> row = new ArrayList<>(10);
@@ -1072,34 +1083,17 @@ public final class KeyboardLayouts {
             row.add(first);
         }
         for (String cell : cells) {
-            String[] parts = cell.split(" ");
+            String typed = IpaKeys.typed(cell);
             SoftwareKeySpec key = SoftwareKeySpec.enabled(
-                "touch.ipa." + Integer.toHexString(parts[0].codePointAt(0)),
-                parts[0], SemanticInput.text(parts[0]));
-            row.add(parts.length > 1 ? key.withLongPress(parts[1]) : key);
+                "touch.ipa." + Integer.toHexString(typed.codePointAt(0)),
+                typed, SemanticInput.text(typed));
+            String[] held = IpaKeys.held(cell);
+            row.add(held.length == 0 ? key : key.withLongPress(held));
         }
         if (last != null) {
             row.add(last);
         }
         return KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0]));
-    }
-
-    /** The first page: symbol, then the symbol its key holds. */
-    private static String[][] ipaFirstPage() {
-        return new String[][] {
-            {"ə ɚ", "ɪ ɨ", "ʊ ʉ", "ɛ œ", "ɔ ɒ", "æ ɶ", "ɑ ɐ", "ʌ ɤ", "ɜ ɝ", "ː ˑ"},
-            {"θ ʘ", "ð ɗ", "ʃ ɕ", "ʒ ʑ", "ŋ ɴ", "ʧ ʨ", "ʤ ʥ", "ɹ ɻ", "ɾ r"},
-            {"ʔ ʕ", "ɡ ɢ", "ç ʝ", "x χ", "ɣ ʁ", "ɲ ɳ", "ʎ ɭ", "ˈ ˌ"},
-        };
-    }
-
-    /** The second page, reached with Shift: the rest of the symbols and the diacritics. */
-    private static String[][] ipaSecondPage() {
-        return new String[][] {
-            {"ɸ ʙ", "β ⱱ", "ʋ ɰ", "ɱ ɶ", "ʈ ɖ", "ɭ ɺ", "ʂ ʐ", "ɟ ʄ", "ʜ ʢ", "ˑ ǀ"},
-            {"y ʏ", "ø ɵ", "ɘ ɞ", "ɯ ɪ", "ɤ ʌ", "ɒ ɑ", "ɶ æ", "ɐ ə", "ʉ ɨ"},
-            {"ˌ ˈ", "̃ ̩", "̥ ̬", "͡ ͜", "ʰ ʱ", "ʲ ˠ", "ʷ ˤ", "ʼ ʘ"},
-        };
     }
 
     /**

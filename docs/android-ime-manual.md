@@ -2143,8 +2143,11 @@ keyboard typed (emulator, 2026-09-16):
 
 - **The action bar was taking its height out of the keys.** Docked, the bar and the keys divided one
   height, so switching the bar on made every row 30 % shorter. At the same finger scatter the miss
-  rate went from 0.7 % to 3.7 % (σ 5 dp) and 3.0 % to 7.3 % (σ 7 dp). The bar is now **added above**
-  the keys; only a floating panel, whose size the user set, still divides its own height.
+  rate went from 0.7 % to 3.7 % (σ 5 dp) and 3.0 % to 7.3 % (σ 7 dp). v0.1.177 added the bar **above**
+  the keys instead; in v0.1.179 the user asked for it back **inside** the height, which is where it
+  had been before, and where it stays: whether the bar counts towards the height is not worth a rule
+  of its own, and anyone whose rows feel short raises the height setting. The measurement is still
+  true — it is the reason the remedy is named here rather than left to be rediscovered.
 - **The platform's long press was typing alternates.** At the system's 400 ms, presses held 380–450
   ms — ordinary in unhurried typing — produced the key's alternate instead of its letter 23 % of the
   time. A key that types an alternate now waits `ALTERNATE_HOLD_MS` (520 ms, or the system's timeout
@@ -2175,6 +2178,33 @@ alone, where a field turns them into its own shortcuts.
 
 **Rule.** Sending the right meta state is not the same as pressing the key. Where a platform reads
 modifier *state*, send the modifier as a key.
+
+### 15.40 One table, two keyboards
+
+**What happened.** The phonetic page (issue #11) was written twice: once as the rows drawn on the
+glass, once as the physical-keyboard table mapping US key positions to the same symbols. The second
+copy had a key id spelled `hardware.q` instead of `hardware.key.q` through a whole page, and nothing
+said so — a hardware table that maps nothing simply types nothing.
+
+**The fix.** One table (`IpaKeys`) holds the symbol, its held alternates and the US position of
+every key; `KeyboardLayouts` draws from it and `HardwareLayoutTables` derives its mapping from it,
+so the two cannot disagree. A test walks the positions and asserts the glass and the wire agree.
+
+**Rule.** When the same arrangement is needed in two places, write it once and derive the second.
+Duplicated tables do not fail loudly; they fail silently, in the copy nobody looks at.
+
+### 15.41 A panel that ate what it was asked to send
+
+**What happened.** The notepad's new **Send** link hands the note to the service to type into the
+app. Dispatching it straight away typed it back into the note: while the notepad is up, the service
+routes every key into it (`consumeForNotepad`).
+
+**The fix.** The host closes the panel first, then dispatches; the text goes out as typed input
+(`SemanticInput.text`) rather than a paste, so a terminal or a remote desktop takes it the way it
+takes any key.
+
+**Rule.** A panel that intercepts input intercepts what you send through it too. Take it down before
+you speak past it.
 
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 

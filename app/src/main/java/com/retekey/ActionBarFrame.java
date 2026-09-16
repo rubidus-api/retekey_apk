@@ -9,8 +9,12 @@ import android.widget.LinearLayout;
  * <p>The bar is part of the keyboard's height, not added on top of it: the height setting is the
  * share of the screen the whole keyboard takes, bar included, so turning the bar on does not push
  * the keyboard up into the app — the keys give up one short row to it instead. (The system band
- * below is the opposite kind of thing: it is the system's, and is added.) The user asked for it
- * this way after the bar had first been an addition.
+ * below is the opposite kind of thing: it is the system's, and is added.)
+ *
+ * <p>This is the user's decision twice over. Measured taps said the shorter rows cost accuracy
+ * (§15.38), so v0.1.177 added the bar above the keys instead; the user asked for it back inside,
+ * because whether the bar counts towards the height is not worth a rule of its own — anyone who
+ * wants taller keys raises the height. The measurement stands, the remedy is the height setting.
  */
 final class ActionBarFrame extends LinearLayout {
     private final ActionBarView bar;
@@ -42,29 +46,19 @@ final class ActionBarFrame extends LinearLayout {
         // Docked, the frame is exactly as tall as the keyboard would be on its own; floating, the
         // panel's frame hands down an exact height. Either way the two children divide it: the bar
         // keeps its own height and the keyboard takes the rest.
-        // Docked, the bar is added above the keys rather than taken out of them: sharing the
-        // height made every row shorter, and a measured tap of the same scatter went wrong two to
-        // five times as often (§15.38). Floating, the panel hands down an exact height and the two
-        // still divide it — the panel is what the user sized.
         int height;
-        boolean exact = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {
             case MeasureSpec.EXACTLY:
                 height = MeasureSpec.getSize(heightMeasureSpec);
                 break;
             case MeasureSpec.AT_MOST:
-                height = Math.min(keyboard.desiredHeightPx() + bar.barHeightPx(),
-                    MeasureSpec.getSize(heightMeasureSpec));
+                height = Math.min(keyboard.desiredHeightPx(), MeasureSpec.getSize(heightMeasureSpec));
                 break;
             default:
-                height = keyboard.desiredHeightPx() + bar.barHeightPx();
+                height = keyboard.desiredHeightPx();
                 break;
         }
         int bandForBar = Math.min(bar.barHeightPx(), height);
-        if (!exact && height - bandForBar < keyboard.desiredHeightPx()) {
-            // The screen could not give the whole of both; the keys keep what is left.
-            bandForBar = Math.max(0, height - keyboard.desiredHeightPx());
-        }
         bar.measure(
             MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
             MeasureSpec.makeMeasureSpec(bandForBar, MeasureSpec.EXACTLY));

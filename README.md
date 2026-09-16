@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.178** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178-legacy.apk)
+**ReteKey v0.1.179** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.178** —
-[retekey-0.1.178.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178.apk) (648 KB; the Android 4.0 build is 533 KB)
+Current release: **v0.1.179** —
+[retekey-0.1.179.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179.apk) (648 KB; the Android 4.0 build is 533 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -165,11 +165,15 @@ there: 漢 for Hanja on 2-beolsik, `Esc` on QWERTY, Dvorak and Colemak — a rea
 a different shape: the modifiers own the leftmost column, every Hangul key
 is two columns wide, and the right-hand column carries backspace, space, then the period and Enter,
 with `!#` and the layout key closing the bottom row. The cell beside Tab carries 漢 on both of them while Hangul is being typed, which converts on a
-tap; under an overlay there is no reading to convert, so a **Shift** takes that column instead — beside Ctrl on 천지인, and in the empty cell beside Meta on 나랏글 — tapped for one key (Shift+arrow selects) or held to stay down. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
+tap; under an overlay there is no reading to convert, so the cell is left empty there. **Shift** is
+one cell up, beside Meta, on both pads and whatever the overlay — tapped for one key (Shift+arrow
+selects) or held to stay down; a key that moved when the pad changed would be a key you had to look
+for. The two cells above it toggle what the twelve Hangul keys show: **123** puts the
 phone keypad's digits on them, **Move** the cursor cluster (arrows, Home/End, PgUp/PgDn, Ins, Esc,
-Del); the same key puts the Hangul back. 천지인 puts Next beside Alt and flanks ㅇㅁ with `.,` and
-`!?`, which work the way the Hangul keys around them do: tapping moves through the characters on the
-face, and dragging left or right picks the one written on that side.
+Del); the same key puts the Hangul back. 천지인 puts **Next** to the left of ㅇㅁ and `!?` to its
+right, which works the way the Hangul keys around it do: tapping moves through the characters on the
+face, and dragging left or right picks the one written on that side. The full stop and comma are on
+the key beside Enter.
 
 Seven letter layouts share that grid:
 
@@ -203,7 +207,7 @@ Seven letter layouts share that grid:
 
 | **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. **Shift** sits beside Meta: tap it for one key, so Shift+arrow selects, or hold it to keep it down. Off until you turn it on in settings |
 | **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold, with **Shift** beside Meta as on Arrows. Off until you turn it on in settings |
-| **IPA** | the International Phonetic Alphabet as a page of its own, for writing a pronunciation beside the word: the vowels ə ɪ ʊ ɛ ɔ æ ɑ ʌ ɜ and the length mark on the top row, the consonants English spells with two letters (θ ð ʃ ʒ ŋ ʧ ʤ) and the r's below, and the stress marks at the end. **Shift** turns to a second page — ɸ β ʋ ʈ ʂ, the rounded and central vowels y ø ɘ ɯ ɤ, and the diacritics (nasal ◌̃, voiceless ◌̥, tie bar ◌͡, aspirated ʰ, palatalised ʲ, labialised ʷ, ejective ʼ). Every key **holds** a rarer neighbour of the symbol it shows, so the whole alphabet is two pages and a hold deep. A physical keyboard types it too, the same symbols in the same places. Off until you turn it on in settings |
+| **IPA** | the International Phonetic Alphabet, for writing a pronunciation beside the word. Each symbol sits at the letter it sounds like, the way X-SAMPA reads a keyboard — `e` types **ə** (and holds ɛ ɜ ɚ ɝ), `a` types **æ** (holding ɑ ɐ ɶ), `t` **θ**, `d` **ð**, `s` **ʃ**, `z` **ʒ**, `n` **ŋ**, `j` **ʤ**, `r` **ɹ**, `v` **ʌ**, `o` **ɔ**, `u` **ʊ**, `i` **ɪ** — and every key holds the rest of its family, so the alphabet is one page and a hold deep. The last cell of the bottom row carries the stress and length marks ˈ ˌ ː ˑ. **Shift** is not a second set of symbols but the plain letters where QWERTY has them, because a transcription is full of ordinary p, t, k, s; the same key then types `/`, holding `[` and `]`. A physical keyboard types both pages the same way. Off until you turn it on in settings |
 
 The layout key — captioned with the layout it goes to next (`2BS`, `QWE`, `DVO`, `CJI`, `NRG`,
 `ARW`, `NUM`, `IPA`, in bold capitals) — walks the layouts you ticked in settings, in the order you put them there, naming
@@ -279,11 +283,11 @@ outnumber the four directions.)
 
 ![French hold strip](assets/keyboard-french-hold.png)
 
-**Cheonjiin(천지인)** — Next beside Alt, 漢 beside Tab, and `.,` `!?` either side of ㅇㅁ:
+**Cheonjiin(천지인)** — Shift beside Meta, 漢 beside Tab, and Next and `!?` either side of ㅇㅁ:
 
 ![Cheonjiin layout](assets/keyboard-cheonjiin.png)
 
-**Naratgeul(나랏글)** — 획 and 쌍 on the bottom letter row, 漢 beside Tab:
+**Naratgeul(나랏글)** — 획 and 쌍 on the bottom letter row, Shift beside Meta, 漢 beside Tab:
 
 ![Naratgeul layout](assets/keyboard-naratgeul.png)
 
@@ -421,6 +425,7 @@ The list behaves like a file manager's details view:
 | **Del** / **DelAll** | delete the ticked notes, or every one |
 | **List** | back to the list from a note; **Close** puts the keyboard back |
 | **Cp Cut Paste Del Un Re** | copy, cut, paste, delete, undo, redo — on the selection, or on the whole field when nothing is selected. Undo is the notepad's own, so it works the same on Android 4 as on 16 |
+| **Send** | types the note into the app you were writing in, at its cursor — the selection if you made one, the whole note otherwise. It goes out as typed input rather than a paste, so a terminal or a remote desktop takes it like anything else the keyboard types. The notepad closes, since what you sent is behind it |
 | pinch | two fingers set the text size on either screen, from 60% to 300%, and it is remembered |
 
 The links sit on one row and wrap onto a second only when the screen is too narrow for them all,
@@ -529,9 +534,10 @@ A **Back to main screen** button at the top returns to the app's main screen at 
 Off by default. It has a screen of its own — **Action bar settings**, from the app's main screen or
 from the button in settings — where you turn it on and decide what it carries. Drag a row by its
 **≡** handle to order it, nudge one with **▲ ▼**, take one off with **✕**, and **Default order** puts
-the shipped bar back. It sits above the keys, scrolls sideways when the list is longer than the screen, and is added to
-the keyboard's height rather than taken out of the rows — switching it on does not make the keys
-shorter.
+the shipped bar back. It sits above the keys, scrolls sideways when the list is longer than the screen, and shares the
+keyboard's height with them: the bar is part of the keyboard, not an addition to it, so turning it
+on does not push the keyboard further up into the app. If the rows feel short with it on, raise the
+keyboard's height.
 
 ![The action bar above the keyboard](assets/keyboard-actionbar.png)
 

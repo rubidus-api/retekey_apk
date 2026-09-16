@@ -758,44 +758,33 @@ final class HardwareLayoutTables {
             "hardware.keycode.7|օ|Օ",
             "hardware.keycode.9|ձ|Ձ",
         });
-        // The IPA page types symbols no US key carries, so every letter position is
-        // remapped: the glass keyboard's own arrangement, unshifted from the first page
-        // and shifted from the second, so the two ways of typing a transcription agree.
-        register(KeyboardLayoutId.ETC_IPA, new String[] {
-            // top row: the first page, with the second page on Shift
-            "hardware.key.q|ə|ɸ",
-            "hardware.key.w|ɪ|β",
-            "hardware.key.e|ʊ|ʋ",
-            "hardware.key.r|ɛ|ɱ",
-            "hardware.key.t|ɔ|ʈ",
-            "hardware.key.y|æ|ɭ",
-            "hardware.key.u|ɑ|ʂ",
-            "hardware.key.i|ʌ|ɟ",
-            "hardware.key.o|ɜ|ʜ",
-            "hardware.key.p|ː|ˑ",
-            // home row: the first page, with the second page on Shift
-            "hardware.key.a|θ|y",
-            "hardware.key.s|ð|ø",
-            "hardware.key.d|ʃ|ɘ",
-            "hardware.key.f|ʒ|ɯ",
-            "hardware.key.g|ŋ|ɤ",
-            "hardware.key.h|ʧ|ɒ",
-            "hardware.key.j|ʤ|ɶ",
-            "hardware.key.k|ɹ|ɐ",
-            "hardware.key.l|ɾ|ʉ",
-            // bottom row: the first page, with the second page on Shift
-            "hardware.key.z|ʔ|ˌ",
-            "hardware.key.x|ɡ|\u0303",
-            "hardware.key.c|ç|\u0325",
-            "hardware.key.v|x|\u0361",
-            "hardware.key.b|ɣ|ʰ",
-            "hardware.key.n|ɲ|ʲ",
-            "hardware.key.m|ʎ|ʷ",
-            "hardware.keycode.55|ˈ|ʼ",
-        });
+        registerIpa();
     }
 
     private HardwareLayoutTables() {
+    }
+
+    /**
+     * The IPA page, read off the same table the keys on the glass are drawn from: a US keyboard
+     * carries none of these symbols, so every letter position is remapped — unshifted is the
+     * symbol, shifted is the plain letter, exactly as the two pages read.
+     */
+    private static void registerIpa() {
+        Map<String, String[]> table = new HashMap<>();
+        for (int row = 0; row < IpaKeys.POSITIONS.length; row++) {
+            String[] positions = IpaKeys.POSITIONS[row];
+            for (int column = 0; column < positions.length; column++) {
+                String position = positions[column];
+                table.put(
+                    position.startsWith("keycode.")
+                        ? "hardware." + position : "hardware.key." + position,
+                    new String[] {
+                        IpaKeys.typed(IpaKeys.SYMBOLS[row][column]),
+                        IpaKeys.typed(IpaKeys.LETTERS[row][column])
+                    });
+            }
+        }
+        TABLES.put(KeyboardLayoutId.ETC_IPA, table);
     }
 
     private static void register(KeyboardLayoutId id, String[] entries) {

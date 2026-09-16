@@ -47,8 +47,8 @@ public final class PhonePagesTest {
     @Test
     public void theSecondColumnCarriesTheOverlayToggles() {
         // The once-empty cells now hold the overlay toggles: 123 shows the keypad digits on the
-        // pad's own keys, Move the cursor cluster. 천지인 keeps Next in the Alt row, and both
-        // pages keep 漢 in the Tab row.
+        // pad's own keys, Move the cursor cluster. Both pages have Shift in the Meta row and 漢
+        // in the Tab row (2026-09-16: Shift took the cell Next had, Next moved to the bottom).
         for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
             assertEquals("row 0", "123", layout.rows().get(0).get(1).label());
             assertTrue(layout.rows().get(0).get(1).isControl());
@@ -57,8 +57,10 @@ public final class PhonePagesTest {
             assertEquals("漢 has the Tab-row cell", "漢",
                 layout.rows().get(3).get(1).label());
         }
-        assertFalse("나랏글 keeps its Alt-row cell empty", NARATGEUL.rows().get(2).get(1).enabled());
-        assertTrue("천지인 puts Next there", CHEONJIIN.rows().get(2).get(1).enabled());
+        for (KeyboardLayout layout : Arrays.asList(CHEONJIIN, NARATGEUL)) {
+            assertEquals("Shift has the Meta-row cell", "⇧", layout.rows().get(2).get(1).label());
+            assertTrue(layout.rows().get(2).get(1).isControl());
+        }
     }
 
     @Test
@@ -77,16 +79,19 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void anOverlayPutsShiftWhereHanjaWas() {
-        // Under the keypad or the cursor cluster there is no reading in front of the cursor to
-        // convert, so 漢's cell is Shift instead: Shift+arrow selects from the cursor cluster, and
-        // a hold keeps it down, the way the letter pages' own Shift does (owner's request).
-        // Shift takes the column's empty cell: the third row on 나랏글, which has no Next key
-        // there, and 漢's row on 천지인 and the kana pad, where Next is.
+    public void everyPhonePageHasOneShiftInTheSameCell() {
+        // Shift sits in the Meta row's own cell on 천지인 and 나랏글, overlay or not (2026-09-16,
+        // owner's request): a key that moves when the pad turns into a cursor cluster is a key you
+        // cannot find without looking. Shift+arrow selects from the cluster, and a hold keeps it
+        // down, the way the letter pages' own Shift does. The kana pad still puts it in 漢's row.
         for (KeyboardLayoutId id : Arrays.asList(KeyboardLayoutId.KO_CHEONJIIN,
                 KeyboardLayoutId.KO_NARATGEUL, KeyboardLayoutId.JA_FLICK)) {
-            int row = id == KeyboardLayoutId.KO_NARATGEUL ? 2 : 3;
-            for (PhoneOverlay overlay : Arrays.asList(PhoneOverlay.DIGITS, PhoneOverlay.NAV)) {
+            int row = id == KeyboardLayoutId.JA_FLICK ? 3 : 2;
+            for (PhoneOverlay overlay : Arrays.asList(
+                    PhoneOverlay.NONE, PhoneOverlay.DIGITS, PhoneOverlay.NAV)) {
+                if (id == KeyboardLayoutId.JA_FLICK && overlay == PhoneOverlay.NONE) {
+                    continue;  // the kana pad's own page has no Shift cell
+                }
                 SoftwareKeySpec cell =
                     KeyboardLayouts.phone(id, overlay).rows().get(row).get(1);
                 assertEquals(id + " " + overlay, ControlKey.SHIFT, cell.control());
@@ -165,23 +170,21 @@ public final class PhonePagesTest {
         assertEquals("ㅅㅎ", above.get(3).label());
         assertEquals("ㅇㅁ", bottom.get(3).label());
 
-        SoftwareKeySpec period = bottom.get(2);
+        SoftwareKeySpec next = bottom.get(2);
         SoftwareKeySpec exclaim = bottom.get(4);
-        assertEquals(".,", period.label());
+        assertEquals("Next", next.label());
         assertEquals("!?", exclaim.label());
-        assertEquals("as wide as the Hangul keys they sit between", 2, period.columnSpan());
+        assertEquals("as wide as the Hangul keys they sit between", 2, next.columnSpan());
         assertEquals(2, exclaim.columnSpan());
     }
 
     @Test
     public void theBottomRowPunctuationCyclesRatherThanHolding() {
         List<SoftwareKeySpec> bottom = CHEONJIIN.rows().get(3);
-        SoftwareKeySpec period = bottom.get(2);
         SoftwareKeySpec exclaim = bottom.get(4);
 
-        assertEquals(".,", period.label());
         assertEquals("!?", exclaim.label());
-        for (SoftwareKeySpec key : Arrays.asList(period, exclaim)) {
+        for (SoftwareKeySpec key : Arrays.asList(exclaim)) {
             assertTrue("both characters are on the face, not under a hold",
                 key.longPressTexts().isEmpty());
             assertFalse(key.hasLongPressControl());
@@ -192,12 +195,14 @@ public final class PhonePagesTest {
     }
 
     @Test
-    public void theCommitKeySitsBesideMeta() {
-        // 2026-08-30: the modifier column flipped, so row 2's own modifier is Meta now.
-        SoftwareKeySpec commit = CHEONJIIN.rows().get(2).get(1);
+    public void theCommitKeySitsBesideIeung() {
+        // 2026-09-16: Next moved off the Meta row (Shift has that cell now) to the bottom row,
+        // left of ㅇㅁ, where the full stop used to be — that punctuation is beside Enter anyway.
+        SoftwareKeySpec commit = CHEONJIIN.rows().get(3).get(2);
         assertEquals("Next", commit.label());
         assertEquals(SemanticInput.Kind.FLUSH, commit.semanticInput().kind());
-        assertEquals("the cell beside Meta is one column", 1, commit.columnSpan());
+        assertEquals("as wide as the Hangul keys beside it", 2, commit.columnSpan());
+        assertEquals("⇧", CHEONJIIN.rows().get(2).get(1).label());
         assertEquals("Meta", CHEONJIIN.rows().get(2).get(0).label());
     }
 
