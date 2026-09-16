@@ -1137,7 +1137,19 @@ mid-syllable, an arrow pressed right after a syllable. Two matrices now run them
 - `scripts/interaction-matrix.sh` (emulator lane, instrumentation build, about nine minutes): the
   cells only a real editor and a real IME window answer — real Termux in both modes, the strip's
   view tree, the notepad, touches on the action bar with physical modifiers held, the clipboard
-  list, the pads. It prints a PASS/FAIL table and exits with the number of failing cells.
+  list, the pads. It prints a PASS/FAIL table and exits with the number of failing cells (forty as
+  of v0.1.179).
+
+**The lane boots wiped, so the terminal has to be reinstalled every time.** `emulator-lane.sh`
+starts the emulator with `-wipe-data`, which is what keeps one run from leaning on the last, and it
+also means Termux is gone at every boot: keep an APK where the matrix can find it (it looks for one
+at a fixed path and installs it if the package is missing) or the whole terminal half is skipped —
+silently, as far as a passing table is concerned. Termux's own release build is **not debuggable**,
+so `run-as com.termux` cannot read the files a cell wrote; the lane's AOSP image gives `adb root`,
+which can, and the script tries run-as first and falls back to reading the data directory directly.
+Reinstalling the IME while its window is on screen makes the framework throw `View=DecorView
+[InputMethod] not attached to window manager` from `showWindow` — an artefact of the reinstall, not
+a defect: force-stop the IME and start the app again before believing a crash seen that way.
 
 **Prove a matrix catches something.** When a cell is added for a defect, run it once against the
 code before the fix and see it fail; a cell that has only ever passed may be testing its own model.
