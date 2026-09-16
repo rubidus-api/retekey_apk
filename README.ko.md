@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.183** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183-legacy.apk)
+**ReteKey v0.1.184** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.183** —
-[retekey-0.1.183.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) (651 KB; 안드로이드 4.0 빌드는 534 KB)
+현재 릴리즈: **v0.1.184** —
+[retekey-0.1.184.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) (657 KB; 안드로이드 4.0 빌드는 537 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -594,6 +594,16 @@ Meta·Shift, 그리고 물리 키보드의 수정자까지입니다. 물리 키�
 맨 위에 있고, 고른 항목은 입력되면서 클립보드에도 들어갑니다. 항목을 누르면 붙여넣고,
 ☆는 고정(오래되어도 지워지지 않음), ✕는 하나 지우기(지운 항목은 아직 클립보드에 있어도 다시 살아나지
 않습니다), **Clear**는 고정하지 않은 것 전부 지우기입니다.
+
+**ReteKey 보관함 — 복사한 적 없는 글.** 아무 앱의 **공유(Share)** 메뉴나 글자 선택 메뉴에서 ReteKey 로
+글을 보내면, 같은 목록 맨 위 **Kept** 구역에 키보드 자체 저장소로 보관됩니다. 누르면 지금 쓰고 있는
+곳에 **쳐서 넣습니다.** 이 항목들에 대해서는 시스템 클립보드를 읽지도 쓰지도 않습니다. 그게 핵심입니다.
+어떤 제조사 ROM 에서는 화면에 떠 있지도 않은 키보드가 복사한 것을 모두 읽어, 끌 수 없는 기록에 남깁니다.
+애초에 복사하지 않은 글은 그렇게 읽힐 수 없습니다. 따로 요구하는 것도, 권한도 없습니다. 공유는 보내는
+앱이 스스로 하는 일이니까요. 보관한 글은 정하신 시간이 지나면 사라집니다 — **10분·1시간·1일·지울
+때까지** 중에서 고르시면 됩니다. 설정의 *클립보드와 보관한 글* 에 있고, 거기서 **시스템 클립보드
+따라가기** 를 아예 끌 수도 있습니다. 끄면 키보드는 클립보드를 전혀 보지 않고, 공유만이 글이 키보드에
+들어오는 길이 됩니다.
 
 하지 않는 일도 그만큼 중요합니다.
 

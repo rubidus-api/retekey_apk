@@ -24,6 +24,27 @@
             android:label="@string/bar_settings_title"
             android:theme="@style/ReteScreenTheme" />
         <activity
+            android:name=".ShareTargetActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/stash_share_label"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <!-- Text shared from any app is kept inside ReteKey, never on the system clipboard. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- And the same from a text selection's own menu, where there is even less to copy. -->
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".SettingsActivity"
             android:exported="true"
             android:label="@string/settings_title"

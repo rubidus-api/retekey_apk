@@ -114,6 +114,8 @@ public class ReteKeyImeService extends InputMethodService {
      * back into the list the next time the keyboard was shown.
      */
     private String forgottenClip;
+    /** Text shared into ReteKey, kept out of the system clipboard on purpose (issue #10). */
+    private StashHistory stash = StashHistory.empty();
 
     @Override
     public View onCreateInputView() {
@@ -483,6 +485,9 @@ public class ReteKeyImeService extends InputMethodService {
      * as sensitive, and that is never kept.
      */
     private void recordSystemClip(boolean fromThisField) {
+        if (!followsTheSystemClipboard()) {
+            return;
+        }
         try {
             android.content.ClipboardManager manager = Compat.systemService(
                 this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
@@ -547,6 +552,7 @@ public class ReteKeyImeService extends InputMethodService {
         }
         clips = ClipStore.load(this);
         clipsLoaded = true;
+        stash = StashStore.loadPruned(this);
         // What is on Android's clipboard now is the first thing anyone opening the list expects to
         // see, whether or not the keyboard was watching when it was copied.
         recordSystemClip(false);
@@ -590,7 +596,7 @@ public class ReteKeyImeService extends InputMethodService {
             public void onPin(String text, boolean pinned) {
                 clips = clips.setPinned(text, pinned);
                 ClipStore.save(ReteKeyImeService.this, clips);
-                panel.show(clips.clips());
+                showPanelLists(panel);
             }
 
             @Override
@@ -598,24 +604,67 @@ public class ReteKeyImeService extends InputMethodService {
                 forgottenClip = text;
                 clips = clips.remove(text);
                 ClipStore.save(ReteKeyImeService.this, clips);
-                panel.show(clips.clips());
+                showPanelLists(panel);
             }
 
             @Override
             public void onClearAll() {
                 clips = clips.clearUnpinned();
                 ClipStore.save(ReteKeyImeService.this, clips);
-                panel.show(clips.clips());
+                showPanelLists(panel);
             }
 
             @Override
             public void onClose() {
                 closeClipboardPanel();
             }
+
+            @Override
+            public void onTypeKept(String text) {
+                // Typed, and only typed: what was shared into ReteKey never reaches the clipboard,
+                // which is the whole reason someone shares it instead of copying it.
+                dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+                    "touch.stash.type", SemanticInput.text(text)));
+                closeClipboardPanel();
+            }
+
+            @Override
+            public void onForgetKept(String text) {
+                stash = stash.remove(text);
+                StashStore.save(ReteKeyImeService.this, stash);
+                showPanelLists(panel);
+            }
+
+            @Override
+            public void onClearKept() {
+                stash = stash.clear();
+                StashStore.save(ReteKeyImeService.this, stash);
+                showPanelLists(panel);
+            }
         });
-        panel.show(clips.clips());
+        showPanelLists(panel);
         return panel;
     }
+
+    /** Both of the panel's lists, and whether the clipboard one is being followed at all. */
+    private void showPanelLists(ClipboardPanelView panel) {
+        panel.show(clips.clips(), stash.items(), followsTheSystemClipboard());
+    }
+
+    /**
+     * Whether the keyboard reads Android's clipboard at all.
+     *
+     * <p>On by default, and the reason the clip list works. Off is for the user who would rather
+     * the keyboard never looked: nothing copied anywhere is recorded, and text reaches the keyboard
+     * only by being shared into it (issue #10).
+     */
+    private boolean followsTheSystemClipboard() {
+        return getSharedPreferences("retekey_view", MODE_PRIVATE)
+            .getBoolean(KEY_FOLLOW_CLIPBOARD, true);
+    }
+
+    /** Settings key for {@link #followsTheSystemClipboard()}. */
+    static final String KEY_FOLLOW_CLIPBOARD = "clipboard_follow";
 
     /** How far either side of the cursor a word is looked for. Longer than any word worth one. */
     private static final int WORD_LOOKAROUND = 64;
@@ -1389,6 +1438,9 @@ public class ReteKeyImeService extends InputMethodService {
      * registration per callback object — and restores it on a ROM that dropped it.
      */
     private void catchUpWithTheSystemClipboard() {
+        if (!followsTheSystemClipboard()) {
+            return;
+        }
         try {
             android.content.ClipboardManager manager = Compat.systemService(
                 this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);

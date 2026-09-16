@@ -41,6 +41,8 @@ public final class SettingsOutline {
         HARDWARE,
         /** Where a terminal's half-built syllable is shown. */
         TERMINAL,
+        /** Whether the keyboard follows Android's clipboard, and how long shared text is kept. */
+        CLIPBOARD,
         /** Which physical layout each on-screen layout uses, on this screen. */
         HARDWARE_LAYOUTS,
         /** How much of the screen the keyboard takes. On an orientation's settings page. */
@@ -68,7 +70,8 @@ public final class SettingsOutline {
         Section.FEEDBACK,
         Section.REPEAT,
         Section.HARDWARE,
-        Section.TERMINAL));
+        Section.TERMINAL,
+        Section.CLIPBOARD));
 
     /** One orientation's settings page: the two small things kept per screen. */
     public static final List<Section> ORIENTATION_PAGE = Collections.unmodifiableList(

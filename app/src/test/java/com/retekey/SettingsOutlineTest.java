@@ -60,7 +60,8 @@ public final class SettingsOutlineTest {
         // screen: none of them is a submenu of another (owner's request).
         assertEquals(
             Arrays.asList(Section.THEME, Section.SYSTEM_BAND, Section.FEEDBACK, Section.REPEAT,
-                Section.HARDWARE, Section.TERMINAL),
+                Section.HARDWARE, Section.TERMINAL,
+                Section.CLIPBOARD),
             SettingsOutline.MAIN);
     }
 

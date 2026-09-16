@@ -32,6 +32,16 @@ final class ClipboardPanelView extends LinearLayout {
         void onClearAll();
 
         void onClose();
+
+        /**
+         * Type a kept item into the app — and only that. It is not put on the clipboard: text
+         * shared into ReteKey is kept out of the clipboard on purpose (issue #10).
+         */
+        void onTypeKept(String text);
+
+        void onForgetKept(String text);
+
+        void onClearKept();
     }
 
     private final KeyboardPalette palette;
@@ -60,19 +70,104 @@ final class ClipboardPanelView extends LinearLayout {
 
     /** Fills the panel. Called again after every pin, forget or clear. */
     void show(List<ClipHistory.Clip> clips) {
+        show(clips, java.util.Collections.<StashHistory.Kept>emptyList(), true);
+    }
+
+    /**
+     * The panel has two lists in it. The clipboard's, which follows Android's clipboard, and the
+     * **kept** one, which is text shared into ReteKey and never copied anywhere — a share from
+     * another app is the way to move a password or a link without the clipboard carrying it
+     * (issue #10). They are drawn apart and behave differently on purpose: picking a clip puts it
+     * on the clipboard as well, picking a kept item only types it.
+     *
+     * <p>{@code following} is the user's "follow the system clipboard" setting: with it off, the
+     * keyboard never reads the clipboard at all and the panel says so instead of showing an empty
+     * list that looks broken.
+     */
+    void show(List<ClipHistory.Clip> clips, List<StashHistory.Kept> kept, boolean following) {
         list.removeAllViews();
+        if (!kept.isEmpty()) {
+            list.addView(groupHeader("Kept in ReteKey", new Runnable() {
+                @Override
+                public void run() {
+                    if (listener != null) {
+                        listener.onClearKept();
+                    }
+                }
+            }));
+            for (StashHistory.Kept item : kept) {
+                list.addView(keptRow(item), new LayoutParams(
+                    LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+            }
+        }
+        if (!kept.isEmpty() || !following) {
+            list.addView(groupHeader("Clipboard", null));
+        }
+        if (!following) {
+            list.addView(note("Not following the system clipboard — share text to ReteKey instead."));
+            return;
+        }
         if (clips.isEmpty()) {
-            TextView empty = new TextView(getContext());
-            empty.setText("Nothing copied yet — Cut and Copy on the bar put clips here.");
-            empty.setTextColor(palette.keyTextMuted);
-            empty.setPadding(dp(12), dp(16), dp(12), dp(16));
-            list.addView(empty);
+            list.addView(note(kept.isEmpty()
+                ? "Nothing copied yet — Cut and Copy on the bar put clips here."
+                : "Nothing copied yet."));
             return;
         }
         for (ClipHistory.Clip clip : clips) {
             list.addView(row(clip), new LayoutParams(
                 LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         }
+    }
+
+    private TextView note(String text) {
+        TextView view = new TextView(getContext());
+        view.setText(text);
+        view.setTextColor(palette.keyTextMuted);
+        view.setPadding(dp(12), dp(16), dp(12), dp(16));
+        return view;
+    }
+
+    /** A line naming one of the two lists, with its own Clear when there is something to clear. */
+    private View groupHeader(String title, final Runnable onClear) {
+        LinearLayout row = new LinearLayout(getContext());
+        row.setOrientation(HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        TextView label = new TextView(getContext());
+        label.setText(title);
+        label.setTextColor(palette.keyTextMuted);
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        label.setPadding(dp(12), dp(10), dp(8), dp(4));
+        row.addView(label, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+        if (onClear != null) {
+            row.addView(action("Clear", onClear));
+        }
+        return row;
+    }
+
+    private View keptRow(final StashHistory.Kept item) {
+        LinearLayout row = new LinearLayout(getContext());
+        row.setOrientation(HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView text = new TextView(getContext());
+        text.setText(oneLine(item.text));
+        text.setTextColor(palette.keyText);
+        text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        text.setPadding(dp(12), dp(12), dp(8), dp(12));
+        text.setMaxLines(2);
+        text.setClickable(true);
+        text.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onTypeKept(item.text);
+            }
+        });
+        row.addView(text, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(action("✕", () -> {
+            if (listener != null) {
+                listener.onForgetKept(item.text);
+            }
+        }));
+        return row;
     }
 
     private View header() {

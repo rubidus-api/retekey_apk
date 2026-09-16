@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.183** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183-legacy.apk)
+**ReteKey v0.1.184** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.183** —
-[retekey-0.1.183.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) (651 KB; the Android 4.0 build is 534 KB)
+Current release: **v0.1.184** —
+[retekey-0.1.184.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) (657 KB; the Android 4.0 build is 537 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -605,6 +605,17 @@ list and the clipboard used to drift apart.) The clip on the clipboard now is at
 the list opens, and a clip you pick becomes the clipboard as well as being typed. Tap a
 clip to paste it; ☆ pins it so it is never aged out; ✕ forgets one — and a clip you forget stays
 forgotten even while it is still on the clipboard — and **Clear** forgets all the unpinned ones.
+
+**Kept in ReteKey — text that was never copied.** Any app's **Share** menu (and a text selection's
+own menu) can send text straight to ReteKey: it is kept in the keyboard's own storage under a
+**Kept** heading at the top of the same list, and tapping it **types it** into whatever you are
+writing in. The system clipboard is not read and not written for these — which is the point. On
+some makers' ROMs a keyboard that is not even on screen reads every copy and files it in a history
+you cannot turn off; text that was never copied cannot be read that way. Nothing extra is asked of
+you and no permission is involved: a share is the sending app's own decision. Kept text ages out on
+your clock — **10 minutes, 1 hour, 1 day, or until you remove it** — in settings, under *Clipboard
+and kept text*, where you can also turn **Follow the system clipboard** off entirely: then the
+keyboard never looks at the clipboard at all, and sharing is the only way text reaches it.
 
 What it will not do matters as much as what it will:
 

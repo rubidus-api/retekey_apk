@@ -2316,6 +2316,29 @@ fill an *unset* preference, so a list emptied on purpose stays empty.
 **Rule.** A screen that asks "press the key you want" owns every key while it asks. Take the event
 before the views, and tell the rest of the app to stand aside.
 
+### 15.46 Text that was never copied
+
+**What was asked.** A keyboard reads the clipboard; on some ROMs it reads it while sitting in the
+background and files everything in a history the user cannot turn off. The request (issue #10) was
+not for a better clipboard but for a way round it: let an app **share** text to the keyboard, keep
+it in the keyboard's own storage, and type it when asked — without the clipboard being told
+anything.
+
+**What was built.** A share target (`ShareTargetActivity`, `ACTION_SEND` and `ACTION_PROCESS_TEXT`,
+no permissions, no screen) writes to `StashStore`, a preferences file of its own. The clip panel
+grew a second list above the clipboard's, drawn and behaving differently: picking a clip still puts
+it on the clipboard, picking a kept item only types it. `StashHistory` holds the rules — newest
+first, at most twenty, ages out on the user's clock (10 min / 1 h / 1 day / never), a repeat moves
+rather than duplicates — and is Android-free, so the rules are a unit test.
+
+**Its pair.** v0.1.180 had just made the keyboard read the clipboard every time it is shown, which
+is the opposite of what a user asking for this wants. So *Follow the system clipboard* is a setting
+(on by default): off, the keyboard never reads the clipboard at all, the panel says so rather than
+showing an empty list, and sharing is the only road in.
+
+**Rule.** When a platform's own channel is the problem, do not make it safer — offer a different
+channel and let the user pick.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

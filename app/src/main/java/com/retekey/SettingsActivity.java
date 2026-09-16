@@ -161,6 +161,9 @@ public final class SettingsActivity extends Activity {
             case TERMINAL:
                 addTerminalControls(root);
                 break;
+            case CLIPBOARD:
+                addClipboardControls(root);
+                break;
             case HARDWARE_LAYOUTS:
                 addHardwareLayoutControls(root);
                 break;
@@ -763,6 +766,46 @@ public final class SettingsActivity extends Activity {
         onStrip.setOnCheckedChangeListener((b, checked) -> prefs().edit()
             .putBoolean(TerminalCompositionSettings.KEY_ON_STRIP, checked).apply());
         root.addView(onStrip);
+    }
+
+    // ---- The clipboard, and text shared into ReteKey ----
+
+    private void addClipboardControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_clip_label));
+        root.addView(sectionHint(R.string.settings_clip_hint));
+
+        CheckBox follow = new CheckBox(this);
+        follow.setText(R.string.settings_clip_follow);
+        follow.setChecked(prefs().getBoolean(ReteKeyImeService.KEY_FOLLOW_CLIPBOARD, true));
+        follow.setOnCheckedChangeListener((b, checked) -> prefs().edit()
+            .putBoolean(ReteKeyImeService.KEY_FOLLOW_CLIPBOARD, checked).apply());
+        root.addView(follow);
+
+        root.addView(sectionHint(R.string.settings_stash_hint));
+        int[] choices = {10, 60, 1440, 0};
+        int[] labels = {R.string.settings_stash_10m, R.string.settings_stash_1h,
+            R.string.settings_stash_1d, R.string.settings_stash_forever};
+        int current = prefs().getInt(StashStore.KEY_MINUTES, StashHistory.DEFAULT_MINUTES);
+        final List<TextView> rows = new ArrayList<>(choices.length);
+        for (int i = 0; i < choices.length; i++) {
+            final int minutes = choices[i];
+            TextView row = new TextView(this);
+            row.setText(getString(labels[i]));
+            row.setPadding(0, dp(10), 0, dp(10));
+            row.setClickable(true);
+            rows.add(row);
+            row.setOnClickListener(v -> {
+                prefs().edit().putInt(StashStore.KEY_MINUTES, minutes).apply();
+                for (int j = 0; j < rows.size(); j++) {
+                    rows.get(j).setText((choices[j] == minutes ? "● " : "○ ")
+                        + getString(labels[j]));
+                }
+            });
+            root.addView(row);
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            rows.get(i).setText((choices[i] == current ? "● " : "○ ") + getString(labels[i]));
+        }
     }
 
     /** A titled millisecond slider bound to an int preference clamped to [min, max]. */

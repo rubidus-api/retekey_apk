@@ -97,5 +97,16 @@
     <string name="mode_english">English</string>
     <string name="hanja_pending">한자 키 인식됨 — 변환 기능은 준비 중입니다.</string>
     <string name="terminal_has_no_selection">A terminal has no selection to copy or cut.</string>
+    <string name="settings_clip_label">Clipboard and kept text</string>
+    <string name="settings_clip_hint">The keyboard reads Android\'s clipboard when it comes up, so what you copied elsewhere is already in the Clip list. Turn that off and it never looks: text then reaches the keyboard only by being shared into it.</string>
+    <string name="settings_clip_follow">Follow the system clipboard</string>
+    <string name="settings_stash_hint">Share text to ReteKey from any app\'s Share menu and it is kept here, never on the system clipboard. Tap it in the Clip list to type it. How long it is kept:</string>
+    <string name="settings_stash_10m">10 minutes</string>
+    <string name="settings_stash_1h">1 hour</string>
+    <string name="settings_stash_1d">1 day</string>
+    <string name="settings_stash_forever">Until I remove it</string>
+    <string name="stash_share_label">Keep in ReteKey</string>
+    <string name="stash_kept">Kept in ReteKey — the clipboard was not touched.</string>
+    <string name="stash_nothing">Nothing to keep.</string>
     <string name="remote_paste_truncated">Clipboard too long — pasted the first part only.</string>
 </resources>
