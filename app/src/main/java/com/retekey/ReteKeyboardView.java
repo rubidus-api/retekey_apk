@@ -189,6 +189,7 @@ public final class ReteKeyboardView extends View {
     private Runnable onHanja;
     private Runnable onUnicodeInput;
     private Runnable onNotepad;
+    private Runnable onClipboard;
     private Runnable onFloatingToggle;
     private Runnable onThemeCycle;
     private Runnable onKanaModifier;
@@ -2065,6 +2066,11 @@ public final class ReteKeyboardView extends View {
         this.onNotepad = listener;
     }
 
+    /** Called when the clipboard tile on the menu page is pressed. */
+    public void setOnClipboard(Runnable listener) {
+        this.onClipboard = listener;
+    }
+
     /** Opens the U+ code-point entry, which the service owns. */
     public void setOnUnicodeInput(Runnable listener) {
         this.onUnicodeInput = listener;
@@ -2143,6 +2149,11 @@ public final class ReteKeyboardView extends View {
             case NOTEPAD:
                 if (onNotepad != null) {
                     onNotepad.run();
+                }
+                break;
+            case CLIPBOARD:
+                if (onClipboard != null) {
+                    onClipboard.run();
                 }
                 break;
             case UNICODE_INPUT:

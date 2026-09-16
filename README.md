@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.181** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181-legacy.apk)
+**ReteKey v0.1.182** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.181** —
-[retekey-0.1.181.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181.apk) (649 KB; the Android 4.0 build is 533 KB)
+Current release: **v0.1.182** —
+[retekey-0.1.182.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182.apk) (650 KB; the Android 4.0 build is 534 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -344,7 +344,7 @@ keyboard itself.
 | Redo | redo | redo it |
 | Date | date | insert the current date and time as text |
 | Emoji | emoji | *not built yet — drawn muted* |
-| Clip | clipboard | *not built yet* |
+| Clip | clipboard | opens the clipboard list, the same one the action bar's **Clip** opens |
 | Copy | copy | copy the selection |
 | Cut | cut | cut the selection |
 | Paste | paste | paste the clipboard |

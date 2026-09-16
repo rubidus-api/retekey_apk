@@ -66,8 +66,18 @@ public final class MenuPageTest {
     }
 
     @Test
+    public void theClipboardTileOpensTheClipList() {
+        // It was drawn as a placeholder while there was no clip list; there is one now, and the
+        // tile is the way to it from the menu page (owner's request, 2026-09-16).
+        SoftwareKeySpec clip = menu.findById("touch.menu.clipboard");
+        assertNotNull(clip);
+        assertTrue(clip.isControl());
+        assertEquals(ControlKey.CLIPBOARD, clip.control());
+    }
+
+    @Test
     public void thePlaceholderTilesStayDisabled() {
-        for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.clipboard",
+        for (String id : Arrays.asList("touch.menu.emoji",
             "touch.menu.onehand.left", "touch.menu.onehand.full")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);

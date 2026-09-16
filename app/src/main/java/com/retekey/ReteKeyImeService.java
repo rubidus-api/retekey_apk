@@ -139,6 +139,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnHanja(this::handleHanja);
         keyboardView.setOnUnicodeInput(this::startUnicodeEntry);
         keyboardView.setOnNotepad(this::toggleNotepad);
+        keyboardView.setOnClipboard(this::toggleClipboardPanel);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         keyboardView.setOnThemeCycle(this::cycleTheme);
         keyboardView.setOnKanaModifier(this::applyKanaModifier);

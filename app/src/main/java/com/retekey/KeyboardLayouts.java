@@ -1807,7 +1807,7 @@ public final class KeyboardLayouts {
             menuControl("redo", "Redo", ControlKey.REDO),
             menuControl("date", "Date", ControlKey.INSERT_DATE),
             menuDisabled("emoji", "Emoji"),
-            menuDisabled("clipboard", "Clip"),
+            menuControl("clipboard", "Clip", ControlKey.CLIPBOARD),
             menuControl("copy", "Copy", ControlKey.COPY),
             menuRaw("cursor.home", "Home", RawKey.HOME),
             menuRaw("cursor.up", "↑", RawKey.UP),

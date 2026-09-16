@@ -53,6 +53,8 @@ public enum ControlKey {
     UNICODE_INPUT,
     /** Open the notepad above the keyboard, through the host. */
     NOTEPAD,
+    /** Open the clipboard list above the keyboard, through the host. */
+    CLIPBOARD,
     /** Toggle a 12-key page's cells between Hangul and the phone keypad's digits. */
     PHONE_DIGITS,
     /** Toggle a 12-key page's cells between Hangul and the arrow/Home/End/PgUp/PgDn cluster. */
