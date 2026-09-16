@@ -85,7 +85,9 @@ public final class LetterLayoutsTest {
         }
         org.junit.Assert.assertEquals("ko", LetterLayouts.languageTag(KeyboardLayoutId.KO_CHEONJIIN));
         org.junit.Assert.assertEquals("ko (Korean)", LetterLayouts.languageGroupLabel("ko"));
-        org.junit.Assert.assertEquals("pad", LetterLayouts.languageTag(KeyboardLayoutId.PAD_ARROWS));
+        org.junit.Assert.assertEquals("etc", LetterLayouts.languageTag(KeyboardLayoutId.PAD_ARROWS));
+        org.junit.Assert.assertEquals("etc", LetterLayouts.languageTag(KeyboardLayoutId.ETC_IPA));
+        org.junit.Assert.assertEquals("etc (Extras)", LetterLayouts.languageGroupLabel("etc"));
     }
 
     /** 자판 약어는 전부 세 글자다 — 전환 키가 굵은 대문자로 그대로 쓴다(2026-08-29). */

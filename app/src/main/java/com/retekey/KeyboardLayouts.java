@@ -140,6 +140,8 @@ public final class KeyboardLayouts {
         padLayout(KeyboardLayoutId.PAD_ARROWS, false, true);
     private static final KeyboardLayout PAD_KEYPAD_LAYOUT =
         padLayout(KeyboardLayoutId.PAD_KEYPAD, true, false);
+    private static final KeyboardLayout IPA_BASE = ipa(false);
+    private static final KeyboardLayout IPA_SECOND = ipa(true);
     private static final KeyboardLayout PAD_KEYPAD_SHIFTED =
         padLayout(KeyboardLayoutId.PAD_KEYPAD, true, true);
     private static final KeyboardLayout CHARS = buildSpecialChars();
@@ -242,6 +244,8 @@ public final class KeyboardLayouts {
                 return shifted ? PAD_ARROWS_SHIFTED : PAD_ARROWS_LAYOUT;
             case PAD_KEYPAD:
                 return shifted ? PAD_KEYPAD_SHIFTED : PAD_KEYPAD_LAYOUT;
+            case ETC_IPA:
+                return shifted ? IPA_SECOND : IPA_BASE;
             case SPECIAL_CHARS:
                 return CHARS;
             default:
@@ -1042,6 +1046,63 @@ public final class KeyboardLayouts {
     }
 
     /**
+     * The IPA page, for phonetic transcription (issue #11). The symbols have no case, so Shift
+     * turns the page over instead: the first page carries what an English or general transcription
+     * needs — the vowels of the lexical sets, the fricatives and affricates English spells with two
+     * letters, the taps and the glottal stop — and the second the rest of the pulmonic consonants,
+     * the rounded and back vowels, and the diacritics that hang on the symbol before them.
+     *
+     * <p>Each key holds one more symbol of its own family, so the pair that is easy to confuse —
+     * ʃ and ɕ, x and χ, ɹ and ɻ — sits under the same finger rather than on another page.
+     */
+    private static KeyboardLayout ipa(boolean second) {
+        String[][] pages = second ? ipaSecondPage() : ipaFirstPage();
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        rows.add(ipaRow(pages[0], null, null));
+        rows.add(ipaRow(pages[1], null, backspaceKey()));
+        rows.add(ipaRow(pages[2], shiftKey(second), enterKey()));
+        return letterPage(KeyboardLayoutId.ETC_IPA, second, rows, null);
+    }
+
+    /** One IPA row: "symbol hold" pairs, with the row's own first and last cells around them. */
+    private static List<SoftwareKeySpec> ipaRow(String[] cells, SoftwareKeySpec first,
+                                                SoftwareKeySpec last) {
+        List<SoftwareKeySpec> row = new ArrayList<>(10);
+        if (first != null) {
+            row.add(first);
+        }
+        for (String cell : cells) {
+            String[] parts = cell.split(" ");
+            SoftwareKeySpec key = SoftwareKeySpec.enabled(
+                "touch.ipa." + Integer.toHexString(parts[0].codePointAt(0)),
+                parts[0], SemanticInput.text(parts[0]));
+            row.add(parts.length > 1 ? key.withLongPress(parts[1]) : key);
+        }
+        if (last != null) {
+            row.add(last);
+        }
+        return KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0]));
+    }
+
+    /** The first page: symbol, then the symbol its key holds. */
+    private static String[][] ipaFirstPage() {
+        return new String[][] {
+            {"ə ɚ", "ɪ ɨ", "ʊ ʉ", "ɛ œ", "ɔ ɒ", "æ ɶ", "ɑ ɐ", "ʌ ɤ", "ɜ ɝ", "ː ˑ"},
+            {"θ ʘ", "ð ɗ", "ʃ ɕ", "ʒ ʑ", "ŋ ɴ", "ʧ ʨ", "ʤ ʥ", "ɹ ɻ", "ɾ r"},
+            {"ʔ ʕ", "ɡ ɢ", "ç ʝ", "x χ", "ɣ ʁ", "ɲ ɳ", "ʎ ɭ", "ˈ ˌ"},
+        };
+    }
+
+    /** The second page, reached with Shift: the rest of the symbols and the diacritics. */
+    private static String[][] ipaSecondPage() {
+        return new String[][] {
+            {"ɸ ʙ", "β ⱱ", "ʋ ɰ", "ɱ ɶ", "ʈ ɖ", "ɭ ɺ", "ʂ ʐ", "ɟ ʄ", "ʜ ʢ", "ˑ ǀ"},
+            {"y ʏ", "ø ɵ", "ɘ ɞ", "ɯ ɪ", "ɤ ʌ", "ɒ ɑ", "ɶ æ", "ɐ ə", "ʉ ɨ"},
+            {"ˌ ˈ", "̃ ̩", "̥ ̬", "͡ ͜", "ʰ ʱ", "ʲ ˠ", "ʷ ˤ", "ʼ ʘ"},
+        };
+    }
+
+    /**
      * Hebrew, each letter where the standard layout puts it, written here in visual left-to-right
      * order (the top row reads ק ר א ט ו ן ם פ from the right, which is how Hebrew reads it).
      * Hebrew has no capitals, so there is no Shift and no shifted page; the cell Shift would take
@@ -1515,6 +1576,10 @@ public final class KeyboardLayouts {
      */
     private static SoftwareKeySpec bottomRowCellFor(KeyboardLayoutId id) {
         switch (id) {
+            case ETC_IPA:
+                // A transcription is written beside prose, and the way back to it is the globe;
+                // the cell stays empty rather than carrying a key this page has no use for.
+                return vacatedCell("layer");
             case KO_DUBEOLSIK:
                 return hanjaKey();
             case EN_QWERTY:

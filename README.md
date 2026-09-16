@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.177** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177-legacy.apk)
+**ReteKey v0.1.178** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.177** —
-[retekey-0.1.177.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) (646 KB; the Android 4.0 build is 532 KB)
+Current release: **v0.1.178** —
+[retekey-0.1.178.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178.apk) (648 KB; the Android 4.0 build is 533 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -118,10 +118,10 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Thirty-two layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+- **Thirty-three layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
   Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, Hebrew, Persian, Arabic, Urdu,
   Thai, Hindi, Russian, Ukrainian, Bulgarian, Macedonian, Serbian, Georgian, Armenian, Japanese
-  Romaji and the 12-key Japanese Flick, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows and Keypad on the same 12-key frame. The
+  Romaji and the 12-key Japanese Flick, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows, Keypad and the IPA phonetic page as extras. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
@@ -203,9 +203,10 @@ Seven letter layouts share that grid:
 
 | **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. **Shift** sits beside Meta: tap it for one key, so Shift+arrow selects, or hold it to keep it down. Off until you turn it on in settings |
 | **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold, with **Shift** beside Meta as on Arrows. Off until you turn it on in settings |
+| **IPA** | the International Phonetic Alphabet as a page of its own, for writing a pronunciation beside the word: the vowels ə ɪ ʊ ɛ ɔ æ ɑ ʌ ɜ and the length mark on the top row, the consonants English spells with two letters (θ ð ʃ ʒ ŋ ʧ ʤ) and the r's below, and the stress marks at the end. **Shift** turns to a second page — ɸ β ʋ ʈ ʂ, the rounded and central vowels y ø ɘ ɯ ɤ, and the diacritics (nasal ◌̃, voiceless ◌̥, tie bar ◌͡, aspirated ʰ, palatalised ʲ, labialised ʷ, ejective ʼ). Every key **holds** a rarer neighbour of the symbol it shows, so the whole alphabet is two pages and a hold deep. A physical keyboard types it too, the same symbols in the same places. Off until you turn it on in settings |
 
 The layout key — captioned with the layout it goes to next (`2BS`, `QWE`, `DVO`, `CJI`, `NRG`,
-`ARW`, `NUM`, in bold capitals) — walks the layouts you ticked in settings, in the order you put them there, naming
+`ARW`, `NUM`, `IPA`, in bold capitals) — walks the layouts you ticked in settings, in the order you put them there, naming
 each one as it arrives. Holding it opens the menu page. Hanja conversion is the 漢 key: on the
 2beolsik letters page, on both 12-key pads while Hangul is being typed, and on the keypad page.
 

@@ -56,7 +56,8 @@ public final class LetterLayouts {
         KeyboardLayoutId.KO_CHEONJIIN,
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
-        KeyboardLayoutId.PAD_KEYPAD
+        KeyboardLayoutId.PAD_KEYPAD,
+        KeyboardLayoutId.ETC_IPA
     );
 
     /** What a user gets before touching settings: the two full keyboards. */
@@ -151,6 +152,8 @@ public final class LetterLayouts {
                 return "arw";
             case PAD_KEYPAD:
                 return "num";
+            case ETC_IPA:
+                return "ipa";
             default:
                 return baseName(id);
         }
@@ -265,6 +268,8 @@ public final class LetterLayouts {
                 return "Arrows";
             case PAD_KEYPAD:
                 return "Keypad";
+            case ETC_IPA:
+                return "IPA(phonetic)";
             default:
                 return id.name();
         }
@@ -276,10 +281,14 @@ public final class LetterLayouts {
      */
     /**
      * The language a layout writes, as a short tag — the part of the id before the underscore
-     * (KO_DUBEOLSIK → "ko"); the two special pads share "pad". Settings groups the not-yet-enabled
+     * (KO_DUBEOLSIK → "ko"); the pads and the IPA page share "etc". Settings groups the not-yet-enabled
      * layouts under these tags so thirty-plus rows read as a dozen families.
      */
     public static String languageTag(KeyboardLayoutId id) {
+        if (id == KeyboardLayoutId.PAD_ARROWS || id == KeyboardLayoutId.PAD_KEYPAD) {
+            // The pads write no language; they belong with the other extras (the IPA page).
+            return "etc";
+        }
         String name = id.name();
         int cut = name.indexOf('_');
         return (cut < 0 ? name : name.substring(0, cut)).toLowerCase(java.util.Locale.ROOT);
@@ -313,7 +322,7 @@ public final class LetterLayouts {
             case "ur": return "ur (Urdu)";
             case "ka": return "ka (Georgian)";
             case "hy": return "hy (Armenian)";
-            case "pad": return "pad (Special)";
+            case "etc": return "etc (Extras)";
             default: return tag;
         }
     }

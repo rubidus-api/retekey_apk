@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.177** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177-legacy.apk)
+**ReteKey v0.1.178** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.177** —
-[retekey-0.1.177.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) (646 KB; 안드로이드 4.0 빌드는 532 KB)
+현재 릴리즈: **v0.1.178** —
+[retekey-0.1.178.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.178/retekey-0.1.178.apk) (648 KB; 안드로이드 4.0 빌드는 533 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -72,7 +72,7 @@ APK를 바로 받으실 수도 있습니다.
    입력창이 있습니다. 시스템 설정을 헤매지 않으셔도 됩니다.
 
 설치한 뒤 한글·영어·12키 자판 사이를 오갈 때는 오른쪽 아래의 자판 키를 누르시면 됩니다. 이 키에는 지금 쓰는 자판이 아니라 *누르면 바뀔* 자판이
-굵은 대문자로 적혀 있어(`QWE`, `DVO`, `2BS`, `CJI`, `NRG`, `ARW`, `NUM`) 다음에 무엇이 올지 미리 보입니다. 길게 누르면 메뉴
+굵은 대문자로 적혀 있어(`QWE`, `DVO`, `2BS`, `CJI`, `NRG`, `ARW`, `NUM`, `IPA`) 다음에 무엇이 올지 미리 보입니다. 길게 누르면 메뉴
 페이지가 열립니다. 그 키가 어떤 자판을 어떤 순서로 돌지는 설정에서 직접 정하실 수 있습니다.
 
 ## 어떻게 생겼나
@@ -116,10 +116,10 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
 
 ## 기능
 
-- **서른두 가지 자판** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, 스페인어, 포르투갈어, 이탈리아어,
+- **서른세 가지 자판** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, 스페인어, 포르투갈어, 이탈리아어,
   폴란드어, 베트남어(Telex), 독일어, 터키어, 프랑스어 AZERTY, 그리스어, 히브리어, 페르시아어, 아랍어,
   우르두어, 태국어, 힌디어, 러시아어, 우크라이나어, 불가리아어, 마케도니아어, 세르비아어, 조지아어,
-  아르메니아어, 일본어 로마자와 12키 일본어 플릭, 12키 자판인 Cheonjiin(천지인)과 Naratgeul(나랏글), 그리고 같은 12키 틀 위의 Arrows와 Keypad. 자판 키가 켜 두신
+  아르메니아어, 일본어 로마자와 12키 일본어 플릭, 12키 자판인 Cheonjiin(천지인)과 Naratgeul(나랏글), 그리고 별도 분류(etc)로 묶인 Arrows·Keypad·IPA 발음기호 자판. 자판 키가 켜 두신
   자판들을 정하신 순서대로 돌고, 길게 누르면 메뉴가 열립니다.
 - **숫자 입력창에는 키패드로** — 전화번호·금액·PIN·날짜처럼 숫자를 받는 칸에서는 12키 Keypad로
   먼저 열립니다. 거기서 자판 키로 원하시는 자판으로 넘어갈 수 있고, 다음 일반 입력창에서는 쓰시던
@@ -201,6 +201,7 @@ vi를 쓰실 때를 위한 진짜 `KEYCODE_ESCAPE`입니다), 나머지에는 �
 
 | **Arrows** | 12키 틀 위의 커서 이동 자판입니다(Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del). 글자 중간에 화살표를 한 번 보는 것이 아니라 문서 안을 계속 돌아다닐 때를 위해, 토글이 아니라 자판으로 두었습니다. Meta 옆에 **Shift** 가 있어, 한 번 누르면 다음 키 하나에만 걸리고(Shift+화살표로 선택) 길게 누르면 계속 눌린 상태로 있습니다. 설정에서 켜야 자판 키가 들릅니다 |
 | **Keypad** | 같은 틀 위의 폰 키패드입니다. `1`–`9`, `*` `0` `#`을 한 번에 입력하고, 길게 누르면 계산기 기호가 나옵니다. Arrows 처럼 Meta 옆에 **Shift** 가 있습니다. 설정에서 켜야 자판 키가 들릅니다 |
+| **IPA** | 낱말 옆에 발음을 적기 위한 국제음성기호 자판입니다. 첫 줄에 모음 ə ɪ ʊ ɛ ɔ æ ɑ ʌ ɜ 와 장음 기호, 가운뎃줄에 영어가 두 글자로 적는 자음(θ ð ʃ ʒ ŋ ʧ ʤ)과 r 계열, 끝에 강세 기호가 있습니다. **Shift** 를 누르면 둘째 면으로 넘어가 ɸ β ʋ ʈ ʂ, 원순·중설 모음 y ø ɘ ɯ ɤ, 그리고 구별 기호(비음화 ◌̃, 무성음화 ◌̥, 연결선 ◌͡, 유기음 ʰ, 구개음화 ʲ, 원순음화 ʷ, 방출음 ʼ)가 나옵니다. 모든 키를 **길게 누르면** 그 기호와 가까운 드문 기호가 나오므로, 전체 기호가 두 면과 길게 누르기 안에 들어갑니다. 물리 키보드도 같은 자리에서 같은 기호를 칩니다. 설정에서 켜야 자판 키가 들릅니다 |
 
 자판 키는 설정에서 체크해 두신 자판들을 넣어 두신 순서대로 돌면서, 자판이 바뀔 때마다 이름을 알려
 줍니다. 길게 누르면 메뉴 페이지가 열립니다. 한자 변환은 漢 키입니다. 2beolsik 글자 자판, 한글을 치는

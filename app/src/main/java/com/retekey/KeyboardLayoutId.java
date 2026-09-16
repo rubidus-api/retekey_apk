@@ -71,6 +71,8 @@ public enum KeyboardLayoutId {
     PAD_ARROWS,
     /** The phone keypad's digits on a 12-key pad, as a layout of its own. */
     PAD_KEYPAD,
+    /** The IPA symbols, on the same ten-column grid; Shift turns the page over (issue #11). */
+    ETC_IPA,
     /** The special-characters page (reached by holding the period). */
     SPECIAL_CHARS,
     /** The special-keys page: keypad plus the special/function keys (reached by the pad key). */
