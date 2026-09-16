@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.179** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179-legacy.apk)
+**ReteKey v0.1.180** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.179** —
-[retekey-0.1.179.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179.apk) (648 KB; 안드로이드 4.0 빌드는 533 KB)
+현재 릴리즈: **v0.1.180** —
+[retekey-0.1.180.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) (648 KB; 안드로이드 4.0 빌드는 533 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -572,9 +572,13 @@ Meta·Shift, 그리고 물리 키보드의 수정자까지입니다. 물리 키�
 ![키보드 위의 클립보드 목록](assets/keyboard-clipboard.png)
 
 **Clip**을 누르면 잘라내거나 복사한 것들이 나옵니다. 안드로이드 클립보드를 따라가므로 이 키보드의 바에서
-한 것뿐 아니라 다른 앱에서 복사한 것도 들어오고, 목록을 열면 지금 클립보드에 있는 것이 맨 위에 있습니다.
-목록에서 고른 항목은 입력되면서 클립보드에도 들어갑니다. 항목을 누르면 붙여넣고,
-☆는 고정(오래되어도 지워지지 않음), ✕는 하나 지우기, **Clear**는 고정하지 않은 것 전부 지우기입니다.
+한 것뿐 아니라 다른 앱에서 복사한 것도 들어옵니다. 알려 주기만 기다리지 않고 **키보드가 올라올 때마다
+클립보드를 직접 읽습니다**. 그래서 브라우저에서 복사한 것이, 붙여 넣으려는 칸에 닿았을 때 이미 목록에
+있습니다(안드로이드는 화면에 있는 앱에만 복사 사실을 알려 주고, 어떤 ROM 들은 화면에 없는 키보드에는
+아예 알려 주지 않습니다. 목록과 클립보드가 따로 놀던 이유입니다). 목록을 열면 지금 클립보드에 있는 것이
+맨 위에 있고, 고른 항목은 입력되면서 클립보드에도 들어갑니다. 항목을 누르면 붙여넣고,
+☆는 고정(오래되어도 지워지지 않음), ✕는 하나 지우기(지운 항목은 아직 클립보드에 있어도 다시 살아나지
+않습니다), **Clear**는 고정하지 않은 것 전부 지우기입니다.
 
 하지 않는 일도 그만큼 중요합니다.
 

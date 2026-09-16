@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.179** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179-legacy.apk)
+**ReteKey v0.1.180** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.179** —
-[retekey-0.1.179.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.179/retekey-0.1.179.apk) (648 KB; the Android 4.0 build is 533 KB)
+Current release: **v0.1.180** —
+[retekey-0.1.180.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) (648 KB; the Android 4.0 build is 533 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -581,10 +581,14 @@ the button does nothing rather than selecting the wrong thing.
 ![The clipboard list over the keyboard](assets/keyboard-clipboard.png)
 
 **Clip** opens what the keyboard remembers of what was cut and copied — through its own bar and in
-any other app, since it follows Android's clipboard. The clip on the clipboard now is at the top when
+any other app, since it follows Android's clipboard. It does not only wait to be told: **every time
+the keyboard comes up it reads the clipboard**, so something copied in a browser is already in the
+list by the time you reach the field you meant to paste it into. (Android tells an app about a copy
+only while it is on screen, and several ROMs stop telling a keyboard that is not, which is how the
+list and the clipboard used to drift apart.) The clip on the clipboard now is at the top when
 the list opens, and a clip you pick becomes the clipboard as well as being typed. Tap a
-clip to paste it; ☆ pins it so it is never aged out; ✕ forgets one and **Clear** forgets all the
-unpinned ones.
+clip to paste it; ☆ pins it so it is never aged out; ✕ forgets one — and a clip you forget stays
+forgotten even while it is still on the clipboard — and **Clear** forgets all the unpinned ones.
 
 What it will not do matters as much as what it will:
 

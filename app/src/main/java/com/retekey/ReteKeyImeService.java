@@ -108,6 +108,12 @@ public class ReteKeyImeService extends InputMethodService {
     private ClipHistory clips = ClipHistory.empty();
     /** Whether {@link #clips} has been read from storage yet — until then it is not the list. */
     private boolean clipsLoaded;
+    /**
+     * A clip the user took off the list while it was still Android's clipboard. The keyboard reads
+     * the clipboard every time it comes up, so without this the forgotten text would walk straight
+     * back into the list the next time the keyboard was shown.
+     */
+    private String forgottenClip;
 
     @Override
     public View onCreateInputView() {
@@ -492,6 +498,11 @@ public class ReteKeyImeService extends InputMethodService {
             // it, not to an empty one it would then write over the whole saved history with.
             loadClipsOnce();
             CharSequence text = data.getItemAt(0).coerceToText(this);
+            if (text != null && text.toString().equals(forgottenClip)) {
+                // Taken off the list on purpose while it is still on the clipboard: leave it off
+                // until the clipboard moves on to something else.
+                return;
+            }
             ClipHistory before = clips;
             ClipHistory updated = clips.record(text, sensitive);
             if (updated != before && clipboardPanel != null) {
@@ -583,6 +594,7 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onForget(String text) {
+                forgottenClip = text;
                 clips = clips.remove(text);
                 ClipStore.save(ReteKeyImeService.this, clips);
                 panel.show(clips.clips());
@@ -1242,6 +1254,7 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onStartInputView(EditorInfo info, boolean restarting) {
         super.onStartInputView(info, restarting);
+        catchUpWithTheSystemClipboard();
         if (bandFrame != null) {
             // The band was possibly measured while this window was not the one on screen — every
             // rebuild from the settings screen is such a moment — and the insets that mattered then
@@ -1268,9 +1281,44 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     @Override
+    public void onWindowShown() {
+        super.onWindowShown();
+        catchUpWithTheSystemClipboard();
+    }
+
+    @Override
     public void onWindowHidden() {
         super.onWindowHidden();
         closePanelsWithTheKeyboard();
+    }
+
+    /**
+     * Reads Android's clipboard whenever the keyboard comes up, and makes sure the watch on it is
+     * still in place.
+     *
+     * <p>The listener alone is not enough. Android only lets an app read the clipboard while it has
+     * focus or is the current keyboard, and several ROMs go further and stop delivering the change
+     * to a keyboard that is not on screen — so a phrase copied in a browser could be invisible to
+     * the list by the time the user reached the field they wanted to paste it into (owner's report,
+     * twice). The moment the keyboard is shown is a moment it is allowed to look, and it is exactly
+     * the moment after someone has copied something elsewhere and come here to use it. The read is
+     * cheap and a repeat of the same text changes nothing, so doing it on every showing is free.
+     *
+     * <p>Re-registering costs nothing when the listener is still there — Android keeps one
+     * registration per callback object — and restores it on a ROM that dropped it.
+     */
+    private void catchUpWithTheSystemClipboard() {
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager != null) {
+                manager.removePrimaryClipChangedListener(systemClipChanged);
+                manager.addPrimaryClipChangedListener(systemClipChanged);
+            }
+        } catch (RuntimeException ignored) {
+            // A ROM that refuses the watch still gets the read below.
+        }
+        recordSystemClip(false);
     }
 
     /**

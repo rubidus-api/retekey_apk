@@ -2218,6 +2218,35 @@ takes any key.
 **Rule.** A panel that intercepts input intercepts what you send through it too. Take it down before
 you speak past it.
 
+### 15.42 A clipboard that only speaks when it is looked at
+
+**What happened.** Text copied in another app was often missing from the keyboard's clip list — the
+list and Android's clipboard felt like two different things (owner's report, twice). The keyboard
+was watching with `addPrimaryClipChangedListener`, registered once in `onCreate`, and that is all it
+had. Android only lets an app read the clipboard while it has focus or is the current keyboard, and
+several ROMs go further: they stop delivering the change to a keyboard that is not on screen. A copy
+made in a browser therefore reached nobody, and by the time the keyboard came up the moment had
+passed.
+
+**The fix.** The keyboard reads the clipboard itself every time it is shown — `onStartInputView` and
+`onWindowShown` both call `catchUpWithTheSystemClipboard()`, which re-registers the watch (cheap; a
+duplicate registration of the same callback is one registration) and then reads. Being shown is
+exactly the moment the keyboard is allowed to look, and exactly the moment after someone copied
+something elsewhere and came here to use it. A clip the user took off the list is remembered in
+`forgottenClip` so that reading does not walk it straight back in while it is still the clipboard.
+
+**How it was proved.** The emulator's AOSP image delivers the change faithfully, so the cell that
+was supposed to cover this passed either way — and the older cell "an outside copy" was setting the
+clipboard from the keyboard's own process, which is not outside at all. Two pieces of tooling made
+it real: a separate package (`testhost/ClipSetterActivity`) that copies the way a browser does, and
+a probe that unhooks the listener the way a ROM does (`CLIPWATCH:off`). With the watch off, the old
+build kept showing the older clip and the new one had the foreign copy the moment the keyboard
+returned.
+
+**Rule.** A permission you only have sometimes is a permission to *use when you have it*. Do not
+build on a callback that the platform may decline to deliver; read at the moments you are allowed to
+read.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
