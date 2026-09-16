@@ -13,6 +13,42 @@ public final class HardwareKeyBindingsTest {
     private static final int SPACE = 62;
     private static final int CTRL_RIGHT = 114;
     private static final int F9 = 139;
+    private static final int KANA = 218;
+    private static final int EISU = 212;
+    private static final int LANGUAGE_SWITCH = 204;
+    private static final int U = 49;
+
+    @Test
+    public void theShortcutsAreThereBeforeAnyoneSetsThem() {
+        // Shift+Space is how Korea has switched scripts on a PC for thirty years, and it works on
+        // a keyboard with no Korean keys at all; 한/영 itself arrives as KANA (218) under Android's
+        // generic key layout, and 한자 as EISU (212), with LANGUAGE_SWITCH (204) for the makers who
+        // send that instead (owner's request, 2026-09-16).
+        List<Binding> hanyeong = HardwareKeyBindings.parse(
+            HardwareKeyBindings.defaultsFor(HardwareKeyBindings.KEY_HANYEONG));
+        assertTrue(hanyeong.contains(new Binding(HardwareKeyBindings.MOD_SHIFT, SPACE)));
+        assertTrue(hanyeong.contains(new Binding(0, KANA)));
+        assertTrue(hanyeong.contains(new Binding(0, LANGUAGE_SWITCH)));
+        assertTrue(HardwareKeyBindings.matches(hanyeong, SPACE, HardwareKeyBindings.MOD_SHIFT));
+        assertFalse("a bare space still types a space",
+            HardwareKeyBindings.matches(hanyeong, SPACE, 0));
+
+        List<Binding> hanja = HardwareKeyBindings.parse(
+            HardwareKeyBindings.defaultsFor(HardwareKeyBindings.KEY_HANJA));
+        assertTrue(hanja.contains(new Binding(0, EISU)));
+
+        List<Binding> unicode = HardwareKeyBindings.parse(
+            HardwareKeyBindings.defaultsFor(HardwareKeyBindings.KEY_UNICODE));
+        assertTrue(unicode.contains(new Binding(
+            HardwareKeyBindings.MOD_CTRL | HardwareKeyBindings.MOD_SHIFT, U)));
+    }
+
+    @Test
+    public void aListEmptiedOnPurposeStaysEmpty() {
+        // The defaults fill an unset preference, not an empty one: removing every binding is an
+        // answer, and it has to survive the next start.
+        assertTrue(HardwareKeyBindings.parse("").isEmpty());
+    }
 
     @Test
     public void parseRoundTripsFormat() {

@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.182** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182-legacy.apk)
+**ReteKey v0.1.183** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.182** —
-[retekey-0.1.182.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182.apk) (650 KB; the Android 4.0 build is 534 KB)
+Current release: **v0.1.183** —
+[retekey-0.1.183.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) (651 KB; the Android 4.0 build is 534 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -489,10 +489,19 @@ key can be bound to the entry itself in settings — none, one, or several, as w
 With a Bluetooth or wired keyboard, letter keys are mapped to 2-beolsik jamo while Korean mode is
 on. In settings you can assign **several physical keys per function**:
 
-- **KO/EN toggle** — for example `Shift+Space` *and* `Right Ctrl`.
-- **Hanja** — for example `F9` *and* `Right Alt`.
-- **Unicode entry** — opens the `U+` code point entry; hex digits build the character, Enter
-  commits it, Esc leaves.
+- **KO/EN toggle** — `Shift+Space` and the keyboard's own **한/영** key are registered from the
+  start, along with the `LANGUAGE_SWITCH` code some makers send instead. Add your own — `Right
+  Ctrl`, say — or remove any of them.
+- **Hanja** — the keyboard's own **한자** key is registered from the start; `F9` or `Right Alt` are
+  a tap away if you would rather have those.
+- **Unicode entry** — `Ctrl+Shift+U` from the start, the combination Linux input methods have used
+  for years. It opens the `U+` code point entry; hex digits build the character, Enter commits it,
+  Esc leaves.
+
+What is registered by default is registered, not fixed: the list shows those keys like any other
+and **Remove** takes one off for good. Pressing the shortcut is all the registration takes — the
+**whole combination** is read, `Shift+Space` included, and while the screen is waiting the keyboard
+stands aside so a key that already does something can still be offered.
 
 A binding may be a lone key or a modifier chord; a modifier pressed on its own registers as itself.
 Modifier chords the IME does not claim are passed through, so application shortcuts keep working,

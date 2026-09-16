@@ -2293,6 +2293,29 @@ killed a `sleep` in Termux). Soft Ctrl with a letter keeps going out as the chor
 Remote desktops are the exception on both counts: nothing is behind their connection to act on, so
 the bar uses chords there too.
 
+### 15.45 A shortcut the keyboard would not let you register
+
+**What happened.** Registering Shift+Space as the 한/영 key stored a lone left Shift. Two things ate
+the Space before the settings screen could see it. The capture was done in `onKeyDown`, which is the
+*last* stop on a key's way through an activity — the focused view sees it first, and the Add button
+that had just been pressed still had focus, where Space and Enter press the button. And once
+Shift+Space became a default binding, the keyboard itself took it: a bound key runs its function,
+which is exactly what the screen asking for it must prevent.
+
+**The fix.** Capture happens in `dispatchKeyEvent`, before any view; and while the screen is
+waiting, it sets `hw_capture_in_progress` in the shared preferences, which the service reads on
+every physical key and answers by passing everything through. The flag is cleared when the capture
+ends and again in `onPause`, so leaving mid-capture cannot leave the keyboard deaf.
+
+**And the defaults.** 한/영 now comes bound to Shift+Space, `KEYCODE_KANA` (218) and
+`KEYCODE_LANGUAGE_SWITCH` (204); 한자 to `KEYCODE_EISU` (212); Unicode entry to Ctrl+Shift+U. The
+odd-looking codes are Android's: its generic key layout maps Linux's HANGEUL and HANJA keys onto the
+Japanese KANA and EISU codes, which is what a Korean keyboard's own two keys arrive as. Defaults
+fill an *unset* preference, so a list emptied on purpose stays empty.
+
+**Rule.** A screen that asks "press the key you want" owns every key while it asks. Take the event
+before the views, and tell the rest of the app to stand aside.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

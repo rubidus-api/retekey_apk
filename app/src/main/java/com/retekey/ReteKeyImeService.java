@@ -928,6 +928,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (settingsIsCapturingAShortcut()) {
+            return super.onKeyDown(keyCode, event);
+        }
         heldHardware.onKey(keyCode, true);
         if (event.getRepeatCount() == 0 && handleHardwareFunctionKey(keyCode, event)) {
             return true;
@@ -987,6 +990,9 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (settingsIsCapturingAShortcut()) {
+            return super.onKeyUp(keyCode, event);
+        }
         heldHardware.onKey(keyCode, false);
         if (isBoundFunctionKey(keyCode, event)) {
             return true;
@@ -1791,15 +1797,32 @@ public class ReteKeyImeService extends InputMethodService {
     private void reloadHardwareBindings() {
         SharedPreferences prefs = getSharedPreferences("retekey_view", MODE_PRIVATE);
         hanyeongBindings = HardwareKeyBindings.parse(
-            prefs.getString(HardwareKeyBindings.KEY_HANYEONG, ""));
+            prefs.getString(HardwareKeyBindings.KEY_HANYEONG,
+                HardwareKeyBindings.defaultsFor(HardwareKeyBindings.KEY_HANYEONG)));
         hanjaBindings = HardwareKeyBindings.parse(
-            prefs.getString(HardwareKeyBindings.KEY_HANJA, ""));
+            prefs.getString(HardwareKeyBindings.KEY_HANJA,
+                HardwareKeyBindings.defaultsFor(HardwareKeyBindings.KEY_HANJA)));
         unicodeBindings = HardwareKeyBindings.parse(
-            prefs.getString(HardwareKeyBindings.KEY_UNICODE, ""));
+            prefs.getString(HardwareKeyBindings.KEY_UNICODE,
+                HardwareKeyBindings.defaultsFor(HardwareKeyBindings.KEY_UNICODE)));
         // A physical key held down repeats on the platform's own clock; only the user's on/off
         // choice can carry over from the soft keyboard's auto-repeat setting.
         dispatcher.setHardwareRepeatEnabled(
             prefs.getBoolean(KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED));
+    }
+
+    /**
+     * Whether the settings screen is waiting for the user to press a shortcut. While it is, every
+     * physical key belongs to that screen: a bound key would otherwise run its function instead of
+     * being registered, and the screen would see only the modifier let up afterwards.
+     */
+    private boolean settingsIsCapturingAShortcut() {
+        try {
+            return getSharedPreferences("retekey_view", MODE_PRIVATE)
+                .getBoolean(HardwareKeyBindings.KEY_CAPTURING, false);
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
     private static int pressedMods(KeyEvent event) {

@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.182** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182-legacy.apk)
+**ReteKey v0.1.183** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.182** —
-[retekey-0.1.182.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.182/retekey-0.1.182.apk) (650 KB; 안드로이드 4.0 빌드는 534 KB)
+현재 릴리즈: **v0.1.183** —
+[retekey-0.1.183.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.183/retekey-0.1.183.apk) (651 KB; 안드로이드 4.0 빌드는 534 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -471,9 +471,18 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 블루투스나 유선 키보드를 연결하시면 한글 모드일 때 글자 키가 두벌식 자모로 매핑됩니다. 설정에서는
 **기능마다 물리 키를 여러 개** 지정하실 수 있습니다.
 
-- **한/영 전환** — 예를 들어 `Shift+Space`*와* `오른쪽 Ctrl`을 함께.
-- **한자** — 예를 들어 `F9`*와* `오른쪽 Alt`를 함께.
-- **유니코드 입력** — `U+` 코드포인트 입력을 엽니다. 16진수로 문자를 만들고 엔터로 넣습니다.
+- **한/영 전환** — `Shift+Space` 와 키보드의 **한/영** 키가 처음부터 등록되어 있습니다(일부 제조사가
+  대신 보내는 `LANGUAGE_SWITCH` 도 함께). `오른쪽 Ctrl` 처럼 원하시는 키를 더하거나, 있는 것을 빼셔도
+  됩니다.
+- **한자** — 키보드의 **한자** 키가 처음부터 등록되어 있습니다. `F9` 나 `오른쪽 Alt` 를 쓰고 싶으면
+  버튼 한 번으로 더할 수 있습니다.
+- **유니코드 입력** — `Ctrl+Shift+U` 가 처음부터 등록되어 있습니다. 리눅스 입력기들이 오래 써 온
+  조합입니다. `U+` 코드포인트 입력을 열고, 16진수로 문자를 만들어 엔터로 넣습니다.
+
+처음부터 등록된 것도 그냥 등록된 것일 뿐 고정이 아닙니다. 목록에 다른 것들과 똑같이 보이고
+**Remove** 로 지우면 그대로 지워집니다. 등록은 원하는 키를 누르기만 하면 됩니다. **조합 전체**를
+읽으므로 `Shift+Space` 도 그대로 들어가고, 화면이 기다리는 동안에는 키보드가 물러나 있어 이미 하는 일이
+있는 키도 등록할 수 있습니다.
 
 지정은 단독 키로도, 수정자 조합으로도 됩니다. 수정자를 혼자 누르면 그 자체로 인식됩니다. 키보드가
 쓰지 않는 수정자 조합은 앱으로 그대로 넘어가므로 앱의 단축키가 그대로 동작하고, 화면의 `Ctrl`과

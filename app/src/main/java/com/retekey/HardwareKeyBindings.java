@@ -18,6 +18,34 @@ public final class HardwareKeyBindings {
     static final String KEY_HANJA = "hw_hanja_bindings";
     /** Keys that open the U+ code-point entry. Like the others, none or several. */
     static final String KEY_UNICODE = "hw_unicode_bindings";
+    /**
+     * Set while the settings screen is waiting for the user to press the shortcut they want.
+     *
+     * <p>The keyboard has to stand aside for that. Otherwise a key that is already bound never
+     * reaches the screen asking for it — Shift+Space toggles the script instead of being offered
+     * as a binding, and what the screen ends up capturing is the Shift on its way back up (owner's
+     * report, 2026-09-16). The two live in one app and share these preferences, which is channel
+     * enough for "not now".
+     */
+    static final String KEY_CAPTURING = "hw_capture_in_progress";
+
+    /**
+     * What each function is bound to before the user says otherwise.
+     *
+     * <p>Android's own key layout is what decides the codes: a Korean keyboard's 한/영 key arrives
+     * as {@code KEYCODE_KANA} (218) and its 한자 key as {@code KEYCODE_EISU} (212) — the generic
+     * layout maps the Linux HANGEUL and HANJA keys onto the Japanese ones — and some makers send
+     * {@code KEYCODE_LANGUAGE_SWITCH} (204) for 한/영 instead. **Shift+Space** is there because it
+     * is how Korea has switched scripts on a PC for thirty years, and it works on a keyboard that
+     * has no Korean keys at all. Unicode entry takes **Ctrl+Shift+U**, the combination Linux input
+     * methods have used for code-point entry since IBus.
+     *
+     * <p>These are defaults, not fixtures: settings lists them like any other binding and the
+     * Remove button takes them off for good — a list emptied on purpose stays empty.
+     */
+    static final String DEFAULT_HANYEONG = "1:62,0:218,0:204";
+    static final String DEFAULT_HANJA = "0:212";
+    static final String DEFAULT_UNICODE = "3:49";
 
     public static final int MOD_SHIFT = 1;
     public static final int MOD_CTRL = 2;
@@ -25,6 +53,20 @@ public final class HardwareKeyBindings {
     public static final int MOD_META = 8;
 
     private HardwareKeyBindings() {
+    }
+
+    /** The stored form of what {@code prefKey} carries when nothing has been stored for it yet. */
+    public static String defaultsFor(String prefKey) {
+        if (KEY_HANYEONG.equals(prefKey)) {
+            return DEFAULT_HANYEONG;
+        }
+        if (KEY_HANJA.equals(prefKey)) {
+            return DEFAULT_HANJA;
+        }
+        if (KEY_UNICODE.equals(prefKey)) {
+            return DEFAULT_UNICODE;
+        }
+        return "";
     }
 
     /** One assigned shortcut: a key code and the modifier bits that must be held with it. */

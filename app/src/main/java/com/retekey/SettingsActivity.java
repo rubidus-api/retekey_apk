@@ -839,7 +839,7 @@ public final class SettingsActivity extends Activity {
         LinearLayout list = prefKey.equals(HardwareKeyBindings.KEY_HANYEONG) ? hanyeongList
             : prefKey.equals(HardwareKeyBindings.KEY_UNICODE) ? unicodeList : hanjaList;
         list.removeAllViews();
-        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
+        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, HardwareKeyBindings.defaultsFor(prefKey)));
         if (bindings.isEmpty()) {
             TextView none = new TextView(this);
             none.setText(R.string.settings_hw_none);
@@ -869,26 +869,41 @@ public final class SettingsActivity extends Activity {
 
     private void startCapture(String prefKey) {
         capturingKey = prefKey;
+        // Tell the keyboard to keep its hands off: a key that is already bound would otherwise do
+        // its job instead of being offered here.
+        prefs().edit().putBoolean(HardwareKeyBindings.KEY_CAPTURING, true).apply();
         captureStatus.setText(R.string.settings_hw_capture);
         captureStatus.setVisibility(View.VISIBLE);
     }
 
     private void stopCapture() {
         capturingKey = null;
+        prefs().edit().putBoolean(HardwareKeyBindings.KEY_CAPTURING, false).apply();
         if (captureStatus != null) {
             captureStatus.setVisibility(View.GONE);
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Leaving the screen mid-capture must not leave the keyboard deaf.
+        if (capturingKey != null) {
+            stopCapture();
+        } else {
+            prefs().edit().putBoolean(HardwareKeyBindings.KEY_CAPTURING, false).apply();
+        }
+    }
+
     private void addBinding(String prefKey, Binding binding) {
-        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
+        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, HardwareKeyBindings.defaultsFor(prefKey)));
         HardwareKeyBindings.add(bindings, binding);
         prefs().edit().putString(prefKey, HardwareKeyBindings.format(bindings)).apply();
         refreshBindings(prefKey);
     }
 
     private void removeBinding(String prefKey, Binding binding) {
-        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, ""));
+        List<Binding> bindings = HardwareKeyBindings.parse(prefs().getString(prefKey, HardwareKeyBindings.defaultsFor(prefKey)));
         bindings.remove(binding);
         prefs().edit().putString(prefKey, HardwareKeyBindings.format(bindings)).apply();
         refreshBindings(prefKey);
@@ -916,9 +931,28 @@ public final class SettingsActivity extends Activity {
         return sb.toString();
     }
 
+    /**
+     * While a shortcut is being captured, every key belongs to the capture.
+     *
+     * <p>It used to be caught in {@code onKeyDown}, which is the last stop on a key's way through
+     * an activity — the focused view sees it first. The Add button had focus, having just been
+     * pressed, and a button eats Space and Enter to press itself; Tab and the arrows move focus.
+     * So Shift+Space was registered as a lone left Shift: the Space never reached the activity at
+     * all, and the Shift's release did (owner's report, 2026-09-16). Taking the event in
+     * {@code dispatchKeyEvent} is taking it before any view can, which is what "press the shortcut
+     * you want" has to mean.
+     */
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (capturingKey != null) {
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (capturingKey == null) {
+            return super.dispatchKeyEvent(event);
+        }
+        int keyCode = event.getKeyCode();
+        if (belongsToThePhone(keyCode)) {
+            stopCapture();
+            return super.dispatchKeyEvent(event);
+        }
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
             if (KeyEvent.isModifierKey(keyCode)) {
                 // Wait: a plain modifier may be the start of a chord, or a lone-modifier binding
                 // captured on its release.
@@ -928,17 +962,31 @@ public final class SettingsActivity extends Activity {
             stopCapture();
             return true;
         }
-        return super.onKeyDown(keyCode, event);
-    }
-
-    @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (capturingKey != null && KeyEvent.isModifierKey(keyCode)) {
+        if (event.getAction() == KeyEvent.ACTION_UP && KeyEvent.isModifierKey(keyCode)) {
             addBinding(capturingKey, new Binding(0, keyCode));
             stopCapture();
             return true;
         }
-        return super.onKeyUp(keyCode, event);
+        return true;
+    }
+
+    /**
+     * Keys a shortcut may not be made of: the phone's own. They are let through untouched — Back
+     * then leaves the screen, which is how a capture started by mistake ends (the flag is cleared
+     * in {@link #onPause}).
+     */
+    private static boolean belongsToThePhone(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK:
+            case KeyEvent.KEYCODE_HOME:
+            case KeyEvent.KEYCODE_APP_SWITCH:
+            case KeyEvent.KEYCODE_POWER:
+            case KeyEvent.KEYCODE_VOLUME_UP:
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static int modsOf(KeyEvent event) {

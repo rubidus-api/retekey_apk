@@ -82,11 +82,11 @@
     <string name="settings_ms_value">%1$d ms</string>
 
     <string name="settings_hw_label">Physical keyboard shortcuts (KO/EN and Hanja)</string>
-    <string name="settings_hw_hint">Register physical keys for the KO/EN toggle and the Hanja key on a Bluetooth or wired keyboard. Each function can have several — for example, KO/EN on both Shift+Space and Right Ctrl.</string>
+    <string name="settings_hw_hint">Register physical keys for the KO/EN toggle, the Hanja key and Unicode entry on a Bluetooth or wired keyboard. Each function can have several. Shift+Space and a keyboard\'s own 한/영 and 한자 keys are registered already, with Ctrl+Shift+U for Unicode entry; remove any of them and it stays removed.</string>
     <string name="settings_hw_hanyeong">KO/EN toggle keys</string>
     <string name="settings_hw_hanja">Hanja keys</string>
     <string name="settings_hw_add">+ Add key</string>
-    <string name="settings_hw_capture">Press a key…  (a modifier alone registers itself; tap the screen to cancel)</string>
+    <string name="settings_hw_capture">Press the shortcut…  (the whole combination is taken; a modifier on its own registers itself; tap here or press Back to cancel)</string>
     <string name="settings_hw_none">No keys registered</string>
     <string name="settings_hw_remove">✕</string>
     <string name="settings_hw_unicode">Unicode entry keys</string>
