@@ -82,6 +82,10 @@ public final class ReteKeyboardView extends View {
         boolean pickerMoved;
         /** A made-up candidate list for pictures (ScreenshotActivity); null in real use. */
         List<String> pickerPreview;
+        /** A modifier this finger armed the moment it came down (§15.37), or null. */
+        ControlKey heldModifier;
+        /** What {@link #typedCount} was then, so the lift can see whether a key used it. */
+        int typedAtDown;
         final Runnable onHold = () -> handleLongPress(this);
         final Runnable onRepeat = () -> handleRepeat(this);
 
@@ -97,6 +101,10 @@ public final class ReteKeyboardView extends View {
 
     private final android.util.SparseArray<Touch> touches = new android.util.SparseArray<>();
     private int nextTouchSerial;
+    /** How many keystrokes have been sent; a held Shift reads it to see whether it was used. */
+    private int typedCount;
+    /** What the syllable being spelled expects next; the service keeps it up to date. */
+    private JamoExpectation.Kind expectedJamo = JamoExpectation.Kind.NONE;
     // Held-key auto-repeat (space, enter, backspace, arrows, letters …), configured in settings.
     private boolean repeatEnabled = KeyRepeatSettings.DEFAULT_ENABLED;
     private int repeatDelayMs = KeyRepeatSettings.DEFAULT_DELAY_MS;
@@ -125,6 +133,8 @@ public final class ReteKeyboardView extends View {
      * 2026-09-16). A meant flick travels well past 18 dp on a key two columns wide.
      */
     private static final float FLICK_DP = 18.0f;
+    /** The shortest hold that types a key's alternate rather than its letter. */
+    private static final int ALTERNATE_HOLD_MS = 520;
     /**
      * How long a 12-key run waits before the next press of the same key starts a new letter rather
      * than cycling. A phone does the same, and it is what lets 삶 be followed by ㅇ — the key that
@@ -297,6 +307,14 @@ public final class ReteKeyboardView extends View {
         shiftLayer.clear();
         requestLayout();
         invalidate();
+    }
+
+    /**
+     * What the composer is in the middle of, so a touch on the line between a consonant key and a
+     * vowel key can be settled by what can actually follow (TouchTargets).
+     */
+    public void setExpectedJamo(JamoExpectation.Kind expected) {
+        expectedJamo = expected == null ? JamoExpectation.Kind.NONE : expected;
     }
 
     /** Re-reads the layout order and lands on a layout that is still enabled. */
@@ -1079,7 +1097,7 @@ public final class ReteKeyboardView extends View {
         // modifier chord is two fingers down at once, and must remain one.
         settlePendingTaps();
         KeyboardLayout layout = layout();
-        int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y);
+        int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y, expectedJamo);
         if (target == null) {
             return;
         }
@@ -1090,10 +1108,49 @@ public final class ReteKeyboardView extends View {
         // third of the area, and every tap that lands there is a keystroke the user has to repeat.
         Touch touch = new Touch(pointerId, rowIndex, keyIndex, gridSignature(), x, y);
         touches.put(pointerId, touch);
+        armModifierOnPress(touch, layout.rows().get(rowIndex).get(keyIndex));
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
         invalidate();
         armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+    }
+
+    /**
+     * Shift and the Ctrl/Alt/Meta latches take effect the moment the finger lands, not when it
+     * lifts. Typing fast rolls one key into the next, and a Shift whose finger left after the
+     * letter's did typed the letter unshifted and then armed itself for the key after it: 빠가다
+     * came out as ㅂ까다 (§15.37).
+     */
+    private void armModifierOnPress(Touch touch, SoftwareKeySpec key) {
+        if (!key.isControl()) {
+            return;
+        }
+        ControlKey control = key.control();
+        if (control == ControlKey.SHIFT) {
+            shiftLayer.tap();
+        } else if (ModifierLatches.handles(control)) {
+            modifierLatches.tap(control);
+        } else {
+            return;
+        }
+        touch.heldModifier = control;
+        touch.typedAtDown = typedCount;
+        invalidate();
+    }
+
+    /**
+     * The finger that armed a modifier has lifted. If a key was typed while it was down, that key
+     * used the modifier, so the one-shot is spent here rather than left for the next key.
+     */
+    private void releaseModifier(Touch touch) {
+        if (touch.heldModifier == null || typedCount == touch.typedAtDown) {
+            return;
+        }
+        if (touch.heldModifier == ControlKey.SHIFT) {
+            consumeOneShotShift();
+        } else {
+            consumeOneShotModifiers();
+        }
     }
 
     /** A finger's hold and repeat timers, armed for whichever key it is on now. */
@@ -1104,11 +1161,23 @@ public final class ReteKeyboardView extends View {
             || (key.isControl()
                 && (key.control() == ControlKey.SHIFT
                     || ModifierLatches.handles(key.control())))) {
-            postDelayed(touch.onHold, ViewConfiguration.getLongPressTimeout());
+            postDelayed(touch.onHold, holdDelayFor(key));
         } else if (repeatEnabled && repeatsOnHold(key)) {
             // Ordinary keys with no long press auto-repeat while held.
             postDelayed(touch.onRepeat, repeatDelayMs);
         }
+    }
+
+    /**
+     * How long a finger must stay for a hold to act. A key that types its alternate waits longer
+     * than the system's long press: at the platform's 400 ms, a fifth of the presses in a measured
+     * run of ordinary typing came out as the alternate instead of the letter (§15.38). The keys
+     * that switch a state — Shift, the modifiers — keep the system's own timing, because there
+     * nothing is typed by mistake.
+     */
+    private int holdDelayFor(SoftwareKeySpec key) {
+        int system = ViewConfiguration.getLongPressTimeout();
+        return key.hasLongPress() ? Math.max(system, ALTERNATE_HOLD_MS) : system;
     }
 
     /**
@@ -1258,7 +1327,7 @@ public final class ReteKeyboardView extends View {
             feedback.playKeyDown();
             return;
         }
-        sink.accept(ProjectKeyEvent.softwareDown(key.stableKeyId(), SemanticInput.text(text)));
+        send(ProjectKeyEvent.softwareDown(key.stableKeyId(), SemanticInput.text(text)));
         resetPhoneInterpreters();
         consumeOneShotShift();
         feedback.playKeyDown();
@@ -1278,7 +1347,7 @@ public final class ReteKeyboardView extends View {
             feedback.playKeyDown();
             return;
         }
-        sink.accept(ProjectKeyEvent.softwareDown(key.stableKeyId(), SemanticInput.text(text)));
+        send(ProjectKeyEvent.softwareDown(key.stableKeyId(), SemanticInput.text(text)));
         resetPhoneInterpreters();
         feedback.playKeyDown();
         flashKeyboard(key, text);
@@ -1322,7 +1391,7 @@ public final class ReteKeyboardView extends View {
         if (!key.hasLongPress()) {
             return;
         }
-        sink.accept(key.longPressEvent(index));
+        send(key.longPressEvent(index));
         resetPhoneInterpreters();
         consumeOneShotShift();
         feedback.playKeyDown();
@@ -1374,7 +1443,7 @@ public final class ReteKeyboardView extends View {
             return;
         }
         if (!emitPhoneKey(key)) {
-            sink.accept(pressEventWithModifiers(key));
+            send(pressEventWithModifiers(key));
         }
         touch.repeatFired = true;
         feedback.playKeyDown();
@@ -1433,7 +1502,12 @@ public final class ReteKeyboardView extends View {
         // keystroke whenever the fingertip drifted a pixel, and the drift is what people notice.
         SoftwareKeySpec held = layout().rows().get(touch.row).get(touch.key);
         if (held.isControl()) {
-            applyControl(held.control());
+            if (touch.heldModifier != null) {
+                // Armed when it went down; the lift only decides whether it was used.
+                releaseModifier(touch);
+            } else {
+                applyControl(held.control());
+            }
             flashKeyboard(held, null);
             performClick();
             return;
@@ -1451,7 +1525,7 @@ public final class ReteKeyboardView extends View {
             return;
         }
         if (!emitPhoneKey(held)) {
-            sink.accept(pressEventWithModifiers(held));
+            send(pressEventWithModifiers(held));
         }
         consumeOneShotShift();
         flashKeyboard(held, null);
@@ -1484,6 +1558,16 @@ public final class ReteKeyboardView extends View {
             touch.holdConsumed = true;
             typeTapped(held);
         }
+    }
+
+    /**
+     * Every keystroke the keyboard sends, counted. A Shift held while a letter is tapped has to
+     * know whether that letter used it: if it did, letting Shift up must not leave it armed for
+     * the next key as well (§15.37).
+     */
+    private void send(ProjectKeyEvent event) {
+        typedCount++;
+        sink.accept(event);
     }
 
     /** Drops a finger's timers and its claim on a key. */
@@ -1530,7 +1614,7 @@ public final class ReteKeyboardView extends View {
         if (rawKey == null) {
             return false;
         }
-        sink.accept(ProjectKeyEvent.softwareDown(
+        send(ProjectKeyEvent.softwareDown(
             key.stableKeyId(), SemanticInput.rawKey(rawKey, mods)));
         consumeOneShotModifiers();
         consumeOneShotShift();
@@ -1565,7 +1649,7 @@ public final class ReteKeyboardView extends View {
      */
     private void toggleTabHold() {
         tabHeld = !tabHeld;
-        sink.accept(ProjectKeyEvent.softwareDown(
+        send(ProjectKeyEvent.softwareDown(
             TAB_KEY_ID,
             SemanticInput.rawKey(
                 RawKey.TAB,
@@ -1579,7 +1663,7 @@ public final class ReteKeyboardView extends View {
      */
     private void toggleCapsLock() {
         capsLocked = !capsLocked;
-        sink.accept(ProjectKeyEvent.softwareDown(
+        send(ProjectKeyEvent.softwareDown(
             CAPS_KEY_ID, SemanticInput.rawKey(RawKey.CAPS_LOCK)));
     }
 
@@ -1671,7 +1755,7 @@ public final class ReteKeyboardView extends View {
         if (key.hasLongPress()) {
             // Holding a key types its one alternate straight away. There is no popup to aim at
             // and nothing to drag to: the finger is already where it needs to be.
-            sink.accept(key.longPressEvent(0));
+            send(key.longPressEvent(0));
             // The alternate is not part of a 12-key run, so it ends one.
             resetPhoneInterpreters();
             consumeOneShotShift();
@@ -1769,7 +1853,7 @@ public final class ReteKeyboardView extends View {
 
     private void emit(SoftwareKeySpec key, java.util.List<SemanticInput> inputs) {
         for (SemanticInput input : inputs) {
-            sink.accept(ProjectKeyEvent.softwareDown(key.stableKeyId(), input));
+            send(ProjectKeyEvent.softwareDown(key.stableKeyId(), input));
         }
     }
 
@@ -1795,15 +1879,35 @@ public final class ReteKeyboardView extends View {
     }
 
     private void consumeOneShotModifiers() {
+        if (isModifierFingerDown(ControlKey.CTRL)) {
+            return;
+        }
         if (modifierLatches.consumeOneShots()) {
             invalidate();
         }
     }
 
     private void consumeOneShotShift() {
+        if (isModifierFingerDown(ControlKey.SHIFT)) {
+            // Still held: it applies to every key typed under it, the way a keyboard's Shift does.
+            return;
+        }
         if (shiftLayer.consumeOneShot()) {
             invalidate();
         }
+    }
+
+    /** Whether a finger is on that modifier's key right now. */
+    private boolean isModifierFingerDown(ControlKey control) {
+        for (int i = 0; i < touches.size(); i++) {
+            Touch touch = touches.valueAt(i);
+            if (touch.heldModifier == control
+                || (control != ControlKey.SHIFT && touch.heldModifier != null
+                    && touch.heldModifier != ControlKey.SHIFT)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

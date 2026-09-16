@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.176** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.176/retekey-0.1.176.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.176/retekey-0.1.176-legacy.apk)
+**ReteKey v0.1.177** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.176** —
-[retekey-0.1.176.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.176/retekey-0.1.176.apk) (644 KB; 안드로이드 4.0 빌드는 531 KB)
+현재 릴리즈: **v0.1.177** —
+[retekey-0.1.177.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) (646 KB; 안드로이드 4.0 빌드는 532 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -146,6 +146,7 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
 - **입체감 있는 둥근 키와 입력 피드백** — 누른 키에 색이 입혀지고, 키 사이 틈이 깜빡이며, 방금 친
   글자가 키 위쪽 상자에 크게 나타납니다. 진동과 소리도 각각 따로 조절하실 수 있습니다.
 - **키를 길게 누르면 보조 글자를 바로 입력** — 팝업을 겨냥할 필요도, 손가락을 끌 필요도 없습니다.
+  시스템의 길게 누르기보다 조금 긴 0.5초를 기다리므로, 천천히 누른 글자는 그대로 글자로 들어갑니다.
   글자 자판의 윗줄에는 `1234567890`, 가운뎃줄에는 `!@#$%^&*;`, 아랫줄에는 `_-:='"?`가 들어 있습니다.
 - **라이트·다크·시스템 중에서 고르십니다** — 안드로이드 12 이상에서는 Material You 색까지
   따라갑니다.
@@ -522,7 +523,8 @@ Esc, Tab — 는 앞의 음절 뒤에 이어서 프로그램으로 그대로 갑
 기본은 꺼져 있습니다. **전용 화면**이 따로 있습니다 — 앱 첫 화면이나 설정의 버튼에서 여는 **Action
 bar settings** 입니다. 거기서 켜고 무엇을 올릴지 정하십시오. 줄 왼쪽의 **≡** 손잡이를 잡고 끌어 순서를
 바꾸고, **▲ ▼**로 한 칸씩 밀고, **✕**로 내리고, **Default order**로 처음 순서로 돌아갑니다. 키 위에
-놓이며, 항목이 화면보다 길면 옆으로 밀어 볼 수 있습니다.
+놓이며, 항목이 화면보다 길면 옆으로 밀어 볼 수 있습니다. 바의 높이는 키에서 빼는 것이 아니라
+키보드 높이에 더해집니다. 켜도 키가 낮아지지 않습니다.
 
 ![키보드 위의 동작 바](assets/keyboard-actionbar.png)
 

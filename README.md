@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.176** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.176/retekey-0.1.176.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.176/retekey-0.1.176-legacy.apk)
+**ReteKey v0.1.177** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.176** —
-[retekey-0.1.176.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.176/retekey-0.1.176.apk) (644 KB; the Android 4.0 build is 531 KB)
+Current release: **v0.1.177** —
+[retekey-0.1.177.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.177/retekey-0.1.177.apk) (646 KB; the Android 4.0 build is 532 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -148,7 +148,8 @@ never open the keypad page you will never see the parts you do not need.
 - **Raised, rounded keys** with press feedback — the pressed key tints, the gaps between the keys
   blink, and the character you just typed appears large in a box above them, plus haptics and
   sound, each independently adjustable.
-- **Hold a key to type its alternate** straight away: no popup, no drag. The letter pages hold
+- **Hold a key to type its alternate** straight away: no popup, no drag — half a second, a little
+  longer than the system's own long press, so an unhurried letter is still a letter. The letter pages hold
   `1234567890` on the top row, `!@#$%^&*;` on the middle one, and `_-:='"?` on the bottom one.
 - **Light, dark, or the system's own** — your choice, with the Material You palette on Android 12+.
 
@@ -527,8 +528,9 @@ A **Back to main screen** button at the top returns to the app's main screen at 
 Off by default. It has a screen of its own — **Action bar settings**, from the app's main screen or
 from the button in settings — where you turn it on and decide what it carries. Drag a row by its
 **≡** handle to order it, nudge one with **▲ ▼**, take one off with **✕**, and **Default order** puts
-the shipped bar back. It sits above the keys and scrolls sideways when the list is longer than the
-screen.
+the shipped bar back. It sits above the keys, scrolls sideways when the list is longer than the screen, and is added to
+the keyboard's height rather than taken out of the rows — switching it on does not make the keys
+shorter.
 
 ![The action bar above the keyboard](assets/keyboard-actionbar.png)
 

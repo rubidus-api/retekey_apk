@@ -218,10 +218,21 @@ public final class CheckedEditorExecutor {
         EditorCapabilities capabilities,
         java.util.Set<KeyModifier> modifiers
     ) {
-        if (capabilities == null || !capabilities.deleteByKeyEvents() || modifiers.isEmpty()) {
+        if (capabilities == null || modifiers.isEmpty()) {
             return java.util.Collections.emptyList();
         }
         java.util.List<RawKey> frame = new java.util.ArrayList<>(4);
+        if (!capabilities.deleteByKeyEvents()) {
+            // An ordinary text field needs Shift's own press before the arrow: it decides whether
+            // an arrow selects from the Shift key having been pressed (MetaKeyKeyListener), not
+            // from the meta state carried on the arrow, so without this the bar's Shift+arrow only
+            // moved the cursor (§15.39). The other modifiers stay as they were: the field turns
+            // them into its own shortcuts from the meta state alone.
+            if (modifiers.contains(KeyModifier.SHIFT)) {
+                frame.add(RawKey.SHIFT_LEFT);
+            }
+            return frame;
+        }
         if (modifiers.contains(KeyModifier.CTRL)) {
             frame.add(RawKey.CTRL_LEFT);
         }

@@ -2119,6 +2119,63 @@ to cover the terminal without resizing it.
 
 **Rule.** A panel that replaces the keyboard lives exactly as long as the keyboard is on screen.
 
+### 15.37 A modifier that waits for the finger to leave
+
+**What happened.** Shift, and the Ctrl/Alt/Meta latches, took effect when the finger lifted. Typing
+fast rolls one key into the next: Shift goes down, the letter goes down, the letter lifts first. The
+letter was therefore typed unshifted, and the modifier — arming itself as it lifted — landed on the
+key after it. 빠가다 came out as ㅂ까다: one motion, two wrong letters. With timings dispatched
+exactly (emulator, 2026-09-16), every order except "Shift lifts first" was wrong, including holding
+Shift down and tapping the letter, which is how a keyboard is meant to work.
+
+**The fix.** A modifier key arms on **press**. While its finger is still down, nothing spends the
+one-shot, so every key typed under it is modified; when the finger lifts, the keyboard spends the
+one-shot if anything was typed while it was held, and leaves it armed if nothing was. Holding still
+locks it, as before.
+
+**Rule.** A key that changes what another key means has to take effect when it is pressed. Anything
+else breaks the moment two fingers overlap, which is what fast typing is.
+
+### 15.38 Where the typos actually were
+
+**What happened.** Two measurements, taps placed by a jittered generator and scored against what the
+keyboard typed (emulator, 2026-09-16):
+
+- **The action bar was taking its height out of the keys.** Docked, the bar and the keys divided one
+  height, so switching the bar on made every row 30 % shorter. At the same finger scatter the miss
+  rate went from 0.7 % to 3.7 % (σ 5 dp) and 3.0 % to 7.3 % (σ 7 dp). The bar is now **added above**
+  the keys; only a floating panel, whose size the user set, still divides its own height.
+- **The platform's long press was typing alternates.** At the system's 400 ms, presses held 380–450
+  ms — ordinary in unhurried typing — produced the key's alternate instead of its letter 23 % of the
+  time. A key that types an alternate now waits `ALTERNATE_HOLD_MS` (520 ms, or the system's timeout
+  if that is longer); Shift and the modifiers keep the system's timing, because a hold there types
+  nothing.
+
+**And where a miss is cheapest to correct**: a touch that lands within `JAMO_BAND` of the line
+between a consonant key and a vowel key is settled by what the syllable can take next — nothing
+composing means a consonant, a lone consonant means a vowel, and a syllable with its vowel means
+nothing is assumed (`JamoExpectation`). Modifier keys give a fifth of the strip along their edge to
+the letter beside them, the way page-changing keys give a third (§15.35). Sentences typed at 90 ms a
+key went from two wrong characters in 77 to none; the ones left at 70 ms with a quarter-key scatter
+are consonant-for-consonant and vowel-for-vowel, which spelling cannot separate.
+
+**Rule.** Measure where the errors are before choosing what to fix, and measure again after: three
+of these four changes were worth more than anything that had been guessed at.
+
+### 15.39 A selection an editor never made
+
+**What happened.** Shift+arrow from the action bar or the keyboard moved the cursor in an ordinary
+text field instead of selecting. A `TextView` decides whether an arrow extends the selection from
+the **Shift key's own press** (`MetaKeyKeyListener` state on the buffer), not from the meta state
+carried on the arrow event, and the keyboard framed modifier presses only for editors that delete by
+key events.
+
+**The fix.** Shift's press is framed for every editor; the other modifiers still go by meta state
+alone, where a field turns them into its own shortcuts.
+
+**Rule.** Sending the right meta state is not the same as pressing the key. Where a platform reads
+modifier *state*, send the modifier as a key.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2244,4 +2301,6 @@ allow` first.
   reports 0 failing cells (§14).
 - [ ] On the 12-key pages a near miss beside 123, Move or ⌫ types the Hangul key or space, and a 16
   dp slide is a tap (§15.35).
+- [ ] A modifier rolled into a letter modifies that letter and not the next one, and a letter held
+  half a second is still a letter (§15.37, §15.38).
 - [ ] This manual was updated for whatever changed.

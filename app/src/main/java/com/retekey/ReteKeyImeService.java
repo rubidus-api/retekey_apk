@@ -998,6 +998,7 @@ public class ReteKeyImeService extends InputMethodService {
             keyboardView.resetLayerState();
             keyboardView.resetPhoneInterpreters();
         }
+        tellTheKeysWhatComesNext();
         reloadHardwareBindings();
         // Settings may also have changed which physical layout this screen layout uses; the
         // mapper reads that preference, so re-picking it here is what makes the change take.
@@ -1150,6 +1151,16 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public int getCandidatesHiddenVisibility() {
         return View.GONE;
+    }
+
+    /**
+     * Hands the keys what the syllable expects next, so a touch on the line between a consonant
+     * and a vowel can be read the way the spelling has to go (JamoExpectation).
+     */
+    private void tellTheKeysWhatComesNext() {
+        if (keyboardView != null) {
+            keyboardView.setExpectedJamo(JamoExpectation.of(inputProcessor.composingText()));
+        }
     }
 
     /** Refreshes the strip from the composer after a write, for an off-screen editor only. */
@@ -2296,6 +2307,7 @@ public class ReteKeyImeService extends InputMethodService {
             noteWhereThisWriteLeavesTheCursor(executed, predicted);
             armIdleSyllableSettle();
             updateComposingStrip();
+            tellTheKeysWhatComesNext();
             return executed;
         } catch (RuntimeException crash) {
             // The keyboard must survive any single bad editor interaction.

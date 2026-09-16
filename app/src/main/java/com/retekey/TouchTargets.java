@@ -20,12 +20,32 @@ import java.util.List;
 final class TouchTargets {
     /** How much of a costly key's cell, measured from a shared edge, goes to the key beside it. */
     static final float YIELD = 0.35f;
+    /**
+     * The same for a modifier (Shift, Ctrl, Alt, Meta). Less, because these are pressed often and
+     * on purpose; enough, because every handling error in the fast-roll measurements was a finger
+     * that landed on one of them instead of the letter beside it.
+     */
+    static final float MODIFIER_YIELD = 0.2f;
 
     private TouchTargets() {
     }
 
+    /** How close to the line between a consonant and a vowel the spelling is allowed to decide. */
+    static final float JAMO_BAND = 0.22f;
+
     /** {row, key index}, or null outside the keyboard. */
     static int[] resolve(KeyboardLayout layout, int width, int height, float x, float y) {
+        return resolve(layout, width, height, x, y, JamoExpectation.Kind.NONE);
+    }
+
+    /**
+     * The same, with what the syllable being spelled expects next. A touch that landed within
+     * {@link #JAMO_BAND} of the line between a consonant key and a vowel key goes to the one the
+     * spelling asks for: after ㅎ only a vowel can follow, so ㅎ|ㅗ resolves to ㅗ, and at the
+     * start of a syllable only a consonant can, so it resolves the other way.
+     */
+    static int[] resolve(KeyboardLayout layout, int width, int height, float x, float y,
+                         JamoExpectation.Kind expected) {
         if (layout == null || width <= 0 || height <= 0 || x < 0 || y < 0 || x >= width || y >= height) {
             return null;
         }
@@ -34,28 +54,31 @@ final class TouchTargets {
         int key = keyIndex(layout, row, x, width);
         SoftwareKeySpec hit = layout.rows().get(row).get(key);
         if (!isCostly(hit)) {
-            return new int[] {row, key};
+            int spelled = spellingNeighbour(layout, row, key, x, width, expected);
+            return new int[] {row, spelled < 0 ? key : spelled};
         }
         List<SoftwareKeySpec> keys = layout.rows().get(row);
         float left = layout.columnEdge(layout.startColumn(row, key), width);
         float right = layout.columnEdge(layout.startColumn(row, key) + hit.columnSpan(), width);
         float cellWidth = right - left;
-        if (key > 0 && isInput(keys.get(key - 1)) && x - left < cellWidth * YIELD) {
+        float yield = cellWidth * (isModifier(hit) ? MODIFIER_YIELD : YIELD);
+        if (key > 0 && isInput(keys.get(key - 1)) && x - left < yield) {
             return new int[] {row, key - 1};
         }
-        if (key + 1 < keys.size() && isInput(keys.get(key + 1)) && right - x <= cellWidth * YIELD) {
+        if (key + 1 < keys.size() && isInput(keys.get(key + 1)) && right - x <= yield) {
             return new int[] {row, key + 1};
         }
         float top = layout.rowEdge(row, height);
         float bottom = layout.rowEdge(row + 1, height);
         float cellHeight = bottom - top;
-        if (row > 0 && y - top < cellHeight * YIELD) {
+        float yieldY = cellHeight * (isModifier(hit) ? MODIFIER_YIELD : YIELD);
+        if (row > 0 && y - top < yieldY) {
             int above = keyIndex(layout, row - 1, x, width);
             if (isInput(layout.rows().get(row - 1).get(above))) {
                 return new int[] {row - 1, above};
             }
         }
-        if (row + 1 < rows && bottom - y <= cellHeight * YIELD) {
+        if (row + 1 < rows && bottom - y <= yieldY) {
             int below = keyIndex(layout, row + 1, x, width);
             if (isInput(layout.rows().get(row + 1).get(below))) {
                 return new int[] {row + 1, below};
@@ -77,6 +100,67 @@ final class TouchTargets {
         return keys.size() - 1;
     }
 
+    /**
+     * The key beside this one that the spelling wants, or -1. Only jamo keys take part, only
+     * within the band along their shared edge, and only when the neighbour is the expected kind
+     * and this key is not.
+     */
+    private static int spellingNeighbour(KeyboardLayout layout, int row, int key, float x,
+                                         int width, JamoExpectation.Kind expected) {
+        if (expected == JamoExpectation.Kind.NONE || jamoKind(layout.rows().get(row).get(key)) == null
+                || jamoKind(layout.rows().get(row).get(key)) == expected) {
+            return -1;
+        }
+        List<SoftwareKeySpec> keys = layout.rows().get(row);
+        float left = layout.columnEdge(layout.startColumn(row, key), width);
+        float right = layout.columnEdge(layout.startColumn(row, key) + keys.get(key).columnSpan(), width);
+        float band = (right - left) * JAMO_BAND;
+        if (key > 0 && x - left < band && jamoKind(keys.get(key - 1)) == expected) {
+            return key - 1;
+        }
+        if (key + 1 < keys.size() && right - x <= band && jamoKind(keys.get(key + 1)) == expected) {
+            return key + 1;
+        }
+        return -1;
+    }
+
+    /** Whether this key types a consonant or a vowel, or null when it types neither. */
+    static JamoExpectation.Kind jamoKind(SoftwareKeySpec key) {
+        SemanticInput input = key.semanticInput();
+        if (!key.enabled() || key.isControl() || input == null
+                || input.kind() != SemanticInput.Kind.JAMO || input.jamo() == null) {
+            return null;
+        }
+        switch (input.jamo().role()) {
+            case VOWEL:
+            case DIRECT_MEDIAL:
+                return JamoExpectation.Kind.VOWEL;
+            case CONTEXTUAL_CONSONANT:
+            case DIRECT_INITIAL:
+            case DIRECT_FINAL:
+                return JamoExpectation.Kind.CONSONANT;
+            default:
+                return null;
+        }
+    }
+
+    /** Shift and the three latches: pressed on purpose often, and mis-hit while rolling. */
+    static boolean isModifier(SoftwareKeySpec key) {
+        if (!key.isControl()) {
+            return false;
+        }
+        switch (key.control()) {
+            case SHIFT:
+            case CTRL:
+            case ALT:
+            case META:
+            case RSHIFT:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /** A key whose accidental press costs more than a wrong letter. */
     static boolean isCostly(SoftwareKeySpec key) {
         if ("touch.edit.backspace".equals(key.stableKeyId())) {
@@ -84,6 +168,9 @@ final class TouchTargets {
         }
         if (!key.isControl()) {
             return false;
+        }
+        if (isModifier(key)) {
+            return true;
         }
         switch (key.control()) {
             case PHONE_DIGITS:
