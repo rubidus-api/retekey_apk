@@ -705,6 +705,9 @@ public class ReteKeyImeService extends InputMethodService {
             notepad.editCommand(contextMenuId);
             return;
         }
+        if (editCommandInATerminal(contextMenuId)) {
+            return;
+        }
         if (editCommandAsRemoteChord(contextMenuId)) {
             return;
         }
@@ -715,12 +718,83 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /**
+     * The bar's editing commands on a terminal, which has no selection and no buffer to act on:
+     * only Paste means anything, and it means typing the clipboard out. The rest report that they
+     * have nothing to work with rather than sending a chord that would do something else entirely.
+     */
+    private boolean editCommandInATerminal(int contextMenuId) {
+        if (editorProfile == null || !editorProfile.capabilities().isTerminal()) {
+            return false;
+        }
+        if (contextMenuId == android.R.id.paste) {
+            return pasteByTypingIntoATerminal();
+        }
+        if (contextMenuId == android.R.id.copy || contextMenuId == android.R.id.cut
+                || contextMenuId == android.R.id.selectAll) {
+            showFunctionToast(getString(R.string.terminal_has_no_selection));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Paste in a terminal: the clipboard is typed out rather than sent as Ctrl+V.
+     *
+     * <p>A shell reads Ctrl+V as quoted-insert — the next character goes in literally — so the
+     * paste did nothing at all in Termux and Termius (issue #9, and the owner's report of
+     * 2026-09-16). A terminal has no clipboard of its own to ask for; what it has is a wire that
+     * takes characters. So the keyboard reads Android's clipboard and types it, which is the same
+     * road the clip list already uses and the same one every other key takes. Remote desktops keep
+     * the chord: there Ctrl+V is a real paste, run by the operating system on the far side, and it
+     * pastes what was copied there rather than what this phone holds.
+     */
+    private boolean pasteByTypingIntoATerminal() {
+        if (editorProfile == null || !editorProfile.capabilities().isTerminal()) {
+            return false;
+        }
+        String text = systemClipText();
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
+            "touch.edit.paste.terminal", SemanticInput.text(text)));
+        return true;
+    }
+
+    /** What is on Android's clipboard as plain text, or null. */
+    private String systemClipText() {
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager == null || !manager.hasPrimaryClip()) {
+                return null;
+            }
+            android.content.ClipData data = manager.getPrimaryClip();
+            if (data == null || data.getItemCount() == 0) {
+                return null;
+            }
+            CharSequence text = data.getItemAt(0).coerceToText(this);
+            return text == null ? null : text.toString();
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    /**
      * On a remote-desktop editor the context-menu actions do nothing — the relay has no text
      * view behind its InputConnection — but it always forwards key events, so the commands
      * become the chords the far side already understands: Ctrl+A/C/X/Z/Y.
      */
     private boolean editCommandAsRemoteChord(int contextMenuId) {
         if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+            return false;
+        }
+        if (editorProfile.capabilities().isTerminal()) {
+            // Not a terminal's road. The bar's editing keys are actions, not keystrokes (the
+            // user's rule, 2026-09-16): the chord a shell would get is a different thing
+            // altogether — Ctrl+C interrupts the running command rather than copying anything,
+            // and Ctrl+A goes to the start of the line. Anyone who wants the chord presses the
+            // keyboard's own Ctrl with the letter, which is sent as the chord it looks like.
             return false;
         }
         RawKey letter = RemoteEditChords.letterFor(contextMenuId);

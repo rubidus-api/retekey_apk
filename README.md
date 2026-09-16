@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.180** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180-legacy.apk)
+**ReteKey v0.1.181** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.180** —
-[retekey-0.1.180.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) (648 KB; the Android 4.0 build is 533 KB)
+Current release: **v0.1.181** —
+[retekey-0.1.181.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181.apk) (649 KB; the Android 4.0 build is 533 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -510,7 +510,14 @@ in Termux and in the SSH clients, in
 either of Termux's input modes. (Password fields are composed into too; a field being private
 means this keyboard never reads it and never remembers it, which is unchanged.) A physical keyboard
 types Korean into a terminal the same way; the keys the layout does not use — Ctrl chords, arrows,
-Enter, Esc, Tab — still go straight to the program, after the syllable before them. With the
+Enter, Esc, Tab — still go straight to the program, after the syllable before them. The action bar's editing
+keys are **actions, not keystrokes**: its **Paste** puts the clipboard in — in a terminal by typing
+it out, since a shell reads Ctrl+V as quoted-insert and pasted nothing at all in Termux and Termius
+— and its Copy, Cut and Select all say plainly that a terminal has no selection instead of sending
+Ctrl+C, which interrupts whatever is running. The keyboard's own **Ctrl** with a letter is the
+other half of that pair: it is sent as the chord it looks like, so Ctrl+C is Ctrl+C and Ctrl+V is
+Ctrl+V, straight through to the program. Remote desktops keep the chord for the bar too, because
+there is no editor behind their connection to act on and Ctrl+V is a real paste on the far side. With the
 older way turned on, a syllable left unfinished for a second and a half is let go of, so that a
 terminal's own arrow buttons, which the keyboard cannot see, do not drag it to a new place.
 

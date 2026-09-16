@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.180** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180-legacy.apk)
+**ReteKey v0.1.181** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.180** —
-[retekey-0.1.180.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.180/retekey-0.1.180.apk) (648 KB; 안드로이드 4.0 빌드는 533 KB)
+현재 릴리즈: **v0.1.181** —
+[retekey-0.1.181.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.181/retekey-0.1.181.apk) (649 KB; 안드로이드 4.0 빌드는 533 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -488,7 +488,13 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 `ssh` 에서, Termux 의 두 입력 모드 모두에서, SSH 클라이언트들에서 한글이 됩니다. (비밀번호 칸에도
 조합합니다. 사적인 칸이라는 것은 이 키보드가 **읽지 않고 기억하지 않는다**는 뜻이고, 그건 그대로입니다.)
 물리 키보드로도 터미널에 같은 방식으로 한글을 칩니다. 자판이 쓰지 않는 키 — Ctrl 조합, 방향키, Enter,
-Esc, Tab — 는 앞의 음절 뒤에 이어서 프로그램으로 그대로 갑니다. 예전 방식을 켜 두면 만들다 만 음절은
+Esc, Tab — 는 앞의 음절 뒤에 이어서 프로그램으로 그대로 갑니다. 액션바의 편집 키들은 **키 입력이 아니라 동작**입니다.
+**Paste** 는 클립보드를 넣습니다. 터미널에서는 쳐서 넣습니다. Ctrl+V 를 보내면 셸이 quoted-insert 로
+읽어 아무것도 붙지 않기 때문입니다(Termux·Termius). Copy·Cut·Select all 은 터미널에 선택이라는 것이
+없다고 알려 줄 뿐, Ctrl+C 를 보내지 않습니다. 그 키는 실행 중인 명령을 중단시킵니다. 짝이 되는 반대편은
+키보드의 **Ctrl** 입니다. 글자와 함께 누르면 보이는 그대로의 조합키로 나가므로, Ctrl+C 는 Ctrl+C 이고
+Ctrl+V 는 Ctrl+V 로 프로그램에 그대로 갑니다. 원격 데스크톱에서는 액션바도 조합키를 씁니다. 그 연결
+뒤에는 동작을 걸 편집기가 없고, 건너편에서는 Ctrl+V 가 진짜 붙여넣기이기 때문입니다. 예전 방식을 켜 두면 만들다 만 음절은
 1.5초가 지나면 놓습니다. 그래야 키보드가 볼 수 없는 터미널 자체의 방향키 버튼이 음절을 새 자리로 끌고
 가지 않습니다.
 

@@ -45,13 +45,54 @@ public final class TouchTargetsTest {
     }
 
     @Test
-    public void theLowerEdgeOfBackspaceIsTheSpaceBar() {
+    public void backspaceKeepsItsWholeCellAboveTheSpaceBar() {
+        // It used to give its lower third to the space bar, on the reasoning that a stray ⌫ costs
+        // more than a stray letter. But the key below ⌫ on the 12-key pages is the space bar, and
+        // a space is not a letter: pressing backspace in a hurry typed a space, and the key could
+        // not be relied on at all (owner's report, 2026-09-16). A costly key keeps its cell where
+        // the neighbour is the space bar or Enter.
         KeyboardLayout cji = KeyboardLayouts.phone(KeyboardLayoutId.KO_CHEONJIIN, PhoneOverlay.NONE);
         float x = W - 10;
         float rowOneTop = cji.rowEdge(1, H);
         float rowHeight = cji.rowEdge(1, H) - cji.rowEdge(0, H);
-        assertEquals("touch.text.space", at(cji, x, rowOneTop - rowHeight * 0.2f));
+        assertEquals("touch.edit.backspace", at(cji, x, rowOneTop - rowHeight * 0.05f));
+        assertEquals("touch.edit.backspace", at(cji, x, rowOneTop - rowHeight * 0.2f));
         assertEquals("touch.edit.backspace", at(cji, x, rowOneTop - rowHeight * 0.6f));
+        // The space bar begins where it is drawn, not a third of a row higher.
+        assertEquals("touch.text.space", at(cji, x, rowOneTop + rowHeight * 0.1f));
+    }
+
+    @Test
+    public void backspaceStillGivesItsEdgeToALetter() {
+        // The measurement that put the yield there stands where the neighbour types letters: on
+        // the 12-key pad ⌫ sits beside ㅏ, and a roll onto ⌫ erased the syllable.
+        KeyboardLayout nrg = KeyboardLayouts.phone(KeyboardLayoutId.KO_NARATGEUL, PhoneOverlay.NONE);
+        float y = nrg.rowEdge(0, H) + (nrg.rowEdge(1, H) - nrg.rowEdge(0, H)) * 0.5f;
+        int index = -1;
+        for (int i = 0; i < nrg.rows().get(0).size(); i++) {
+            if ("touch.edit.backspace".equals(nrg.rows().get(0).get(i).stableKeyId())) {
+                index = i;
+            }
+        }
+        int start = nrg.startColumn(0, index);
+        float left = colEdge(nrg, start);
+        float cell = colEdge(nrg, start + nrg.rows().get(0).get(index).columnSpan()) - left;
+        assertEquals("touch.naratgeul.a", at(nrg, left + cell * 0.1f, y));
+        assertEquals("touch.edit.backspace", at(nrg, left + cell * 0.6f, y));
+    }
+
+    @Test
+    public void theTopEdgeOfEnterIsTheSpaceBar() {
+        // The other half of the same report: aiming at the space bar sent Enter. A stray Enter is
+        // the most expensive miss on the board — it sends the message, or runs the command — so it
+        // gives the top fifth of its cell back to the key above.
+        KeyboardLayout nrg = KeyboardLayouts.phone(KeyboardLayoutId.KO_NARATGEUL, PhoneOverlay.NONE);
+        float x = W - 10;
+        float rowTwoTop = nrg.rowEdge(2, H);
+        float rowHeight = nrg.rowEdge(2, H) - nrg.rowEdge(1, H);
+        assertEquals("touch.text.space", at(nrg, x, rowTwoTop + rowHeight * 0.1f));
+        assertEquals("touch.edit.enter", at(nrg, x, rowTwoTop + rowHeight * 0.5f));
+        assertEquals("touch.edit.enter", at(nrg, x, rowTwoTop + rowHeight * 0.9f));
     }
 
     @Test

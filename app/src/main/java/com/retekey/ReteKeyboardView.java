@@ -133,6 +133,9 @@ public final class ReteKeyboardView extends View {
      * 2026-09-16). A meant flick travels well past 18 dp on a key two columns wide.
      */
     private static final float FLICK_DP = 18.0f;
+
+    /** How far past a key's edge a finger drifts before the press becomes the neighbour's (dp). */
+    private static final float RETARGET_DP = 16.0f;
     /** The shortest hold that types a key's alternate rather than its letter. */
     private static final int ALTERNATE_HOLD_MS = 520;
     /**
@@ -153,6 +156,16 @@ public final class ReteKeyboardView extends View {
     /** How far a finger may wander before it is judged to have left its key. */
     private final int touchSlopPx;
     private final int flickDistancePx;
+    /**
+     * How far past a key's edge a finger has to travel before the press becomes the neighbour's.
+     *
+     * <p>The system's touch slop is the distance at which a press stops being a tap, which is not
+     * the same question: a fast tap rolls a few millimetres as the finger lands and lifts, and at
+     * the slop distance that roll was handing the press to the key below — ⌫ typed a space, space
+     * sent Enter (owner's report, 2026-09-16). Sliding to a neighbour on purpose is a deliberate
+     * movement and still works; it just has to mean it.
+     */
+    private final int retargetPx;
     private final int keyRadiusPx;
     private final int keyShadowPx;
 
@@ -220,6 +233,7 @@ public final class ReteKeyboardView extends View {
         this.keyGapPx = Math.round(KEY_GAP_DP * density);
         this.touchSlopPx = ViewConfiguration.get(context).getScaledTouchSlop();
         this.flickDistancePx = Math.max(touchSlopPx, Math.round(FLICK_DP * density));
+        this.retargetPx = Math.max(touchSlopPx, Math.round(RETARGET_DP * density));
         this.keyRadiusPx = Math.round(KEY_RADIUS_DP * density);
         this.keyShadowPx = Math.round(KEY_SHADOW_DP * density);
         this.palette = KeyboardPalette.resolve(context);
@@ -1223,7 +1237,7 @@ public final class ReteKeyboardView extends View {
             if (tryFlick(layout, touch, x, y)) {
                 continue;
             }
-            if (!escapedKey(layout, touch, x, y)) {
+            if (!driftedOffKey(layout, touch, x, y)) {
                 continue;
             }
             int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y);
@@ -1410,6 +1424,18 @@ public final class ReteKeyboardView extends View {
     }
 
     /** Whether a finger has left its key's cell by more than a touch slop. */
+    /** The same, but with the wider margin a press must cross before it changes keys. */
+    private boolean driftedOffKey(KeyboardLayout layout, Touch touch, float x, float y) {
+        SoftwareKeySpec key = layout.rows().get(touch.row).get(touch.key);
+        int startColumn = layout.startColumn(touch.row, touch.key);
+        return TouchTargeting.escaped(x, y,
+            layout.columnEdge(startColumn, getWidth()),
+            layout.rowEdge(touch.row, getHeight()),
+            layout.columnEdge(startColumn + key.columnSpan(), getWidth()),
+            layout.rowEdge(touch.row + 1, getHeight()),
+            retargetPx);
+    }
+
     private boolean escapedKey(KeyboardLayout layout, Touch touch, float x, float y) {
         SoftwareKeySpec key = layout.rows().get(touch.row).get(touch.key);
         int startColumn = layout.startColumn(touch.row, touch.key);

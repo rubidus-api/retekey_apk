@@ -2247,6 +2247,52 @@ returned.
 build on a callback that the platform may decline to deliver; read at the moments you are allowed to
 read.
 
+### 15.43 The key below kept winning
+
+**What happened.** Typing fast on the 12-key pads, ⌫ typed a space and the space bar sent Enter
+(owner's report, 2026-09-16). Two separate causes met in the same column. First, ⌫ is a costly key
+and gave the bottom 35 % of its cell to the key below (§15.38) — which on those pages is the space
+bar, not a letter, so the protection meant backspace could not be hit at all in a hurry. Second, a
+press became the neighbour's as soon as the finger left the cell by the system's **touch slop**,
+and a fast tap rolls that far as it lands and lifts.
+
+**The fix.** A costly key yields its edge to a *letter*, never to the space bar or Enter. The
+retarget margin is its own number now — `RETARGET_DP`, 16 dp past the edge — because the distance
+at which a press stops being a tap is not the distance at which it changes keys. And Enter, where a
+miss costs most (it sends the message or runs the command), gives the top fifth of its cell back to
+the space bar above it.
+
+**How it was proved.** A probe that taps and rolls (`TAPDRIFT`) measured the two cases the report
+described: before the fix, a ⌫ pressed low or rolled 10 dp typed a space and erased nothing; after
+it, both erase. Cells hold all three now.
+
+**Rule.** Protection that shrinks a key is protection against pressing it. Ask which key the user
+was aiming at, not only which one is expensive.
+
+### 15.44 A paste a shell reads as a keystroke
+
+**What happened.** Paste did nothing in Termux and Termius. On an editor that takes keys rather
+than text the keyboard sent **Ctrl+V**, which is right for a remote desktop — the far-side system
+pastes — but a shell reads Ctrl+V as *quoted-insert*: it waits and puts the next character in
+literally.
+
+**The fix.** In a terminal the keyboard reads Android's clipboard and **types it**, the road the
+clip list already used. Remote desktops keep the chord. The two are told apart by capability rather
+than by name: a terminal sends keys *and* has no surrounding text (`EditorCapabilities.isTerminal`),
+a remote desktop sends keys but keeps a dummy buffer.
+
+**Rule.** A chord means what the far side thinks it means. Where you cannot know that, send the
+thing itself.
+
+**And the pair it belongs to.** The user drew the line after seeing this fix: *the bar's editing
+keys are actions; the keyboard's Ctrl is a key.* So the bar's Paste puts the clipboard in (by
+`performContextMenuAction` where there is an editor, by typing where there is only a wire), and its
+Copy, Cut and Select all say a terminal has no selection rather than going out as Ctrl+C — which
+would interrupt the running command, not copy anything (measured: before this, the bar's Copy
+killed a `sleep` in Termux). Soft Ctrl with a letter keeps going out as the chord it looks like.
+Remote desktops are the exception on both counts: nothing is behind their connection to act on, so
+the bar uses chords there too.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

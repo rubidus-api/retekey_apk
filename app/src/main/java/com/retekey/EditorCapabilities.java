@@ -121,6 +121,15 @@ public final class EditorCapabilities {
         return composesOffScreen;
     }
 
+    /**
+     * A terminal rather than a remote desktop: both send keys instead of editing text, but a
+     * terminal has no buffer of its own at all. The difference matters where the far side reads a
+     * chord differently — Ctrl+V is a paste on a Windows desktop and quoted-insert in a shell.
+     */
+    public boolean isTerminal() {
+        return deleteByKeyEvents && noSurroundingText;
+    }
+
     /** Whether a surrounding-text call reaches anything (see {@link #noSurroundingText}). */
     public boolean hasSurroundingText() {
         return !noSurroundingText;

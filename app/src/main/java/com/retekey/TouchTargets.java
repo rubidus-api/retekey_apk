@@ -27,6 +27,15 @@ final class TouchTargets {
      */
     static final float MODIFIER_YIELD = 0.2f;
 
+    /**
+     * How much of its cell a key gives up along a shared edge. Enter gives the smaller share: it
+     * is aimed at on purpose, and it is at the edge of the board where there is nowhere to overrun
+     * to — what it has to stop is the finger that fell short of it.
+     */
+    private static float yieldFraction(SoftwareKeySpec key) {
+        return isModifier(key) || isEnter(key) ? MODIFIER_YIELD : YIELD;
+    }
+
     private TouchTargets() {
     }
 
@@ -61,26 +70,26 @@ final class TouchTargets {
         float left = layout.columnEdge(layout.startColumn(row, key), width);
         float right = layout.columnEdge(layout.startColumn(row, key) + hit.columnSpan(), width);
         float cellWidth = right - left;
-        float yield = cellWidth * (isModifier(hit) ? MODIFIER_YIELD : YIELD);
-        if (key > 0 && isInput(keys.get(key - 1)) && x - left < yield) {
+        float yield = cellWidth * yieldFraction(hit);
+        if (key > 0 && yieldsTo(hit, keys.get(key - 1)) && x - left < yield) {
             return new int[] {row, key - 1};
         }
-        if (key + 1 < keys.size() && isInput(keys.get(key + 1)) && right - x <= yield) {
+        if (key + 1 < keys.size() && yieldsTo(hit, keys.get(key + 1)) && right - x <= yield) {
             return new int[] {row, key + 1};
         }
         float top = layout.rowEdge(row, height);
         float bottom = layout.rowEdge(row + 1, height);
         float cellHeight = bottom - top;
-        float yieldY = cellHeight * (isModifier(hit) ? MODIFIER_YIELD : YIELD);
+        float yieldY = cellHeight * yieldFraction(hit);
         if (row > 0 && y - top < yieldY) {
             int above = keyIndex(layout, row - 1, x, width);
-            if (isInput(layout.rows().get(row - 1).get(above))) {
+            if (yieldsTo(hit, layout.rows().get(row - 1).get(above))) {
                 return new int[] {row - 1, above};
             }
         }
         if (row + 1 < rows && bottom - y <= yieldY) {
             int below = keyIndex(layout, row + 1, x, width);
-            if (isInput(layout.rows().get(row + 1).get(below))) {
+            if (yieldsTo(hit, layout.rows().get(row + 1).get(below))) {
                 return new int[] {row + 1, below};
             }
         }
@@ -163,7 +172,7 @@ final class TouchTargets {
 
     /** A key whose accidental press costs more than a wrong letter. */
     static boolean isCostly(SoftwareKeySpec key) {
-        if ("touch.edit.backspace".equals(key.stableKeyId())) {
+        if ("touch.edit.backspace".equals(key.stableKeyId()) || isEnter(key)) {
             return true;
         }
         if (!key.isControl()) {
@@ -189,5 +198,38 @@ final class TouchTargets {
     /** A key that types: the kind a costly neighbour gives its edge to. */
     static boolean isInput(SoftwareKeySpec key) {
         return key.enabled() && !key.isControl() && !isCostly(key);
+    }
+
+    /**
+     * The space bar and Enter. They type, but a stray one is not "one wrong letter": a space lands
+     * in the middle of a word, and Enter sends the message or runs the command. They are also the
+     * keys that sit directly under ⌫ on the 12-key pages, and giving them ⌫'s lower third made
+     * backspace unreachable in a hurry — pressing it typed a space instead (owner's report,
+     * 2026-09-16). So a costly key keeps its whole cell where these two are the neighbour.
+     */
+    static boolean isStructural(SoftwareKeySpec key) {
+        String id = key.stableKeyId();
+        return "touch.text.space".equals(id) || "touch.edit.enter".equals(id);
+    }
+
+    /** The Enter key, which is where a near miss costs most: it sends, or it runs. */
+    static boolean isEnter(SoftwareKeySpec key) {
+        return "touch.edit.enter".equals(key.stableKeyId());
+    }
+
+    /**
+     * Whether {@code costly} gives part of its cell to {@code neighbour}.
+     *
+     * <p>Letters always take the edge. The space bar and Enter normally do not — that is what made
+     * ⌫ unreachable — but the space bar does take Enter's, because a stray Enter sends the message
+     * or runs the command, and the pair sits one above the other in the same column where the
+     * misses were reported (owner, 2026-09-16: "the key below gets pressed — space instead of
+     * backspace, Enter instead of space").
+     */
+    private static boolean yieldsTo(SoftwareKeySpec costly, SoftwareKeySpec neighbour) {
+        if (!isInput(neighbour)) {
+            return false;
+        }
+        return !isStructural(neighbour) || isEnter(costly) && !isEnter(neighbour);
     }
 }
