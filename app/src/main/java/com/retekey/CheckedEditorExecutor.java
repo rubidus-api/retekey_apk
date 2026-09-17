@@ -134,6 +134,7 @@ public final class CheckedEditorExecutor {
                 case COMMIT_TEXT:
                 case DELETE_BACKWARD:
                 case DELETE_RECENT:
+                case RECOMPOSE_PREVIOUS:
                 case RAW_ENTER:
                 case RAW_KEY:
                 case PERFORM_EDITOR_ACTION:
@@ -660,6 +661,8 @@ public final class CheckedEditorExecutor {
                 return mutationCall(guardedCall(endpoint, bridge::finishComposingText));
             case DELETE_BACKWARD:
                 return executeRichDelete(endpoint, bounds, capabilities);
+            case RECOMPOSE_PREVIOUS:
+                return executeRecompose(endpoint, action, bounds);
             case DELETE_RECENT: {
                 // Our own just-committed characters: the surrounding-text call is reliable here
                 // on every editor, remote-desktop dummies included, and cannot be key-filtered —
@@ -710,6 +713,50 @@ public final class CheckedEditorExecutor {
         return result.isSucceeded()
             ? ActionExecution.dispatched(1, 1)
             : ActionExecution.failure(reasonForOperation(result), 1, !result.isStaleSession());
+    }
+
+    /**
+     * Takes the characters before the cursor back into composition and replaces them, without
+     * deleting anything.
+     *
+     * <p>The three-step way — clear the composition, delete a character, compose again — asks the
+     * editor to be right about three calls in a row, and an editor that is not loses the character
+     * before the cursor: 나랏글's ㅈ (ㅅ plus a stroke) was taking the syllable before it with it in
+     * one app (owner's report, 2026-09-17). Where the editor can mark a region, one call replaces
+     * all three; where it cannot — it says so by refusing — the old way still runs.
+     */
+    private static ActionExecution executeRecompose(
+        EditorEndpoint endpoint,
+        KeyAction action,
+        EditorBounds bounds
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        int end = bounds.selectionEnd();
+        int start = end - action.recentCount();
+        if (start >= 0 && !bounds.hasSelectedText()) {
+            EditorCallResult region = guardedCall(
+                endpoint, () -> bridge.setComposingRegion(start, end));
+            if (region.isStaleSession()) {
+                return ActionExecution.failure(
+                    ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION, 1, false);
+            }
+            if (region.isSucceeded()) {
+                return mutationCall(guardedCall(
+                    endpoint, () -> bridge.setComposingText(action.text(), 1)));
+            }
+        }
+        // No region to mark, or the editor would not mark it: clear, delete, compose again.
+        EditorCallResult cleared = guardedCall(endpoint, () -> bridge.setComposingText("", 1));
+        if (!cleared.isSucceeded()) {
+            return ActionExecution.failure(reasonForOperation(cleared), 1, !cleared.isStaleSession());
+        }
+        EditorCallResult deleted = guardedCall(
+            endpoint, () -> bridge.deleteSurroundingTextInCodePoints(action.recentCount() - 1, 0));
+        if (!deleted.isSucceeded()) {
+            return ActionExecution.failure(reasonForOperation(deleted), 3, !deleted.isStaleSession());
+        }
+        return mutationCall(guardedCall(
+            endpoint, () -> bridge.setComposingText(action.text(), 1)));
     }
 
     private static ActionExecution executeRichDelete(

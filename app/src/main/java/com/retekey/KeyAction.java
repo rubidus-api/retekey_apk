@@ -19,6 +19,17 @@ public final class KeyAction {
          * of that call is reliable — and a text call cannot be dropped by key-event filtering.
          */
         DELETE_RECENT,
+        /**
+         * Take the {@code count} characters before the cursor back into composition and make the
+         * composition {@code text} — one replacement instead of a delete and a rewrite.
+         *
+         * <p>It exists because the three-step way (clear the composition, delete a character, put
+         * a composition back) asks an editor to be right about three calls in a row, and an editor
+         * that is not loses the character before the cursor: typing 신재님 on 나랏글 in one app,
+         * the 신 vanished when ㅈ was made from ㅅ (owner's report, 2026-09-17). Taking the region
+         * back deletes nothing, so there is nothing to lose.
+         */
+        RECOMPOSE_PREVIOUS,
         PERFORM_EDITOR_ACTION,
         RAW_ENTER,
         RAW_KEY
@@ -75,6 +86,18 @@ public final class KeyAction {
     /** How many code points a {@link Kind#DELETE_RECENT} takes back. */
     public int recentCount() {
         return actionId;
+    }
+
+    /**
+     * Takes {@code charactersBeforeCursor} characters — the composing text included — back into
+     * composition, as {@code text}.
+     */
+    public static KeyAction recomposePrevious(int charactersBeforeCursor, String text) {
+        if (charactersBeforeCursor < 1) {
+            throw new IllegalArgumentException("recompose needs at least one character");
+        }
+        return new KeyAction(
+            Kind.RECOMPOSE_PREVIOUS, text, charactersBeforeCursor, null, Collections.emptySet());
     }
 
     public static KeyAction commitText(String text) {

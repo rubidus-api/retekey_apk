@@ -11,6 +11,12 @@ public interface EditorBridge {
 
     EditorCallResult finishComposingText();
 
+    /**
+     * Marks the text between {@code start} and {@code end} as the composing region — how a
+     * syllable already written is taken back to be rewritten, without deleting anything.
+     */
+    EditorCallResult setComposingRegion(int start, int end);
+
     EditorCallResult deleteSurroundingTextInCodePoints(int before, int after);
 
     EditorTextResult getTextBeforeCursor(int maxUtf16Units, int flags);

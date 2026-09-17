@@ -32,13 +32,12 @@ public final class HangulInputProcessorTest {
         processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(2)));  // 만
         processor.process(SemanticInput.jamo(SemanticJamo.contextualConsonant(11))); // 만 + ㅇ
 
-        // The automaton asks for its ㅇ back: clear it, take 만 out of the editor, compose it again.
+        // The automaton asks for its ㅇ back. In an editor that can mark a region, that is one
+        // call: the ㅇ and the 만 behind it become the composition again, with nothing deleted.
+        // The delete used to be three calls, and an editor that ran them out of order lost the
+        // syllable before the cursor (owner's report, 2026-09-17).
         assertEquals(
-            Arrays.asList(
-                KeyAction.setComposingText(""),
-                KeyAction.deleteBackward(),
-                KeyAction.setComposingText("만")
-            ),
+            Collections.singletonList(KeyAction.recomposePrevious(2, "만")),
             processor.process(SemanticInput.deleteForCorrection()).actions()
         );
         assertEquals(

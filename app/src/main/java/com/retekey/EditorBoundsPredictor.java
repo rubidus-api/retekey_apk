@@ -64,6 +64,20 @@ static EditorBounds after(EditorBounds current, KeyAction action) {
                 return current.selectionStart() == 0
                     ? EditorBounds.of(0, 0, -1, -1)
                     : EditorBounds.unknown();
+            case RECOMPOSE_PREVIOUS: {
+                // The region swallows the characters behind the cursor and becomes the new
+                // composition: the cursor lands after it, and the composing range is the whole of
+                // what was written. Only a known cursor can say where that is.
+                if (!current.hasSelection() || current.hasSelectedText()) {
+                    return EditorBounds.unknown();
+                }
+                int start = current.selectionEnd() - action.recentCount();
+                if (start < 0) {
+                    return EditorBounds.unknown();
+                }
+                int end = safeAdd(start, action.text().length());
+                return end < 0 ? EditorBounds.unknown() : EditorBounds.of(end, end, start, end);
+            }
             case PERFORM_EDITOR_ACTION:
             case RAW_ENTER:
             case RAW_KEY:

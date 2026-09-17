@@ -142,6 +142,15 @@ final class FakeEditorBridge implements EditorBridge {
     }
 
     @Override
+    public EditorCallResult setComposingRegion(int start, int end) {
+        return record("setComposingRegion:" + start + ".." + end, () -> {
+            // What a TextView does: the span is moved, the text is untouched, the cursor stays.
+            composingStart = Math.max(0, Math.min(start, modelText.length()));
+            composingEnd = Math.max(composingStart, Math.min(end, modelText.length()));
+        });
+    }
+
+    @Override
     public EditorCallResult finishComposingText() {
         return record("finishComposingText", () -> {
             composingStart = -1;

@@ -62,6 +62,12 @@ final class SimulatedEditors {
         @Override public EditorTextResult getTextBeforeCursor(int max, int flags) {
             return EditorTextResult.value("");
         }
+        @Override public EditorCallResult setComposingRegion(int start, int end) {
+            // Neither a terminal nor a relay has a region to mark: they refuse, and the keyboard's
+            // older way runs instead. (Neither is ever asked — the plan for them is a different
+            // shape — but a refusal is the honest answer if one ever is.)
+            return EditorCallResult.rejected();
+        }
 
         void eraseOne() {
             if (text.length() > 0) {
@@ -108,6 +114,9 @@ final class SimulatedEditors {
         @Override public EditorCallResult commitText(String t, int c) { return fake.commitText(t, c); }
         @Override public EditorCallResult setComposingText(String t, int c) {
             return fake.setComposingText(t, c);
+        }
+        @Override public EditorCallResult setComposingRegion(int s, int e) {
+            return fake.setComposingRegion(s, e);
         }
         @Override public EditorCallResult finishComposingText() { return fake.finishComposingText(); }
         @Override public EditorCallResult deleteSurroundingTextInCodePoints(int b, int a) {

@@ -2364,6 +2364,26 @@ drawing, on a file a stranger wrote.
 **Rule.** Publish the smallest format that answers the request. Everything in it is a promise to
 read it for ever; everything left out is a decision you can still make later.
 
+### 15.48 Three calls an editor can get wrong
+
+**What happened.** Typing 신재님 on 나랏글 in one app, the 신 vanished the moment ㅈ was made
+(owner's report, 2026-09-17). ㅈ is ㅅ with a stroke, and the stroke asks for the syllable that the
+ㅅ closed back: the composer answered with three calls — clear the composition, delete one
+character, compose the pair again. Three calls in a row are three chances for an editor to be
+wrong about what the cursor and the composing region are, and the one that is wrong deletes the
+character before the composition and never puts it back. The same word in a plain `EditText`
+(emulator, the same build) came out right, which is what says the shape rather than the spelling
+was at fault.
+
+**The fix.** `RECOMPOSE_PREVIOUS`: take the characters behind the cursor — the composition included
+— back into the composing region and make them the new composition. `setComposingRegion` then
+`setComposingText`, no delete at all, so there is nothing to lose. Editors that will not mark a
+region say so by refusing, and the old three calls run for them; editors that never see a preedit
+(a terminal's strip, a remote desktop's commits) keep the shapes they already understand.
+
+**Rule.** Where a platform has one call for what you mean, do not spell it out in three. Every extra
+call is a place for an editor to disagree with you.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

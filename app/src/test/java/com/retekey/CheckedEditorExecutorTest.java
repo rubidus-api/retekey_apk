@@ -554,6 +554,56 @@ public final class CheckedEditorExecutorTest {
         Assert.assertEquals(ExecutionResult.Outcome.NOT_DISPATCHED, result.outcome());
     }
 
+    @Test
+    public void aRecomposeMarksTheRegionAndReplacesItWithoutDeleting() {
+        // 나랏글's ㅈ is ㅅ with a stroke, and making it takes back the syllable the ㅅ closed. The
+        // three-call way — clear, delete, compose — lost that syllable in an editor that ran the
+        // calls out of order (owner's report, 2026-09-17). One region does it with no delete.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.setModel("신ㅅ", EditorBounds.of(2, 2, 1, 2));
+
+        ExecutionResult result = EXECUTOR.execute(
+            plan(2, 3, Collections.singletonList(KeyAction.recomposePrevious(2, "신"))),
+            ExecutionContext.active(2, 3, EditorBounds.of(2, 2, 1, 2), RICH),
+            () -> EditorEndpoint.of(2, bridge)
+        );
+
+        Assert.assertFalse(result.isFailure());
+        Assert.assertEquals(Arrays.asList(
+            "beginBatchEdit",
+            "setComposingRegion:0..2",
+            "setComposingText:length=1:cursor=1",
+            "endBatchEdit"
+        ), bridge.trace());
+        Assert.assertEquals("신", bridge.modelText());
+    }
+
+    @Test
+    public void anEditorThatWillNotMarkARegionStillGetsItsSyllableBack() {
+        // The older way is the fallback, not the default: clear the composition, take back the one
+        // character behind it, and compose the pair again.
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.setModel("신ㅅ", EditorBounds.of(2, 2, 1, 2));
+        bridge.returnAt(2, EditorCallResult.rejected());
+
+        ExecutionResult result = EXECUTOR.execute(
+            plan(2, 3, Collections.singletonList(KeyAction.recomposePrevious(2, "신"))),
+            ExecutionContext.active(2, 3, EditorBounds.of(2, 2, 1, 2), RICH),
+            () -> EditorEndpoint.of(2, bridge)
+        );
+
+        Assert.assertFalse(result.isFailure());
+        Assert.assertEquals(Arrays.asList(
+            "beginBatchEdit",
+            "setComposingRegion:0..2",
+            "setComposingText:length=0:cursor=1",
+            "deleteCodePoints:before=1:after=0",
+            "setComposingText:length=1:cursor=1",
+            "endBatchEdit"
+        ), bridge.trace());
+        Assert.assertEquals("신", bridge.modelText());
+    }
+
     private static TransitionPlan<String> plan(
         long generation,
         long revision,

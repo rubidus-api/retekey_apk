@@ -424,6 +424,16 @@ public final class PhoneCompositionTest {
                                 committed.deleteCharAt(committed.length() - 1);
                             }
                             break;
+                        case RECOMPOSE_PREVIOUS: {
+                            // A composing region taken back over what was already written: those
+                            // characters become the composition, and none is deleted.
+                            int take = action.recentCount() - composing.length();
+                            composing = action.text();
+                            for (int i = 0; i < take && committed.length() > 0; i++) {
+                                committed.deleteCharAt(committed.length() - 1);
+                            }
+                            break;
+                        }
                         default:
                             break;
                     }

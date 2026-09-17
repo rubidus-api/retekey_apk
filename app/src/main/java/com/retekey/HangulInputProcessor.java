@@ -252,8 +252,17 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
         if (correction) {
             HangulComposer.Result reopened = composer.reopenClosedSyllable();
             if (reopened != null) {
-                // Drop the consonant being corrected, take back the syllable it closed, and put
-                // that syllable back into composition so the replacement can join it.
+                // Take back the syllable this consonant closed, with the consonant itself, and
+                // make the two of them the composition again — the replacement then joins it.
+                // One replacement rather than a delete and a rewrite: the delete was landing on
+                // the syllable before it in editors that reorder the three calls (owner's report,
+                // 2026-09-17: 신재님 lost its 신 the moment ㅈ was made). Where the preedit is not
+                // in the editor to begin with — a remote desktop's commits, a terminal's strip —
+                // the old three steps are still the only shape those editors understand.
+                if (!composeByCommits() && !composesOffScreen()) {
+                    return DispatchResult.handled(
+                        KeyAction.recomposePrevious(2, reopened.preedit()));
+                }
                 return DispatchResult.handled(
                     KeyAction.setComposingText(""),
                     KeyAction.deleteBackward(),

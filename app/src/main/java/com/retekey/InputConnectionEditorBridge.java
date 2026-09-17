@@ -38,6 +38,11 @@ public final class InputConnectionEditorBridge implements EditorBridge {
     }
 
     @Override
+    public EditorCallResult setComposingRegion(int start, int end) {
+        return booleanCall(() -> inputConnection.setComposingRegion(start, end));
+    }
+
+    @Override
     public EditorCallResult finishComposingText() {
         return booleanCall(inputConnection::finishComposingText);
     }

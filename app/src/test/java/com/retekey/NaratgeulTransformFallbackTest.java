@@ -166,6 +166,17 @@ public final class NaratgeulTransformFallbackTest {
                             committed.deleteCharAt(committed.length() - 1);
                         }
                         break;
+                    case RECOMPOSE_PREVIOUS: {
+                        // What an editor does with a composing region: the characters it covers —
+                        // the composing ones and the committed ones behind them — become the new
+                        // composition, and nothing is deleted.
+                        int take = action.recentCount() - composing.length();
+                        composing = action.text();
+                        for (int i = 0; i < take && committed.length() > 0; i++) {
+                            committed.deleteCharAt(committed.length() - 1);
+                        }
+                        break;
+                    }
                     default:
                         break;
                 }
