@@ -41,6 +41,8 @@ public class ReteKeyImeService extends InputMethodService {
     private List<HardwareKeyBindings.Binding> unicodeBindings = java.util.Collections.emptyList();
     /** The code point being typed on the U+ key, or null when that entry is not open. */
     private UnicodeEntry unicodeEntry;
+    /** The phonetic page's panel — a search or a family — while it is open, or null. */
+    private IpaPanel ipaPanel;
     private Toast functionToast;
     private static final int HANJA_LOOKBEHIND = 8;
     /** The candidate list while it is up, living in a floating panel of its own. */
@@ -142,12 +144,29 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnUnicodeInput(this::startUnicodeEntry);
         keyboardView.setOnNotepad(this::toggleNotepad);
         keyboardView.setOnClipboard(this::toggleClipboardPanel);
+        keyboardView.setOnIpaFind(this::startIpaFind);
+        keyboardView.setOnIpaChart(this::startIpaChart);
         keyboardView.setOnFloatingToggle(this::toggleFloatingMode);
         keyboardView.setOnThemeCycle(this::cycleTheme);
         keyboardView.setOnKanaModifier(this::applyKanaModifier);
         keyboardView.setOnLayoutChanged(this::announceLayout);
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
+        if (ipaPanel != null) {
+            // Above the keyboard rather than over the document: a search is typed, so the keys
+            // have to stay in reach. (The Hanja candidates float instead — nothing is typed into
+            // them, and there the panel is all there is to see.)
+            floatingFrame = null;
+            hanjaView = new HanjaCandidatesView(this);
+            hanjaView.setOnPick(value -> {
+                if (!pickFromIpaPanel(value)) {
+                    commitHanja(value);
+                }
+            });
+            hanjaView.setOnDismiss(this::endIpaPanel);
+            hanjaView.show(pendingReading, pendingCandidates);
+            return new PanelFrame(this, hanjaView, withActionBar(keyboardView));
+        }
         if (clipboardPanel != null) {
             // The clipboard owns the window while it is open, the way the notepad does.
             floatingFrame = null;
@@ -173,8 +192,15 @@ public class ReteKeyImeService extends InputMethodService {
             FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         if (hanjaFloating) {
             hanjaView = new HanjaCandidatesView(this);
-            hanjaView.setOnPick(this::commitHanja);
-            hanjaView.setOnDismiss(this::hideHanjaCandidates);
+            hanjaView.setOnPick(value -> {
+                if (!pickFromIpaPanel(value)) {
+                    commitHanja(value);
+                }
+            });
+            hanjaView.setOnDismiss(() -> {
+                ipaPanel = null;
+                hideHanjaCandidates();
+            });
             hanjaView.show(pendingReading, pendingCandidates);
             floatingFrame = new FloatingKeyboardFrame(this, hanjaView);
             floatingFrame.setOpacityPercent(
@@ -1610,6 +1636,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
             return;
         }
+        if (ipaPanel != null && consumeForIpaPanel(event)) {
+            return;
+        }
         if (consumeForNotepad(event)) {
             return;
         }
@@ -1988,6 +2017,119 @@ public class ReteKeyImeService extends InputMethodService {
         }
         dispatchSoftwareInput(
             ProjectKeyEvent.softwareDown("touch.menu.unicode", SemanticInput.text(character)));
+    }
+
+    /**
+     * Opens the phonetic search: the letters typed are a query, not text, and the symbols that
+     * answer it are offered in the candidate panel (issue #11).
+     */
+    private void startIpaFind() {
+        openIpaPanel(IpaPanel.find());
+    }
+
+    /** The same panel, showing the families instead — the chart's own grouping. */
+    private void startIpaChart() {
+        openIpaPanel(IpaPanel.families());
+    }
+
+    private void openIpaPanel(IpaPanel panel) {
+        finishComposingInEditor();
+        inputProcessor.reset();
+        ipaPanel = panel;
+        showIpaPanel();
+        if (panel.mode() == IpaPanel.Mode.FIND && keyboardView != null) {
+            // A search is typed in letters, and the phonetic page's letters are its Shift face:
+            // turning it over is what "type a name" means. After the panel is up, not before —
+            // building the input view makes a new keyboard, and a lock set on the old one is gone.
+            keyboardView.setModifierLockFromBar(ControlKey.SHIFT, true);
+        }
+    }
+
+    /** Puts what the panel is offering in front of the user, and says what was asked. */
+    private void showIpaPanel() {
+        if (ipaPanel == null) {
+            return;
+        }
+        List<HanjaCandidatesView.Item> items = new ArrayList<>();
+        for (String[] choice : ipaPanel.choices()) {
+            items.add(new HanjaCandidatesView.Item(choice[0], choice[1]));
+        }
+        pendingReading = ipaPanel.label();
+        pendingCandidates = items;
+        hanjaCandidatesShown = true;
+        if (hanjaView != null && !hanjaFloating) {
+            // Already up: new contents, not a new panel — rebuilding it would take the keyboard
+            // out from under the fingers between one letter of the query and the next.
+            hanjaView.show(pendingReading, pendingCandidates);
+            return;
+        }
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    private void endIpaPanel() {
+        ipaPanel = null;
+        hanjaCandidatesShown = false;
+        pendingCandidates = java.util.Collections.emptyList();
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    /**
+     * A pick from the panel: a family opens, a symbol is typed. Returns false when the panel is
+     * not the thing on screen, so the Hanja candidates keep their own answer.
+     */
+    private boolean pickFromIpaPanel(String value) {
+        if (ipaPanel == null) {
+            return false;
+        }
+        int family = ipaPanel.familyAt(value);
+        if (family >= 0) {
+            ipaPanel = ipaPanel.openFamily(family);
+            showIpaPanel();
+            return true;
+        }
+        endIpaPanel();
+        dispatchSoftwareInput(
+            ProjectKeyEvent.softwareDown("touch.ipa.panel", SemanticInput.text(value)));
+        return true;
+    }
+
+    /**
+     * An on-screen key while the panel is open. In a search the letters build the query; a delete
+     * takes one back; anything else closes the panel and is typed as usual, so nothing is trapped.
+     */
+    private boolean consumeForIpaPanel(ProjectKeyEvent event) {
+        SemanticInput input = event == null ? null : event.semanticInput();
+        if (input == null) {
+            return false;
+        }
+        if (ipaPanel.mode() != IpaPanel.Mode.FIND) {
+            // A family list is a list: it answers taps on itself, not the keyboard.
+            return false;
+        }
+        switch (input.kind()) {
+            case TEXT: {
+                String text = input.text();
+                if (text == null || text.isEmpty()) {
+                    return false;
+                }
+                ipaPanel = ipaPanel.append(text);
+                showIpaPanel();
+                return true;
+            }
+            case DELETE_BACKWARD:
+                if (ipaPanel.query().isEmpty()) {
+                    endIpaPanel();
+                    return true;
+                }
+                ipaPanel = ipaPanel.backspace();
+                showIpaPanel();
+                return true;
+            default:
+                endIpaPanel();
+                return false;
+        }
     }
 
     /**

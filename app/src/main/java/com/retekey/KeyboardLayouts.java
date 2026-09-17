@@ -1618,11 +1618,15 @@ public final class KeyboardLayouts {
      */
     private static SoftwareKeySpec bottomRowCellFor(KeyboardLayoutId id) {
         switch (id) {
+            case ETC_IPA:
+                // The page holds what a transcription uses most; the rest is found rather than
+                // hunted for. Tap to search by name or X-SAMPA code, hold for the families.
+                return SoftwareKeySpec
+                    .control("touch.ipa.find", "🔎", ControlKey.IPA_FIND)
+                    .withLongPressControl(ControlKey.IPA_CHART)
+                    .withLongPressHint("IPA");
             case ETC_USER:
                 // Somebody else's layout: this keyboard cannot know what its users reach for.
-            case ETC_IPA:
-                // A transcription is written beside prose, and the way back to it is the globe;
-                // the cell stays empty rather than carrying a key this page has no use for.
                 return vacatedCell("layer");
             case KO_DUBEOLSIK:
                 return hanjaKey();

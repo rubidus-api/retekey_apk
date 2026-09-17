@@ -190,6 +190,8 @@ public final class ReteKeyboardView extends View {
     private Runnable onUnicodeInput;
     private Runnable onNotepad;
     private Runnable onClipboard;
+    private Runnable onIpaFind;
+    private Runnable onIpaChart;
     private Runnable onFloatingToggle;
     private Runnable onThemeCycle;
     private Runnable onKanaModifier;
@@ -2071,6 +2073,16 @@ public final class ReteKeyboardView extends View {
         this.onClipboard = listener;
     }
 
+    /** Called by the IPA page's Find key: a symbol by the name the user has for it. */
+    public void setOnIpaFind(Runnable listener) {
+        this.onIpaFind = listener;
+    }
+
+    /** Called by the same key held: the symbols by family instead. */
+    public void setOnIpaChart(Runnable listener) {
+        this.onIpaChart = listener;
+    }
+
     /** Opens the U+ code-point entry, which the service owns. */
     public void setOnUnicodeInput(Runnable listener) {
         this.onUnicodeInput = listener;
@@ -2154,6 +2166,16 @@ public final class ReteKeyboardView extends View {
             case CLIPBOARD:
                 if (onClipboard != null) {
                     onClipboard.run();
+                }
+                break;
+            case IPA_FIND:
+                if (onIpaFind != null) {
+                    onIpaFind.run();
+                }
+                break;
+            case IPA_CHART:
+                if (onIpaChart != null) {
+                    onIpaChart.run();
                 }
                 break;
             case UNICODE_INPUT:

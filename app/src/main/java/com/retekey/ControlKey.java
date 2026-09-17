@@ -55,6 +55,10 @@ public enum ControlKey {
     NOTEPAD,
     /** Open the clipboard list above the keyboard, through the host. */
     CLIPBOARD,
+    /** Find a phonetic symbol by name or X-SAMPA code (the IPA page's own search). */
+    IPA_FIND,
+    /** Browse the phonetic symbols by family: vowels, plosives, fricatives… */
+    IPA_CHART,
     /** Toggle a 12-key page's cells between Hangul and the phone keypad's digits. */
     PHONE_DIGITS,
     /** Toggle a 12-key page's cells between Hangul and the arrow/Home/End/PgUp/PgDn cluster. */

@@ -106,6 +106,16 @@ public final class IpaLayoutTest {
         }
     }
 
+    @Test
+    public void thePageHasItsOwnWayToTheRestOfTheAlphabet() {
+        // A page holds what a transcription uses most; the rest is found by name (tap) or by
+        // family (hold) rather than hunted for — the report's own complaint (issue #11).
+        SoftwareKeySpec find = SYMBOLS.findById("touch.ipa.find");
+        assertNotNull(find);
+        assertEquals(ControlKey.IPA_FIND, find.control());
+        assertEquals(ControlKey.IPA_CHART, find.longPressControl());
+    }
+
     private static String typedAt(KeyboardLayout page, int row, int column) {
         return symbolKeys(page, row).get(column).label();
     }
@@ -129,7 +139,7 @@ public final class IpaLayoutTest {
     private static List<SoftwareKeySpec> symbolKeys(KeyboardLayout page, int row) {
         List<SoftwareKeySpec> keys = new ArrayList<>();
         for (SoftwareKeySpec key : page.rows().get(row)) {
-            if (key.stableKeyId().startsWith("touch.ipa.")) {
+            if (key.stableKeyId().startsWith("touch.ipa.") && !key.isControl()) {
                 keys.add(key);
             }
         }

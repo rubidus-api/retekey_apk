@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.186** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.186/retekey-0.1.186.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.186/retekey-0.1.186-legacy.apk)
+**ReteKey v0.1.187** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.187/retekey-0.1.187.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.187/retekey-0.1.187-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.186** —
-[retekey-0.1.186.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.186/retekey-0.1.186.apk) (661 KB; the Android 4.0 build is 540 KB)
+Current release: **v0.1.187** —
+[retekey-0.1.187.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.187/retekey-0.1.187.apk) (672 KB; the Android 4.0 build is 547 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -207,7 +207,7 @@ Seven letter layouts share that grid:
 
 | **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. **Shift** sits beside Meta: tap it for one key, so Shift+arrow selects, or hold it to keep it down. Off until you turn it on in settings |
 | **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold, with **Shift** beside Meta as on Arrows. Off until you turn it on in settings |
-| **IPA** | the International Phonetic Alphabet, for writing a pronunciation beside the word. Each symbol sits at the letter it sounds like, the way X-SAMPA reads a keyboard — `e` types **ə** (and holds ɛ ɜ ɚ ɝ), `a` types **æ** (holding ɑ ɐ ɶ), `t` **θ**, `d` **ð**, `s` **ʃ**, `z` **ʒ**, `n` **ŋ**, `j` **ʤ**, `r` **ɹ**, `v` **ʌ**, `o` **ɔ**, `u` **ʊ**, `i` **ɪ** — and every key holds the rest of its family, so the alphabet is one page and a hold deep. The last cell of the bottom row carries the stress and length marks ˈ ˌ ː ˑ. **Shift** is not a second set of symbols but the plain letters where QWERTY has them, because a transcription is full of ordinary p, t, k, s; the same key then types `/`, holding `[` and `]`. A physical keyboard types both pages the same way. Off until you turn it on in settings |
+| **IPA** | the International Phonetic Alphabet, for writing a pronunciation beside the word. Each symbol sits at the letter it sounds like, the way X-SAMPA reads a keyboard — `e` types **ə** (and holds ɛ ɜ ɚ ɝ), `a` types **æ** (holding ɑ ɐ ɶ), `t` **θ**, `d` **ð**, `s` **ʃ**, `z` **ʒ**, `n` **ŋ**, `j` **ʤ**, `r` **ɹ**, `v` **ʌ**, `o` **ɔ**, `u` **ʊ**, `i` **ɪ** — and every key holds the rest of its family, so the alphabet is one page and a hold deep. The last cell of the bottom row carries the stress and length marks ˈ ˌ ː ˑ. **Shift** is not a second set of symbols but the plain letters where QWERTY has them, because a transcription is full of ordinary p, t, k, s; the same key then types `/`, holding `[` and `]`. A physical keyboard types both pages the same way. The **🔎** key at the bottom is the way to everything the page does not hold: **tap** it and type what you call the symbol — `palm`, `schwa`, `fricative`, or the X-SAMPA code `T` — and the matches appear above the keys to pick from; **hold** it for the families instead (vowels, plosives, nasals, fricatives, affricates, approximants, laterals, trills and taps, clicks and implosives, stress and length, diacritics), where two taps reach any of them. Off until you turn it on in settings |
 
 The layout key — captioned with the layout it goes to next (`2BS`, `QWE`, `DVO`, `CJI`, `NRG`,
 `ARW`, `NUM`, `IPA`, in bold capitals) — walks the layouts you ticked in settings, in the order you put them there, naming

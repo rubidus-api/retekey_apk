@@ -2384,6 +2384,32 @@ region say so by refusing, and the old three calls run for them; editors that ne
 **Rule.** Where a platform has one call for what you mean, do not spell it out in three. Every extra
 call is a place for an editor to disagree with you.
 
+### 15.49 A page cannot hold an alphabet, so let it be asked
+
+**What the request actually said.** The phonetic page answered "I want IPA symbols" (issue #11),
+but the reporter had also said *why* another keyboard's phonetic page went unused: "the symbols are
+hard to find". They typed saved phrases instead — "palm" for ɑ. That is a search, and a page with
+twenty-seven keys was never going to be the answer to a hundred and sixty symbols.
+
+**What was built.** One key on the page, two doors. **Tap** it and what is typed becomes a query:
+X-SAMPA codes (`T` is θ, and the capitals mean it — `t` is t), the symbol's own name (schwa, nasal,
+fricative), and for the English vowels Wells's lexical sets (PALM, THOUGHT, KIT), which is the
+vocabulary a dictionary reader already has. **Hold** it and the families are offered instead —
+vowels, plosives, fricatives… — and picking one shows its symbols. Two taps to anything, with the
+chart's own words as the map and nothing to memorise.
+
+**Where it is drawn.** The candidate panel the Hanja list already uses, but **above the keyboard**
+rather than floating over the document: a search is typed, so the keys have to stay in reach. The
+Hanja list keeps floating, because nothing is typed into it.
+
+**Two things the first device run taught.** Building the input view makes a *new* keyboard view, so
+a Shift lock set before the panel opens is gone after it — turn the page over afterwards. And the
+rebuild takes long enough under TCG that a probe tapping straight after it hits the old view; the
+same sequence typed by hand works. A test that races the rebuild is measuring the emulator.
+
+**Rule.** When a page cannot hold the domain, the keyboard's job is not a bigger page — it is a
+question the user can already phrase.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
