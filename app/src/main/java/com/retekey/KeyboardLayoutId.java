@@ -73,6 +73,8 @@ public enum KeyboardLayoutId {
     PAD_KEYPAD,
     /** The IPA symbols, on the same ten-column grid; Shift turns the page over (issue #11). */
     ETC_IPA,
+    /** A layout the user installed from a file of their own (issue #11). */
+    ETC_USER,
     /** The special-characters page (reached by holding the period). */
     SPECIAL_CHARS,
     /** The special-keys page: keypad plus the special/function keys (reached by the pad key). */

@@ -27,6 +27,18 @@ public final class ShareTargetActivity extends Activity {
             finish();
             return;
         }
+        if (UserLayout.looksLikeOne(text.toString())) {
+            // A layout somebody wrote, shared in the same way text is (issue #11). It replaces the
+            // one installed before, if any: there is one slot, and saying so is better than a list.
+            UserLayout installed = UserLayouts.install(this, text.toString());
+            Toast.makeText(this,
+                installed == null
+                    ? getString(R.string.layout_not_read)
+                    : getString(R.string.layout_installed, installed.name()),
+                Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         StashHistory kept = StashStore.loadPruned(this)
             .record(text, System.currentTimeMillis());
         StashStore.save(this, kept);

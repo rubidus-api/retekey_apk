@@ -164,6 +164,9 @@ public final class SettingsActivity extends Activity {
             case CLIPBOARD:
                 addClipboardControls(root);
                 break;
+            case USER_LAYOUT:
+                addUserLayoutControls(root);
+                break;
             case HARDWARE_LAYOUTS:
                 addHardwareLayoutControls(root);
                 break;
@@ -805,6 +808,33 @@ public final class SettingsActivity extends Activity {
         }
         for (int i = 0; i < rows.size(); i++) {
             rows.get(i).setText((choices[i] == current ? "● " : "○ ") + getString(labels[i]));
+        }
+    }
+
+    // ---- The layout the user installed themselves ----
+
+    private void addUserLayoutControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_layout_label));
+        root.addView(sectionHint(R.string.settings_layout_hint));
+
+        UserLayout installed = UserLayouts.load(this);
+        final TextView state = new TextView(this);
+        state.setPadding(0, dp(8), 0, dp(8));
+        state.setText(installed == null
+            ? getString(R.string.settings_layout_none)
+            : getString(R.string.settings_layout_installed, installed.name()));
+        root.addView(state);
+
+        if (installed != null) {
+            Button remove = new Button(this);
+            remove.setText(R.string.settings_layout_remove);
+            remove.setOnClickListener(v -> {
+                UserLayouts.remove(this);
+                state.setText(R.string.settings_layout_none);
+                remove.setEnabled(false);
+            });
+            root.addView(remove, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         }
     }
 

@@ -105,6 +105,13 @@
     <string name="settings_stash_1h">1 hour</string>
     <string name="settings_stash_1d">1 day</string>
     <string name="settings_stash_forever">Until I remove it</string>
+    <string name="layout_installed">Layout installed: %1$s. Turn it on in settings.</string>
+    <string name="layout_not_read">That layout file could not be read.</string>
+    <string name="settings_layout_label">Your own layout</string>
+    <string name="settings_layout_hint">Share a layout file to ReteKey and it is installed here — one at a time. A file is three rows of keys, written as text, with what each key holds after a bar.</string>
+    <string name="settings_layout_none">No layout installed.</string>
+    <string name="settings_layout_installed">Installed: %1$s</string>
+    <string name="settings_layout_remove">Remove</string>
     <string name="stash_share_label">Keep in ReteKey</string>
     <string name="stash_kept">Kept in ReteKey — the clipboard was not touched.</string>
     <string name="stash_nothing">Nothing to keep.</string>

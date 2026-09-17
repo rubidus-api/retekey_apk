@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.184** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184-legacy.apk)
+**ReteKey v0.1.185** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.185/retekey-0.1.185.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.185/retekey-0.1.185-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.184** —
-[retekey-0.1.184.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) (657 KB; 안드로이드 4.0 빌드는 537 KB)
+현재 릴리즈: **v0.1.185** —
+[retekey-0.1.185.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.185/retekey-0.1.185.apk) (660 KB; 안드로이드 4.0 빌드는 539 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -604,6 +604,26 @@ Meta·Shift, 그리고 물리 키보드의 수정자까지입니다. 물리 키�
 때까지** 중에서 고르시면 됩니다. 설정의 *클립보드와 보관한 글* 에 있고, 거기서 **시스템 클립보드
 따라가기** 를 아예 끌 수도 있습니다. 끄면 키보드는 클립보드를 전혀 보지 않고, 공유만이 글이 키보드에
 들어오는 길이 됩니다.
+
+**내 자판 만들기.** 같은 방식으로 자판 파일을 ReteKey 에 공유하면 자판 한 면으로 설치됩니다. 한 번에
+하나이고, 새로 설치하면 이전 것을 대신합니다. 파일은 그냥 글이라 메시지에 적어 보낼 수 있을 만큼
+작습니다.
+
+```
+retekey-layout 1
+name: Greek phonetic
+cap: grk
+row: α β γ|ϝ δ ε|έ ζ η|ή θ ι|ί κ
+row: λ μ ν ξ ο|ό π ρ σ|ς τ
+row: υ|ύ φ χ ψ ω|ώ
+```
+
+각 칸은 그 키가 치는 글자이고, 막대(|) 뒤는 **길게 누르면** 나오는 글자입니다. 세 줄, 한 줄에 최대
+열 개입니다. 나머지 — Shift·백스페이스·엔터·아래 줄·자판 키 — 는 키보드 것이고 파일에 없습니다. 일부러
+그렇게 했습니다. 릴리즈로 공개한 형식은 앞으로도 계속 읽어 줘야 하므로, 이 형식은 할 수 있는 한 적게
+말합니다. 모르는 줄은 거절하지 않고 무시하므로, 나중 버전용으로 쓴 파일도 지금 버전에서 동작합니다.
+설치한 자판은 다른 자판처럼 설정에서 켜시면 되고, 설정의 *내 자판* 에서 무엇이 설치되어 있는지 보고
+지울 수 있습니다.
 
 하지 않는 일도 그만큼 중요합니다.
 

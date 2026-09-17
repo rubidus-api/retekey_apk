@@ -2339,6 +2339,31 @@ showing an empty list, and sharing is the only road in.
 **Rule.** When a platform's own channel is the problem, do not make it safer — offer a different
 channel and let the user pick.
 
+### 15.47 A format is a promise, so say as little as possible
+
+**What was asked.** A way to add a keyboard layout without waiting for a release: a file shared
+into the app (issue #11). The reporter offered JSON or something custom, and worried about
+copyright in copying another keyboard's arrangement.
+
+**What was built.** A line format with a header, a name, a three-letter cap and three `row:` lines
+whose cells are "what the key types" and, after a bar, what it holds. Nothing else: Shift,
+backspace, Enter, the bottom row and the layout key are the keyboard's own. One installed layout at
+a time, kept as its text in a preferences file of its own, parsed into `UserLayout` — Android-free,
+so the format is a unit test. It arrives through the share door the stash already opened: text that
+begins with the header is a layout, anything else is text to keep.
+
+**The rule that makes it survivable.** *Unknown lines are ignored, not refused.* A file written for
+a later ReteKey still works in this one, minus what this one cannot do. That single rule is what
+lets the format grow without breaking the promise, and it has its own test.
+
+**What the page still enforces.** The grid is ten columns whatever the file says: a short row is
+padded and a long one is cut. The first run on a device proved why — a three-key row threw
+`every row must span exactly 10 columns` out of `KeyboardLayout.of`, from inside the keyboard's own
+drawing, on a file a stranger wrote.
+
+**Rule.** Publish the smallest format that answers the request. Everything in it is a promise to
+read it for ever; everything left out is a decision you can still make later.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

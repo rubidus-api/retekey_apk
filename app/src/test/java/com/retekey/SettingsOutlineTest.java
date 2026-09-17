@@ -61,7 +61,7 @@ public final class SettingsOutlineTest {
         assertEquals(
             Arrays.asList(Section.THEME, Section.SYSTEM_BAND, Section.FEEDBACK, Section.REPEAT,
                 Section.HARDWARE, Section.TERMINAL,
-                Section.CLIPBOARD),
+                Section.CLIPBOARD, Section.USER_LAYOUT),
             SettingsOutline.MAIN);
     }
 

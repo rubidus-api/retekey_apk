@@ -43,6 +43,8 @@ public final class SettingsOutline {
         TERMINAL,
         /** Whether the keyboard follows Android's clipboard, and how long shared text is kept. */
         CLIPBOARD,
+        /** The layout the user installed from a file of their own. */
+        USER_LAYOUT,
         /** Which physical layout each on-screen layout uses, on this screen. */
         HARDWARE_LAYOUTS,
         /** How much of the screen the keyboard takes. On an orientation's settings page. */
@@ -71,7 +73,8 @@ public final class SettingsOutline {
         Section.REPEAT,
         Section.HARDWARE,
         Section.TERMINAL,
-        Section.CLIPBOARD));
+        Section.CLIPBOARD,
+        Section.USER_LAYOUT));
 
     /** One orientation's settings page: the two small things kept per screen. */
     public static final List<Section> ORIENTATION_PAGE = Collections.unmodifiableList(

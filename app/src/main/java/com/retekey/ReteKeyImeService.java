@@ -1344,6 +1344,9 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onCreate() {
         super.onCreate();
+        // The layout somebody installed themselves, read once: the pages are drawn from a static
+        // that knows nothing of Android (issue #11).
+        UserLayouts.load(this);
         // Held for the life of the service: the registration in SharedPreferences is weak, and a
         // listener that is collected is a setting that appears not to work.
         viewPrefs().registerOnSharedPreferenceChangeListener(barPrefsListener);

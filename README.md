@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.184** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184-legacy.apk)
+**ReteKey v0.1.185** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.185/retekey-0.1.185.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.185/retekey-0.1.185-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.184** —
-[retekey-0.1.184.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.184/retekey-0.1.184.apk) (657 KB; the Android 4.0 build is 537 KB)
+Current release: **v0.1.185** —
+[retekey-0.1.185.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.185/retekey-0.1.185.apk) (660 KB; the Android 4.0 build is 539 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -616,6 +616,26 @@ you and no permission is involved: a share is the sending app's own decision. Ke
 your clock — **10 minutes, 1 hour, 1 day, or until you remove it** — in settings, under *Clipboard
 and kept text*, where you can also turn **Follow the system clipboard** off entirely: then the
 keyboard never looks at the clipboard at all, and sharing is the only way text reaches it.
+
+**A layout of your own.** Share a layout file to ReteKey the same way and it is installed as a
+keyboard page — one at a time, replacing whatever was there. A file is text, small enough to write
+in a message:
+
+```
+retekey-layout 1
+name: Greek phonetic
+cap: grk
+row: α β γ|ϝ δ ε|έ ζ η|ή θ ι|ί κ
+row: λ μ ν ξ ο|ό π ρ σ|ς τ
+row: υ|ύ φ χ ψ ω|ώ
+```
+
+Each cell is the character the key types; anything after a bar is what the key **holds**. Three
+rows, up to ten keys across; everything else — Shift, backspace, Enter, the bottom row, the layout
+key — is the keyboard's own and is not in the file. That is deliberate: a format published in a
+release has to be read for ever, so this one says as little as it can. Lines it does not know are
+ignored rather than refused, so a file written for a later version still works. Turn the layout on
+like any other, in settings; *Your own layout* there shows what is installed and removes it.
 
 What it will not do matters as much as what it will:
 

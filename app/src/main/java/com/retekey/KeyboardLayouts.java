@@ -249,6 +249,13 @@ public final class KeyboardLayouts {
                 return shifted ? PAD_KEYPAD_SHIFTED : PAD_KEYPAD_LAYOUT;
             case ETC_IPA:
                 return shifted ? IPA_LETTERS : IPA_SYMBOLS;
+            case ETC_USER: {
+                UserLayout installed = UserLayouts.current();
+                // Nothing installed: the globe has to have somewhere to go, so the page falls back
+                // to QWERTY rather than to an empty grid.
+                return installed == null
+                    ? of(KeyboardLayoutId.EN_QWERTY, shifted) : user(installed, shifted);
+            }
             case SPECIAL_CHARS:
                 return CHARS;
             default:
@@ -1075,6 +1082,47 @@ public final class KeyboardLayouts {
         return letterPage(KeyboardLayoutId.ETC_IPA, letters, rows, null);
     }
 
+    /**
+     * The layout somebody installed themselves (issue #11). The file says which letters are on the
+     * three rows and what each one holds; everything around them is the keyboard's, so the page has
+     * the same backspace, Shift, Enter and bottom row as every other. Shift types the capitals the
+     * platform knows, which is what a letter layout means.
+     */
+    private static KeyboardLayout user(UserLayout layout, boolean shifted) {
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
+        for (int index = 0; index < layout.rows().size(); index++) {
+            List<SoftwareKeySpec> row = new ArrayList<>(COLUMNS);
+            // The keys the file names, then the keyboard's own around them. The grid is ten
+            // columns wide whatever the file says, so a short row is padded and a long one is cut:
+            // the page has to be a page before it is anybody's layout.
+            int reserved = index == 0 ? 0 : index == 1 ? 1 : 2;
+            if (index == 2) {
+                row.add(shiftKey(shifted));
+            }
+            List<UserLayout.Key> keys = layout.rows().get(index);
+            int room = COLUMNS - reserved;
+            for (int k = 0; k < keys.size() && k < room; k++) {
+                UserLayout.Key key = keys.get(k);
+                String types = shifted ? key.types.toUpperCase(java.util.Locale.ROOT) : key.types;
+                SoftwareKeySpec spec = SoftwareKeySpec.enabled(
+                    "touch.user." + Integer.toHexString(key.types.codePointAt(0)),
+                    types, SemanticInput.text(types));
+                row.add(key.holds.isEmpty()
+                    ? spec : spec.withLongPress(key.holds.toArray(new String[0])));
+            }
+            for (int pad = Math.min(keys.size(), room); pad < room; pad++) {
+                row.add(vacatedCell("user." + index + "." + pad));
+            }
+            if (index == 1) {
+                row.add(backspaceKey());
+            } else if (index == 2) {
+                row.add(enterKey());
+            }
+            rows.add(KeyboardLayout.row(row.toArray(new SoftwareKeySpec[0])));
+        }
+        return letterPage(KeyboardLayoutId.ETC_USER, shifted, rows, null);
+    }
+
     /** One IPA row: "typed held held…" cells, with the row's own first and last keys around them. */
     private static List<SoftwareKeySpec> ipaRow(String[] cells, SoftwareKeySpec first,
                                                 SoftwareKeySpec last) {
@@ -1570,6 +1618,8 @@ public final class KeyboardLayouts {
      */
     private static SoftwareKeySpec bottomRowCellFor(KeyboardLayoutId id) {
         switch (id) {
+            case ETC_USER:
+                // Somebody else's layout: this keyboard cannot know what its users reach for.
             case ETC_IPA:
                 // A transcription is written beside prose, and the way back to it is the globe;
                 // the cell stays empty rather than carrying a key this page has no use for.

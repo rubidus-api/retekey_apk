@@ -57,7 +57,8 @@ public final class LetterLayouts {
         KeyboardLayoutId.KO_NARATGEUL,
         KeyboardLayoutId.PAD_ARROWS,
         KeyboardLayoutId.PAD_KEYPAD,
-        KeyboardLayoutId.ETC_IPA
+        KeyboardLayoutId.ETC_IPA,
+        KeyboardLayoutId.ETC_USER
     );
 
     /** What a user gets before touching settings: the two full keyboards. */
@@ -154,6 +155,11 @@ public final class LetterLayouts {
                 return "num";
             case ETC_IPA:
                 return "ipa";
+            case ETC_USER: {
+                // The installed layout's own three letters, or a reminder that there is none.
+                UserLayout installed = UserLayouts.current();
+                return installed == null ? "usr" : installed.cap();
+            }
             default:
                 return baseName(id);
         }
@@ -270,6 +276,10 @@ public final class LetterLayouts {
                 return "Keypad";
             case ETC_IPA:
                 return "IPA(phonetic)";
+            case ETC_USER: {
+                UserLayout installed = UserLayouts.current();
+                return installed == null ? "Your layout(none yet)" : installed.name();
+            }
             default:
                 return id.name();
         }
