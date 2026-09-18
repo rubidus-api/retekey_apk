@@ -2428,7 +2428,26 @@ off, and an opacity, with the keys reading through it. Its ink keeps at least
 `EchoBoxSettings.MIN_INK_OPACITY` of itself however faint the box is — at 35 % both faded together
 and neither the character nor the keys could be read (measured on the emulator).
 
+**What the owner changed after seeing it.** The box starts at 60 % rather than solid — it is over
+the keys, and the keys matter more than it does — and the app's own screen lost the ⚙ in front of
+its two settings entries. A glyph in front of a label is decoration where the label already says
+what it is.
+
 **Rule.** A colour is a name. Two different things in one colour is one thing without a name.
+
+### 15.51 A keyboard of white keys
+
+**What happened.** The light theme painted key faces in the lightest neutral there is — near-white
+by hand, `system_neutral1_50` under Material You — and the owner read the result as a sheet of
+paper rather than a set of keys (2026-09-18).
+
+**The fix.** One step down the ramp on both: hand-tuned faces at 238/240/244 over a 198/202/209
+ground, and the dynamic palette at `system_neutral1_100` over `system_neutral1_200`. The ladder is
+unchanged — face above ground, disabled below — so every other colour that is derived from them
+(the pressed tint, the choosing hue, the ink contrast) moves with it and nothing needed a second
+adjustment.
+
+**Rule.** Theme colours are a ladder, not a list. Move a rung, not a colour.
 
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 

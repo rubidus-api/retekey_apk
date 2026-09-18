@@ -18,8 +18,13 @@ final class EchoBoxSettings {
 
     /** On by default: it is what makes a keystroke readable under the finger that made it. */
     static final boolean DEFAULT_ENABLED = true;
-    /** Solid enough to read at a glance, and not so solid that the keys vanish behind it. */
-    static final int DEFAULT_OPACITY = 85;
+    /**
+     * See-through by default: the box is over the keys, and the keys matter more than it does.
+     * Sixty per cent shows the row underneath while the box still reads as a box; the character on
+     * top stays crisp whatever this is, because the ink has a floor of its own
+     * ({@link #MIN_INK_OPACITY}). The owner set 40 and then settled on 60 (2026-09-18).
+     */
+    static final int DEFAULT_OPACITY = 60;
     /** Below this the box is a ghost and the character cannot be read; above it is opaque. */
     static final int MIN_OPACITY = 20;
     static final int MAX_OPACITY = 100;

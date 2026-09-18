@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.188** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.188/retekey-0.1.188.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.188/retekey-0.1.188-legacy.apk)
+**ReteKey v0.1.189** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.189/retekey-0.1.189.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.189/retekey-0.1.189-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -53,8 +53,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.188** —
-[retekey-0.1.188.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.188/retekey-0.1.188.apk) (674 KB; the Android 4.0 build is 548 KB)
+Current release: **v0.1.189** —
+[retekey-0.1.189.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.189/retekey-0.1.189.apk) (674 KB; the Android 4.0 build is 548 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -548,7 +548,7 @@ A **Back to main screen** button at the top returns to the app's main screen at 
 **What you just typed, over the keys.** A finger covers the key it presses, so the character
 appears in a box at the top of the keyboard for as long as the keystroke's blink lasts. It is a
 setting — *Show what was typed over the keyboard*, under feedback in settings — and its **opacity**
-is one too, so the row underneath can read through it; the character itself stays legible however
+is one too, set to 60% so the row underneath reads through the box; the character itself stays legible however
 faint the box is. **A character you chose rather than pressed** — held for, flicked to, picked off
 the strip of alternates — is echoed in a **different colour** from a pressed key, and the strip
 itself is painted in that colour, so a hold that landed on the wrong alternate is visible as such

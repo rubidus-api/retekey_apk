@@ -154,9 +154,11 @@ final class KeyboardPalette {
                 sys(context, android.R.color.system_accent1_300));
         }
         return new KeyboardPalette(
-            sys(context, android.R.color.system_neutral1_100),
-            sys(context, android.R.color.system_neutral1_50),
+            // One step down the neutral ramp from where this started: the key face was the
+            // lightest neutral there is, which on most wallpapers comes out white.
             sys(context, android.R.color.system_neutral1_200),
+            sys(context, android.R.color.system_neutral1_100),
+            sys(context, android.R.color.system_neutral1_300),
             sys(context, android.R.color.system_accent1_700),
             sys(context, android.R.color.system_accent1_200),
             sys(context, android.R.color.system_neutral1_900),
@@ -182,9 +184,13 @@ final class KeyboardPalette {
 
     private static KeyboardPalette light() {
         return new KeyboardPalette(
-            Color.rgb(210, 214, 220), // background (surface)
-            Color.rgb(252, 253, 255), // key face (near white, elevated)
-            Color.rgb(230, 233, 238), // disabled
+            Color.rgb(198, 202, 209), // background (surface)
+            // Light grey rather than near-white: a keyboard of white keys reads as a sheet of
+            // paper with lines on it, and the eye has to find the key edges rather than being
+            // shown them (owner's request, 2026-09-18). Grey keys on a darker grey ground keep
+            // the same ladder — face above background, disabled below — with less glare.
+            Color.rgb(238, 240, 244), // key face (light grey, elevated)
+            Color.rgb(221, 224, 230), // disabled
             Color.rgb(28, 90, 168),   // held: deep, the strongest state
             Color.rgb(138, 180, 232), // armed for one key: mid, plainly not held
             Color.rgb(28, 30, 34),    // label (onSurface)

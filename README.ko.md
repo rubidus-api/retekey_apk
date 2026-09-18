@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.188** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.188/retekey-0.1.188.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.188/retekey-0.1.188-legacy.apk)
+**ReteKey v0.1.189** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.189/retekey-0.1.189.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.189/retekey-0.1.189-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -53,8 +53,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.188** —
-[retekey-0.1.188.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.188/retekey-0.1.188.apk) (674 KB; 안드로이드 4.0 빌드는 548 KB)
+현재 릴리즈: **v0.1.189** —
+[retekey-0.1.189.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.189/retekey-0.1.189.apk) (674 KB; 안드로이드 4.0 빌드는 548 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -539,8 +539,8 @@ Ctrl+V 는 Ctrl+V 로 프로그램에 그대로 갑니다. 원격 데스크톱�
 
 **방금 친 글자를 키 위에 보여 주기.** 손가락이 누른 키를 가리므로, 그 글자가 키보드 위쪽 상자에
 잠깐 나타납니다. 이것은 설정입니다 — 설정의 피드백 항목에 있는 *친 글자를 키보드 위에 보여주기* —
-그리고 **투명도**도 설정입니다. 낮추면 아래 줄이 비쳐 보이고, 상자가 아무리 흐려도 글자 자체는 또렷하게
-남습니다. **눌러서가 아니라 골라서 넣은 글자**(길게 누르기, 끌기, 대안 띠에서 고르기)는 눌린 키와 **다른
+그리고 **투명도**도 설정이며 기본값은 60%입니다. 아래 줄이 비쳐 보이고, 상자가 아무리 흐려도 글자
+자체는 또렷하게 남습니다. **눌러서가 아니라 골라서 넣은 글자**(길게 누르기, 끌기, 대안 띠에서 고르기)는 눌린 키와 **다른
 색**으로 표시되고, 고르는 띠 자체도 그 색으로 칠해집니다. 그래서 길게 누르다 엉뚱한 대안에 닿았을 때
 한눈에 보입니다.
 
