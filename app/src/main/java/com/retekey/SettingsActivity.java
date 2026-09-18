@@ -219,6 +219,42 @@ public final class SettingsActivity extends Activity {
             KeyFeedback.KEY_HAPTIC, KeyFeedback.DEFAULT_HAPTIC);
         addPercentSlider(root, R.string.settings_sound,
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
+
+        root.addView(sectionHint(R.string.settings_echo_hint));
+        CheckBox echo = new CheckBox(this);
+        echo.setText(R.string.settings_echo_enabled);
+        echo.setChecked(prefs().getBoolean(
+            EchoBoxSettings.KEY_ENABLED, EchoBoxSettings.DEFAULT_ENABLED));
+        echo.setOnCheckedChangeListener((b, checked) -> prefs().edit()
+            .putBoolean(EchoBoxSettings.KEY_ENABLED, checked).apply());
+        root.addView(echo);
+        addIntSlider(root, R.string.settings_echo_opacity, EchoBoxSettings.KEY_OPACITY,
+            EchoBoxSettings.MIN_OPACITY, EchoBoxSettings.MAX_OPACITY,
+            EchoBoxSettings.DEFAULT_OPACITY);
+    }
+
+    /** A titled percentage slider bound to an int preference clamped to [min, max]. */
+    private void addIntSlider(LinearLayout root, int titleRes, String prefKey,
+            int min, int max, int def) {
+        TextView label = new TextView(this);
+        label.setPadding(0, dp(10), 0, 0);
+        root.addView(label);
+
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(max - min);
+        int start = Math.max(min, Math.min(max, prefs().getInt(prefKey, def)));
+        bar.setProgress(start - min);
+        bar.setPadding(dp(4), dp(8), dp(4), dp(8));
+        label.setText(getString(titleRes) + "  " + start + "%");
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override
+            public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                int value = progress + min;
+                prefs().edit().putInt(prefKey, value).apply();
+                label.setText(getString(titleRes) + "  " + value + "%");
+            }
+        });
+        root.addView(bar, matchWidth());
     }
 
 

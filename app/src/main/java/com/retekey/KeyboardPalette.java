@@ -32,6 +32,12 @@ final class KeyboardPalette {
     final int keyShadow;
     final int hint;
     final int pressTint;
+    /**
+     * The colour of choosing: the strip of alternates a hold raises, and the echo of what it types.
+     * A hue of its own rather than the accent, which is the colour of pressing (see
+     * {@link ChoiceHue}).
+     */
+    final int choiceAccent;
 
     private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
             int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint) {
@@ -55,6 +61,10 @@ final class KeyboardPalette {
         this.keyShadow = keyShadow;
         this.hint = hint;
         this.pressTint = pressTint;
+        // Derived rather than given: every palette — hand-tuned or the device's own Material You —
+        // gets a choosing colour that keeps its saturation and lightness, so it reads in the same
+        // theme as everything around it.
+        this.choiceAccent = ChoiceHue.of(keyAccent);
     }
 
     /**

@@ -123,6 +123,11 @@ public final class ReteKeyboardView extends View {
     private String unicodePreview = "U+";
     /** A layout handed in whole for pictures (ScreenshotActivity's five-row proof); null in real use. */
     private KeyboardLayout previewLayout;
+    /** Whether what is being echoed was chosen from a hold rather than typed by a plain press. */
+    private boolean flashFromChoice;
+    /** Whether the echo box is drawn at all, and how much of the keyboard shows through it. */
+    private boolean echoBoxEnabled = EchoBoxSettings.DEFAULT_ENABLED;
+    private int echoBoxOpacity = EchoBoxSettings.DEFAULT_OPACITY;
 
 
     /**
@@ -477,6 +482,10 @@ public final class ReteKeyboardView extends View {
         feedback.reload(prefs());
         repeatEnabled = prefs().getBoolean(
             KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED);
+        echoBoxEnabled = prefs().getBoolean(
+            EchoBoxSettings.KEY_ENABLED, EchoBoxSettings.DEFAULT_ENABLED);
+        echoBoxOpacity = EchoBoxSettings.clampOpacity(prefs().getInt(
+            EchoBoxSettings.KEY_OPACITY, EchoBoxSettings.DEFAULT_OPACITY));
         repeatDelayMs = KeyRepeatSettings.clampDelay(prefs().getInt(
             KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS));
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
@@ -540,11 +549,25 @@ public final class ReteKeyboardView extends View {
      * turning that to zero turns the blink off with it.
      */
     private void flashKeyboard(SoftwareKeySpec key, String typed) {
+        flashKeyboard(key, typed, false);
+    }
+
+    /**
+     * The same, for a character that was <em>chosen</em> — held for, flicked to, picked off a
+     * strip. It is echoed in the choosing colour rather than the pressing one, so a hold that
+     * lands on the wrong alternate is visible as such at a glance (owner's request, 2026-09-18).
+     */
+    private void flashChoice(SoftwareKeySpec key, String typed) {
+        flashKeyboard(key, typed, true);
+    }
+
+    private void flashKeyboard(SoftwareKeySpec key, String typed, boolean chosen) {
         if (feedback.visualIntensity() <= 0.0f) {
             return;
         }
         removeCallbacks(onFlashElapsed);
         flashing = true;
+        flashFromChoice = chosen;
         flashLabel = echoLabel(key, typed);
         invalidate();
         postDelayed(onFlashElapsed, FLASH_MS);
@@ -633,7 +656,7 @@ public final class ReteKeyboardView extends View {
      * actually be read.
      */
     private void drawEchoBox(Canvas canvas, int width, int height) {
-        if (!flashing || flashLabel == null) {
+        if (!flashing || flashLabel == null || !echoBoxEnabled) {
             return;
         }
         float boxHeight = Math.min(height * 0.38f, dp(72));
@@ -647,10 +670,11 @@ public final class ReteKeyboardView extends View {
         float left = centerX - boxWidth * 0.5f;
         float radius = dp(10);
 
-        paint.setColor(palette.keyAccent);
+        int face = flashFromChoice ? palette.choiceAccent : palette.keyAccent;
+        paint.setColor(EchoBoxSettings.withOpacity(face, echoBoxOpacity));
         Compat.drawRoundRect(
             canvas, left, top, left + boxWidth, top + boxHeight, radius, paint);
-        paint.setColor(palette.background);
+        paint.setColor(EchoBoxSettings.inkWithOpacity(palette.inkOn(face), echoBoxOpacity));
         canvas.drawText(
             flashLabel, centerX, top + boxHeight * 0.5f - (paint.descent() + paint.ascent()) / 2.0f,
             paint);
@@ -805,10 +829,15 @@ public final class ReteKeyboardView extends View {
         paint.setColor(palette.keyShadow);
         Compat.drawRoundRect(canvas, centreX - half, centreY - half + keyShadowPx,
             centreX + half, centreY + half + keyShadowPx, radius, paint);
-        paint.setColor(aimed ? palette.keyAccent : palette.keyFace);
+        // Choosing has its own colour: the one under the finger in it, the rest tinted with it,
+        // so the strip reads as a choice being made rather than as more pressed keys.
+        int fill = aimed
+            ? palette.choiceAccent
+            : ChoiceHue.softOf(palette.keyAccent, palette.keyFace);
+        paint.setColor(fill);
         Compat.drawRoundRect(
             canvas, centreX - half, centreY - half, centreX + half, centreY + half, radius, paint);
-        paint.setColor(aimed ? palette.background : palette.keyText);
+        paint.setColor(palette.inkOn(fill));
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(box * 0.5f);
         canvas.drawText(directionForDisplay(label), centreX,
@@ -1348,7 +1377,7 @@ public final class ReteKeyboardView extends View {
         resetPhoneInterpreters();
         consumeOneShotShift();
         feedback.playKeyDown();
-        flashKeyboard(key, visibleFlickText(text));
+        flashChoice(key, visibleFlickText(text));
     }
 
     /** What to show for a flick's text: the ZWNJ — Persian's half-space — is invisible by trade. */
@@ -1367,7 +1396,7 @@ public final class ReteKeyboardView extends View {
         send(ProjectKeyEvent.softwareDown(key.stableKeyId(), SemanticInput.text(text)));
         resetPhoneInterpreters();
         feedback.playKeyDown();
-        flashKeyboard(key, text);
+        flashChoice(key, text);
     }
 
     private static CheonjiinInterpreter.Key phoneKeyOf(SoftwareKeySpec key) {
@@ -1393,7 +1422,7 @@ public final class ReteKeyboardView extends View {
         emit(key, cheonjiin.flick(phoneKey, direction));
         restartMultiTapTimeout();
         feedback.playKeyDown();
-        flashKeyboard(key, label);
+        flashChoice(key, label);
         performClick();
         return true;
     }
@@ -1412,7 +1441,7 @@ public final class ReteKeyboardView extends View {
         resetPhoneInterpreters();
         consumeOneShotShift();
         feedback.playKeyDown();
-        flashKeyboard(key, key.longPressTexts().get(index));
+        flashChoice(key, key.longPressTexts().get(index));
         performClick();
     }
 
@@ -1789,7 +1818,7 @@ public final class ReteKeyboardView extends View {
             resetPhoneInterpreters();
             consumeOneShotShift();
             feedback.playKeyDown();
-            flashKeyboard(key, key.longPressTexts().get(0));
+            flashChoice(key, key.longPressTexts().get(0));
             touch.holdConsumed = true;
             performClick();
         }
@@ -1999,6 +2028,20 @@ public final class ReteKeyboardView extends View {
                 // four. Nothing ships it yet; the row height simply comes out one fifth.
                 previewLayout = KeyboardLayouts.fiveRowDemo();
                 break;
+            case "echo": {
+                // echo:LAYOUT:text[:choice][:opacity] — the box that shows what was just typed,
+                // for pictures of it: the plain kind, the choosing kind, and a see-through one.
+                page = Page.LETTERS;
+                letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
+                flashing = true;
+                flashLabel = parts.length > 2 ? parts[2] : "가";
+                flashFromChoice = parts.length > 3 && "choice".equals(parts[3]);
+                echoBoxEnabled = true;
+                if (parts.length > 4) {
+                    echoBoxOpacity = EchoBoxSettings.clampOpacity(Integer.parseInt(parts[4]));
+                }
+                break;
+            }
             case "guide": {
                 // guide:LAYOUT:row:key[:DIRECTION] — the four-way guide a held flicking key
                 // raises, for pictures. The finger is pretended down on that key.

@@ -97,6 +97,9 @@
     <string name="mode_english">English</string>
     <string name="hanja_pending">한자 키 인식됨 — 변환 기능은 준비 중입니다.</string>
     <string name="terminal_has_no_selection">A terminal has no selection to copy or cut.</string>
+    <string name="settings_echo_hint">The box that shows what you just typed, over the keyboard. A finger covers the key it presses, which is why it is there — but it is a box over the keys, so it can be turned off, and made see-through enough to read the row underneath.</string>
+    <string name="settings_echo_enabled">Show what was typed over the keyboard</string>
+    <string name="settings_echo_opacity">Box opacity</string>
     <string name="settings_clip_label">Clipboard and kept text</string>
     <string name="settings_clip_hint">The keyboard reads Android\'s clipboard when it comes up, so what you copied elsewhere is already in the Clip list. Turn that off and it never looks: text then reaches the keyboard only by being shared into it.</string>
     <string name="settings_clip_follow">Follow the system clipboard</string>

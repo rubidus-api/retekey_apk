@@ -2410,6 +2410,26 @@ same sequence typed by hand works. A test that races the rebuild is measuring th
 **Rule.** When a page cannot hold the domain, the keyboard's job is not a bigger page — it is a
 question the user can already phrase.
 
+### 15.50 Three things in one colour
+
+**What happened.** A held key is painted in the accent. So was the strip of alternates a hold
+raises, and so was the echo box over it. With a finger down and a strip up, nothing on screen said
+which of them was the choice being made (owner's request, 2026-09-18).
+
+**The fix.** Choosing has a hue of its own: the accent turned 210° round the circle, keeping the
+theme's saturation and lightness so it stays legible in light and dark and follows a Material You
+palette when the device sets one (`ChoiceHue`). The strip's aimed cell is painted in it, the rest
+tinted with it, and a character that was *chosen* — held for, flicked to, picked — is echoed in it
+too, where a pressed key still echoes in the accent.
+
+**And the box became a setting.** It is drawn over the keys, which is the point (a finger covers
+the key it presses) and also the objection (it can sit exactly where the next key is). So: on or
+off, and an opacity, with the keys reading through it. Its ink keeps at least
+`EchoBoxSettings.MIN_INK_OPACITY` of itself however faint the box is — at 35 % both faded together
+and neither the character nor the keys could be read (measured on the emulator).
+
+**Rule.** A colour is a name. Two different things in one colour is one thing without a name.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
