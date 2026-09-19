@@ -116,6 +116,10 @@ public final class IpaLayoutTest {
         assertEquals(ControlKey.IPA_CHART, find.longPressControl());
     }
 
+    private static List<String> heldAt(KeyboardLayout page, int row, int column) {
+        return symbolKeys(page, row).get(column).longPressTexts();
+    }
+
     private static String typedAt(KeyboardLayout page, int row, int column) {
         return symbolKeys(page, row).get(column).label();
     }
@@ -144,5 +148,15 @@ public final class IpaLayoutTest {
             }
         }
         return keys;
+    }
+
+    @Test
+    public void theNasalMarkIsOnTheNasalKeyAndAmongTheMarks() {
+        // Issue #11, the reporter's second message: every vowel has a nasal counterpart, so the
+        // page carries the combining tilde itself rather than a symbol per nasal vowel.
+        String tilde = "\u0303";
+        assertTrue(heldAt(SYMBOLS, 2, 5).contains(tilde));
+        assertTrue(heldAt(SYMBOLS, 2, 7).contains(tilde));
+        assertEquals("\u014b", typedAt(SYMBOLS, 2, 5));
     }
 }

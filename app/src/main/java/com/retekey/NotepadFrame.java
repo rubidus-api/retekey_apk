@@ -44,10 +44,13 @@ final class NotepadFrame extends LinearLayout implements BottomReserving {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // The window is the screen: the notepad takes whatever the keyboard does not.
-        int screenHeight = getResources().getDisplayMetrics().heightPixels - bottomReserved;
+        // The window is what the screen leaves an input method: the band the system draws at the
+        // top is not ours to write in, and asking for it put the top of the notepad underneath the
+        // status bar and made some apps drop the keyboard the moment it opened (issue #8).
+        int height = PanelHeight.forPanel(getResources().getDisplayMetrics().heightPixels,
+            PanelHeight.topInset(this), bottomReserved);
         super.onMeasure(widthMeasureSpec,
-            MeasureSpec.makeMeasureSpec(Math.max(0, screenHeight), MeasureSpec.EXACTLY));
+            MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
     }
 
     /** Whether a touch at this point is on the notepad's own area rather than the keyboard's. */

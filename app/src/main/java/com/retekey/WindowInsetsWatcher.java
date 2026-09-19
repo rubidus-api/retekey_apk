@@ -45,6 +45,25 @@ final class WindowInsetsWatcher {
         return insets == null ? -1 : bandOf(view, insets);
     }
 
+    /**
+     * The band the system draws at the top — status bar, and a cutout where there is one — or -1
+     * when the platform cannot be asked (issue #8).
+     */
+    static int currentTop(View view) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return -1;
+        }
+        WindowInsets insets = view.getRootWindowInsets();
+        if (insets == null) {
+            return -1;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return insets.getInsets(
+                WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()).top;
+        }
+        return insets.getSystemWindowInsetTop();
+    }
+
     private static int bandOf(View view, WindowInsets insets) {
         int tappable = 0;
         int navigation = 0;

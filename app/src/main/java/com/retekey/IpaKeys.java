@@ -15,6 +15,12 @@ package com.retekey;
  * held. Each key holds its neighbours in the same family, so the alphabet is one page and a hold
  * deep rather than a long grid.
  *
+ * <p>A mark that is not a letter of its own — the nasal tilde above all — is typed by the key of
+ * the sound it belongs to: a hold on {@code n}, the nasal key, gives the combining tilde, so any
+ * vowel can be nasalised (ẽ, ɔ̃, ʌ̃) instead of every nasal vowel needing a symbol of its own on the
+ * page. The marks cell at the end of the bottom row holds it too, beside the voiceless ring and the
+ * syllabic mark (issue #11, the reporter's second message).
+ *
  * <p>Shift is not a second set of symbols but the plain Latin letters: a transcription is full of
  * them (the p, t, k, s, m, n, l of /ˈstɹɛŋkθ/), and a page that could not type them would send the
  * user back to another layout every other character.
@@ -56,9 +62,9 @@ final class IpaKeys {
             "ʧ ç ɕ c",      // c: the ch of church, then the palatal fricative and stop
             "ʌ ⱱ ʌ̃",        // v: the strut vowel, which is the letter's own shape
             "β ʙ ɓ",        // b: the bilabial fricative, trill and implosive
-            "ŋ ɲ ɳ ɴ",      // n: the ng of sing, then palatal, retroflex and uvular nasals
+            "ŋ ɲ ɳ ɴ \u0303",  // n: the ng of sing, the other nasals, and the nasal mark itself
             "ɱ ɰ",          // m: the labiodental nasal and the velar approximant
-            "ˈ ˌ ː ˑ",      // and the marks: primary and secondary stress, long and half-long
+            "ˈ ˌ ː ˑ \u0303 \u0325 \u0329",  // and the marks: stress, length, nasal, voiceless, syllabic
         },
     };
 
