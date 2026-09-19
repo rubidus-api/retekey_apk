@@ -44,6 +44,34 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <!--
+            The layout door, separate from the text one (issue #11): sharing to ReteKey keeps text
+            and never installs anything, and this entry installs a layout and never keeps text, so
+            neither can be mistaken for the other by what the text happens to begin with. A .rkl
+            file opened from a file manager or a mail attachment arrives here too.
+        -->
+        <activity-alias
+            android:name=".InstallLayoutActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/layout_share_label"
+            android:targetActivity=".ShareTargetActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="*/*" />
+                <data android:host="*" />
+                <data android:pathPattern=".*\\.rkl" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".SettingsActivity"
             android:exported="true"
