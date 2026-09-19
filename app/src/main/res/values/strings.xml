@@ -111,7 +111,8 @@
     <string name="layout_installed">Layout installed: %1$s. Turn it on in settings.</string>
     <string name="layout_not_read">That layout file could not be read.</string>
     <string name="settings_layout_label">Your own layout</string>
-    <string name="settings_layout_hint">Share a layout file to ReteKey and it is installed here — one at a time. A file is three rows of keys, written as text, with what each key holds after a bar.</string>
+    <string name="settings_layout_hint">A layout is text: three rows of keys, with what each key holds after a bar. Install one by sharing it to <b>Install a ReteKey layout</b>, or by opening a <tt>.rkl</tt> file — one at a time, and the new one replaces the old.</string>
+    <string name="settings_layout_example_hint">A whole layout, to copy and change. Lines this version does not know are ignored, so a file written for a later one still works:</string>
     <string name="settings_layout_none">No layout installed.</string>
     <string name="settings_layout_installed">Installed: %1$s</string>
     <string name="settings_layout_remove">Remove</string>

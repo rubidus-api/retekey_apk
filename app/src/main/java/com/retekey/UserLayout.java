@@ -36,6 +36,19 @@ import java.util.List;
 public final class UserLayout {
     /** The first line of every file this understands. */
     public static final String HEADER = "retekey-layout 1";
+
+    /**
+     * A whole layout, small enough to read at a glance — shown on the settings screen so that the
+     * format can be learned from the thing itself rather than from a description of it (the
+     * reporter of #11 asked for exactly this). It is parsed by a test, so the example on screen
+     * cannot drift away from what the parser accepts.
+     */
+    public static final String EXAMPLE = HEADER + "\n"
+        + "name: Greek phonetic\n"
+        + "cap: grk\n"
+        + "row: α β γ|ϝ δ ε|έ ζ η|ή θ ι|ί κ\n"
+        + "row: λ μ ν ξ ο|ό π ρ σ|ς τ\n"
+        + "row: υ|ύ φ χ ψ ω|ώ";
     /** How many rows of letters a layout has: the keyboard's own shape. */
     public static final int ROWS = 3;
     /** The most keys a row may carry, which is the grid's width. */

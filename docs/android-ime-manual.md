@@ -2293,6 +2293,15 @@ killed a `sleep` in Termux). Soft Ctrl with a letter keeps going out as the chor
 Remote desktops are the exception on both counts: nothing is behind their connection to act on, so
 the bar uses chords there too.
 
+**The one place the name is asked after all (issue #9, reopened).** The capability test misses a
+terminal whose view reports a cursor — an SSH client can be a terminal on the screen and an ordinary
+editor to the connection, and Termius is exactly that. Such an app was handed
+`performContextMenuAction(paste)`, and a view of that kind does nothing with it; there is nothing to
+detect, because the call returns true whether or not the editor acted. So **paste**, and paste only,
+also asks whether the app is known as a terminal by name, and types the clipboard when it is. Every
+other answer still comes from the editor's shape, which is what keeps a plain text field inside a
+terminal app behaving like a plain text field.
+
 ### 15.45 A shortcut the keyboard would not let you register
 
 **What happened.** Registering Shift+Space as the 한/영 key stored a lone left Shift. Two things ate

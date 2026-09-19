@@ -50,6 +50,19 @@ public final class UserLayoutTest {
     }
 
     @Test
+    public void theExampleOnTheSettingsScreenIsARealLayout() {
+        // The example is shown so the format can be learned from it; if the parser ever stopped
+        // accepting it, the screen would be teaching a format the app does not read.
+        UserLayout example = UserLayout.parse(UserLayout.EXAMPLE);
+        assertNotNull(example);
+        assertEquals("Greek phonetic", example.name());
+        assertEquals("grk", example.cap());
+        assertEquals(UserLayout.ROWS, example.rows().size());
+        assertEquals("α", example.rows().get(0).get(0).types);
+        assertEquals(Arrays.asList("ϝ"), example.rows().get(0).get(2).holds);
+    }
+
+    @Test
     public void whatIsNotALayoutIsNotOne() {
         assertFalse(UserLayout.looksLikeOne("a shared sentence"));
         assertNull(UserLayout.parse("a shared sentence"));

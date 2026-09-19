@@ -41,6 +41,8 @@ public class ReteKeyImeService extends InputMethodService {
     private List<HardwareKeyBindings.Binding> unicodeBindings = java.util.Collections.emptyList();
     /** The code point being typed on the U+ key, or null when that entry is not open. */
     private UnicodeEntry unicodeEntry;
+    /** The package the field being typed into belongs to, for the paths that go by name. */
+    private String editorPackage;
     /** The phonetic page's panel — a search or a family — while it is open, or null. */
     private IpaPanel ipaPanel;
     private Toast functionToast;
@@ -781,6 +783,12 @@ public class ReteKeyImeService extends InputMethodService {
             notepad.editCommand(contextMenuId);
             return;
         }
+        // Paste is asked first, because the one editor kind that needs it most is the one that
+        // does not look like a terminal to the classifier — an SSH client whose view reports a
+        // cursor (issue #9, reopened). The rest of the terminal answers follow.
+        if (contextMenuId == android.R.id.paste && pasteByTypingIntoATerminal()) {
+            return;
+        }
         if (editCommandInATerminal(contextMenuId)) {
             return;
         }
@@ -788,9 +796,24 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         InputConnection inputConnection = getCurrentInputConnection();
-        if (inputConnection != null) {
-            inputConnection.performContextMenuAction(contextMenuId);
+        if (inputConnection == null) {
+            return;
         }
+        // The answer says the request reached the connection, not that the editor acted on it:
+        // EditableInputConnection hands the action to its view and returns true regardless. So a
+        // refusal cannot be seen from here, and the editors that refuse are caught before this by
+        // name and by shape instead.
+        inputConnection.performContextMenuAction(contextMenuId);
+    }
+
+    /** Types what is on Android's clipboard into the editor, as keystrokes; false when empty. */
+    private boolean typeTheClipboard(String keyId) {
+        String text = systemClipText();
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(keyId, SemanticInput.text(text)));
+        return true;
     }
 
     /**
@@ -825,16 +848,20 @@ public class ReteKeyImeService extends InputMethodService {
      * pastes what was copied there rather than what this phone holds.
      */
     private boolean pasteByTypingIntoATerminal() {
-        if (editorProfile == null || !editorProfile.capabilities().isTerminal()) {
+        if (editorProfile == null) {
             return false;
         }
-        String text = systemClipText();
-        if (text == null || text.isEmpty()) {
+        // A terminal by shape — no cursor to report, no buffer behind the connection — or a
+        // terminal by name whose view happens to report a cursor and is therefore not classified
+        // as one. An SSH client is the second kind: its field looks ordinary enough that the
+        // context-menu paste is sent to it, and the editor does nothing with it, so nothing
+        // arrives (issue #9, reopened 2026-09-19). Only this one road changes for those apps;
+        // what a key types is still decided by the editor's shape, not by its name (§15.31).
+        if (!editorProfile.capabilities().isTerminal()
+                && !AndroidEditorProfileClassifier.isTerminal(editorPackage)) {
             return false;
         }
-        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-            "touch.edit.paste.terminal", SemanticInput.text(text)));
-        return true;
+        return typeTheClipboard("touch.edit.paste.terminal");
     }
 
     /** What is on Android's clipboard as plain text, or null. */
@@ -1137,6 +1164,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public void onStartInput(EditorInfo attribute, boolean restarting) {
+        editorPackage = attribute == null ? null : attribute.packageName;
         super.onStartInput(attribute, restarting);
         if (keyboardView != null) {
             // A field that takes a phone number or an amount opens on the keypad, the way other

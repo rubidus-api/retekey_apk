@@ -872,6 +872,17 @@ public final class SettingsActivity extends Activity {
             root.addView(remove, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         }
+
+        // A whole layout, on the screen where layouts are managed: the format is learned from the
+        // thing itself rather than from a description of it (the reporter of #11 asked for this).
+        // Selectable, so it can be copied straight out of here into a message or a file.
+        root.addView(sectionHint(R.string.settings_layout_example_hint));
+        TextView example = new TextView(this);
+        example.setText(UserLayout.EXAMPLE);
+        example.setTypeface(android.graphics.Typeface.MONOSPACE);
+        example.setTextIsSelectable(true);
+        example.setPadding(dp(10), dp(10), dp(10), dp(10));
+        root.addView(example, matchWidth());
     }
 
     /** A titled millisecond slider bound to an int preference clamped to [min, max]. */
