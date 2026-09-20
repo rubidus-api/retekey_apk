@@ -25,6 +25,7 @@ and the special keys most keyboards leave out.
 - [Who it is for](#who-it-is-for)
 - [Features](#features)
 - [Layout](#layout)
+- [User layouts](#user-layouts)
 - [Floating keyboard](#floating-keyboard)
 - [Notepad](#notepad)
 - [Hanja conversion](#hanja-conversion)
@@ -118,11 +119,23 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Thirty-three layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
-  Polish, Vietnamese (Telex), German, Turkish, French AZERTY, Greek, Hebrew, Persian, Arabic, Urdu,
-  Thai, Hindi, Russian, Ukrainian, Bulgarian, Macedonian, Serbian, Georgian, Armenian, Japanese
-  Romaji and the 12-key Japanese Flick, the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes, and Arrows, Keypad and the IPA phonetic page as extras. The
+- **Thirty-five layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+  Polish, Vietnamese (Telex), German, Turkish (QWERTY and F), French AZERTY, Greek, Hebrew, Persian,
+  Arabic, Urdu, Thai (Kedmanee and Pattachote), Hindi, Russian (ЙЦУКЕН and phonetic), Ukrainian,
+  Bulgarian (phonetic and БДС), Macedonian, Serbian, Georgian, Armenian, Japanese Romaji and the
+  12-key Japanese Flick, and the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes — with
+  Arrows, Keypad, the IPA phonetic page and [a layout of your own](#user-layouts) as extras. The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
+- **A layout you write yourself** — three rows of keys and what each one holds, in a text file you
+  share into the keyboard or open as a `.rkl` file. No build, no account, no waiting for a release.
+  [How to write one.](docs/user-layouts.md)
+- **Phonetic symbols on a page of their own** — the IPA alphabet where the letters sound like it
+  (X-SAMPA's reading of a QWERTY board), each key holding its own family, Shift for the plain
+  letters a transcription is full of, and, when the page does not have it, a symbol found by name or
+  by family rather than hunted for.
+- **Text that was never copied** — any app's Share can hand ReteKey a password or a link, which it
+  keeps in its own storage and **types** when you pick it. The system clipboard is neither read nor
+  written for it, so there is nothing on it for a keyboard in the background to find.
 - **Numbers get a keypad** — a field that takes a phone number, an amount, a PIN or a date opens
   on the 12-key Keypad. The layout key walks your own list from there, and the next ordinary field
   is back on the layout you were using.
@@ -152,6 +165,9 @@ never open the keypad page you will never see the parts you do not need.
   longer than the system's own long press, so an unhurried letter is still a letter. The letter pages hold
   `1234567890` on the top row, `!@#$%^&*;` on the middle one, and `_-:='"?` on the bottom one.
 - **Light, dark, or the system's own** — your choice, with the Material You palette on Android 12+.
+- **The box that echoes what you typed** can be turned off, or made as see-through as you like, so
+  the keys under it stay readable; a hold that offers a choice is drawn in a colour of its own, so
+  choosing never looks like typing.
 
 ## Layout
 
@@ -366,6 +382,34 @@ keyboard itself.
 
 The muted keys are drawn but do nothing: they are the places the features will go, marked so the
 page does not shift under you when they arrive.
+
+## User layouts
+
+A layout can be a text file you wrote. It names the letters on the three rows of keys and what each
+key holds; the bottom row, Shift, backspace, Enter and the layout key stay the keyboard's own, which
+is what keeps the format small enough to promise:
+
+```
+retekey-layout 1
+name: Greek phonetic
+cap: grk
+row: α β γ|ϝ δ ε|έ ζ η|ή θ ι|ί κ
+row: λ μ ν ξ ο|ό π ρ σ|ς τ
+row: υ|ύ φ χ ψ ω|ώ
+```
+
+Install it by selecting the text anywhere and choosing **Share → Install a ReteKey layout**, or by
+saving it with a `.rkl` extension and opening the file. Sharing to plain **ReteKey** does something
+else entirely — it keeps the text to type later — so a note that happens to begin with
+`retekey-layout` is a note. Then tick the layout in **Settings → Keyboard layouts**, in the *etc*
+group, and the layout key will walk to it wearing the three letters from `cap:`.
+
+One layout at a time; installing another replaces it. Settings shows the whole example above,
+selectable, so the format can be copied off the screen you are already on.
+
+**[The full guide: writing a ReteKey layout file](docs/user-layouts.md)** — every line, what a key
+may type, how many keys fit on each row, what Shift does, what happens to a file it cannot read, and
+what a layout file deliberately cannot do.
 
 ## Floating keyboard
 
@@ -856,6 +900,15 @@ It covers:
 - **a detailed anti-pattern chapter** — real failures from this project, each with what was
   built, what went wrong, the fix, and the resulting rule, with wrong-versus-right code;
 - a pre-release checklist.
+
+### Writing a layout file
+
+**[English](docs/user-layouts.md)** · [한국어](docs/user-layouts.ko.md)
+
+The format a layout you write yourself is in, line by line: what each line means, what a key may
+type and hold, how many keys fit on each row, what Shift does, the two ways to install one, the four
+reasons it can be refused, and what the format deliberately cannot say. Every example in it is
+parsed by a unit test, so the guide cannot drift away from the app that reads it.
 
 The English version is canonical and the Korean version is its translation; the two link to each
 other. It is a **living document**, updated whenever ReteKey's IME implementation changes, so it

@@ -1018,6 +1018,14 @@ Rules:
 - Keep every `WindowInsets` reference in one class if the app still runs on API 14–19, where the
   type does not exist.
 
+**A panel the keyboard owns is not entitled to the whole screen.** An IME window is anchored to the
+bottom, so a window measured at the full display height reaches up behind the status bar — and an
+app whose own area is squeezed to nothing by it can decide the keyboard is in the way and put it
+down, which is a panel that opens and closes in the same breath (§15.52). Measure a panel against
+what is actually there: the screen, less the band at the top the system draws in, less whatever the
+keyboard already reserves at the bottom, and never more than four fifths of the screen. That is
+arithmetic, so it belongs in a class a unit test can call rather than in a layout pass.
+
 **A floating panel lives in a window the size of the screen.** Two consequences:
 
 - The touchable region you hand the framework in `onComputeInsets` is in **window** coordinates. A
@@ -1056,6 +1064,18 @@ the view is created — which users read as "the slider does nothing".
 
 Keep the clamping of stored values in plain Java so it is unit-testable, and clamp on **read** as
 well as write; preference files outlive your validation rules.
+
+Two kinds of thing end up in settings that are worth naming, because both are read by the keyboard
+rather than by the screen that writes them:
+
+- **What a drawing rule needs.** The box that echoes the last keystroke is a switch and an opacity;
+  the opacity has a floor for its ink, because a box that fades its letters with its background stops
+  being a readout before it stops being visible (§15.50, §15.51).
+- **What the user brought with them.** The layout somebody wrote themselves is stored as the text of
+  the file, parsed on the way in and again when the service starts, and held in one slot — one
+  layout, replaced when another arrives. Storing the text rather than the parsed form is what lets a
+  later version read an old file better than the version that stored it. The format, and what it
+  deliberately does not say, is a document of its own: `docs/user-layouts.md` (§15.47).
 
 ## 14. Testing and verification
 
@@ -1134,11 +1154,12 @@ mid-syllable, an arrow pressed right after a syllable. Two matrices now run them
   the behaviour it copies; the parts of the service a JVM cannot run (passing a key through, leaving
   the field, reacting to a selection report) are reproduced with a pointer to the method each
   copies. It prints the whole table and names every failing cell.
-- `scripts/interaction-matrix.sh` (emulator lane, instrumentation build, about nine minutes): the
-  cells only a real editor and a real IME window answer — real Termux in both modes, the strip's
-  view tree, the notepad, touches on the action bar with physical modifiers held, the clipboard
-  list, the pads. It prints a PASS/FAIL table and exits with the number of failing cells (forty as
-  of v0.1.179).
+- `scripts/interaction-matrix.sh` (emulator lane, instrumentation build, about twenty minutes under
+  TCG): the cells only a real editor and a real IME window answer — real Termux in both modes, the
+  strip's view tree, the notepad and the clip list opening inside a terminal and staying open, paste
+  into an app that is a terminal by name, touches on the action bar with physical modifiers held,
+  the phonetic page, installing a layout from a file, the pads. It prints a PASS/FAIL table and exits
+  with the number of failing cells (sixty-six as of v0.1.192).
 
 **The lane boots wiped, so the terminal has to be reinstalled every time.** `emulator-lane.sh`
 starts the emulator with `-wipe-data`, which is what keeps one run from leaning on the last, and it
@@ -1150,6 +1171,12 @@ which can, and the script tries run-as first and falls back to reading the data 
 Reinstalling the IME while its window is on screen makes the framework throw `View=DecorView
 [InputMethod] not attached to window manager` from `showWindow` — an artefact of the reinstall, not
 a defect: force-stop the IME and start the app again before believing a crash seen that way.
+
+**Test the documentation that tells somebody else how to write a file.** A format is only as good as
+the description people copy from, and a description drifts silently. The examples in
+`docs/user-layouts.md` are extracted by a unit test and parsed, the translation has to carry the same
+examples byte for byte, and the first of them is the very string the settings screen displays — so
+the page on the phone, the page on the web and the parser cannot disagree (§15.47).
 
 **Prove a matrix catches something.** When a cell is added for a defect, run it once against the
 code before the fix and see it fail; a cell that has only ever passed may be testing its own model.
@@ -2458,6 +2485,30 @@ adjustment.
 
 **Rule.** Theme colours are a ladder, not a list. Move a rung, not a colour.
 
+### 15.52 A panel that asked for the whole screen
+
+**What happened.** Memo and Clip opened and closed again in the same breath in a terminal and in a
+chat app, and in the apps where they did open, the top of the panel sat *under* the status bar and
+the app below rearranged itself as if the keyboard had grown to fill the display. The reporter's
+screenshots showed both halves of it (issue #8).
+
+**Why.** The panels were measured at the height of the screen. An IME window is anchored to the
+bottom of the display, so a window that tall reaches up behind the system's own band at the top —
+that is the screenshot. And an app whose own area is squeezed to nothing by an input window can
+decide the input method is in the way and ask for it to be hidden; the keyboard goes down, the panel
+goes with it, and the next keystroke brings both back. That is the flicker.
+
+**The fix.** Measure the panel against the room an input method actually has: the screen, less the
+band at the top, less what the keyboard already reserves at the bottom, and never more than four
+fifths of the screen whatever the arithmetic says. Leaving a fifth to the app is what keeps the app
+from concluding it has no room left. The calculation is a class of its own with unit tests, and two
+device cells — the notepad and the clip list, opened inside real Termux and still open four seconds
+later — keep it honest.
+
+**Rule.** A window you do not own the rules for is not a canvas. Ask what is left after the system's
+furniture, leave the app enough to stay on its feet, and put the arithmetic somewhere a test can
+reach it.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2585,4 +2636,13 @@ allow` first.
   dp slide is a tap (§15.35).
 - [ ] A modifier rolled into a letter modifies that letter and not the next one, and a letter held
   half a second is still a letter (§15.37, §15.38).
-- [ ] This manual was updated for whatever changed.
+- [ ] A panel the keyboard owns opens inside a terminal and a chat app and **stays** open, with the
+  system's band at the top still visible above it (§12a, §15.52).
+- [ ] Paste puts the clipboard into a terminal, into an app that is a terminal by name whatever its
+  field reports, and into an ordinary field by the editor's own paste (§15.44).
+- [ ] Text shared to the keyboard is kept and never touches the system clipboard, and a layout
+  arrives only through the door that installs one — including when the shared text begins with the
+  layout header (§15.46, §15.47).
+- [ ] A layout file somebody else wrote installs, appears in settings under its own name, and draws
+  the keys and holds the file names; the examples in `docs/user-layouts.md` still parse (§14).
+- [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

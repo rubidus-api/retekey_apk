@@ -1088,7 +1088,7 @@ public final class KeyboardLayouts {
      * the same backspace, Shift, Enter and bottom row as every other. Shift types the capitals the
      * platform knows, which is what a letter layout means.
      */
-    private static KeyboardLayout user(UserLayout layout, boolean shifted) {
+    static KeyboardLayout user(UserLayout layout, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(3);
         for (int index = 0; index < layout.rows().size(); index++) {
             List<SoftwareKeySpec> row = new ArrayList<>(COLUMNS);
@@ -1104,9 +1104,11 @@ public final class KeyboardLayouts {
             for (int k = 0; k < keys.size() && k < room; k++) {
                 UserLayout.Key key = keys.get(k);
                 String types = shifted ? key.types.toUpperCase(java.util.Locale.ROOT) : key.types;
+                // Named by where it sits, not by what it types: a file may put two keys that start
+                // with the same character on the same page (ch and c), and two keys with one name
+                // are one key to everything that looks a key up.
                 SoftwareKeySpec spec = SoftwareKeySpec.enabled(
-                    "touch.user." + Integer.toHexString(key.types.codePointAt(0)),
-                    types, SemanticInput.text(types));
+                    "touch.user." + index + "." + k, types, SemanticInput.text(types));
                 row.add(key.holds.isEmpty()
                     ? spec : spec.withLongPress(key.holds.toArray(new String[0])));
             }
