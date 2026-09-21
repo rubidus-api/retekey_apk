@@ -45,6 +45,8 @@ public class ReteKeyImeService extends InputMethodService {
     private String editorPackage;
     /** The phonetic page's panel — a search or a family — while it is open, or null. */
     private IpaPanel ipaPanel;
+    /** Physical keys whose down the panel used up, so their up is not handed to the app. */
+    private final java.util.Set<Integer> keysOwnedByIpaPanel = new java.util.HashSet<>();
     private Toast functionToast;
     private static final int HANJA_LOOKBEHIND = 8;
     /** The candidate list while it is up, living in a floating panel of its own. */
@@ -53,6 +55,9 @@ public class ReteKeyImeService extends InputMethodService {
     private List<HanjaCandidatesView.Item> pendingCandidates;
     private boolean pendingFromSelection;
     private int pendingDeleteLength;
+    /** The text the candidates were offered for, and the session they were offered in. */
+    private String pendingSource;
+    private long pendingGeneration;
     private boolean hanjaCandidatesShown;
     /**
      * Where our own writes should have left the cursor in an editor that materialises composition,
@@ -1044,8 +1049,23 @@ public class ReteKeyImeService extends InputMethodService {
         if (unicodeEntry != null && handleUnicodeKey(keyCode, event)) {
             return true;
         }
+        if (ipaPanel != null) {
+            IpaKeyRoute route = routeForIpaPanel(keyCode, event);
+            if (route.consumes()) {
+                // Its key-up is ours too; the app never saw the down (onKeyUp).
+                keysOwnedByIpaPanel.add(keyCode);
+                return true;
+            }
+            if (route.kind() == IpaKeyRoute.Kind.PASS && KeyEvent.isModifierKey(keyCode)) {
+                // Shift for a capital: the search stays open and the key goes on as usual.
+                return super.onKeyDown(keyCode, event);
+            }
+        }
         if (hanjaCandidatesShown && handleHanjaSelectionKey(keyCode)) {
             return true;
+        }
+        if (ipaPanel != null) {
+            endIpaPanel();
         }
         hideHanjaCandidatesIfShown();
         if (keyboardView != null) {
@@ -1096,6 +1116,9 @@ public class ReteKeyImeService extends InputMethodService {
             return super.onKeyUp(keyCode, event);
         }
         heldHardware.onKey(keyCode, false);
+        if (keysOwnedByIpaPanel.remove(keyCode)) {
+            return true;
+        }
         if (isBoundFunctionKey(keyCode, event)) {
             return true;
         }
@@ -1206,6 +1229,10 @@ public class ReteKeyImeService extends InputMethodService {
         if (floatingFrame != null) {
             floatingFrame.setOpacityPercent(FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         }
+        if (ipaPanel != null) {
+            // A search typed for one field must not swallow the next field's text (review R20).
+            endIpaPanel();
+        }
         hideHanjaCandidatesIfShown();
         updateHardwareMapper(currentSubtype());
     }
@@ -1224,26 +1251,57 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onFinishInput() {
         // Finalize any half-formed preedit into the editor before tearing down, so leaving a field
-        // mid-syllable doesn't drop the underlined composing text.
-        finishComposingInEditor();
-        if (sessionActive) {
-            sessionController.stopAccepting();
-        }
-        dispatcher.reset();
+        // mid-syllable doesn't drop the underlined composing text. The teardown after it runs
+        // whatever the editor does with that last call (manual §15.5, review R10).
         try {
-            super.onFinishInput();
+            finishComposingInEditor();
         } finally {
-            finishSession();
+            if (sessionActive) {
+                sessionController.stopAccepting();
+            }
+            dispatcher.reset();
+            try {
+                // The framework's own part is one more finishComposingText on the same editor.
+                super.onFinishInput();
+            } catch (RuntimeException editorFailed) {
+                // Already asked above; an editor that throws at it must not take the service down.
+                logTeardownFailure("onFinishInput", editorFailed);
+            } finally {
+                finishSession();
+            }
         }
     }
 
-    /** Commits any active composing region as normal text; a no-op when nothing is composing. */
+    /**
+     * Commits any active composing region as normal text; a no-op when nothing is composing.
+     * Never throws: it is the first step of every teardown, and an editor failing it must not
+     * stop the rest (review R10) — the text is then the editor's, as it would be anyway.
+     */
     private void finishComposingInEditor() {
-        commitSyllableHeldOnTheStrip();
+        try {
+            commitSyllableHeldOnTheStrip();
+        } catch (RuntimeException editorFailed) {
+            logTeardownFailure("strip flush", editorFailed);
+            showComposingStrip("");
+        }
         InputConnection inputConnection = getCurrentInputConnection();
         if (inputConnection != null) {
-            inputConnection.finishComposingText();
+            try {
+                inputConnection.finishComposingText();
+            } catch (RuntimeException editorFailed) {
+                // Nothing more can be asked of this editor; the teardown goes on.
+                logTeardownFailure("finishComposingText", editorFailed);
+            }
         }
+    }
+
+    /**
+     * A catch this wide could hide a bug of our own (HANDOFF, Hazards), so it leaves a trace —
+     * the step and the exception's class only, never a message that might carry typed text.
+     */
+    private static void logTeardownFailure(String step, RuntimeException failure) {
+        android.util.Log.w("ReteKey", "teardown step failed: " + step + ": "
+            + failure.getClass().getName());
     }
 
     /**
@@ -1461,10 +1519,17 @@ public class ReteKeyImeService extends InputMethodService {
     public void onFinishInputView(boolean finishingInput) {
         // Finalize any preedit when the keyboard is dismissed so a hidden view never strands
         // underlined composing text; the composer restarts clean when the view returns.
-        finishComposingInEditor();
-        inputProcessor.reset();
-        hideHanjaCandidatesIfShown();
-        closePanelsWithTheKeyboard();
+        try {
+            finishComposingInEditor();
+        } finally {
+            inputProcessor.reset();
+            // A phonetic search belongs to the view it was typed in (review R20).
+            if (ipaPanel != null) {
+                endIpaPanel();
+            }
+            hideHanjaCandidatesIfShown();
+            closePanelsWithTheKeyboard();
+        }
     }
 
     @Override
@@ -1786,22 +1851,22 @@ public class ReteKeyImeService extends InputMethodService {
         if (ic == null) {
             return;
         }
+        CharSequence before;
         try {
-            CharSequence before = ic.getTextBeforeCursor(1, 0);
-            if (before == null || before.length() != 1) {
-                return;
-            }
-            String turned = KanaFlick.modified(before.charAt(0));
-            if (turned == null) {
-                return;
-            }
-            ic.beginBatchEdit();
-            ic.deleteSurroundingText(1, 0);
-            ic.commitText(turned, 1);
-            ic.endBatchEdit();
+            before = ic.getTextBeforeCursor(1, 0);
         } catch (RuntimeException ignored) {
             // A misbehaving editor must never crash the keyboard.
+            return;
         }
+        if (before == null || before.length() != 1) {
+            return;
+        }
+        String turned = KanaFlick.modified(before.charAt(0));
+        if (turned == null) {
+            return;
+        }
+        // Checked: a refused delete commits nothing, and the batch always closes (review R02).
+        TextReplacement.replace(new InputConnectionEditorBridge(ic), 1, turned);
     }
 
     /** The Latin composer the current letter layout wants, or null for none. */
@@ -2124,6 +2189,37 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /**
+     * A physical key while the panel is open: the same answers as an on-screen key
+     * (IpaKeyRoute). Applies what the route says to the panel and returns it.
+     */
+    private IpaKeyRoute routeForIpaPanel(int keyCode, KeyEvent event) {
+        IpaKeyRoute route = IpaKeyRoute.of(
+            ipaPanel.mode() == IpaPanel.Mode.FIND,
+            ipaPanel.query().isEmpty(),
+            keyCode,
+            event.getUnicodeChar(event.getMetaState()),
+            KeyEvent.isModifierKey(keyCode),
+            event.isCtrlPressed() || event.isAltPressed() || event.isMetaPressed());
+        switch (route.kind()) {
+            case APPEND:
+                ipaPanel = ipaPanel.append(route.text());
+                showIpaPanel();
+                break;
+            case BACKSPACE:
+                ipaPanel = ipaPanel.backspace();
+                showIpaPanel();
+                break;
+            case CLOSE:
+            case CLOSE_AND_CONTINUE:
+                endIpaPanel();
+                break;
+            default:
+                break;
+        }
+        return route;
+    }
+
+    /**
      * An on-screen key while the panel is open. In a search the letters build the query; a delete
      * takes one back; anything else closes the panel and is typed as usual, so nothing is trapped.
      */
@@ -2428,6 +2524,7 @@ public class ReteKeyImeService extends InputMethodService {
             // alphabet, ㅇ the circled numbers — the convention every Korean IME has carried.
             pendingFromSelection = false;
             pendingDeleteLength = 1;
+            pendingSource = String.valueOf((char) lastCodePoint);
             showHanjaCandidates(String.valueOf((char) lastCodePoint),
                 codePointItems(SpecialCharTable.candidatesFor((char) lastCodePoint)));
         } else if (HanjaTable.isHangul(lastCodePoint)) {
@@ -2438,6 +2535,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
             pendingFromSelection = false;
             pendingDeleteLength = match.length;
+            pendingSource = text.substring(text.length() - match.length);
             showHanjaCandidates(match.reading, forwardItems(match.candidates));
         } else if (HanjaTable.isHanja(lastCodePoint)) {
             HanjaTable.Match match = dictionary.longestSuffixReverseMatch(text, HANJA_LOOKBEHIND);
@@ -2447,6 +2545,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
             pendingFromSelection = false;
             pendingDeleteLength = match.length;
+            pendingSource = text.substring(text.length() - match.length);
             showHanjaCandidates(match.reading, reverseItems(match.candidates));
         } else {
             hideHanjaCandidatesIfShown();
@@ -2463,6 +2562,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
             pendingFromSelection = true;
             pendingDeleteLength = 0;
+            pendingSource = selection;
             showHanjaCandidates(selection, forwardItems(candidates));
             return true;
         }
@@ -2473,6 +2573,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
             pendingFromSelection = true;
             pendingDeleteLength = 0;
+            pendingSource = selection;
             showHanjaCandidates(selection, reverseItems(readings));
             return true;
         }
@@ -2511,25 +2612,47 @@ public class ReteKeyImeService extends InputMethodService {
         return items;
     }
 
-    /** Replaces the source reading with the chosen Hanja and hides the strip. */
+    /**
+     * Replaces the source reading with the chosen Hanja and hides the strip. The reading is
+     * replaced only if it is still where it was when the candidates were offered — same session,
+     * same text before the cursor or same selection — so a pick made after the cursor moved or the
+     * field changed deletes nothing it was not offered for; and the delete is checked, so a
+     * refused one does not leave the Hanja beside the reading (review R02).
+     */
     private void commitHanja(String hanja) {
         InputConnection ic = getCurrentInputConnection();
-        if (ic != null) {
-            try {
-                ic.beginBatchEdit();
-                if (!pendingFromSelection && pendingDeleteLength > 0) {
-                    ic.deleteSurroundingText(pendingDeleteLength, 0);
-                }
+        try {
+            if (ic != null && hanjaSourceStillInPlace(ic)) {
                 // With a live selection, commitText replaces it; otherwise it follows the delete.
-                ic.commitText(hanja, 1);
-            } finally {
-                ic.endBatchEdit();
+                TextReplacement.replace(
+                    new InputConnectionEditorBridge(ic),
+                    pendingFromSelection ? 0 : pendingDeleteLength,
+                    hanja);
             }
+        } finally {
+            hideHanjaCandidates();
         }
-        hideHanjaCandidates();
+    }
+
+    private boolean hanjaSourceStillInPlace(InputConnection ic) {
+        if (pendingSource == null || pendingGeneration != sessionController.generation()) {
+            return false;
+        }
+        if (!pendingFromSelection) {
+            return pendingDeleteLength == pendingSource.length()
+                && TextReplacement.stillBeforeCursor(
+                    new InputConnectionEditorBridge(ic), pendingSource);
+        }
+        try {
+            CharSequence selected = ic.getSelectedText(0);
+            return selected != null && pendingSource.equals(selected.toString());
+        } catch (RuntimeException unreadable) {
+            return false;
+        }
     }
 
     private void showHanjaCandidates(String reading, List<HanjaCandidatesView.Item> candidates) {
+        pendingGeneration = sessionController.generation();
         pendingReading = reading;
         pendingCandidates = candidates;
         hanjaCandidatesShown = true;
@@ -2581,6 +2704,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void hideHanjaCandidates() {
+        pendingSource = null;
         pendingReading = null;
         pendingCandidates = null;
         hanjaCandidatesShown = false;

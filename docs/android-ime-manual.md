@@ -2509,6 +2509,94 @@ later — keep it honest.
 furniture, leave the app enough to stay on its feet, and put the arithmetic somewhere a test can
 reach it.
 
+### 15.53 A chord that let go of only what went well
+
+**What happened.** The independent review of 2026-09-17 (finding R01) drove the remote-desktop
+chord through a fake editor that fails on cue. If the session ended right after Ctrl went down,
+the executor returned "not dispatched" before its release loop and Ctrl was never let up. If the
+editor refused Ctrl, the loop merely stopped pressing modifiers and still sent C — so Ctrl+C
+arrived as a bare `c` and was reported as a shortcut that worked.
+
+**Why.** The frame (§15a) was written for the path where every call succeeds. Its failure exits
+were early returns, the release loop sat after them, and it released every modifier in the frame
+rather than the ones actually pressed. A modifier press is a write to the far side like any other,
+but it was not guarded by the session check the key itself had.
+
+**The fix.** The chord owns what it pressed. A modifier is pressed only while the session is still
+this one; after a refused, throwing or stale press nothing more is pressed and the key is not sent.
+Every modifier that was pressed is released in a `finally`, in reverse, through the endpoint's own
+bridge — the connection it was pressed on, never whichever editor replaced it — and one release
+failing does not skip the next. The result counts the frame's calls, and anything short of a clean
+four-call chord is uncertain rather than dispatched, so the service does not hand the event on.
+A syllable written just before a key (the flush-then-key plan) keeps its count when the key fails.
+
+**Rule.** Whatever a sequence presses, the same sequence lets go of, on the same connection, in a
+`finally`. Test every call of it failing, not the one that happened to fail in the field.
+
+### 15.54 A replacement that committed after its delete failed
+
+**What happened.** The kana ゛゜小 key and a Hanja pick both replace text before the cursor: delete,
+then commit. Both wrote the calls straight onto the `InputConnection` (review R02): kana committed
+whether or not the delete happened, so a refused delete turned か into かが, and a throw skipped
+`endBatchEdit`. A Hanja pick replaced whatever was before the cursor when it was tapped, even if
+the cursor had moved or the field had changed since the candidates were offered.
+
+**The fix.** `TextReplacement` does both: begin, delete, commit, and always end, with the delete a
+prerequisite — nothing is committed after a delete that was refused or threw. A Hanja pick first
+checks that the reading it was offered for is still there: the same session generation, and the
+same text before the cursor (or the same selection). If not, the candidates close and nothing is
+written.
+
+**Rule.** A replacement is two edits with an order. Check the first before sending the second, and
+check that what you are replacing is still what you were asked to replace.
+
+### 15.55 The teardown behind the call that threw
+
+**What happened.** `onFinishInput` asked the editor to finish composing before it stopped the
+session. The call sat outside the `try/finally` that held the cleanup, so an editor throwing there
+skipped `stopAccepting` and `finishSession` alike (review R10) — the rule of §15.5, broken by its
+own first line. `onFinishInputView` had the same shape.
+
+**The fix.** `finishComposingInEditor` never throws, and both teardowns run the rest of their work in
+`finally` blocks behind it. The framework's own `onFinishInput` is one more `finishComposingText`,
+so an exception from it is caught too.
+
+**Rule.** In a teardown, the first line is a place to fail. Everything that must happen goes in a
+`finally` after it.
+
+### 15.56 A search that listened to only one keyboard
+
+**What happened.** With the phonetic search open, an on-screen letter joined the query and a
+physical letter was typed into the document (review R20). `onKeyDown` hid the candidate strip and
+carried on, leaving the search open with nothing showing — and the next field's first word then
+went into the query.
+
+**The fix.** `IpaKeyRoute` gives a physical key the answers an on-screen key gets: a letter joins
+the query, Backspace takes one back (and closes an empty search), Escape closes, digits and page
+keys stay with the candidates, a modifier alone passes (Shift is how a capital is typed), anything
+else closes the search and goes on as usual. A down the search used up has its up used up too.
+A new field, or the keyboard going away, ends the search.
+
+**Rule.** A mode that takes over typing takes over every way of typing, and ends at the edges of
+the field it was opened in.
+
+### 15.57 Gates that could not fail
+
+**What happened.** Two local gates reported what they had not checked (review R14, R15). The
+instrumentation runner still asked Gradle for task names that had become ambiguous when the
+modern/legacy flavors arrived, and installed APK paths that no longer existed — a leftover from
+an older build could have been the thing tested. The sentence matrix counted one row inside a
+command substitution, whose subshell threw the count away, so it could print FAIL and exit 0. The
+interaction matrix compared the keyboard to a size only one emulator has.
+
+**The fix.** The runner takes a flavor, deletes that variant's APKs before building, and installs
+nothing unless each APK sits beside build metadata naming its own variant. Every matrix row goes
+through one verdict function in the parent shell; a read that finds no log line is its own value,
+not an empty field; the exit status is 0 or 1. The geometry row measures the keyboard before and
+after the bar and compares the two. Each gate has a test that fails it one row at a time.
+
+**Rule.** A gate is only evidence if it has been seen to fail. Break each row on purpose once.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2645,4 +2733,9 @@ allow` first.
   layout header (§15.46, §15.47).
 - [ ] A layout file somebody else wrote installs, appears in settings under its own name, and draws
   the keys and holds the file names; the examples in `docs/user-layouts.md` still parse (§14).
+- [ ] A remote chord whose modifier or key fails releases every modifier it pressed and reports
+  uncertain, not dispatched; a kana or Hanja replacement whose delete fails commits nothing
+  (§15.53, §15.54).
+- [ ] The local gates fail when they should: `tests/test-ime-instrumentation-runner.sh` and
+  `tests/test-sentence-matrix.sh` pass, and the runner installs the flavor it built (§15.57).
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

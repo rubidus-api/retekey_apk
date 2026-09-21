@@ -64,10 +64,33 @@ public final class CheckedEditorExecutor {
             if (written.isFailure()) {
                 return written;
             }
-            return executeRawCompatibility(
+            ExecutionResult key = executeRawCompatibility(
                 subPlan(plan, actions.subList(actions.size() - 1, actions.size())),
                 endpoint,
                 context.capabilities());
+            boolean wrote = written.dispatchedMutationCount() > 0
+                || written.remoteMutationMayHaveOccurred();
+            if (!key.isFailure() || !wrote) {
+                return key;
+            }
+            // The text is in the editor and the key is not. Reporting only the key's failure
+            // would read as "nothing happened" and keep the syllable composing that already
+            // landed (review R01): the whole plan is uncertain, with the write counted.
+            int offset = written.operationCount();
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                key.reason(),
+                key.cleanupReason(),
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                actions.size() - 1,
+                offset + Math.max(0, key.failedOperationIndex()),
+                key.cleanupOperationIndex() < 0 ? -1 : offset + key.cleanupOperationIndex(),
+                offset + key.operationCount(),
+                actions.get(actions.size() - 1).kind(),
+                written.dispatchedMutationCount() + key.dispatchedMutationCount(),
+                true
+            );
         }
 
         boolean rawEditor = context.capabilities().deletionMode()
@@ -305,60 +328,133 @@ public final class CheckedEditorExecutor {
         //   실제 스캔코드, 소프트 플래그 제거)으로 입혀 릴레이의 하드웨어 경로 — 수식 상태를
         //   추적해 조합하는 경로 — 를 타게 한다. 글자에는 meta 도 도로 싣는다.
         boolean dressAsHardware = !frame.isEmpty();
+        // The chord owns every modifier it pressed until it has let it go (review R01). A press
+        // is attempted only while the session is still this one, and after a refused, throwing
+        // or stale press nothing more is pressed: Ctrl+C whose Ctrl failed must not arrive as a
+        // bare C. Whatever was pressed is released in the finally below, in reverse, through this
+        // endpoint's own bridge — the connection it was pressed on, never whichever editor
+        // replaced it. If that connection is already gone the release cannot reach it either;
+        // the result then says a modifier may be left down instead of claiming a shortcut.
         java.util.Set<KeyModifier> held = java.util.EnumSet.noneOf(KeyModifier.class);
-        for (RawKey modifierKey : frame) {
-            held.add(modifierOf(modifierKey));
-            java.util.Set<KeyModifier> pressed = java.util.EnumSet.copyOf(held);
-            EditorCallResult modifierDown = safeCall(() -> bridge.sendRawKey(RawEditorKey.hardware(
-                modifierKey,
-                pressed,
-                RawEditorKey.Action.DOWN
-            )));
-            if (!modifierDown.isSucceeded()) {
-                break;
+        java.util.List<RawKey> pressed = new java.util.ArrayList<>(frame.size());
+        int operation = 0;
+        EditorCallResult prerequisite = null;
+        int prerequisiteIndex = -1;
+        EditorCallResult down = null;
+        EditorCallResult up = null;
+        int downIndex = -1;
+        int upIndex = -1;
+        ExecutionResult.Reason releaseReason = ExecutionResult.Reason.NONE;
+        int releaseIndex = -1;
+        try {
+            for (RawKey modifierKey : frame) {
+                java.util.Set<KeyModifier> chord = java.util.EnumSet.copyOf(held);
+                chord.add(modifierOf(modifierKey));
+                if (!endpoint.isCurrent()) {
+                    prerequisite = EditorCallResult.staleSession();
+                    prerequisiteIndex = operation;
+                    break;
+                }
+                pressed.add(modifierKey);
+                held.add(modifierOf(modifierKey));
+                prerequisiteIndex = operation++;
+                EditorCallResult modifierDown = safeCall(() -> bridge.sendRawKey(
+                    RawEditorKey.hardware(modifierKey, chord, RawEditorKey.Action.DOWN)));
+                if (!modifierDown.isSucceeded()) {
+                    prerequisite = modifierDown;
+                    break;
+                }
+            }
+            if (prerequisite == null) {
+                boolean hw = dressAsHardware;
+                down = guardedCall(endpoint, () -> bridge.sendRawKey(hw
+                    ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.DOWN)
+                    : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.DOWN)));
+                if (!down.isStaleSession()) {
+                    downIndex = operation++;
+                    up = safeCall(() -> bridge.sendRawKey(hw
+                        ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.UP)
+                        : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.UP)));
+                    upIndex = operation++;
+                }
+            }
+        } finally {
+            // 누른 역순으로 놓는다 — 실제 손가락이 그렇게 하고, 저쪽 OS 도 그 순서를 기대한다.
+            // One release failing does not skip the rest.
+            for (int i = pressed.size() - 1; i >= 0; i--) {
+                RawKey modifierKey = pressed.get(i);
+                held.remove(modifierOf(modifierKey));
+                java.util.Set<KeyModifier> stillHeld = java.util.EnumSet.copyOf(held);
+                EditorCallResult release = safeCall(() -> bridge.sendRawKey(
+                    RawEditorKey.hardware(modifierKey, stillHeld, RawEditorKey.Action.UP)));
+                int index = operation++;
+                if (!release.isSucceeded() && releaseReason == ExecutionResult.Reason.NONE) {
+                    releaseReason = reasonForOperation(release);
+                    releaseIndex = index;
+                }
             }
         }
-        boolean hw = dressAsHardware;
-        EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(hw
-            ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.DOWN)
-            : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.DOWN)));
-        if (down.isStaleSession()) {
+
+        boolean keyNotSent = prerequisite != null || down.isStaleSession();
+        if (keyNotSent && pressed.isEmpty()) {
+            // Nothing reached the editor, so there is nothing to let go of.
             return notDispatched(
                 plan,
                 ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
             );
         }
-        EditorCallResult up = safeCall(() -> bridge.sendRawKey(hw
-            ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.UP)
-            : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.UP)));
-        // 누른 역순으로 놓는다 — 실제 손가락이 그렇게 하고, 저쪽 OS 도 그 순서를 기대한다.
-        for (int i = frame.size() - 1; i >= 0; i--) {
-            RawKey modifierKey = frame.get(i);
-            held.remove(modifierOf(modifierKey));
-            java.util.Set<KeyModifier> stillHeld = java.util.EnumSet.copyOf(held);
-            safeCall(() -> bridge.sendRawKey(RawEditorKey.hardware(
-                modifierKey,
-                stillHeld,
-                RawEditorKey.Action.UP
-            )));
+        if (keyNotSent) {
+            // A modifier went down (and was released, as far as this connection allows); the key
+            // never went. On a remote desktop a lone Alt or Meta tap is not nothing.
+            EditorCallResult failed = prerequisite != null ? prerequisite : down;
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                reasonForOperation(failed),
+                releaseReason,
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                0,
+                prerequisite != null ? prerequisiteIndex : operation - pressed.size(),
+                releaseIndex,
+                operation,
+                action.kind(),
+                0,
+                true
+            );
         }
         if (!down.isSucceeded() || !up.isSucceeded()) {
             EditorCallResult primary = down.isSucceeded() ? up : down;
-            ExecutionResult.Reason cleanupReason = !down.isSucceeded() && !up.isSucceeded()
-                ? reasonForOperation(up)
-                : ExecutionResult.Reason.NONE;
+            boolean bothFailed = !down.isSucceeded() && !up.isSucceeded();
             return result(
                 plan,
                 ExecutionResult.Outcome.UNCERTAIN,
                 reasonForOperation(primary),
-                cleanupReason,
+                bothFailed ? reasonForOperation(up) : releaseReason,
                 ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
                 0,
-                down.isSucceeded() ? 1 : 0,
-                !down.isSucceeded() && !up.isSucceeded() ? 1 : -1,
-                2,
+                down.isSucceeded() ? upIndex : downIndex,
+                bothFailed ? upIndex : releaseIndex,
+                operation,
                 action.kind(),
                 down.isSucceeded() ? 1 : 0,
+                true
+            );
+        }
+        if (releaseReason != ExecutionResult.Reason.NONE) {
+            // The key landed, but a modifier may still be down on the far side — the batch path's
+            // rule for a failed endBatchEdit after good writes.
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                releaseReason,
+                releaseReason,
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                0,
+                releaseIndex,
+                releaseIndex,
+                operation,
+                action.kind(),
+                1,
                 true
             );
         }
@@ -372,7 +468,7 @@ public final class CheckedEditorExecutor {
             -1,
             -1,
             -1,
-            2,
+            operation,
             null,
             1,
             false
