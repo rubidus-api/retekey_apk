@@ -2597,6 +2597,57 @@ after the bar and compares the two. Each gate has a test that fails it one row a
 
 **Rule.** A gate is only evidence if it has been seen to fail. Break each row on purpose once.
 
+### 15.58 Helpers that read a password field
+
+**What happened.** Composing in a password field was made to work (§15.30, issue #7), and the
+executor never reads a sensitive field's text. But the service reads the field directly in six
+places — select-word, the kana ゛゜小 key, the Hanja key, a Hanja pick's check that its reading is
+still there, the 나랏글 stroke on a written character, and the cursor check that reads the preedit
+back — and none of them asked whether the field was a password (review R03).
+
+**The fix.** One question, `mayReadEditorText()`, asked before every one of them. In a password
+field they do nothing; composing goes on, since it only ever uses what the keyboard itself holds.
+
+**Rule.** A privacy rule enforced in one path is a rule for that path. Put it in one place and have
+every read ask it.
+
+### 15.59 A clip that did not say it was a password
+
+**What happened.** Copying from a visible-password field put the text in the clip history (review
+R18, reproduced on a real EditText). The keyboard's own Copy key already refused to remember from a
+sensitive field, but the clipboard listener — which hears every copy, whichever app made it —
+judged a clip only by the copying app's marking, and a field's own Copy does not mark anything.
+
+**The fix.** `ClipRetentionGuard`: a clip is withheld when its app marked it, when the field being
+typed in is private (a password of any kind, or a field that asked for no personalised learning),
+or when a private field was left less than a second ago, because the listener can hear of a copy
+after the focus has moved on. A withheld clip stays withheld until the clipboard moves on, so the
+catch-up when the keyboard next appears cannot pick it up; only a digest of it is held.
+
+**Rule.** The clipboard does not say where a clip came from. The field the user was in does.
+
+### 15.60 A keyboard for the lock screen that opened the diary
+
+**What happened.** The service is direct-boot aware, so that there is a keyboard before the user
+first unlocks the phone. Its `onCreate` then opened the installed layout from ordinary
+SharedPreferences, which live in credential-encrypted storage — unavailable until unlock (review
+R04). Every setting, and the clip, stash and note histories, live there too.
+
+**The fix.** Until the first unlock the service's `getSharedPreferences` hands every caller —
+views and stores included, since they all reach storage through this context — preferences held in
+memory: defaults, nothing read, nothing written to disk. The clipboard is not recorded. Nothing
+personal is copied to device-protected storage to make the locked keyboard look like the unlocked
+one. At unlock — `ACTION_USER_UNLOCKED`, or the first storage read that finds the user unlocked,
+whichever comes first, once — the real settings are opened and the keyboard rebuilt. Anything
+written before that (a setting changed at the lock screen) is dropped by design.
+
+Also by design: in a field that asked for no personalised learning (an incognito tab) copies are
+not kept either, and in a terminal that declares a password variation the helpers of §15.58 stay
+out — Hanja, kana, select-word.
+
+**Rule.** Direct-boot aware means every storage path at startup answers "before unlock?" first.
+Plain defaults are a working keyboard; a copy of the user's data outside its encryption is not.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2738,4 +2789,6 @@ allow` first.
   (§15.53, §15.54).
 - [ ] The local gates fail when they should: `tests/test-ime-instrumentation-runner.sh` and
   `tests/test-sentence-matrix.sh` pass, and the runner installs the flavor it built (§15.57).
+- [ ] In a password field no helper reads the field, a copy made there is not kept, and the keyboard
+  starts before the first unlock without opening its settings (§15.58–§15.60).
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

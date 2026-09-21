@@ -17,8 +17,8 @@ android {
     defaultConfig {
         applicationId = "com.retekey"
         targetSdk = 36
-        versionCode = 194
-        versionName = "0.1.193"
+        versionCode = 195
+        versionName = "0.1.194"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

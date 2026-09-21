@@ -47,6 +47,14 @@ public class ReteKeyImeService extends InputMethodService {
     private IpaPanel ipaPanel;
     /** Physical keys whose down the panel used up, so their up is not handed to the app. */
     private final java.util.Set<Integer> keysOwnedByIpaPanel = new java.util.HashSet<>();
+    /** Whether a clip on the clipboard may be kept when nobody asked (review R18). */
+    private final ClipRetentionGuard clipGuard = new ClipRetentionGuard();
+    /** Settings by name while the user has not unlocked yet: in memory only (review R04). */
+    private final java.util.Map<String, LockedPreferences> lockedPreferences =
+        new java.util.HashMap<>();
+    private boolean userUnlocked;
+    private boolean unlockHandled = true;
+    private android.content.BroadcastReceiver unlockReceiver;
     private Toast functionToast;
     private static final int HANJA_LOOKBEHIND = 8;
     /** The candidate list while it is up, living in a floating panel of its own. */
@@ -472,7 +480,7 @@ public class ReteKeyImeService extends InputMethodService {
      */
     private void selectWordAroundCursor() {
         InputConnection inputConnection = getCurrentInputConnection();
-        if (inputConnection == null) {
+        if (inputConnection == null || !mayReadEditorText()) {
             return;
         }
         CharSequence before = inputConnection.getTextBeforeCursor(WORD_LOOKAROUND, 0);
@@ -518,7 +526,8 @@ public class ReteKeyImeService extends InputMethodService {
      * as sensitive, and that is never kept.
      */
     private void recordSystemClip(boolean fromThisField) {
-        if (!followsTheSystemClipboard()) {
+        if (!isUserUnlocked() || !followsTheSystemClipboard()) {
+            // Before the first unlock there is no history to add to, and none is started.
             return;
         }
         try {
@@ -531,12 +540,18 @@ public class ReteKeyImeService extends InputMethodService {
             if (data == null || data.getItemCount() == 0) {
                 return;
             }
-            boolean sensitive = isMarkedSensitive(data)
+            CharSequence text = data.getItemAt(0).coerceToText(this);
+            // The copying app's marking, the field being typed in and the one just left all
+            // count: a copy made in a password field is not marked by the field (review R18).
+            // Asked first and always: the guard remembers what it withholds, so a later
+            // catch-up in an ordinary field does not keep it.
+            boolean guardKeeps = clipGuard.mayKeep(
+                text, isMarkedSensitive(data), android.os.SystemClock.uptimeMillis());
+            boolean sensitive = !guardKeeps
                 || (fromThisField && editorProfile.capabilities().isSensitive());
             // The list lives in storage; the first record after the keyboard starts has to add to
             // it, not to an empty one it would then write over the whole saved history with.
             loadClipsOnce();
-            CharSequence text = data.getItemAt(0).coerceToText(this);
             if (text != null && text.toString().equals(forgottenClip)) {
                 // Taken off the list on purpose while it is still on the clipboard: leave it off
                 // until the clipboard moves on to something else.
@@ -709,6 +724,124 @@ public class ReteKeyImeService extends InputMethodService {
 
     private SharedPreferences viewPrefs() {
         return getSharedPreferences("retekey_view", MODE_PRIVATE);
+    }
+
+    /**
+     * Whether the keyboard may read the text of the field being typed in. Not in a password field
+     * of any kind (review R03): composing there still works — it uses only what the keyboard
+     * itself holds — but select-word, kana and Hanja conversion, the 나랏글 stroke on a written
+     * character and the cursor check that reads the preedit back all stay out.
+     */
+    private boolean mayReadEditorText() {
+        return editorProfile != null && !editorProfile.capabilities().isSensitive();
+    }
+
+    /** A field whose text must not be kept by the keyboard: a password, or "no learning". */
+    private static boolean isPrivateField(EditorProfile profile, EditorInfo attribute) {
+        return ClipRetentionGuard.isPrivateField(
+            profile != null && profile.capabilities().isSensitive(),
+            attribute == null ? 0 : attribute.imeOptions);
+    }
+
+    /**
+     * Every setting, layout and history this keyboard has lives in credential-encrypted storage,
+     * which cannot be opened before the user first unlocks the device — and the service is
+     * direct-boot aware so that there is a keyboard at the lock screen. Until then every caller,
+     * the views and stores included (they all reach storage through this context), gets settings
+     * held in memory: defaults, nothing read, nothing written to disk, nothing personal moved to
+     * device-protected storage to make the locked keyboard look like the unlocked one (review
+     * R04). On unlock the real settings are opened and the keyboard rebuilt from them.
+     */
+    @Override
+    public SharedPreferences getSharedPreferences(String name, int mode) {
+        if (isUserUnlocked()) {
+            return super.getSharedPreferences(name, mode);
+        }
+        LockedPreferences locked = lockedPreferences.get(name);
+        if (locked == null) {
+            locked = new LockedPreferences();
+            lockedPreferences.put(name, locked);
+        }
+        return locked;
+    }
+
+    private boolean isUserUnlocked() {
+        if (userUnlocked || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            return true;
+        }
+        try {
+            android.os.UserManager users = Compat.systemService(
+                this, Context.USER_SERVICE, android.os.UserManager.class);
+            userUnlocked = users == null || users.isUserUnlocked();
+        } catch (RuntimeException unknown) {
+            userUnlocked = true;
+        }
+        if (userUnlocked && !unlockHandled) {
+            // Unlocked, and the broadcast has not said so (yet, or ever): reopen the settings
+            // from here too. Posted, never inline — this is reached from inside view
+            // construction, and rebuilding the view there would re-enter setInputView.
+            mainHandler.post(this::onUserUnlocked);
+        }
+        return userUnlocked;
+    }
+
+    /** Waits for the first unlock when the service started before it. */
+    private void watchForUnlock() {
+        if (isUserUnlocked()) {
+            return;
+        }
+        unlockHandled = false;
+        android.util.Log.i("ReteKey", "started before unlock: settings held in memory");
+        unlockReceiver = new android.content.BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                onUserUnlocked();
+            }
+        };
+        try {
+            registerReceiver(unlockReceiver,
+                new android.content.IntentFilter(Intent.ACTION_USER_UNLOCKED));
+        } catch (RuntimeException refused) {
+            // The first storage read after unlock then does the reopening (isUserUnlocked).
+            logTeardownFailure("unlock receiver", refused);
+            unlockReceiver = null;
+        }
+    }
+
+    /** Reopens the real settings once, after the first unlock (receiver or first read). */
+    private void onUserUnlocked() {
+        if (unlockHandled) {
+            return;
+        }
+        unlockHandled = true;
+        userUnlocked = true;
+        android.util.Log.i("ReteKey", "user unlocked: settings reopened");
+        lockedPreferences.clear();
+        stopWatchingForUnlock();
+        UserLayouts.load(this);
+        try {
+            viewPrefs().registerOnSharedPreferenceChangeListener(barPrefsListener);
+        } catch (RuntimeException unavailable) {
+            // The settings then take effect at the next start of a field instead.
+        }
+        clipsLoaded = false;
+        if (keyboardView != null) {
+            keyboardView.reloadLetterLayouts();
+        }
+        reloadHardwareBindings();
+        rebuildInputView();
+    }
+
+    private void stopWatchingForUnlock() {
+        if (unlockReceiver == null) {
+            return;
+        }
+        try {
+            unregisterReceiver(unlockReceiver);
+        } catch (RuntimeException neverRegistered) {
+            // Nothing to unhook.
+        }
+        unlockReceiver = null;
     }
 
     /**
@@ -1206,6 +1339,8 @@ public class ReteKeyImeService extends InputMethodService {
         if (TerminalCompositionSettings.appliesTo(editorProfile, composeTerminalOnStrip())) {
             editorProfile = editorProfile.composingOffScreen();
         }
+        clipGuard.onField(isPrivateField(editorProfile, attribute),
+            android.os.SystemClock.uptimeMillis());
         showComposingStrip("");
         sessionController.start(
             ScaffoldSessionState.EMPTY,
@@ -1436,6 +1571,7 @@ public class ReteKeyImeService extends InputMethodService {
     public void onDestroy() {
         dispatcher.reset();
         finishSession();
+        stopWatchingForUnlock();
         try {
             android.content.ClipboardManager manager = Compat.systemService(
                 this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
@@ -1456,6 +1592,7 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onCreate() {
         super.onCreate();
+        watchForUnlock();
         // The layout somebody installed themselves, read once: the pages are drawn from a static
         // that knows nothing of Android (issue #11).
         UserLayouts.load(this);
@@ -1648,7 +1785,7 @@ public class ReteKeyImeService extends InputMethodService {
                     newSelStart,
                     newSelEnd,
                     preedit,
-                    connection == null || preedit.isEmpty()
+                    connection == null || preedit.isEmpty() || !mayReadEditorText()
                         ? null
                         : connection.getTextBeforeCursor(preedit.length(), 0)
                 );
@@ -1848,7 +1985,7 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         InputConnection ic = getCurrentInputConnection();
-        if (ic == null) {
+        if (ic == null || !mayReadEditorText()) {
             return;
         }
         CharSequence before;
@@ -2489,7 +2626,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     private void handleHanja() {
         InputConnection ic = getCurrentInputConnection();
-        if (ic == null) {
+        if (ic == null || !mayReadEditorText()) {
             return;
         }
         MappedHanjaTable dictionary = HanjaDictionary.get(this);
@@ -2635,7 +2772,8 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private boolean hanjaSourceStillInPlace(InputConnection ic) {
-        if (pendingSource == null || pendingGeneration != sessionController.generation()) {
+        if (pendingSource == null || pendingGeneration != sessionController.generation()
+            || !mayReadEditorText()) {
             return false;
         }
         if (!pendingFromSelection) {
@@ -2873,7 +3011,7 @@ public class ReteKeyImeService extends InputMethodService {
      */
     private CharSequence characterBeforeCursor() {
         InputConnection ic = getCurrentInputConnection();
-        if (ic == null) {
+        if (ic == null || !mayReadEditorText()) {
             return null;
         }
         try {
@@ -2930,6 +3068,7 @@ public class ReteKeyImeService extends InputMethodService {
         inputProcessor.reset();
         showComposingStrip("");
         editorProfile = EditorProfile.unsupported();
+        clipGuard.onField(false, android.os.SystemClock.uptimeMillis());
         if (editorFailureToast != null) {
             editorFailureToast.cancel();
             editorFailureToast = null;
