@@ -37,6 +37,7 @@ public final class NotepadView extends LinearLayout {
     private final KeyboardPalette palette;
     private NoteList notes;
     private Screen screen = Screen.LIST;
+    /** The id of the note open in the editor, or null. */
     private String openStamp;
 
     private final LinearLayout listScreen;
@@ -707,10 +708,10 @@ public final class NotepadView extends LinearLayout {
     // ---- the list ----
 
     private void newNote() {
-        Note note = new Note(Note.stampOf(System.currentTimeMillis()), "", "");
+        Note note = Note.made(System.currentTimeMillis(), "", "");
         notes = notes.added(note);
         changed();
-        open(note.stamp());
+        open(note.id());
     }
 
     private void deleteSelected() {
@@ -732,7 +733,7 @@ public final class NotepadView extends LinearLayout {
      */
     void showPreviewNote() {
         if (!notes.isEmpty()) {
-            open(notes.notes().get(0).stamp());
+            open(notes.notes().get(0).id());
         }
     }
 
@@ -741,12 +742,12 @@ public final class NotepadView extends LinearLayout {
         preeditLength = 0;
     }
 
-    private void open(String stamp) {
-        Note note = notes.byStamp(stamp);
+    private void open(String id) {
+        Note note = notes.byId(id);
         if (note == null) {
             return;
         }
-        openStamp = stamp;
+        openStamp = id;
         screen = Screen.NOTE;
         stampLabel.setText(note.stamp());
         titleField.setText(note.title());
@@ -771,7 +772,7 @@ public final class NotepadView extends LinearLayout {
         if (openStamp == null) {
             return;
         }
-        Note note = notes.byStamp(openStamp);
+        Note note = notes.byId(openStamp);
         if (note == null) {
             return;
         }
@@ -840,18 +841,18 @@ public final class NotepadView extends LinearLayout {
         row.setMinimumHeight(dp(44));
 
         CheckBox tick = new CheckBox(getContext());
-        tick.setChecked(notes.isSelected(note.stamp()));
+        tick.setChecked(notes.isSelected(note.id()));
         tick.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                notes = notes.toggledSelection(note.stamp());
+                notes = notes.toggledSelection(note.id());
                 refresh();
             }
         });
         row.addView(tick, cell(dp(34)));
 
-        row.addView(moveButton("▲", note.stamp(), -1), cell(dp(28)));
-        row.addView(moveButton("▼", note.stamp(), 1), cell(dp(28)));
+        row.addView(moveButton("▲", note.id(), -1), cell(dp(28)));
+        row.addView(moveButton("▼", note.id(), 1), cell(dp(28)));
 
         TextView stamp = new TextView(getContext());
         stamp.setText(note.stamp());
@@ -869,14 +870,14 @@ public final class NotepadView extends LinearLayout {
         title.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                open(note.stamp());
+                open(note.id());
             }
         });
         row.addView(title, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
         return row;
     }
 
-    private Button moveButton(String glyph, final String stamp, final int delta) {
+    private Button moveButton(String glyph, final String id, final int delta) {
         Button button = new Button(getContext(), null, android.R.attr.borderlessButtonStyle);
         button.setText(glyph);
         button.setTextColor(palette.keyText);
@@ -890,7 +891,7 @@ public final class NotepadView extends LinearLayout {
         button.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                notes = notes.moved(stamp, delta);
+                notes = notes.moved(id, delta);
                 changed();
                 refresh();
             }

@@ -111,9 +111,8 @@ final class ClipHistory {
         if (value.trim().isEmpty()) {
             return this;
         }
-        if (value.length() > MAX_LENGTH) {
-            value = value.substring(0, MAX_LENGTH);
-        }
+        // Cut by whole characters: 4000 units through an emoji is half a character (R08).
+        value = Scalars.truncate(value, MAX_LENGTH);
         List<Clip> next = new ArrayList<>(clips.size() + 1);
         boolean wasPinned = false;
         for (Clip clip : clips) {

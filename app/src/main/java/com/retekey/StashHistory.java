@@ -43,6 +43,25 @@ final class StashHistory {
             this.text = text;
             this.keptAt = keptAt;
         }
+
+        // Two kept items are the same when their text and moment are, which is what the store's
+        // migration compares before it writes anything (review W4).
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (!(other instanceof Kept)) {
+                return false;
+            }
+            Kept that = (Kept) other;
+            return keptAt == that.keptAt && text.equals(that.text);
+        }
+
+        @Override
+        public int hashCode() {
+            return text.hashCode() * 31 + (int) (keptAt ^ (keptAt >>> 32));
+        }
     }
 
     private static final StashHistory EMPTY = new StashHistory(Collections.<Kept>emptyList());
@@ -84,9 +103,7 @@ final class StashHistory {
         if (value.trim().isEmpty()) {
             return this;
         }
-        if (value.length() > MAX_LENGTH) {
-            value = value.substring(0, MAX_LENGTH);
-        }
+        value = Scalars.truncate(value, MAX_LENGTH);
         List<Kept> next = new ArrayList<>(items.size() + 1);
         for (Kept item : items) {
             if (!item.text.equals(value)) {

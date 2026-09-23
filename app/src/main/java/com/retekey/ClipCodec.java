@@ -4,40 +4,42 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * How the clip history is written down and read back.
- *
- * <p>The same idea as {@link NoteCodec}, and for the same reason: a clip is exactly the place where
- * every separator anyone can type will eventually appear, so the records are separated by U+001E
- * and the pin flag by U+001F — two characters no keyboard produces. A clip carrying one anyway is
- * dropped on the way in rather than corrupting the record after it.
+ * How the clip history is written down and read back: two fields a clip — the pin flag and the
+ * text — through {@link RecordCodec}. The first form separated records with U+001E and fields
+ * with U+001F and dropped any clip that contained one, so a copied fragment could be shown in the
+ * list and be gone after a restart (review finding R07). That form is still read once, so nothing
+ * saved before is lost.
  */
 final class ClipCodec {
-    /** U+001E RECORD SEPARATOR, between clips. */
+    /** U+001E RECORD SEPARATOR, between clips in the first form. */
     private static final String RECORD = "\u001E";
-    /** U+001F UNIT SEPARATOR, between a clip's pin flag and its text. */
+    /** U+001F UNIT SEPARATOR, between a clip's pin flag and its text in the first form. */
     private static final String FIELD = "\u001F";
+    private static final int FIELDS = 2;
 
     private ClipCodec() {
     }
 
     static String encode(List<ClipHistory.Clip> clips) {
-        StringBuilder out = new StringBuilder();
+        List<String[]> records = new ArrayList<>(clips.size());
         for (ClipHistory.Clip clip : clips) {
-            if (clip.text.contains(RECORD) || clip.text.contains(FIELD)) {
-                continue;
-            }
-            if (out.length() > 0) {
-                out.append(RECORD);
-            }
-            out.append(clip.pinned ? '1' : '0').append(FIELD).append(clip.text);
+            records.add(new String[] {clip.pinned ? "1" : "0", clip.text});
         }
-        return out.toString();
+        return RecordCodec.encode(records, FIELDS);
     }
 
     static ClipHistory decode(String stored) {
-        List<ClipHistory.Clip> clips = new ArrayList<>();
         if (stored == null || stored.isEmpty()) {
             return ClipHistory.empty();
+        }
+        List<ClipHistory.Clip> clips = new ArrayList<>();
+        if (RecordCodec.isNewFormat(stored)) {
+            for (String[] record : RecordCodec.decode(stored, FIELDS)) {
+                if (!record[1].isEmpty()) {
+                    clips.add(new ClipHistory.Clip(record[1], "1".equals(record[0])));
+                }
+            }
+            return ClipHistory.of(clips);
         }
         for (String record : stored.split(RECORD, -1)) {
             int field = record.indexOf(FIELD);

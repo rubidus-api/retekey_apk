@@ -2648,6 +2648,51 @@ out — Hanja, kana, select-word.
 **Rule.** Direct-boot aware means every storage path at startup answers "before unlock?" first.
 Plain defaults are a working keyboard; a copy of the user's data outside its encryption is not.
 
+### 15.61 Two notes written in the same minute
+
+**What happened.** A note's identity was its stamp, and the stamp is minutes: `20260713-1448`. Two
+notes written inside one minute were therefore one note to everything that looks a note up. Ticking
+one and deleting selected deleted both; editing one could land on the other; the arrows moved
+whichever came first (review R05).
+
+**The fix.** A note has an id of its own, made when the note is made and never shown. Opening,
+editing, selecting, moving and deleting all go by it. The stamp is what it always was on screen: a
+date. Notes written by the older build get an id from their place in the stored text, which is the
+same id every time that text is read.
+
+**Rule.** A timestamp is a fact about a record, not a name for it. Anything a user can make twice
+needs an identity that cannot collide.
+
+### 15.62 A separator inside the thing being separated
+
+**What happened.** The notes, the clip list and the shared-text stash were stored with U+001E
+between records and U+001F between fields, on the stated grounds that no keyboard types those.
+Text does not only come from a keyboard. Pasted or entered by code point, one U+001E split a note
+into two and cut its body; a clip or a shared item containing one was silently dropped on save,
+after the keyboard had shown it and said it was kept (review R06, R07).
+
+**The fix.** One form for all three lists: a header naming the number of fields, then every field
+written as its length, a colon and its text. Nothing inside a field can end it. The old form is
+still read, once; the text it came from is kept under `<key>_v1`, and the new text is written only
+when reading it back gives exactly what the old text gave. Text in the new form that does not read
+back as itself is kept under `<key>_damaged` and what could be read is used.
+
+**Rule.** "No one can type that character" is not a property of stored text. Say how long a field
+is instead of hoping nothing in it looks like the end.
+
+### 15.63 A panel holding yesterday's list
+
+**What happened.** The clip and stash panels were built from the lists the service held when they
+opened. Text shared into the keyboard while a panel stayed open went into the store, not into that
+copy — and forgetting one item from the panel wrote the copy back, erasing the newly shared text
+(review R19, reproduced on a device).
+
+**The fix.** Every change a panel makes starts from what is stored now: load, apply the change by
+its text, save. The panel's own copy is only what it draws.
+
+**Rule.** A view that has been open for a while holds a photograph. Never write a photograph back
+over the thing it was taken of.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2791,4 +2836,6 @@ allow` first.
   `tests/test-sentence-matrix.sh` pass, and the runner installs the flavor it built (§15.57).
 - [ ] In a password field no helper reads the field, a copy made there is not kept, and the keyboard
   starts before the first unlock without opening its settings (§15.58–§15.60).
+- [ ] Notes, clips and shared text keep separators, tabs and emoji across a restart, two notes
+  made in one minute stay two, and a panel left open does not erase newer text (§15.61–§15.63).
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

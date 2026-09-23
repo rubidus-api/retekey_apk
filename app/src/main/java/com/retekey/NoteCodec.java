@@ -6,39 +6,57 @@ import java.util.List;
 /**
  * How the notes are written down and read back.
  *
- * <p>One string holds them all: each note is its stamp, a tab, its title, a newline, and then its
- * body, with the notes separated by the record separator U+001E — a character no keyboard can type
- * and no note can therefore contain. A line-based format was tempting and wrong: a note's body is
- * exactly the place where every separator anyone can type will eventually appear.
+ * <p>Four fields a note — id, stamp, title, body — written through {@link RecordCodec}, where a
+ * field says how long it is. The first form put a tab between stamp and title, a newline before
+ * the body and U+001E between notes, on the grounds that no keyboard types U+001E; a pasted one
+ * turned a note into two notes and cut its body (review finding R06). That form is still read,
+ * once, so nothing written before is lost: each old note is given an id from its place in the
+ * stored order, which is the same id every time the same stored text is read.
  *
  * <p>Android-free, so a note written today can be read back by a test rather than by a device.
  */
 public final class NoteCodec {
-    /** U+001E RECORD SEPARATOR: the one character that cannot arrive from a keyboard. */
+    /** U+001E RECORD SEPARATOR: what the first form put between notes. */
     private static final String RECORD = "\u001E";
+    private static final int FIELDS = 4;
 
     private NoteCodec() {
     }
 
     public static String encode(List<Note> notes) {
-        StringBuilder out = new StringBuilder();
+        List<String[]> records = new ArrayList<>(notes.size());
         for (Note note : notes) {
-            if (out.length() > 0) {
-                out.append(RECORD);
-            }
-            out.append(note.stamp()).append('\t').append(note.title()).append('\n')
-                .append(note.body());
+            records.add(new String[] {note.id(), note.stamp(), note.title(), note.body()});
         }
-        return out.toString();
+        return RecordCodec.encode(records, FIELDS);
     }
 
     public static List<Note> decode(String text) {
-        List<Note> notes = new ArrayList<>();
         if (text == null || text.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (RecordCodec.isNewFormat(text)) {
+            List<Note> notes = new ArrayList<>();
+            for (String[] record : RecordCodec.decode(text, FIELDS)) {
+                if (!record[0].isEmpty() && !record[1].isEmpty()) {
+                    notes.add(new Note(record[0], record[1], record[2], record[3]));
+                }
+            }
             return notes;
         }
-        for (String record : text.split(RECORD, -1)) {
-            Note note = decodeOne(record);
+        return decodeFirstForm(text);
+    }
+
+    /** Whether {@code text} was written by the form this codec writes now. */
+    static boolean isCurrentForm(String text) {
+        return RecordCodec.isNewFormat(text);
+    }
+
+    private static List<Note> decodeFirstForm(String text) {
+        List<Note> notes = new ArrayList<>();
+        String[] records = text.split(RECORD, -1);
+        for (int i = 0; i < records.length; i++) {
+            Note note = decodeOne("legacy-" + i, records[i]);
             if (note != null) {
                 notes.add(note);
             }
@@ -46,7 +64,7 @@ public final class NoteCodec {
         return notes;
     }
 
-    private static Note decodeOne(String record) {
+    private static Note decodeOne(String id, String record) {
         if (record.isEmpty()) {
             return null;
         }
@@ -59,6 +77,6 @@ public final class NoteCodec {
         if (stamp.isEmpty()) {
             return null;
         }
-        return new Note(stamp, title, body);
+        return new Note(id, stamp, title, body);
     }
 }

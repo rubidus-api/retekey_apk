@@ -101,7 +101,9 @@ final class IpaPanel {
     }
 
     IpaPanel backspace() {
-        return query.isEmpty() ? this : withQuery(query.substring(0, query.length() - 1));
+        // One whole character: a supplementary one is two units, and taking one of them would
+        // leave the query malformed (R08).
+        return query.isEmpty() ? this : withQuery(Scalars.withoutLastScalar(query));
     }
 
     /** The line above the choices: what was asked, in the user's own words. */

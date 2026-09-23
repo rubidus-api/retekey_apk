@@ -68,13 +68,13 @@ public final class NoteList {
         return ascending;
     }
 
-    /** The stamps of the notes whose checkbox is ticked. */
+    /** The ids of the notes whose checkbox is ticked. */
     public Set<String> selected() {
         return selected;
     }
 
-    public boolean isSelected(String stamp) {
-        return selected.contains(stamp);
+    public boolean isSelected(String id) {
+        return selected.contains(id);
     }
 
     /** Whether every note is ticked — what the header checkbox shows. */
@@ -93,11 +93,11 @@ public final class NoteList {
             .sorted(sort, ascending);
     }
 
-    /** Replaces the note with this one's stamp, leaving the order alone. */
+    /** Replaces the note with this one's id, leaving the order alone. */
     public NoteList replaced(Note note) {
         List<Note> next = new ArrayList<>(notes);
         for (int i = 0; i < next.size(); i++) {
-            if (next.get(i).stamp().equals(note.stamp())) {
+            if (next.get(i).id().equals(note.id())) {
                 next.set(i, note);
                 break;
             }
@@ -105,9 +105,9 @@ public final class NoteList {
         return new NoteList(next, new LinkedHashSet<>(selected), sort, ascending);
     }
 
-    public Note byStamp(String stamp) {
+    public Note byId(String id) {
         for (Note note : notes) {
-            if (note.stamp().equals(stamp)) {
+            if (note.id().equals(id)) {
                 return note;
             }
         }
@@ -157,9 +157,9 @@ public final class NoteList {
     }
 
     /** One note moved a place up or down; a hand-made order is a manual sort from then on. */
-    public NoteList moved(String stamp, int delta) {
+    public NoteList moved(String id, int delta) {
         List<Note> next = new ArrayList<>(notes);
-        int from = indexOf(stamp);
+        int from = indexOf(id);
         int to = from + delta;
         if (from < 0 || to < 0 || to >= next.size()) {
             return this;
@@ -169,19 +169,19 @@ public final class NoteList {
         return new NoteList(next, new LinkedHashSet<>(selected), Sort.MANUAL, ascending);
     }
 
-    private int indexOf(String stamp) {
+    private int indexOf(String id) {
         for (int i = 0; i < notes.size(); i++) {
-            if (notes.get(i).stamp().equals(stamp)) {
+            if (notes.get(i).id().equals(id)) {
                 return i;
             }
         }
         return -1;
     }
 
-    public NoteList toggledSelection(String stamp) {
+    public NoteList toggledSelection(String id) {
         Set<String> next = new LinkedHashSet<>(selected);
-        if (!next.remove(stamp)) {
-            next.add(stamp);
+        if (!next.remove(id)) {
+            next.add(id);
         }
         return new NoteList(new ArrayList<>(notes), next, sort, ascending);
     }
@@ -191,7 +191,7 @@ public final class NoteList {
         Set<String> next = new LinkedHashSet<>();
         if (!allSelected()) {
             for (Note note : notes) {
-                next.add(note.stamp());
+                next.add(note.id());
             }
         }
         return new NoteList(new ArrayList<>(notes), next, sort, ascending);
@@ -201,7 +201,7 @@ public final class NoteList {
     public NoteList withoutSelected() {
         List<Note> next = new ArrayList<>();
         for (Note note : notes) {
-            if (!selected.contains(note.stamp())) {
+            if (!selected.contains(note.id())) {
                 next.add(note);
             }
         }

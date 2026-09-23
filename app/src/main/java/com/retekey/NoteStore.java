@@ -25,8 +25,15 @@ final class NoteStore {
         if (context == null) {
             return NoteList.empty();
         }
-        return NoteList.of(NoteCodec.decode(prefs(context).getString(KEY_NOTES, "")))
-            .sortedBy(NoteList.Sort.STAMP);
+        SharedPreferences prefs = prefs(context);
+        String stored = prefs.getString(KEY_NOTES, "");
+        // Ids are given to notes from the first form by their place in the stored order, so this
+        // happens before any sorting (review R05, R06).
+        java.util.List<Note> notes = NoteCodec.decode(stored);
+        String rewritten = NoteCodec.encode(notes);
+        StoreMigration.rewrite(
+            prefs, KEY_NOTES, stored, rewritten, notes.equals(NoteCodec.decode(rewritten)));
+        return NoteList.of(notes).sortedBy(NoteList.Sort.STAMP);
     }
 
     static void save(Context context, NoteList notes) {

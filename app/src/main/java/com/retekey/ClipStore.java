@@ -24,7 +24,13 @@ final class ClipStore {
         if (context == null) {
             return ClipHistory.empty();
         }
-        return ClipCodec.decode(prefs(context).getString(KEY_CLIPS, ""));
+        SharedPreferences prefs = prefs(context);
+        String stored = prefs.getString(KEY_CLIPS, "");
+        ClipHistory history = ClipCodec.decode(stored);
+        String rewritten = ClipCodec.encode(history.clips());
+        StoreMigration.rewrite(prefs, KEY_CLIPS, stored, rewritten,
+            history.clips().equals(ClipCodec.decode(rewritten).clips()));
+        return history;
     }
 
     static void save(Context context, ClipHistory history) {

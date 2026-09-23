@@ -26,7 +26,13 @@ final class StashStore {
         if (context == null) {
             return StashHistory.empty();
         }
-        return StashCodec.decode(prefs(context).getString(KEY_ITEMS, ""));
+        SharedPreferences prefs = prefs(context);
+        String stored = prefs.getString(KEY_ITEMS, "");
+        StashHistory history = StashCodec.decode(stored);
+        String rewritten = StashCodec.encode(history.items());
+        StoreMigration.rewrite(prefs, KEY_ITEMS, stored, rewritten,
+            history.items().equals(StashCodec.decode(rewritten).items()));
+        return history;
     }
 
     static void save(Context context, StashHistory history) {

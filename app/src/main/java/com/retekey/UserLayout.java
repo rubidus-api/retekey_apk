@@ -160,11 +160,14 @@ public final class UserLayout {
     private static String capOf(String cap, String name) {
         String from = cap == null || cap.trim().isEmpty() ? name : cap.trim();
         StringBuilder out = new StringBuilder(3);
-        for (int i = 0; i < from.length() && out.length() < 3; i++) {
-            char ch = from.charAt(i);
-            if (!Character.isWhitespace(ch)) {
-                out.append(ch);
+        // By code point: a character outside the basic plane takes two units, and stopping
+        // between them would leave half of it on the key (R08).
+        for (int i = 0; i < from.length() && out.length() < 3;) {
+            int codePoint = from.codePointAt(i);
+            if (!Character.isWhitespace(codePoint)) {
+                out.appendCodePoint(codePoint);
             }
+            i += Character.charCount(codePoint);
         }
         while (out.length() < 3) {
             out.append('·');
@@ -173,6 +176,6 @@ public final class UserLayout {
     }
 
     private static String trimmedTo(String text, int limit) {
-        return text.length() <= limit ? text : text.substring(0, limit);
+        return Scalars.truncate(text, limit);
     }
 }

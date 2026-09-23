@@ -642,7 +642,7 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onPin(String text, boolean pinned) {
-                clips = clips.setPinned(text, pinned);
+                clips = freshClips().setPinned(text, pinned);
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
             }
@@ -650,14 +650,14 @@ public class ReteKeyImeService extends InputMethodService {
             @Override
             public void onForget(String text) {
                 forgottenClip = text;
-                clips = clips.remove(text);
+                clips = freshClips().remove(text);
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
             }
 
             @Override
             public void onClearAll() {
-                clips = clips.clearUnpinned();
+                clips = freshClips().clearUnpinned();
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
             }
@@ -678,20 +678,38 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onForgetKept(String text) {
-                stash = stash.remove(text);
+                stash = freshStash().remove(text);
                 StashStore.save(ReteKeyImeService.this, stash);
                 showPanelLists(panel);
             }
 
             @Override
             public void onClearKept() {
-                stash = stash.clear();
+                stash = freshStash().clear();
                 StashStore.save(ReteKeyImeService.this, stash);
                 showPanelLists(panel);
             }
         });
         showPanelLists(panel);
         return panel;
+    }
+
+    /**
+     * The clip list as the store has it now. A panel that was opened a while ago holds the list
+     * as it was then, and writing that back erases anything recorded since — text shared into the
+     * keyboard while the panel stayed open disappeared when an older item was forgotten from it
+     * (review finding R19). Every change the panel makes starts from what is stored.
+     */
+    private ClipHistory freshClips() {
+        clips = ClipStore.load(this);
+        clipsLoaded = true;
+        return clips;
+    }
+
+    /** The shared-text list as the store has it now; see {@link #freshClips()}. */
+    private StashHistory freshStash() {
+        stash = StashStore.load(this);
+        return stash;
     }
 
     /** Both of the panel's lists, and whether the clipboard one is being followed at all. */
