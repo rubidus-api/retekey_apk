@@ -57,6 +57,60 @@ public final class UserLayout {
     public static final int MAX_HOLDS = 5;
     /** How long a name may be before it stops fitting anywhere it is shown. */
     public static final int MAX_NAME = 40;
+    /**
+     * Sizes a layout file may not exceed. They are ceilings, not shapes: the largest of the
+     * documented examples is 186 characters, its longest line 57, and its keys type two characters
+     * with holds of one, so every one of these is many times what a layout needs. They exist
+     * because a file arrives from somewhere else, and a key that typed two hundred thousand
+     * characters was accepted before (review finding R09).
+     */
+    public static final int MAX_TEXT = 8192;
+    /** The most a single line may hold. */
+    public static final int MAX_LINE = 1024;
+    /** The most a key may type: room for a cluster with its marks, not for a paragraph. */
+    public static final int MAX_TYPES = 16;
+    /** The most one of a key's holds may type. */
+    public static final int MAX_HOLD = 16;
+
+    /** Why a file is not a layout this version can install. */
+    public enum Problem {
+        /** It is one. */
+        NONE,
+        /** It does not begin with the header at all. */
+        NOT_A_LAYOUT,
+        /** The header names a version this build does not know. */
+        WRONG_VERSION,
+        /** Longer than {@link #MAX_TEXT}, or a line longer than {@link #MAX_LINE}. */
+        TOO_BIG,
+        LINE_TOO_LONG,
+        /** A key types, or holds, more than a key can (see {@link #MAX_TYPES}). */
+        KEY_TOO_LONG,
+        /** A row with no keys in it. */
+        EMPTY_ROW,
+        /** No {@code name:} line, or an empty one. */
+        NO_NAME,
+        /** Not the three rows the keyboard's shape asks for. */
+        NOT_THREE_ROWS
+    }
+
+    /** What a file turned out to be: the layout, or why it is not one. */
+    public static final class Checked {
+        private final UserLayout layout;
+        private final Problem problem;
+
+        private Checked(UserLayout layout, Problem problem) {
+            this.layout = layout;
+            this.problem = problem;
+        }
+
+        public UserLayout layout() {
+            return layout;
+        }
+
+        public Problem problem() {
+            return problem;
+        }
+    }
 
     /** One key: what it types, and what it holds. */
     public static final class Key {
@@ -94,7 +148,25 @@ public final class UserLayout {
 
     /** Whether this text looks like a layout file at all — the cheapest question there is. */
     public static boolean looksLikeOne(String text) {
-        return text != null && text.trim().startsWith(HEADER);
+        if (text == null) {
+            return false;
+        }
+        String first = withoutByteOrderMark(text).trim();
+        int end = first.indexOf('\n');
+        if (end >= 0) {
+            first = first.substring(0, end);
+        }
+        // The version is the whole word: "retekey-layout 10" is a format this build has not seen.
+        return first.trim().equals(HEADER);
+    }
+
+    /**
+     * A byte-order mark is what a Windows editor writes before the first character. It is
+     * invisible, it is not the writer's doing, and without this it would make the header "not the
+     * first thing in the file" — the commonest way a layout fails to read.
+     */
+    private static String withoutByteOrderMark(String text) {
+        return text.startsWith("\uFEFF") ? text.substring(1) : text;
     }
 
     /**
@@ -102,13 +174,31 @@ public final class UserLayout {
      * whole error report on purpose: the caller has one thing to say to the user either way.
      */
     public static UserLayout parse(String text) {
-        if (!looksLikeOne(text)) {
-            return null;
+        return check(text).layout();
+    }
+
+    /** The layout, or the reason there is not one — what the install screen tells the user. */
+    public static Checked check(String text) {
+        if (text == null) {
+            return new Checked(null, Problem.NOT_A_LAYOUT);
+        }
+        String body = withoutByteOrderMark(text);
+        if (body.length() > MAX_TEXT) {
+            // Asked before the text is split, so a huge file is refused rather than taken apart.
+            return new Checked(null, Problem.TOO_BIG);
+        }
+        if (!looksLikeOne(body)) {
+            return new Checked(null,
+                body.trim().startsWith("retekey-layout") ? Problem.WRONG_VERSION
+                    : Problem.NOT_A_LAYOUT);
         }
         String name = null;
         String cap = null;
         List<List<Key>> rows = new ArrayList<>(ROWS);
-        for (String raw : text.split("\r\n|\n|\r")) {
+        for (String raw : body.split("\r\n|\n|\r")) {
+            if (raw.length() > MAX_LINE) {
+                return new Checked(null, Problem.LINE_TOO_LONG);
+            }
             String line = raw.trim();
             if (line.isEmpty() || line.startsWith("#") || line.equals(HEADER)) {
                 continue;
@@ -120,20 +210,28 @@ public final class UserLayout {
             } else if (line.startsWith("row:")) {
                 if (rows.size() < ROWS) {
                     List<Key> keys = keysOf(line.substring(4).trim());
+                    if (keys == null) {
+                        // A key longer than a key: refused, never cut down to fit (R09).
+                        return new Checked(null, Problem.KEY_TOO_LONG);
+                    }
                     if (keys.isEmpty()) {
-                        return null;
+                        return new Checked(null, Problem.EMPTY_ROW);
                     }
                     rows.add(keys);
                 }
             }
             // Anything else is a line from a later version of the format: ignored, not refused.
         }
-        if (name == null || name.isEmpty() || rows.size() != ROWS) {
-            return null;
+        if (name == null || name.isEmpty()) {
+            return new Checked(null, Problem.NO_NAME);
         }
-        return new UserLayout(name, capOf(cap, name), rows);
+        if (rows.size() != ROWS) {
+            return new Checked(null, Problem.NOT_THREE_ROWS);
+        }
+        return new Checked(new UserLayout(name, capOf(cap, name), rows), Problem.NONE);
     }
 
+    /** The keys of one row, or null when one of them is longer than a key may be. */
     private static List<Key> keysOf(String row) {
         List<Key> keys = new ArrayList<>(MAX_KEYS_PER_ROW);
         for (String cell : row.split("\\s+")) {
@@ -145,8 +243,14 @@ public final class UserLayout {
             if (types.isEmpty()) {
                 continue;
             }
+            if (types.length() > MAX_TYPES) {
+                return null;
+            }
             List<String> holds = new ArrayList<>(MAX_HOLDS);
             for (int i = 1; i < parts.length && holds.size() < MAX_HOLDS; i++) {
+                if (parts[i].length() > MAX_HOLD) {
+                    return null;
+                }
                 if (!parts[i].isEmpty()) {
                     holds.add(parts[i]);
                 }

@@ -2693,6 +2693,25 @@ its text, save. The panel's own copy is only what it draws.
 **Rule.** A view that has been open for a while holds a photograph. Never write a photograph back
 over the thing it was taken of.
 
+### 15.64 A layout that installed itself
+
+**What happened.** The layout door took what arrived and installed it. Any app that can offer a
+share could replace the keyboard's layout by sending one, and the only word about it was a toast
+afterwards (review R13). The parser was as trusting: `startsWith("retekey-layout 1")` accepted a
+file marked version 10, and a key was allowed to type two hundred thousand characters, split and
+stored (R09).
+
+**The fix.** The door asks. The name, the key cap, the first row of keys and the layout it would
+replace, with Install and Cancel; nothing is written until Install. A file is read off the main
+thread — somebody else's provider decides how long that takes — one byte past the ceiling, so a
+file over it is refused rather than read as the layout its beginning resembles. The version is the
+whole word, a byte-order mark before it is allowed, and the file, its lines and its keys have
+sizes derived from the layouts that already work: many times what any of them needs, and a file
+past them is refused with the reason rather than trimmed to fit.
+
+**Rule.** An exported door is an offer, not an instruction. Show what arrived, say what it would
+replace, and change nothing until the person whose keyboard it is says so.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2838,4 +2857,6 @@ allow` first.
   starts before the first unlock without opening its settings (§15.58–§15.60).
 - [ ] Notes, clips and shared text keep separators, tabs and emoji across a restart, two notes
   made in one minute stay two, and a panel left open does not erase newer text (§15.61–§15.63).
+- [ ] A shared or opened layout installs nothing until Install is pressed, and a file with the
+  wrong version, an over-long key or no name is refused with its reason (§15.64).
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

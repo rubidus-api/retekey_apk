@@ -28,23 +28,13 @@ public final class ShareTargetActivity extends Activity {
         boolean layoutDoor = throughLayoutDoor(intent);
         CharSequence shared = sharedText(intent);
         String text = shared == null ? null : shared.toString();
-        if (layoutDoor && (text == null || text.trim().isEmpty())) {
-            // Opened as a file: read what it holds, which needs no permission — the opener granted
-            // this one URI when it chose ReteKey.
-            text = fileText(intent);
-        }
         switch (ShareRoute.of(layoutDoor, text)) {
-            case INSTALL_LAYOUT: {
-                // A layout somebody wrote (issue #11). It replaces the one installed before, if
-                // any: there is one slot, and saying so is better than a list.
-                UserLayout installed = text == null ? null : UserLayouts.install(this, text);
-                Toast.makeText(this,
-                    installed == null
-                        ? getString(R.string.layout_not_read)
-                        : getString(R.string.layout_installed, installed.name()),
-                    Toast.LENGTH_LONG).show();
-                break;
-            }
+            case INSTALL_LAYOUT:
+                // A layout somebody wrote (issue #11). Nothing is installed until the user says
+                // so: an app that can send a share must not be able to replace the keyboard's
+                // layout by sending one (review finding R13).
+                offerLayout(intent, text);
+                return;
             case KEEP_TEXT: {
                 StashHistory kept = StashStore.loadPruned(this)
                     .record(text, System.currentTimeMillis());
@@ -57,6 +47,126 @@ public final class ShareTargetActivity extends Activity {
                 break;
         }
         finish();
+    }
+
+    /**
+     * Reads the layout — off this thread when it is a file, since somebody else's provider decides
+     * how long that takes — and then asks.
+     */
+    private void offerLayout(final Intent intent, final String shared) {
+        if (shared != null && !shared.trim().isEmpty()) {
+            ask(UserLayout.check(shared), shared);
+            return;
+        }
+        final android.os.Handler handler = new android.os.Handler();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final String text = fileText(intent);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isFinishing()) {
+                            return;
+                        }
+                        ask(UserLayout.check(text), text);
+                    }
+                });
+            }
+        }, "layout-read").start();
+    }
+
+    /** The one question this door asks: install this, or leave what is installed alone. */
+    private void ask(UserLayout.Checked checked, final String text) {
+        UserLayout layout = checked.layout();
+        if (layout == null) {
+            new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.layout_problem_title)
+                .setMessage(reasonFor(checked.problem()))
+                .setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(android.content.DialogInterface dialog) {
+                        finish();
+                    }
+                })
+                .setPositiveButton(android.R.string.ok,
+                    new android.content.DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(android.content.DialogInterface dialog, int which) {
+                            finish();
+                        }
+                    })
+                .show();
+            return;
+        }
+        UserLayout installed = UserLayouts.current();
+        String details = getString(R.string.layout_install_details,
+            layout.name(), layout.cap(), firstKeys(layout));
+        String replaces = installed == null
+            ? getString(R.string.layout_install_first)
+            : getString(R.string.layout_install_replaces, installed.name());
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.layout_install_title)
+            .setMessage(details + "\n\n" + replaces)
+            .setNegativeButton(android.R.string.cancel,
+                new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        finish();
+                    }
+                })
+            .setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(android.content.DialogInterface dialog) {
+                    finish();
+                }
+            })
+            .setPositiveButton(R.string.layout_install_button,
+                new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        UserLayout put = UserLayouts.install(ShareTargetActivity.this, text);
+                        Toast.makeText(ShareTargetActivity.this,
+                            put == null
+                                ? getString(R.string.layout_not_read)
+                                : getString(R.string.layout_installed, put.name()),
+                            Toast.LENGTH_LONG).show();
+                        finish();
+                    }
+                })
+            .show();
+    }
+
+    /** The first row's keys, as a line: what this layout would put under the fingers. */
+    private static String firstKeys(UserLayout layout) {
+        StringBuilder out = new StringBuilder();
+        for (UserLayout.Key key : layout.rows().get(0)) {
+            if (out.length() > 0) {
+                out.append(' ');
+            }
+            out.append(key.types);
+        }
+        return out.toString();
+    }
+
+    private int reasonFor(UserLayout.Problem problem) {
+        switch (problem) {
+            case WRONG_VERSION:
+                return R.string.layout_problem_wrong_version;
+            case TOO_BIG:
+            case LINE_TOO_LONG:
+                return R.string.layout_problem_too_big;
+            case KEY_TOO_LONG:
+                return R.string.layout_problem_key_too_long;
+            case EMPTY_ROW:
+                return R.string.layout_problem_empty_row;
+            case NO_NAME:
+                return R.string.layout_problem_no_name;
+            case NOT_THREE_ROWS:
+                return R.string.layout_problem_rows;
+            default:
+                return R.string.layout_problem_not_a_layout;
+        }
     }
 
     /** Whether this arrived at the layout entry, or as an opened file. */
@@ -87,9 +197,14 @@ public final class ShareTargetActivity extends Activity {
             byte[] buffer = new byte[4096];
             int read;
             // A layout is a few hundred bytes; anything past a sensible ceiling is not one, and
-            // reading it whole into memory would be somebody else's file doing it.
-            while ((read = in.read(buffer)) > 0 && out.size() < MOST_A_LAYOUT_CAN_BE) {
+            // reading it whole into memory would be somebody else's file doing it. One byte past
+            // the ceiling is read on purpose: a file over it is refused, never taken for the
+            // layout its first part looks like (review finding R09).
+            while ((read = in.read(buffer)) > 0 && out.size() <= MOST_A_LAYOUT_CAN_BE) {
                 out.write(buffer, 0, read);
+            }
+            if (out.size() > MOST_A_LAYOUT_CAN_BE) {
+                return null;
             }
             return new String(out.toByteArray(), "UTF-8");
         } catch (java.io.IOException | RuntimeException e) {

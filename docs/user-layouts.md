@@ -53,9 +53,21 @@ share it as text, the extension does not matter — there is no file.
 | `# …` | no | A comment. Blank lines are fine too. |
 | anything else | no | Ignored, never refused — that is how a file written for a later version still works in this one. |
 
-The file is read as **UTF-8**. Windows, Mac and Unix line endings are all accepted. When it is
-opened as a file rather than shared as text, only the first 64 KiB are read; a layout is a few
-hundred bytes, so this only matters if you point ReteKey at something that is not a layout.
+The file is read as **UTF-8**; a byte-order mark before the header is allowed, since editors write
+one without being asked. Windows, Mac and Unix line endings are all accepted. The version is the
+whole word: a file that says `retekey-layout 10` is refused rather than read as version 1.
+
+A layout also has sizes it may not exceed, so that a file from somewhere else cannot make the
+keyboard hold a key that types a paragraph. They are far above anything a layout needs — the
+largest example in this guide is 186 characters — and a file that breaks one is refused with the
+reason, not trimmed to fit:
+
+| | At most |
+| --- | --- |
+| the whole file | 8192 characters, and 64 KiB when it is opened as a file rather than shared |
+| one line | 1024 characters |
+| what one key types | 16 characters |
+| one of a key's holds | 16 characters |
 
 ## Keys, and what a key holds
 
@@ -113,9 +125,14 @@ Holds do not change under Shift: a held `é` is `é` either way.
 
 Two roads, and they are deliberately separate from the one that keeps text private:
 
+Either road ends with ReteKey **asking**. It shows the layout's name, its key cap and its first row
+of keys, says which layout it would replace, and installs nothing until you press **Install**.
+Cancel, or press back, and what you had installed stays exactly as it was. That is on purpose: an
+app that can share a file should not be able to change your keyboard by sharing one.
+
 **As text.** Select the whole layout in whatever app it is in — a notes app, a message, a web page —
-and choose **Share**, then **Install a ReteKey layout**. ReteKey says `Layout installed: <name>.
-Turn it on in settings.`
+and choose **Share**, then **Install a ReteKey layout**. After you press Install, ReteKey says
+`Layout installed: <name>. Turn it on in settings.`
 
 **As a file.** Save it with a `.rkl` extension and open it — from a file manager, a download, a mail
 attachment — then choose ReteKey. Nothing needs storage permission: the app that opens the file

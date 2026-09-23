@@ -96,4 +96,79 @@ public final class UserLayoutTest {
         assertNotNull(tiny);
         assertEquals(3, tiny.cap().length());
     }
+
+    /**
+     * The version is the whole word, not its beginning: `retekey-layout 10` is a format this
+     * version has never seen, and reading it as version 1 is how a later file would be
+     * misunderstood key for key (review finding R09).
+     */
+    @Test
+    public void onlyTheVersionThisBuildKnowsIsRead() {
+        assertNull(UserLayout.parse(GREEK.replace("retekey-layout 1", "retekey-layout 10")));
+        assertNull(UserLayout.parse(GREEK.replace("retekey-layout 1", "retekey-layout 1.5")));
+        assertNull(UserLayout.parse(GREEK.replace("retekey-layout 1", "retekey-layout")));
+        assertNotNull(UserLayout.parse(GREEK.replace("retekey-layout 1", "retekey-layout 1 ")));
+        assertEquals(UserLayout.Problem.WRONG_VERSION,
+            UserLayout.check(GREEK.replace("retekey-layout 1", "retekey-layout 10")).problem());
+    }
+
+    /** A Windows editor writes a byte-order mark: invisible, and not the file's fault. */
+    @Test
+    public void aByteOrderMarkBeforeTheHeaderIsNotAFault() {
+        assertNotNull(UserLayout.parse("\uFEFF" + GREEK));
+    }
+
+    /**
+     * Bounds, so that a file from somewhere else cannot make the keyboard hold a key that types
+     * two hundred thousand characters (R09). They are far above anything a layout needs: the
+     * largest of the documented examples is 186 characters with keys of two.
+     */
+    @Test
+    public void aLayoutThatIsNotOfALayoutsSizeIsRefused() {
+        assertEquals(UserLayout.Problem.NONE, UserLayout.check(GREEK).problem());
+
+        String hugeKey = GREEK.replace("row: α", "row: " + repeat("x", UserLayout.MAX_TYPES + 1));
+        assertNull(UserLayout.parse(hugeKey));
+        assertEquals(UserLayout.Problem.KEY_TOO_LONG, UserLayout.check(hugeKey).problem());
+
+        String hugeHold = GREEK.replace("γ|ϝ", "γ|" + repeat("y", UserLayout.MAX_HOLD + 1));
+        assertEquals(UserLayout.Problem.KEY_TOO_LONG, UserLayout.check(hugeHold).problem());
+
+        String longLine = GREEK + "\nnote: " + repeat("z", UserLayout.MAX_LINE);
+        assertEquals(UserLayout.Problem.LINE_TOO_LONG, UserLayout.check(longLine).problem());
+
+        String huge = GREEK + "\n#" + repeat("w", UserLayout.MAX_TEXT);
+        assertEquals(UserLayout.Problem.TOO_BIG, UserLayout.check(huge).problem());
+        assertNull(UserLayout.parse(huge));
+    }
+
+    /** A key at the limit still works: the bound is a ceiling, not a new shape. */
+    @Test
+    public void aKeyAtTheLimitIsAccepted() {
+        String atLimit = GREEK.replace("row: α", "row: " + repeat("x", UserLayout.MAX_TYPES));
+        assertNotNull(UserLayout.parse(atLimit));
+        String holdAtLimit = GREEK.replace("γ|ϝ", "γ|" + repeat("y", UserLayout.MAX_HOLD));
+        assertNotNull(UserLayout.parse(holdAtLimit));
+    }
+
+    /** What the user is told when a file will not do. */
+    @Test
+    public void everyRefusalHasAReasonOfItsOwn() {
+        assertEquals(UserLayout.Problem.NOT_A_LAYOUT, UserLayout.check("a shared sentence").problem());
+        assertEquals(UserLayout.Problem.NOT_A_LAYOUT, UserLayout.check(null).problem());
+        assertEquals(UserLayout.Problem.NO_NAME,
+            UserLayout.check("retekey-layout 1\nrow: a\nrow: b\nrow: c").problem());
+        assertEquals(UserLayout.Problem.NOT_THREE_ROWS,
+            UserLayout.check("retekey-layout 1\nname: two\nrow: a\nrow: b").problem());
+        assertNotNull(UserLayout.check(GREEK).layout());
+        assertNull(UserLayout.check("a shared sentence").layout());
+    }
+
+    private static String repeat(String s, int times) {
+        StringBuilder out = new StringBuilder(s.length() * times);
+        for (int i = 0; i < times; i++) {
+            out.append(s);
+        }
+        return out.toString();
+    }
 }

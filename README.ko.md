@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.196** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.196/retekey-0.1.196.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.196/retekey-0.1.196-legacy.apk)
+**ReteKey v0.1.197** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.197/retekey-0.1.197.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.197/retekey-0.1.197-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -54,8 +54,8 @@ APK를 바로 받으실 수도 있습니다.
 **[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.196** —
-[retekey-0.1.196.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.196/retekey-0.1.196.apk) (687 KB; 안드로이드 4.0 빌드는 555 KB)
+현재 릴리즈: **v0.1.197** —
+[retekey-0.1.197.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.197/retekey-0.1.197.apk) (691 KB; 안드로이드 4.0 빌드는 557 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -385,7 +385,8 @@ row: υ|ύ φ χ ψ ω|ώ
 ```
 
 어디서든 그 글을 선택해 **공유 → Install a ReteKey layout** 을 고르거나, `.rkl` 확장자로 저장해 파일을
-열면 설치됩니다. 그냥 **ReteKey** 로 공유하는 것은 전혀 다른 일입니다. 나중에 쳐 넣을 글을 보관하는
+엽니다. ReteKey 가 들어온 것 — 이름, 키 캡, 첫 줄 — 과 무엇을 대신하게 되는지 보여 주고, **Install** 을
+누르기 전에는 아무것도 설치하지 않습니다. 그냥 **ReteKey** 로 공유하는 것은 전혀 다른 일입니다. 나중에 쳐 넣을 글을 보관하는
 쪽이라서, `retekey-layout` 으로 시작하는 메모도 그냥 메모입니다. 설치한 뒤 **설정 → Keyboard
 layouts** 의 *etc* 묶음에서 체크하면, 자판 키가 `cap:` 의 세 글자를 달고 그 자판까지 돕니다.
 

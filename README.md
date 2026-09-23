@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.196** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.196/retekey-0.1.196.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.196/retekey-0.1.196-legacy.apk)
+**ReteKey v0.1.197** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.197/retekey-0.1.197.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.197/retekey-0.1.197-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -54,8 +54,8 @@ Or take an APK directly:
 **[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.196** —
-[retekey-0.1.196.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.196/retekey-0.1.196.apk) (687 KB; the Android 4.0 build is 555 KB)
+Current release: **v0.1.197** —
+[retekey-0.1.197.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.197/retekey-0.1.197.apk) (691 KB; the Android 4.0 build is 557 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -399,7 +399,9 @@ row: υ|ύ φ χ ψ ω|ώ
 ```
 
 Install it by selecting the text anywhere and choosing **Share → Install a ReteKey layout**, or by
-saving it with a `.rkl` extension and opening the file. Sharing to plain **ReteKey** does something
+saving it with a `.rkl` extension and opening the file. ReteKey shows what arrived — its name, its
+key cap, its first row — and which layout it would replace, and installs nothing until you press
+**Install**. Sharing to plain **ReteKey** does something
 else entirely — it keeps the text to type later — so a note that happens to begin with
 `retekey-layout` is a note. Then tick the layout in **Settings → Keyboard layouts**, in the *etc*
 group, and the layout key will walk to it wearing the three letters from `cap:`.
