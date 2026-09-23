@@ -45,7 +45,11 @@ public final class StoreMigrationTest {
         Assert.assertEquals(old, prefs.getString(KEY + "_v1", ""));
     }
 
-    /** Text in the current form that does not read back as itself is damaged, and kept. */
+    /**
+     * Text in the current form that is not what its own records write is damaged, and kept. The
+     * store asks exactly as it does in the app: a round trip of what was read cannot tell, since
+     * the readable prefix of a cut store re-encodes to itself.
+     */
     @Test
     public void damagedCurrentTextIsKeptAside() {
         SharedPreferences prefs = new LockedPreferences();
@@ -53,11 +57,31 @@ public final class StoreMigrationTest {
         String cut = whole.substring(0, whole.length() - 2);
         prefs.edit().putString(KEY, cut).commit();
         ClipHistory readable = ClipCodec.decode(cut);
+        String rewritten = ClipCodec.encode(readable.clips());
 
-        StoreMigration.rewrite(prefs, KEY, cut, ClipCodec.encode(readable.clips()), false);
+        StoreMigration.rewrite(prefs, KEY, cut, rewritten,
+            readable.clips().equals(ClipCodec.decode(rewritten).clips()));
 
         Assert.assertEquals(cut, prefs.getString(KEY + "_damaged", ""));
         Assert.assertEquals(cut, prefs.getString(KEY, ""));
+        Assert.assertFalse(prefs.contains(KEY + "_v1"));
+    }
+
+    /** A whole store in the current form is left alone, and nothing is copied aside. */
+    @Test
+    public void wholeCurrentTextIsLeftAlone() {
+        SharedPreferences prefs = new LockedPreferences();
+        ClipHistory history = ClipHistory.empty().record("kept", false);
+        String stored = ClipCodec.encode(history.clips());
+        prefs.edit().putString(KEY, stored).commit();
+        ClipHistory read = ClipCodec.decode(stored);
+        String rewritten = ClipCodec.encode(read.clips());
+
+        StoreMigration.rewrite(prefs, KEY, stored, rewritten,
+            read.clips().equals(ClipCodec.decode(rewritten).clips()));
+
+        Assert.assertEquals(stored, prefs.getString(KEY, ""));
+        Assert.assertFalse(prefs.contains(KEY + "_damaged"));
         Assert.assertFalse(prefs.contains(KEY + "_v1"));
     }
 

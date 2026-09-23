@@ -73,7 +73,8 @@ final class RecordCodec {
                 } catch (NumberFormatException damaged) {
                     return records;
                 }
-                if (length < 0 || colon + 1 + length > stored.length()) {
+                // Written so a length near Integer.MAX_VALUE cannot overflow into a valid one.
+                if (length < 0 || length > stored.length() - colon - 1) {
                     return records;
                 }
                 record[i] = stored.substring(colon + 1, colon + 1 + length);

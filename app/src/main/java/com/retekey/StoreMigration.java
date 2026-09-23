@@ -26,19 +26,25 @@ final class StoreMigration {
     /**
      * @param stored what the key holds now
      * @param rewritten the same records in the current form
-     * @param faithful whether reading {@code rewritten} back gave the records {@code stored} did
+     * @param legacyReadFaithfully whether the records read from a first-form {@code stored} come
+     *     back unchanged from {@code rewritten}; ignored when {@code stored} is already current,
+     *     where the test is whether it *is* what its own records write — a round trip of what was
+     *     read cannot tell a truncated store from a whole one, since a prefix re-encodes to
+     *     itself. A first form that cannot be rewritten faithfully is left as it is, with its copy
+     *     under {@code <key>_v1} made all the same.
      */
     static void rewrite(
         SharedPreferences prefs,
         String key,
         String stored,
         String rewritten,
-        boolean faithful
+        boolean legacyReadFaithfully
     ) {
         if (prefs == null || stored == null || stored.isEmpty()) {
             return;
         }
         boolean current = RecordCodec.isNewFormat(stored);
+        boolean faithful = current ? stored.equals(rewritten) : legacyReadFaithfully;
         if (current && faithful) {
             return;
         }

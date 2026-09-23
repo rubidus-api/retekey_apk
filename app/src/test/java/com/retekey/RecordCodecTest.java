@@ -71,6 +71,8 @@ public final class RecordCodecTest {
         Assert.assertArrayEquals(new String[] {"one", "first"}, partial.get(0));
         Assert.assertTrue(RecordCodec.decode("retekey-store 2 2\nnonsense", 2).isEmpty());
         Assert.assertTrue(RecordCodec.decode("retekey-store 2 2\n-1:x1:y", 2).isEmpty());
+        // A length that would overflow when added to the position must not read as a short one.
+        Assert.assertTrue(RecordCodec.decode("retekey-store 2 2\n2147483647:x", 2).isEmpty());
     }
 
     /** The header says how many fields a record has, so a store of notes is not read as clips. */
