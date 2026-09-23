@@ -2712,6 +2712,29 @@ past them is refused with the reason rather than trimmed to fit.
 **Rule.** An exported door is an offer, not an instruction. Show what arrived, say what it would
 replace, and change nothing until the person whose keyboard it is says so.
 
+### 15.65 The cursor report from the middle of our own write
+
+**What happened.** Typing 자모통 into a remote desktop sometimes gave 자ㅁㅗ통 — the jamo of a
+syllable committed one by one instead of composed (owner's report, 2026-09-23).
+
+**Why.** In a window onto another machine there is no composing region, so a syllable is rewritten:
+delete what was materialised, commit the new form (§15a.1). That is two operations on the wire, and
+the client's own buffer reports where its cursor went after each of them. This keyboard remembered
+only where the *plan* would leave the cursor (§15a.5), so the report from the delete — a position
+one back — matched no expectation, was read as the user moving the cursor, and settled the syllable
+where it stood. The next jamo then had nothing to take back and was committed on its own. It was
+intermittent because the two operations usually sit in one batch and the client usually reports once,
+at its end; when the reports came separately, the syllable broke.
+
+**The fix.** Expect every step, not the end: the service walks the plan's actions and records the
+cursor each one leaves, so the delete's report is an expectation like any other. A report of the
+position our own last report already left it at — a client repeating itself, or one whose buffer has
+not caught up — is an echo too, not a move. A jump the writing cannot explain is still the user, and
+still settles the syllable.
+
+**Rule.** When one keystroke becomes several operations, the far side answers several times.
+Expect the whole path, not its end.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2859,4 +2882,6 @@ allow` first.
   made in one minute stay two, and a panel left open does not erase newer text (§15.61–§15.63).
 - [ ] A shared or opened layout installs nothing until Install is pressed, and a file with the
   wrong version, an over-long key or no name is refused with its reason (§15.64).
+- [ ] A syllable typed into a remote desktop stays one syllable when its client reports a cursor
+  after every operation, not only at the end of a batch (§15.65).
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

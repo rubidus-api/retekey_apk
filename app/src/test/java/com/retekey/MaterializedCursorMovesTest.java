@@ -69,4 +69,48 @@ public final class MaterializedCursorMovesTest {
         }
         assertFalse("the newest expectation still holds", moves.isForeignMove(40, 40));
     }
+
+    /**
+     * The owner's report (2026-09-23): typing 자모통 into a remote desktop sometimes came out
+     * 자ㅁㅗ통 — the jamo of one syllable committed separately. Rewriting a syllable is two writes
+     * on the wire, a delete and a commit, and the client's own buffer reports where its cursor
+     * went after each of them. Only the end of the plan was expected, so the report from the
+     * delete matched nothing, was read as the user moving the cursor, and settled the syllable
+     * where it stood — after which the next jamo could not take it back.
+     */
+    @Test
+    public void theStepsOfARewriteAreEchoesToo() {
+        MaterializedCursorMoves moves = new MaterializedCursorMoves();
+        moves.expect(2);
+        assertFalse(moves.isForeignMove(2, 2));
+
+        // ㅗ replaces ㅁ: delete one (the buffer goes back to 1), commit 모 (forward to 2).
+        moves.expect(1);
+        moves.expect(2);
+        assertFalse("the delete's own report", moves.isForeignMove(1, 1));
+        assertFalse("and the commit's", moves.isForeignMove(2, 2));
+    }
+
+    /** The same report twice — the client repeating itself — is not the user doing anything. */
+    @Test
+    public void aRepeatOfTheLastReportIsNotAMove() {
+        MaterializedCursorMoves moves = new MaterializedCursorMoves();
+        moves.expect(1);
+        moves.expect(2);
+        assertFalse(moves.isForeignMove(1, 1));
+        assertFalse(moves.isForeignMove(2, 2));
+        assertFalse("the client reported where it already was", moves.isForeignMove(2, 2));
+        assertTrue("but a jump from there is still the user", moves.isForeignMove(0, 0));
+    }
+
+    /** A report of where we were before the write in flight is an echo on its way, not a move. */
+    @Test
+    public void aReportFromBeforeTheWriteInFlightIsNotAMove() {
+        MaterializedCursorMoves moves = new MaterializedCursorMoves();
+        moves.expect(3);
+        assertFalse(moves.isForeignMove(3, 3));
+        moves.expect(4);
+        assertFalse("the buffer had not caught up yet", moves.isForeignMove(3, 3));
+        assertFalse(moves.isForeignMove(4, 4));
+    }
 }

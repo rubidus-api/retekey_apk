@@ -26,15 +26,21 @@ import java.util.Deque;
  */
 public final class MaterializedCursorMoves {
     /** Enough for the keys a hand can type before the first report comes back. */
-    private static final int MAX_PENDING = 8;
+    private static final int MAX_PENDING = 16;
 
     private final Deque<Integer> expected = new ArrayDeque<>();
     private boolean anchored;
+    /**
+     * Where the last report that was ours left the cursor: a report of it again is not a move.
+     * Negative until one has been seen, so position 0 is not mistaken for "nothing yet".
+     */
+    private int anchorPosition = -1;
 
     /** Session boundary: nothing is expected and nothing is judged until a report arrives. */
     public void reset() {
         expected.clear();
         anchored = false;
+        anchorPosition = -1;
     }
 
     /**
@@ -66,13 +72,22 @@ public final class MaterializedCursorMoves {
             expected.clear();
             expected.addLast(newSelStart);
             anchored = newSelStart == newSelEnd;
+            anchorPosition = newSelStart;
             return false;
         }
         if (newSelStart != newSelEnd) {
             // Composing never selects a range, so a range is the user's doing.
             expected.clear();
             anchored = false;
+            anchorPosition = -1;
             return true;
+        }
+        if (anchorPosition >= 0 && newSelStart == anchorPosition) {
+            // Where our own last report left it. A client that repeats itself, or whose buffer
+            // has not caught up with the write in flight, is not the user moving anything —
+            // reading it as one settled the syllable mid-way and split 자모통 into 자ㅁㅗ통
+            // (owner's report, 2026-09-23).
+            return false;
         }
         boolean matched = false;
         while (!expected.isEmpty()) {
@@ -83,12 +98,14 @@ public final class MaterializedCursorMoves {
             }
         }
         if (matched) {
+            anchorPosition = newSelStart;
             return false;
         }
         // No expectation left to explain it: the far side moved. Re-anchor on what it reports.
         expected.clear();
         expected.addLast(newSelStart);
         anchored = true;
+        anchorPosition = newSelStart;
         return true;
     }
 }

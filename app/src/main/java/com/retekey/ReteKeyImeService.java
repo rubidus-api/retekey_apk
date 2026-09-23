@@ -1939,17 +1939,30 @@ public class ReteKeyImeService extends InputMethodService {
      * composition. A write whose outcome the editor decides — a raw key, Enter — predicts nothing,
      * and that drops the expectations rather than inventing one (MaterializedCursorMoves).
      */
-    private void noteWhereThisWriteLeavesTheCursor(ExecutionResult executed, EditorBounds predicted) {
+    private void noteWhereThisWriteLeavesTheCursor(
+        ExecutionResult executed,
+        DispatchResult dispatched,
+        EditorBounds before
+    ) {
         if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
             return;
         }
         if (executed == null || executed.outcome() != ExecutionResult.Outcome.DISPATCHED) {
             return;
         }
-        materializedCursor.expect(
-            predicted != null && predicted.hasSelection() && !predicted.hasSelectedText()
-                ? predicted.selectionStart()
-                : -1);
+        // Every action, not only the end of the plan: rewriting a syllable is a delete and then a
+        // commit, and the client's buffer reports where its cursor went after each of them. With
+        // only the end expected, the delete's own report matched nothing and was read as the user
+        // moving the cursor — which settled the syllable and split 자모통 into 자ㅁㅗ통 (owner's
+        // report, 2026-09-23).
+        EditorBounds walking = before;
+        for (KeyAction action : dispatched.actions()) {
+            walking = EditorBoundsPredictor.after(walking, java.util.Collections.singletonList(action));
+            materializedCursor.expect(
+                walking != null && walking.hasSelection() && !walking.hasSelectedText()
+                    ? walking.selectionStart()
+                    : -1);
+        }
     }
 
     /** Whether a physical key goes through the dispatcher here (see TerminalHardwareKeys). */
@@ -2962,9 +2975,10 @@ public class ReteKeyImeService extends InputMethodService {
                 ScaffoldSessionState.EMPTY,
                 predicted
             );
+            EditorBounds before = sessionController.workingBounds();
             ExecutionResult executed = sessionController.execute(plan, this::currentEndpoint);
             forgetWhatWasNotWritten(executed);
-            noteWhereThisWriteLeavesTheCursor(executed, predicted);
+            noteWhereThisWriteLeavesTheCursor(executed, result, before);
             armIdleSyllableSettle();
             updateComposingStrip();
             tellTheKeysWhatComesNext();
