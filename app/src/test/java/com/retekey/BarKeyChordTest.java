@@ -38,15 +38,15 @@ public final class BarKeyChordTest {
     @Test
     public void aPhysicalModifierIsHeldUntilItsOwnKeyComesUp() {
         HeldHardwareModifiers held = new HeldHardwareModifiers();
-        held.onKey(KeyEvent.KEYCODE_SHIFT_LEFT, true);
-        held.onKey(KeyEvent.KEYCODE_SHIFT_RIGHT, true);
-        held.onKey(KeyEvent.KEYCODE_CTRL_LEFT, true);
-        held.onKey(KeyEvent.KEYCODE_SHIFT_LEFT, false);
+        held.onKey(1, KeyEvent.KEYCODE_SHIFT_LEFT, true);
+        held.onKey(1, KeyEvent.KEYCODE_SHIFT_RIGHT, true);
+        held.onKey(1, KeyEvent.KEYCODE_CTRL_LEFT, true);
+        held.onKey(1, KeyEvent.KEYCODE_SHIFT_LEFT, false);
         assertEquals("the right Shift is still down",
             EnumSet.of(KeyModifier.SHIFT, KeyModifier.CTRL), held.held());
-        held.onKey(KeyEvent.KEYCODE_A, true);
-        held.onKey(KeyEvent.KEYCODE_SHIFT_RIGHT, false);
-        held.onKey(KeyEvent.KEYCODE_CTRL_LEFT, false);
+        held.onKey(1, KeyEvent.KEYCODE_A, true);
+        held.onKey(1, KeyEvent.KEYCODE_SHIFT_RIGHT, false);
+        held.onKey(1, KeyEvent.KEYCODE_CTRL_LEFT, false);
         assertEquals(EnumSet.noneOf(KeyModifier.class), held.held());
     }
 }

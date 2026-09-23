@@ -74,4 +74,28 @@ public final class LatchStateTest {
         assertEquals(LatchState.State.OFF, latch.state());
         assertFalse(latch.isActive());
     }
+
+    /**
+     * A press that is canceled — the finger slid off the keyboard, the view was rebuilt under it —
+     * leaves the latch as it was before it. A second tap would not do: it arms what was off and
+     * clears what was locked (review finding R11).
+     */
+    @org.junit.Test
+    public void aCanceledPressLeavesTheLatchAsItWas() {
+        LatchState latch = new LatchState();
+        LatchState.State before = latch.state();
+        latch.tap();
+        latch.restore(before);
+        org.junit.Assert.assertEquals(LatchState.State.OFF, latch.state());
+
+        latch.toggleLock();
+        before = latch.state();
+        latch.tap();
+        org.junit.Assert.assertEquals(LatchState.State.OFF, latch.state());
+        latch.restore(before);
+        org.junit.Assert.assertEquals(LatchState.State.LOCKED, latch.state());
+
+        latch.restore(null);
+        org.junit.Assert.assertEquals(LatchState.State.OFF, latch.state());
+    }
 }

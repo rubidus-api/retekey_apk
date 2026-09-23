@@ -2735,6 +2735,28 @@ still settles the syllable.
 **Rule.** When one keystroke becomes several operations, the far side answers several times.
 Expect the whole path, not its end.
 
+### 15.66 A modifier nobody was holding any more
+
+**What happened.** Shift takes effect the moment the finger lands (§15.37), and a press that never
+lifts — the finger slid off the keyboard, the window went away, the page was rebuilt under it —
+only had its timers dropped. The latch it armed stayed armed, so the next unrelated key was
+shifted. The same for Ctrl, Alt and Meta; a tap that had *cleared* a lock left it cleared
+(review finding R11). On the physical side, a modifier held when a keyboard was unplugged, or when
+the field changed, was never let go of either: the keyboard went on believing Ctrl was down, so an
+arrow tapped on the action bar went out as Ctrl+arrow (R17).
+
+**The fix.** A press remembers what the latch held before it, and a canceled press puts that back —
+off if it was off, locked if it was locked. Where a key was typed while the finger was down the
+chord happened, so the one-shot is spent as a release spends it; where another finger is still on
+the same modifier, that finger owns the state. Rebuilding the page cancels the touches on it, which
+now means unwinding them. Physical modifiers are held per keyboard rather than per key code, so one
+keyboard's key-up cannot release another's; a keyboard that goes away takes its keys with it, a
+field boundary clears them all, and an ordinary key is believed about what it carries, which heals
+a key-up that never arrived.
+
+**Rule.** Whoever pressed it owns it. A press that does not end in a release ends in taking the
+press back, and a modifier belongs to the keyboard — or the finger — that is holding it.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
@@ -2884,4 +2906,6 @@ allow` first.
   wrong version, an over-long key or no name is refused with its reason (§15.64).
 - [ ] A syllable typed into a remote desktop stays one syllable when its client reports a cursor
   after every operation, not only at the end of a batch (§15.65).
+- [ ] A finger that slides off Shift, or a page rebuilt under it, leaves Shift as it was, and a
+  keyboard unplugged mid-chord stops arming the action bar's arrows (§15.66).
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

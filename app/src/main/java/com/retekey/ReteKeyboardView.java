@@ -84,6 +84,8 @@ public final class ReteKeyboardView extends View {
         List<String> pickerPreview;
         /** A modifier this finger armed the moment it came down (§15.37), or null. */
         ControlKey heldModifier;
+        /** What that modifier's latch held before this finger landed on it (review R11). */
+        LatchState.State latchBeforePress;
         /** What {@link #typedCount} was then, so the lift can see whether a key used it. */
         int typedAtDown;
         final Runnable onHold = () -> handleLongPress(this);
@@ -345,6 +347,10 @@ public final class ReteKeyboardView extends View {
         if (!order.contains(letterLayoutId)) {
             letterLayoutId = LetterLayouts.firstOf(order);
         }
+        // The page is being rebuilt under whatever fingers are on it: the key one of them is
+        // holding may not be there afterwards. Their timers go, and a modifier one of them armed
+        // is taken back rather than left for the next page (review R11/W6).
+        cancelAllTouches();
         requestLayout();
         invalidate();
     }
@@ -1173,8 +1179,10 @@ public final class ReteKeyboardView extends View {
         }
         ControlKey control = key.control();
         if (control == ControlKey.SHIFT) {
+            touch.latchBeforePress = shiftLayer.state();
             shiftLayer.tap();
         } else if (ModifierLatches.handles(control)) {
+            touch.latchBeforePress = modifierLatches.stateOf(control);
             modifierLatches.tap(control);
         } else {
             return;
@@ -1641,9 +1649,48 @@ public final class ReteKeyboardView extends View {
             Touch touch = touches.valueAt(i);
             removeCallbacks(touch.onHold);
             removeCallbacks(touch.onRepeat);
+            unwindModifier(touch);
         }
         touches.clear();
         invalidate();
+    }
+
+    /**
+     * A finger on a modifier that never lifted — it slid off the keyboard, the view was rebuilt
+     * under it, the window went away. The press is taken back: the latch goes to what it held
+     * before that finger landed. Where a key was typed while it was down, the chord happened, so
+     * the one-shot is spent the way a release spends it instead. Before this, a canceled Shift
+     * stayed armed and shifted whatever was typed next (review finding R11).
+     */
+    private void unwindModifier(Touch touch) {
+        ControlKey control = touch.heldModifier;
+        if (control == null) {
+            return;
+        }
+        if (typedCount != touch.typedAtDown) {
+            releaseModifier(touch);
+            return;
+        }
+        if (holdsTheSameModifier(touch)) {
+            // Another finger is still on it: that one owns the state now.
+            return;
+        }
+        if (control == ControlKey.SHIFT) {
+            shiftLayer.restore(touch.latchBeforePress);
+        } else {
+            modifierLatches.restore(control, touch.latchBeforePress);
+        }
+    }
+
+    /** Whether another finger still down is holding the same modifier this one armed. */
+    private boolean holdsTheSameModifier(Touch canceled) {
+        for (int i = touches.size() - 1; i >= 0; i--) {
+            Touch other = touches.valueAt(i);
+            if (other != canceled && other.heldModifier == canceled.heldModifier) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

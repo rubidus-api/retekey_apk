@@ -43,6 +43,18 @@ public final class ModifierLatches {
         latch(modifier).toggleLock();
     }
 
+    /** What this modifier's latch holds now — for putting it back after a canceled press. */
+    public LatchState.State stateOf(ControlKey modifier) {
+        return handles(modifier) ? latch(modifier).state() : LatchState.State.OFF;
+    }
+
+    /** Puts one modifier back the way it was before a press that was canceled (review R11). */
+    public void restore(ControlKey modifier, LatchState.State previous) {
+        if (handles(modifier)) {
+            latch(modifier).restore(previous);
+        }
+    }
+
     public boolean isActive(ControlKey modifier) {
         return handles(modifier) && latch(modifier).isActive();
     }

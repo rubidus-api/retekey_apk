@@ -95,6 +95,8 @@ public class ReteKeyImeService extends InputMethodService {
     private ComposingStripView composingStrip;
     /** Modifier keys held on a physical keyboard, for action-bar keys pressed meanwhile. */
     private final HeldHardwareModifiers heldHardware = new HeldHardwareModifiers();
+    /** Hears when a keyboard is unplugged, so what it held is not believed afterwards. */
+    private android.hardware.input.InputManager.InputDeviceListener deviceListener;
     /** The modifiers the action-bar press under the finger was made with, or null between presses. */
     private java.util.Set<KeyModifier> pressModifiers;
     private boolean composingStripShown;
@@ -803,6 +805,63 @@ public class ReteKeyImeService extends InputMethodService {
         return userUnlocked;
     }
 
+    /**
+     * A keyboard unplugged mid-chord never sends the up for what it held, so what it held is
+     * forgotten when it goes (review R17). The listener arrived in API 16; below that a held key
+     * is let go of at the next field boundary, which is the other half of the same rule.
+     */
+    private void watchForKeyboardsGoingAway() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return;
+        }
+        try {
+            android.hardware.input.InputManager input = Compat.systemService(
+                this, Context.INPUT_SERVICE, android.hardware.input.InputManager.class);
+            if (input == null) {
+                return;
+            }
+            deviceListener = new android.hardware.input.InputManager.InputDeviceListener() {
+                @Override
+                public void onInputDeviceAdded(int deviceId) {
+                }
+
+                @Override
+                public void onInputDeviceRemoved(int deviceId) {
+                    heldHardware.forgetDevice(deviceId);
+                }
+
+                @Override
+                public void onInputDeviceChanged(int deviceId) {
+                    // A keyboard that re-declared itself is not the same one holding the same
+                    // keys; what it was believed to hold is no longer evidence.
+                    heldHardware.forgetDevice(deviceId);
+                }
+            };
+            input.registerInputDeviceListener(deviceListener, mainHandler);
+        } catch (RuntimeException unavailable) {
+            logTeardownFailure("input device listener", unavailable);
+            deviceListener = null;
+        }
+    }
+
+    private void stopWatchingForKeyboardsGoingAway() {
+        if (deviceListener == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            // Nothing was registered below API 16, where the listener does not exist.
+            deviceListener = null;
+            return;
+        }
+        try {
+            android.hardware.input.InputManager input = Compat.systemService(
+                this, Context.INPUT_SERVICE, android.hardware.input.InputManager.class);
+            if (input != null) {
+                input.unregisterInputDeviceListener(deviceListener);
+            }
+        } catch (RuntimeException neverRegistered) {
+            // Nothing to unhook.
+        }
+        deviceListener = null;
+    }
+
     /** Waits for the first unlock when the service started before it. */
     private void watchForUnlock() {
         if (isUserUnlocked()) {
@@ -1189,7 +1248,8 @@ public class ReteKeyImeService extends InputMethodService {
         if (settingsIsCapturingAShortcut()) {
             return super.onKeyDown(keyCode, event);
         }
-        heldHardware.onKey(keyCode, true);
+        heldHardware.onKey(event.getDeviceId(), keyCode, true);
+        heldHardware.reconcile(event.getDeviceId(), keyCode, event.getMetaState());
         if (event.getRepeatCount() == 0 && handleHardwareFunctionKey(keyCode, event)) {
             return true;
         }
@@ -1266,7 +1326,7 @@ public class ReteKeyImeService extends InputMethodService {
         if (settingsIsCapturingAShortcut()) {
             return super.onKeyUp(keyCode, event);
         }
-        heldHardware.onKey(keyCode, false);
+        heldHardware.onKey(event.getDeviceId(), keyCode, false);
         if (keysOwnedByIpaPanel.remove(keyCode)) {
             return true;
         }
@@ -1590,6 +1650,7 @@ public class ReteKeyImeService extends InputMethodService {
         dispatcher.reset();
         finishSession();
         stopWatchingForUnlock();
+        stopWatchingForKeyboardsGoingAway();
         try {
             android.content.ClipboardManager manager = Compat.systemService(
                 this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
@@ -1611,6 +1672,7 @@ public class ReteKeyImeService extends InputMethodService {
     public void onCreate() {
         super.onCreate();
         watchForUnlock();
+        watchForKeyboardsGoingAway();
         // The layout somebody installed themselves, read once: the pages are drawn from a static
         // that knows nothing of Android (issue #11).
         UserLayouts.load(this);
@@ -3100,6 +3162,9 @@ public class ReteKeyImeService extends InputMethodService {
         inputProcessor.reset();
         showComposingStrip("");
         editorProfile = EditorProfile.unsupported();
+        // A key held when the field goes is a key this keyboard will never hear the up for
+        // (review R17): it must not arm the arrows of the next field.
+        heldHardware.clear();
         clipGuard.onField(false, android.os.SystemClock.uptimeMillis());
         if (editorFailureToast != null) {
             editorFailureToast.cancel();

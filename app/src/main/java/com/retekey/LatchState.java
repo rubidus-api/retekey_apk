@@ -45,6 +45,16 @@ public final class LatchState {
         state = State.OFF;
     }
 
+    /**
+     * Puts the latch back the way it was before a press that was then canceled — a finger that
+     * slid off the keyboard, a view rebuilt under it. A tap cannot undo a tap: it arms what was
+     * off and clears what was locked, so the state before the press is what is restored
+     * (review finding R11).
+     */
+    public void restore(State previous) {
+        state = previous == null ? State.OFF : previous;
+    }
+
     public boolean isActive() {
         return state != State.OFF;
     }
