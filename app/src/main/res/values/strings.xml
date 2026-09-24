@@ -2,10 +2,11 @@
     <string name="app_name">ReteKey IME</string>
     <string name="ime_name">ReteKey IME</string>
     <!-- What the system's keyboard switcher shows for each subtype (issue #14): the keyboard's
-         name, not a language. The subtype still says whether a physical keyboard starts in Korean
-         or in English. No %s: Android would put the locale's name in its place. -->
+         name and nothing else — no language, on either one (owner's rule, 2026-09-25). The
+         subtype still says whether a physical keyboard starts in Korean or in English. No %s:
+         Android would put the locale's name in its place. -->
     <string name="subtype_korean">ReteKey IME</string>
-    <string name="subtype_english">ReteKey IME (English)</string>
+    <string name="subtype_english">ReteKey IME</string>
     <string name="editor_unavailable">Editor unavailable. Tap the text field and try again.</string>
     <string name="preview_hint">Enable ReteKey, then type in the field to try the keyboard.</string>
     <string name="preview_field_hint">Type here…</string>

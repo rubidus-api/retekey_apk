@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.200** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200-legacy.apk)
+**ReteKey v0.1.201** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.201/retekey-0.1.201.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.201/retekey-0.1.201-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -49,13 +49,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.201/retekey-0.1.201.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.201/retekey-0.1.201-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.200** —
-[retekey-0.1.200.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk) (697 KB; the Android 4.0 build is 560 KB)
+Current release: **v0.1.201** —
+[retekey-0.1.201.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.201/retekey-0.1.201.apk) (697 KB; the Android 4.0 build is 560 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
