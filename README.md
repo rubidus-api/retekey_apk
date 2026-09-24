@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.199** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199-legacy.apk)
+**ReteKey v0.1.200** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200-legacy.apk)
 
 **English** · [한국어](README.ko.md)
 
@@ -49,13 +49,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.1.199** —
-[retekey-0.1.199.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk) (693 KB; the Android 4.0 build is 558 KB)
+Current release: **v0.1.200** —
+[retekey-0.1.200.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk) (697 KB; the Android 4.0 build is 560 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -149,8 +149,9 @@ never open the keypad page you will never see the parts you do not need.
 - **Stateful 2-beolsik Hangul composer** with compound vowels and final consonants, consonant
   migration, and reversible backspace (닭 → 달 → 다).
 - **Hanja conversion** in both directions, with 훈음 glosses, paging, and number-key selection, in
-  a window of its own that appears whichever keyboard you are using.
-- **Notepad** on a key: a translucent full-screen panel above the keyboard, with a list that sorts
+  a window of its own that appears whichever keyboard you are using — or, if you choose, docked
+  above the keyboard or in the floating keyboard's own place.
+- **Notepad** on a key: a full-screen panel above the keyboard, with a list that sorts
   and selects like a file manager and notes stamped the moment they are made.
 - **Floating keyboard** for a tablet in landscape: a translucent panel confined to one half of the
   screen, draggable, resizable, and mirrored to the other half with one key.
@@ -165,6 +166,8 @@ never open the keypad page you will never see the parts you do not need.
   longer than the system's own long press, so an unhurried letter is still a letter. The letter pages hold
   `1234567890` on the top row, `!@#$%^&*;` on the middle one, and `_-:='"?` on the bottom one.
 - **Light, dark, or the system's own** — your choice, with the Material You palette on Android 12+.
+- **For E-Ink**: a monochrome drawing, outlined black-and-white keys, and a no-motion switch that
+  drops the press shade, the flash and the echo box.
 - **The box that echoes what you typed** can be turned off, or made as see-through as you like, so
   the keys under it stay readable; a hold that offers a choice is drawn in a colour of its own, so
   choosing never looks like typing.

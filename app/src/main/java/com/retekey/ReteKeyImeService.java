@@ -92,6 +92,8 @@ public class ReteKeyImeService extends InputMethodService {
     private FloatingKeyboardBounds hanjaBounds;
     /** True while the candidate list is the floating panel, in place of the keyboard. */
     private boolean hanjaFloating;
+    /** The Hanja candidates docked above a docked keyboard (issue #14, {@link PanelPlacement}). */
+    private boolean hanjaDocked;
     private ComposingStripView composingStrip;
     /** Modifier keys held on a physical keyboard, for action-bar keys pressed meanwhile. */
     private final HeldHardwareModifiers heldHardware = new HeldHardwareModifiers();
@@ -147,6 +149,11 @@ public class ReteKeyImeService extends InputMethodService {
 
     private View buildInputView() {
         builtFor = OrientedPrefs.current(this);
+        // Whatever candidate view the last build made belongs to a tree that is going away. A
+        // branch below that shows candidates makes its own; left pointing at the old one, the
+        // phonetic search updated a view no longer on screen and took every letter into a query
+        // nobody could see (issue #13).
+        hanjaView = null;
         // The code-point pad floats whatever the keyboard is doing: it is not a page of the
         // keyboard but a small panel of its own, and it replaces the keyboard while it is open.
         floatingMode = unicodeFloating || hanjaFloating
@@ -167,6 +174,10 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnThemeCycle(this::cycleTheme);
         keyboardView.setOnKanaModifier(this::applyKanaModifier);
         keyboardView.setOnLayoutChanged(this::announceLayout);
+        if (unicodeEntry != null && !unicodeFloating) {
+            // The pad docked in place of the keys (issue #14): a rebuild must not drop it.
+            keyboardView.setUnicodeEntry(true);
+        }
         reloadHardwareBindings();
         HanjaDictionary.preload(this);
         if (ipaPanel != null) {
@@ -181,6 +192,20 @@ public class ReteKeyImeService extends InputMethodService {
                 }
             });
             hanjaView.setOnDismiss(this::endIpaPanel);
+            hanjaView.show(pendingReading, pendingCandidates);
+            return new PanelFrame(this, hanjaView, withActionBar(keyboardView));
+        }
+        if (hanjaDocked) {
+            // Following a docked keyboard: the list sits above it the way the phonetic search's
+            // does, and the keyboard stays where it was, opaque, under the fingers (issue #14).
+            floatingFrame = null;
+            hanjaView = new HanjaCandidatesView(this);
+            hanjaView.setOnPick(value -> {
+                if (!pickFromIpaPanel(value)) {
+                    commitHanja(value);
+                }
+            });
+            hanjaView.setOnDismiss(this::hideHanjaCandidates);
             hanjaView.show(pendingReading, pendingCandidates);
             return new PanelFrame(this, hanjaView, withActionBar(keyboardView));
         }
@@ -222,11 +247,16 @@ public class ReteKeyImeService extends InputMethodService {
             floatingFrame = new FloatingKeyboardFrame(this, hanjaView);
             floatingFrame.setOpacityPercent(
                 FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
+            floatingFrame.setOnClose(this::hideHanjaCandidates);
+            if (panelPlacement() == PanelPlacement.KEYBOARD_FLOATING) {
+                // In the floating keyboard's own place: one position for everything that floats.
+                placeLikeTheKeyboard();
+                return floatingFrame;
+            }
             if (hanjaBounds == null) {
                 hanjaBounds = FloatingKeyboardSettings.load(
                     viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX);
             }
-            floatingFrame.setOnClose(this::hideHanjaCandidates);
             floatingFrame.setOnBoundsChanged(this::onHanjaBoundsChanged);
             if (hanjaBounds != null) {
                 floatingFrame.setBounds(hanjaBounds);
@@ -235,12 +265,16 @@ public class ReteKeyImeService extends InputMethodService {
         }
         if (unicodeFloating) {
             keyboardView.setUnicodeEntry(true);
+            // The pad's ✕ is the way out of the entry, not a way to turn the floating keyboard off.
+            floatingFrame.setOnClose(this::endUnicodeEntry);
+            if (panelPlacement() == PanelPlacement.KEYBOARD_FLOATING) {
+                placeLikeTheKeyboard();
+                return floatingFrame;
+            }
             if (unicodeBounds == null) {
                 unicodeBounds = FloatingKeyboardSettings.load(
                     viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX);
             }
-            // The pad's ✕ is the way out of the entry, not a way to turn the floating keyboard off.
-            floatingFrame.setOnClose(this::endUnicodeEntry);
             floatingFrame.setOnBoundsChanged(this::onUnicodeBoundsChanged);
             if (unicodeBounds != null) {
                 floatingFrame.setBounds(unicodeBounds);
@@ -256,6 +290,24 @@ public class ReteKeyImeService extends InputMethodService {
             floatingFrame.setBounds(floatingBounds);
         }
         return floatingFrame;
+    }
+
+    /** Where the Hanja list and the code-point pad go in this orientation (issue #14). */
+    private PanelPlacement panelPlacement() {
+        ScreenOrientation now = OrientedPrefs.current(this);
+        return PanelPlacement.of(FloatingKeyboardSettings.panelsFollow(viewPrefs(), now),
+            FloatingKeyboardSettings.isEnabled(viewPrefs(), now));
+    }
+
+    /** Gives the floating frame the floating keyboard's place, and moves the keyboard with it. */
+    private void placeLikeTheKeyboard() {
+        if (floatingBounds == null) {
+            floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
+        }
+        floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
+        if (floatingBounds != null) {
+            floatingFrame.setBounds(floatingBounds);
+        }
     }
 
     @Override
@@ -600,6 +652,8 @@ public class ReteKeyImeService extends InputMethodService {
             closeClipboardPanel();
             return;
         }
+        // One panel at a time: the clipboard takes the notepad's place rather than hiding it.
+        putNotepadAway();
         clips = ClipStore.load(this);
         clipsLoaded = true;
         stash = StashStore.loadPruned(this);
@@ -630,7 +684,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private ClipboardPanelView buildClipboardPanel() {
-        final ClipboardPanelView panel = clipboardPanel;
+        final ClipboardPanelView panel = detached(clipboardPanel);
         panel.setListener(new ClipboardPanelView.Listener() {
             @Override
             public void onPaste(String text) {
@@ -1912,12 +1966,12 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public boolean onEvaluateInputViewShown() {
         super.onEvaluateInputViewShown();
-        if (hanjaFloating) {
+        if (hanjaFloating || hanjaDocked) {
             // The candidates are a panel of this IME's own now, so they need the window shown even
             // when a hardware keyboard would otherwise keep the keyboard hidden.
             return true;
         }
-        if (unicodeFloating) {
+        if (unicodeFloating || unicodeEntry != null) {
             // A hardware keyboard normally hides the on-screen keyboard, and it can go on typing
             // the digits — but then nothing would show the code being built. The pad is the
             // feedback, so it comes up regardless of what is typing into it.
@@ -2293,6 +2347,14 @@ public class ReteKeyImeService extends InputMethodService {
         finishComposingInEditor();
         inputProcessor.reset();
         unicodeEntry = UnicodeEntry.empty();
+        if (panelPlacement() == PanelPlacement.DOCKED && keyboardView != null) {
+            // Following a docked keyboard: the pad takes the keys' place and nothing moves.
+            unicodeFloating = false;
+            keyboardView.setUnicodeEntry(true);
+            updateInputViewShown();
+            showUnicodeEntry();
+            return;
+        }
         unicodeFloating = true;
         setInputView(onCreateInputView());
         updateInputViewShown();
@@ -2573,12 +2635,22 @@ public class ReteKeyImeService extends InputMethodService {
             closeNotepad();
             return;
         }
+        // One panel at a time. With the clipboard left set, the rebuild showed the clipboard
+        // again and the notepad sat invisible behind it (issue #12).
+        clipboardPanel = null;
         notepad = new NotepadView(this, NoteStore.load(this));
         setInputView(onCreateInputView());
         updateInputViewShown();
     }
 
     private void closeNotepad() {
+        putNotepadAway();
+        setInputView(onCreateInputView());
+        updateInputViewShown();
+    }
+
+    /** Saves and forgets the notepad without rebuilding, for whoever rebuilds next. */
+    private void putNotepadAway() {
         flushNotepadComposition();
         notepadComposer.reset();
         notepadTelex.reset();
@@ -2587,13 +2659,24 @@ public class ReteKeyImeService extends InputMethodService {
             NoteStore.save(this, notepad.notes());
             notepad = null;
         }
-        setInputView(onCreateInputView());
-        updateInputViewShown();
+    }
+
+    /**
+     * A panel kept in a field outlives the frame it was shown in. Every rebuild of the input view
+     * — the other panel opened, the screen turned — puts it into a new frame, and Android refuses
+     * a view that still has a parent: that refusal was issue #12's crash.
+     */
+    private static <T extends View> T detached(T view) {
+        android.view.ViewParent parent = view.getParent();
+        if (parent instanceof android.view.ViewGroup) {
+            ((android.view.ViewGroup) parent).removeView(view);
+        }
+        return view;
     }
 
     /** Wires a freshly built panel to its store and its way out. */
     private NotepadView buildNotepad() {
-        final NotepadView panel = notepad;
+        final NotepadView panel = detached(notepad);
         panel.setOnClose(this::closeNotepad);
         panel.setOnChanged(() -> NoteStore.save(this, panel.notes()));
         // Send: the note goes into the app as typed input, the same road a key takes, so a
@@ -2887,15 +2970,19 @@ public class ReteKeyImeService extends InputMethodService {
         pendingReading = reading;
         pendingCandidates = candidates;
         hanjaCandidatesShown = true;
-        if (hanjaFloating && hanjaView != null) {
+        if ((hanjaFloating || hanjaDocked) && hanjaView != null) {
             // Already up: a new reading is new contents, not a new panel — rebuilding would make
             // it jump and lose the place the user dragged it to.
             hanjaView.show(reading, candidates);
             return;
         }
-        // The candidates are a floating panel like the code-point pad: they belong over the
-        // document rather than in a popup pinned to a keyboard that may not even be on screen.
-        hanjaFloating = true;
+        if (panelPlacement() == PanelPlacement.DOCKED) {
+            hanjaDocked = true;
+        } else {
+            // The candidates are a floating panel like the code-point pad: they belong over the
+            // document rather than in a popup pinned to a keyboard that may not even be on screen.
+            hanjaFloating = true;
+        }
         setInputView(onCreateInputView());
         updateInputViewShown();
     }
@@ -2939,6 +3026,12 @@ public class ReteKeyImeService extends InputMethodService {
         pendingReading = null;
         pendingCandidates = null;
         hanjaCandidatesShown = false;
+        if (hanjaDocked) {
+            hanjaDocked = false;
+            setInputView(onCreateInputView());
+            updateInputViewShown();
+            return;
+        }
         if (!hanjaFloating) {
             return;
         }

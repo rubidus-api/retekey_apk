@@ -31,6 +31,42 @@ final class ScreenTheme {
         }
     }
 
+    /** Whether the keyboard is drawn in paper and ink only (issue #15). Off when unreadable. */
+    static boolean monochrome(Context context) {
+        return flag(context, PlainDisplay.KEY_MONOCHROME);
+    }
+
+    /**
+     * Whether keys stay still when pressed: nothing flashed, shaded or echoed (issue #15). The
+     * user's own switch, or Android's "remove animations", which asks the same of every app.
+     */
+    static boolean still(Context context) {
+        float scale = 1.0f;
+        try {
+            // Global settings are API 17; below that the legacy build keeps only its own switch.
+            if (android.os.Build.VERSION.SDK_INT >= 17) {
+                scale = android.provider.Settings.Global.getFloat(context.getContentResolver(),
+                    android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1.0f);
+            }
+        } catch (RuntimeException unreadable) {
+            // Keep the default: animations as usual unless the user switched them off here.
+        }
+        return PlainDisplay.still(flag(context, PlainDisplay.KEY_STILL), scale);
+    }
+
+    static void setFlag(Context context, String key, boolean value) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(key, value).apply();
+    }
+
+    private static boolean flag(Context context, String key) {
+        try {
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, false);
+        } catch (RuntimeException noPreferences) {
+            return false;
+        }
+    }
+
     /** Stores the mode. The keyboard picks it up through its preference-change listener. */
     static void setMode(Context context, ThemeMode mode) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

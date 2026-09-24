@@ -3,11 +3,13 @@
     android:isDefault="@bool/ime_default"
     android:settingsActivity="com.retekey.SettingsActivity">
     <subtype
+        android:label="@string/subtype_korean"
         android:languageTag="ko-KR"
         android:imeSubtypeLocale="ko_KR"
         android:imeSubtypeMode="keyboard"
         android:isAsciiCapable="false" />
     <subtype
+        android:label="@string/subtype_english"
         android:languageTag="en-US"
         android:imeSubtypeLocale="en_US"
         android:imeSubtypeMode="keyboard"

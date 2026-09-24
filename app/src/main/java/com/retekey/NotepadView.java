@@ -102,8 +102,11 @@ public final class NotepadView extends LinearLayout {
                     prefs(getContext()).edit().putInt(TEXT_PERCENT_KEY, textPercent).apply();
                 }
             });
-        // Translucent: the panel is over an app the user is often reading from.
-        setBackgroundColor(withAlpha(palette.background, 0xE0));
+        // Opaque, as the clipboard list is: two panels that take the same place over an app should
+        // not differ in how much of it they let through (issue #14). It was translucent, and in
+        // an app that paints its own picture behind the keyboard that picture came through the
+        // notes and not through the clipboard.
+        setBackgroundColor(palette.background);
 
         listScreen = new LinearLayout(context);
         listScreen.setOrientation(VERTICAL);
@@ -1002,10 +1005,6 @@ public final class NotepadView extends LinearLayout {
 
     private LayoutParams wide() {
         return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-    }
-
-    private static int withAlpha(int color, int alpha) {
-        return (alpha << 24) | (color & 0x00FFFFFF);
     }
 
     private int dp(int value) {

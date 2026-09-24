@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">ReteKey IME</string>
     <string name="ime_name">ReteKey IME</string>
+    <!-- What the system's keyboard switcher shows for each subtype (issue #14): the keyboard's
+         name, not a language. The subtype still says whether a physical keyboard starts in Korean
+         or in English. No %s: Android would put the locale's name in its place. -->
+    <string name="subtype_korean">ReteKey IME</string>
+    <string name="subtype_english">ReteKey IME (English)</string>
     <string name="editor_unavailable">Editor unavailable. Tap the text field and try again.</string>
     <string name="preview_hint">Enable ReteKey, then type in the field to try the keyboard.</string>
     <string name="preview_field_hint">Type here…</string>
@@ -43,6 +48,8 @@
     <string name="settings_band_always">Always</string>
     <string name="settings_band_never">Never</string>
     <string name="settings_theme_label">Colour scheme</string>
+    <string name="settings_panels_follow">Hanja and code-point panels follow the keyboard: above it when it is docked, in its place when it floats</string>
+    <string name="settings_monochrome">Monochrome: black and white keys with an outline, for E-Ink screens</string>
     <string name="settings_theme_hint">Light or dark, for the keyboard and for these screens. On Android 12 and later the colours are taken from the system\'s own palette, so the keyboard matches the wallpaper theme you have set.</string>
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
@@ -98,6 +105,7 @@
     <string name="hanja_pending">한자 키 인식됨 — 변환 기능은 준비 중입니다.</string>
     <string name="terminal_has_no_selection">A terminal has no selection to copy or cut.</string>
     <string name="settings_echo_hint">The box that shows what you just typed, over the keyboard. A finger covers the key it presses, which is why it is there — but it is a box over the keys, so it can be turned off, and made see-through enough to read the row underneath.</string>
+    <string name="settings_still">No motion: nothing flashes, shades or pops up when a key is pressed (also on when Android\'s \"Remove animations\" is on)</string>
     <string name="settings_echo_enabled">Show what was typed over the keyboard</string>
     <string name="settings_echo_opacity">Box opacity</string>
     <string name="settings_clip_label">Clipboard and kept text</string>

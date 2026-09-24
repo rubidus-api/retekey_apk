@@ -129,6 +129,8 @@ public final class ReteKeyboardView extends View {
     private boolean flashFromChoice;
     /** Whether the echo box is drawn at all, and how much of the keyboard shows through it. */
     private boolean echoBoxEnabled = EchoBoxSettings.DEFAULT_ENABLED;
+    /** Nothing drawn for a moment and taken away: no flash, press shade or echo (issue #15). */
+    private boolean still;
     private int echoBoxOpacity = EchoBoxSettings.DEFAULT_OPACITY;
 
 
@@ -492,6 +494,7 @@ public final class ReteKeyboardView extends View {
             EchoBoxSettings.KEY_ENABLED, EchoBoxSettings.DEFAULT_ENABLED);
         echoBoxOpacity = EchoBoxSettings.clampOpacity(prefs().getInt(
             EchoBoxSettings.KEY_OPACITY, EchoBoxSettings.DEFAULT_OPACITY));
+        still = ScreenTheme.still(getContext());
         repeatDelayMs = KeyRepeatSettings.clampDelay(prefs().getInt(
             KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS));
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
@@ -568,7 +571,7 @@ public final class ReteKeyboardView extends View {
     }
 
     private void flashKeyboard(SoftwareKeySpec key, String typed, boolean chosen) {
-        if (feedback.visualIntensity() <= 0.0f) {
+        if (feedback.visualIntensity() <= 0.0f || still) {
             return;
         }
         removeCallbacks(onFlashElapsed);
@@ -697,7 +700,7 @@ public final class ReteKeyboardView extends View {
 
     /** Tints each held key for a colour-change press feedback, one per finger on the keyboard. */
     private void drawPressFeedback(Canvas canvas, int width, int height) {
-        if (touches.size() == 0 || feedback.visualIntensity() <= 0.0f) {
+        if (touches.size() == 0 || feedback.visualIntensity() <= 0.0f || still) {
             return;
         }
         KeyboardLayout layout = layout();
@@ -832,17 +835,15 @@ public final class ReteKeyboardView extends View {
         }
         float half = box * 0.5f;
         float radius = box * 0.18f;
-        paint.setColor(palette.keyShadow);
-        Compat.drawRoundRect(canvas, centreX - half, centreY - half + keyShadowPx,
-            centreX + half, centreY + half + keyShadowPx, radius, paint);
         // Choosing has its own colour: the one under the finger in it, the rest tinted with it,
         // so the strip reads as a choice being made rather than as more pressed keys.
         int fill = aimed
             ? palette.choiceAccent
-            : ChoiceHue.softOf(palette.keyAccent, palette.keyFace);
-        paint.setColor(fill);
-        Compat.drawRoundRect(
-            canvas, centreX - half, centreY - half, centreX + half, centreY + half, radius, paint);
+            : palette.outlined
+                ? palette.keyFace
+                : ChoiceHue.softOf(palette.keyAccent, palette.keyFace);
+        drawKeyShape(canvas, centreX - half, centreY - half, centreX + half, centreY + half,
+            radius, fill);
         paint.setColor(palette.inkOn(fill));
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(box * 0.5f);
@@ -890,7 +891,8 @@ public final class ReteKeyboardView extends View {
             + "|" + shiftLayer.isActive()
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld
             + "|" + capsLocked + "|"
-            + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext());
+            + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext())
+            + "|" + ScreenTheme.monochrome(getContext());
     }
 
     /**
@@ -960,6 +962,27 @@ public final class ReteKeyboardView extends View {
     }
 
     /**
+     * A key's body. Ordinarily a face raised on a darker lip just below it; in the monochrome
+     * palette an outline in the ink colour round a face in the paper colour, the way an e-reader
+     * draws its own keys — a lip needs a second shade, and E-Ink has few to spare.
+     */
+    private void drawKeyShape(Canvas canvas, float l, float t, float r, float b, float radius,
+            int fill) {
+        paint.setColor(palette.keyShadow);
+        if (palette.outlined) {
+            float edge = Math.max(1.0f, keyShadowPx * 0.5f);
+            Compat.drawRoundRect(canvas, l, t, r, b, radius, paint);
+            paint.setColor(fill);
+            Compat.drawRoundRect(canvas, l + edge, t + edge, r - edge, b - edge,
+                Math.max(0.0f, radius - edge), paint);
+            return;
+        }
+        Compat.drawRoundRect(canvas, l, t + keyShadowPx, r, b + keyShadowPx, radius, paint);
+        paint.setColor(fill);
+        Compat.drawRoundRect(canvas, l, t, r, b, radius, paint);
+    }
+
+    /**
      * One key, in the given face colour. The colour is a parameter so a pressed key can be redrawn
      * whole — face, label and corner mark — in its brighter shade, rather than washed over with a
      * translucent sheet that takes the label down with it.
@@ -970,11 +993,7 @@ public final class ReteKeyboardView extends View {
         float t = top + keyGapPx;
         float r = right - keyGapPx;
         float b = bottom - keyGapPx;
-        // A darker lip just below the face makes the key look raised.
-        paint.setColor(palette.keyShadow);
-        Compat.drawRoundRect(canvas, l, t + keyShadowPx, r, b + keyShadowPx, keyRadiusPx, paint);
-        paint.setColor(fill);
-        Compat.drawRoundRect(canvas, l, t, r, b, keyRadiusPx, paint);
+        drawKeyShape(canvas, l, t, r, b, keyRadiusPx, fill);
         // The ink follows the fill, not the theme: a held key is painted strongly enough that the
         // ordinary label colour would sink into it.
         boolean latched = canBeHeld(key) && isHeld(key);

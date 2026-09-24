@@ -2757,6 +2757,38 @@ a key-up that never arrived.
 **Rule.** Whoever pressed it owns it. A press that does not end in a release ends in taking the
 press back, and a modifier belongs to the keyboard — or the finger — that is holding it.
 
+### 15.67 A panel that still had a parent
+
+**What happened.** The clipboard list and the notepad are kept in fields of the service, so what
+they hold survives the input view being built again. Every rebuild put the same panel into a new
+frame — and the old frame, no longer on screen but not gone, was still its parent. Android refuses
+that with `IllegalStateException: The specified child already has a parent`, and the IME crashed.
+Any rebuild with a panel open did it: pressing Memo with the clipboard open, or turning the screen
+(issue #12). Behind it was a second fault: with both fields set, the build showed the clipboard,
+and the notepad sat invisible behind it until the next Memo press closed a panel nobody could see.
+
+**The fix.** A kept panel leaves its old parent before it joins a new frame (`detached`), and the
+two panels replace each other: opening one puts the other away — the notepad saved first, as its
+own close does.
+
+**Rule.** A view that outlives its frame is detached before it is placed again. And one place on
+screen holds one thing: opening a panel closes whatever held that place, rather than leaving two
+flags set and the build choosing between them.
+
+### 15.68 A search typed into a view no longer on screen
+
+**What happened.** Closing the phonetic search rebuilt the input view without the candidate list,
+but left `hanjaView` pointing at the old list. The next search saw a list "already up", updated
+that one, and skipped the rebuild — so nothing appeared, while the search was open and took every
+letter as its query. The keyboard looked frozen in Shift, and typed nothing, until the user left
+the IME (issue #13).
+
+**The fix.** Every build starts by forgetting the last build's candidate view; the branches that
+show candidates make their own. The field now always means "the list in the tree on screen".
+
+**Rule.** A field that names a view names a view in the current tree. When a rebuild can leave it
+behind, the rebuild clears it — "already showing" must not be answered by a view that is not.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

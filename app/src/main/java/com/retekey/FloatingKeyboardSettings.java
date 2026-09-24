@@ -46,6 +46,18 @@ public final class FloatingKeyboardSettings {
         OrientedPrefs.putBoolean(prefs, KEY_ENABLED, orientation, enabled);
     }
 
+    /** Whether the Hanja list and the code-point pad follow the keyboard here (issue #14). */
+    static final String KEY_PANELS_FOLLOW = "floating_panels_follow";
+
+    public static boolean panelsFollow(SharedPreferences prefs, ScreenOrientation orientation) {
+        return OrientedPrefs.getBoolean(prefs, KEY_PANELS_FOLLOW, orientation, false);
+    }
+
+    public static void setPanelsFollow(
+            SharedPreferences prefs, ScreenOrientation orientation, boolean follow) {
+        OrientedPrefs.putBoolean(prefs, KEY_PANELS_FOLLOW, orientation, follow);
+    }
+
     public static int clampOpacity(int percent) {
         return Math.max(MIN_OPACITY_PERCENT, Math.min(MAX_OPACITY_PERCENT, percent));
     }

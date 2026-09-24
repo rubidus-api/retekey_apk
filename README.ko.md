@@ -1,6 +1,6 @@
 # ReteKey IME
 
-**ReteKey v0.1.199** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199-legacy.apk)
+**ReteKey v0.1.200** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200-legacy.apk)
 
 [English](README.md) · **한국어**
 
@@ -49,13 +49,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.1.199** —
-[retekey-0.1.199.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk) (693 KB; 안드로이드 4.0 빌드는 558 KB)
+현재 릴리즈: **v0.1.200** —
+[retekey-0.1.200.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.200/retekey-0.1.200.apk) (697 KB; 안드로이드 4.0 빌드는 560 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -146,8 +146,9 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
 - **상태를 가진 두벌식 한글 조합기** — 겹모음과 겹받침, 받침 이동(도깨비불), 되돌릴 수 있는
   백스페이스(닭 → 달 → 다)를 지원합니다.
 - **양방향 한자 변환** — 훈음 풀이와 페이지 넘김, 숫자키 선택을 갖췄고, 어떤 키보드를 쓰고 계시든
-  나타나는 별도의 창에서 고르십니다.
-- **메모장** — 키 하나로 열리는 반투명 전체화면 패널입니다. 목록은 파일 관리자처럼 정렬·선택되고,
+  나타나는 별도의 창에서 고르십니다. 원하시면 키보드 위에 붙이거나 플로팅 키보드 자리에 띄울 수도
+  있습니다.
+- **메모장** — 키 하나로 열리는 전체화면 패널입니다. 목록은 파일 관리자처럼 정렬·선택되고,
   각 글에는 만든 순간의 일시가 찍힙니다.
 - **플로팅 키보드** — 태블릿을 눕혔을 때를 위한 기능입니다. 화면 절반 안에 머무는 반투명 패널로,
   옮기고 크기를 바꿀 수 있으며 키 하나로 반대쪽 절반에 대칭으로 보낼 수 있습니다.
@@ -162,6 +163,8 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
   글자 자판의 윗줄에는 `1234567890`, 가운뎃줄에는 `!@#$%^&*;`, 아랫줄에는 `_-:='"?`가 들어 있습니다.
 - **라이트·다크·시스템 중에서 고르십니다** — 안드로이드 12 이상에서는 Material You 색까지
   따라갑니다.
+- **E-Ink 를 위해** — 테두리만 있는 흑백 키로 그리는 흑백 모드와, 누름 음영·번쩍임·글자 상자를 없애는
+  움직임 없음 스위치가 있습니다.
 - **방금 친 글자를 보여 주는 상자**는 끄거나 원하시는 만큼 투명하게 할 수 있어서 아래 키가 비칩니다.
   홀드로 여럿 중에서 고르는 순간은 따로 정한 색으로 그려서, 고르는 일이 치는 일처럼 보이지 않습니다.
 

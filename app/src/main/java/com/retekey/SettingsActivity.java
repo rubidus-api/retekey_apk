@@ -220,6 +220,7 @@ public final class SettingsActivity extends Activity {
         addPercentSlider(root, R.string.settings_sound,
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
 
+        root.addView(flagBox(R.string.settings_still, PlainDisplay.KEY_STILL));
         root.addView(sectionHint(R.string.settings_echo_hint));
         CheckBox echo = new CheckBox(this);
         echo.setText(R.string.settings_echo_enabled);
@@ -314,6 +315,18 @@ public final class SettingsActivity extends Activity {
         row.addView(themeButton(ThemeMode.LIGHT, R.string.settings_theme_light));
         row.addView(themeButton(ThemeMode.DARK, R.string.settings_theme_dark));
         root.addView(row, matchWidth());
+        // Beside light and dark rather than instead of them: an E-Ink screen is paper-white, but
+        // a monochrome keyboard in the dark theme is white ink on black and just as plain.
+        root.addView(flagBox(R.string.settings_monochrome, PlainDisplay.KEY_MONOCHROME));
+    }
+
+    /** A checkbox for one of {@link PlainDisplay}'s switches. */
+    private CheckBox flagBox(int titleRes, String key) {
+        CheckBox box = new CheckBox(this);
+        box.setText(titleRes);
+        box.setChecked(prefs().getBoolean(key, false));
+        box.setOnCheckedChangeListener((b, checked) -> ScreenTheme.setFlag(this, key, checked));
+        return box;
     }
 
     private Button themeButton(ThemeMode mode, int titleRes) {
@@ -500,6 +513,13 @@ public final class SettingsActivity extends Activity {
         floating.setOnCheckedChangeListener((b, checked) ->
             FloatingKeyboardSettings.setEnabled(prefs(), editing, checked));
         root.addView(floating);
+
+        CheckBox follow = new CheckBox(this);
+        follow.setText(R.string.settings_panels_follow);
+        follow.setChecked(FloatingKeyboardSettings.panelsFollow(prefs(), editing));
+        follow.setOnCheckedChangeListener((b, checked) ->
+            FloatingKeyboardSettings.setPanelsFollow(prefs(), editing, checked));
+        root.addView(follow);
 
         TextView label = new TextView(this);
         Compat.setTextAppearance(label, android.R.style.TextAppearance_DeviceDefault_Medium);

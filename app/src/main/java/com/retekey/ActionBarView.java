@@ -55,6 +55,8 @@ final class ActionBarView extends HorizontalScrollView {
 
     private final LinearLayout row;
     private final KeyboardPalette palette;
+    /** No press shade when the keys are to stay still (issue #15). */
+    private final boolean still;
     private final Handler handler = new Handler(Looper.getMainLooper());
     /** The chords held down right now. They stay down until pressed again. */
     private final Set<BarSlot> latched = new HashSet<>();
@@ -65,6 +67,7 @@ final class ActionBarView extends HorizontalScrollView {
     ActionBarView(Context context) {
         super(context);
         palette = KeyboardPalette.resolve(context);
+        still = ScreenTheme.still(context);
         setFillViewport(true);
         setHorizontalScrollBarEnabled(false);
         setBackgroundColor(palette.background);
@@ -264,7 +267,7 @@ final class ActionBarView extends HorizontalScrollView {
                 return;
             }
             view.setTextColor(palette.keyText);
-            view.setBackgroundColor(pressed
+            view.setBackgroundColor(pressed && !still
                 ? KeyPressTint.pressed(palette.keyFace, palette.pressTint)
                 : palette.keyFace);
         }

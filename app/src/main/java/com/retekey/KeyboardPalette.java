@@ -38,6 +38,11 @@ final class KeyboardPalette {
      * {@link ChoiceHue}).
      */
     final int choiceAccent;
+    /**
+     * Keys drawn as an outline in {@link #keyShadow} round the face, instead of a face raised on a
+     * lip: the monochrome palette's way of showing a key's edge without a second shade (issue #15).
+     */
+    final boolean outlined;
 
     private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
             int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint) {
@@ -50,6 +55,13 @@ final class KeyboardPalette {
     private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
             int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint,
             int keyTextInverse) {
+        this(background, keyFace, keyDisabled, keyAccent, keyAccentSoft, keyText, keyTextMuted,
+            keyShadow, hint, pressTint, keyTextInverse, ChoiceHue.of(keyAccent), false);
+    }
+
+    private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
+            int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint,
+            int keyTextInverse, int choiceAccent, boolean outlined) {
         this.keyTextInverse = keyTextInverse;
         this.background = background;
         this.keyFace = keyFace;
@@ -61,10 +73,11 @@ final class KeyboardPalette {
         this.keyShadow = keyShadow;
         this.hint = hint;
         this.pressTint = pressTint;
-        // Derived rather than given: every palette — hand-tuned or the device's own Material You —
-        // gets a choosing colour that keeps its saturation and lightness, so it reads in the same
-        // theme as everything around it.
-        this.choiceAccent = ChoiceHue.of(keyAccent);
+        // Derived rather than given for every palette with colour in it — hand-tuned or the
+        // device's own Material You — so the choosing colour keeps its saturation and lightness
+        // and reads in the same theme as everything around it. Monochrome gives a grey instead.
+        this.choiceAccent = choiceAccent;
+        this.outlined = outlined;
     }
 
     /**
@@ -125,6 +138,9 @@ final class KeyboardPalette {
 
     static KeyboardPalette resolve(Context context) {
         boolean night = isNight(context);
+        if (ScreenTheme.monochrome(context)) {
+            return monochrome(night);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 return dynamic(context, night);
@@ -166,6 +182,16 @@ final class KeyboardPalette {
             sys(context, android.R.color.system_neutral1_300),
             sys(context, android.R.color.system_neutral2_500),
             sys(context, android.R.color.system_accent1_600));
+    }
+
+    /** Paper and ink, and greys between them for the states (see {@link PlainDisplay}). */
+    static KeyboardPalette monochrome(boolean night) {
+        int[] c = PlainDisplay.monochrome(night);
+        return new KeyboardPalette(
+            c[PlainDisplay.BACKGROUND], c[PlainDisplay.KEY_FACE], c[PlainDisplay.KEY_DISABLED],
+            c[PlainDisplay.HELD], c[PlainDisplay.ARMED], c[PlainDisplay.KEY_TEXT],
+            c[PlainDisplay.KEY_TEXT_MUTED], c[PlainDisplay.EDGE], c[PlainDisplay.HINT],
+            c[PlainDisplay.PRESS], c[PlainDisplay.BACKGROUND], c[PlainDisplay.CHOICE], true);
     }
 
     private static KeyboardPalette dark() {
