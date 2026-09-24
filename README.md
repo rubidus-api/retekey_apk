@@ -49,9 +49,9 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
 Current release: **v0.1.199** —
@@ -726,8 +726,8 @@ package name, so one replaces the other.
 
 | Build | Runs on | APK |
 |---|---|---|
-| **modern** | Android 9 – 16 (API 28–36) | `retekey.apk` |
-| **legacy** | Android 4.0 – 16 (API 14–36) | `retekey-legacy.apk` |
+| **modern** | Android 9 – 16 (API 28–36) | `retekey-<version>.apk` |
+| **legacy** | Android 4.0 – 16 (API 14–36) | `retekey-<version>-legacy.apk` |
 
 Both are built from the same source, target API 36, and behave identically wherever the platform
 lets them. The split exists because reaching down to Android 4 means taking an older road in a few

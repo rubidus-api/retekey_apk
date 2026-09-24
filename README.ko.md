@@ -49,9 +49,9 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/latest/download/retekey-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.1.199/retekey-0.1.199-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
 현재 릴리즈: **v0.1.199** —
@@ -707,8 +707,8 @@ row: υ|ύ φ χ ψ ω|ώ
 
 | 빌드 | 동작 범위 | APK |
 |---|---|---|
-| **modern** | 안드로이드 9 – 16 (API 28–36) | `retekey.apk` |
-| **legacy** | 안드로이드 4.0 – 16 (API 14–36) | `retekey-legacy.apk` |
+| **modern** | 안드로이드 9 – 16 (API 28–36) | `retekey-<version>.apk` |
+| **legacy** | 안드로이드 4.0 – 16 (API 14–36) | `retekey-<version>-legacy.apk` |
 
 둘은 같은 소스에서 나오고 모두 API 36을 대상으로 하며, 플랫폼이 허락하는 한 똑같이 동작합니다. 굳이
 나눈 이유는 안드로이드 4까지 내려가려면 몇 군데에서 옛 방식을 써야 하는데, 요즘 폰에까지 그 길을
