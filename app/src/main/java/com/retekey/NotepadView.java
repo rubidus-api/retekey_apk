@@ -35,6 +35,8 @@ public final class NotepadView extends LinearLayout {
     private enum Screen { LIST, NOTE }
 
     private final KeyboardPalette palette;
+    /** No motion (issue #15): no ripple on the buttons, no glow at a scroll's end. */
+    private final boolean still;
     private NoteList notes;
     private Screen screen = Screen.LIST;
     /** The id of the note open in the editor, or null. */
@@ -75,6 +77,7 @@ public final class NotepadView extends LinearLayout {
     public NotepadView(Context context, NoteList initial) {
         super(context);
         this.palette = KeyboardPalette.resolve(context);
+        this.still = ScreenTheme.still(context);
         this.notes = initial == null ? NoteList.empty() : initial;
         setOrientation(VERTICAL);
         textPercent = NotepadTextScale.clamp(prefs(context)
@@ -144,7 +147,7 @@ public final class NotepadView extends LinearLayout {
         listScreen.addView(tools, wide());
 
         LinearLayout header = row(context);
-        selectAll = new CheckBox(context);
+        selectAll = quiet(new CheckBox(context));
         selectAll.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -160,7 +163,7 @@ public final class NotepadView extends LinearLayout {
         header.addView(sortByTitle, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
         listScreen.addView(header, wide());
 
-        ScrollView scroller = new ScrollView(context);
+        ScrollView scroller = quiet(new ScrollView(context));
         scroller.addView(listRows);
         listScreen.addView(scroller, new LayoutParams(
             LayoutParams.MATCH_PARENT, 0, 1f));
@@ -260,7 +263,7 @@ public final class NotepadView extends LinearLayout {
         bodyField = field(context, "");
         bodyField.setGravity(Gravity.TOP | Gravity.START);
         scaleText(bodyField, 16f);
-        ScrollView bodyScroller = new ScrollView(context);
+        ScrollView bodyScroller = quiet(new ScrollView(context));
         bodyScroller.addView(bodyField, new ScrollView.LayoutParams(
             LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         noteScreen.addView(bodyScroller, new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f));
@@ -824,7 +827,7 @@ public final class NotepadView extends LinearLayout {
     }
 
     private Button headerButton(Context context, final NoteList.Sort column) {
-        Button button = new Button(context, null, android.R.attr.borderlessButtonStyle);
+        Button button = quiet(new Button(context, null, android.R.attr.borderlessButtonStyle));
         button.setTextColor(palette.keyText);
         button.setAllCaps(false);
         button.setPadding(dp(4), 0, dp(4), 0);
@@ -843,7 +846,7 @@ public final class NotepadView extends LinearLayout {
         LinearLayout row = row(getContext());
         row.setMinimumHeight(dp(44));
 
-        CheckBox tick = new CheckBox(getContext());
+        CheckBox tick = quiet(new CheckBox(getContext()));
         tick.setChecked(notes.isSelected(note.id()));
         tick.setOnClickListener(new OnClickListener() {
             @Override
@@ -881,7 +884,8 @@ public final class NotepadView extends LinearLayout {
     }
 
     private Button moveButton(String glyph, final String id, final int delta) {
-        Button button = new Button(getContext(), null, android.R.attr.borderlessButtonStyle);
+        Button button =
+            quiet(new Button(getContext(), null, android.R.attr.borderlessButtonStyle));
         button.setText(glyph);
         button.setTextColor(palette.keyText);
         button.setAllCaps(false);
@@ -913,7 +917,7 @@ public final class NotepadView extends LinearLayout {
     }
 
     private Button toolButton(Context context, String label, OnClickListener listener) {
-        Button button = new Button(context, null, android.R.attr.borderlessButtonStyle);
+        Button button = quiet(new Button(context, null, android.R.attr.borderlessButtonStyle));
         button.setText(label);
         // The platform's borderless default is a washed-out grey on this translucent panel;
         // the body text is palette-coloured, and the toolbar must read as sharply as it does.
@@ -924,6 +928,33 @@ public final class NotepadView extends LinearLayout {
         button.setMinWidth(0);
         button.setOnClickListener(listener);
         return button;
+    }
+
+    /**
+     * Under No motion, takes away what a view draws for a moment and then removes: a borderless
+     * button's or a checkbox's ripple (its whole background — neither has another), the glow a
+     * scroll view paints when it reaches an end, and the tick's drawn-in animation, which is
+     * skipped to its end state the moment it changes. A view keeps its padding.
+     */
+    private <T extends View> T quiet(T view) {
+        if (!still) {
+            return view;
+        }
+        if (view instanceof ScrollView) {
+            view.setOverScrollMode(OVER_SCROLL_NEVER);
+        } else {
+            int left = view.getPaddingLeft();
+            int top = view.getPaddingTop();
+            int right = view.getPaddingRight();
+            int bottom = view.getPaddingBottom();
+            Compat.setBackground(view, null);
+            view.setPadding(left, top, right, bottom);
+        }
+        if (view instanceof android.widget.CompoundButton) {
+            ((android.widget.CompoundButton) view).setOnCheckedChangeListener(
+                (box, checked) -> box.jumpDrawablesToCurrentState());
+        }
+        return view;
     }
 
     private EditText field(Context context, String hint) {

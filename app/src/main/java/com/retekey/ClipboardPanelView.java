@@ -59,6 +59,10 @@ final class ClipboardPanelView extends LinearLayout {
         list = new LinearLayout(context);
         list.setOrientation(VERTICAL);
         ScrollView scroller = new ScrollView(context);
+        if (ScreenTheme.still(context)) {
+            // No motion (issue #15): no glow when the list is scrolled to an end.
+            scroller.setOverScrollMode(OVER_SCROLL_NEVER);
+        }
         scroller.addView(list, new LayoutParams(
             LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         addView(scroller, new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f));

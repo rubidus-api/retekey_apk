@@ -2789,6 +2789,22 @@ show candidates make their own. The field now always means "the list in the tree
 **Rule.** A field that names a view names a view in the current tree. When a rebuild can leave it
 behind, the rebuild clears it — "already showing" must not be answered by a view that is not.
 
+### 15.69 A still keyboard with moving panels
+
+**What happened.** No motion (issue #15) was built into the keyboard view and the action bar: no
+press shade, no flash, no echo. The reply to the reporter said nothing would be shown and taken
+away. The notepad did not agree: its buttons were the platform's borderless buttons, which play a
+ripple on every press, its checkboxes drew their tick in, and its lists and the clipboard's glowed
+when scrolled to an end. A test counted nineteen of these in an empty notepad with No motion on.
+
+**The fix.** The notepad and the clipboard read the same switch. Under it a borderless button or a
+checkbox loses its ripple background (padding kept), a tick jumps to its end state when it changes,
+and a scroll view never draws its end glow.
+
+**Rule.** A display switch is about every surface the IME draws, not the one it was written for.
+Platform widgets bring their own motion; find it by counting — ripple backgrounds, animated
+drawables, over-scroll — in each panel with the switch on.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an
