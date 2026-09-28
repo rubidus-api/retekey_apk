@@ -1,8 +1,6 @@
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.0** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)
+
 # ReteKey IME
-
-**ReteKey v0.2.0** (latest release) download — [apk (Android 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) · [legacy apk (Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)
-
-**English** · [한국어](README.ko.md)
 
 **An Android Hangul keyboard for developers and power users** — for anyone who needs Esc, Tab, Ctrl
 chords, function and arrow keys on a phone, and a keyboard that behaves itself in a terminal.

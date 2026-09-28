@@ -1,8 +1,6 @@
+**한국어** | [English](README.md) — **ReteKey IME v0.2.0** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)
+
 # ReteKey IME
-
-**ReteKey v0.2.0** (최신 릴리즈) 다운로드 — [apk (안드로이드 9+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) · [레거시 apk (안드로이드 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)
-
-[English](README.md) · **한국어**
 
 **개발자와 전문 사용자를 위한 안드로이드 한글 키보드입니다.** 폰에서도 Esc와 Tab, Ctrl 조합, 함수키와
 방향키가 필요하고, 터미널에서 얌전히 동작하는 키보드가 필요한 분들을 위해 만들었습니다.
