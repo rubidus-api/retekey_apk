@@ -78,4 +78,16 @@ public final class PlainDisplayTest {
         assertTrue(PlainDisplay.still(false, 0.0f));
         assertFalse(PlainDisplay.still(false, 0.5f));
     }
+
+    /**
+     * Issue #16: the layout's name in a pop-up on a switch is a picture shown and taken away, so
+     * it has its own switch, and No motion silences it as well.
+     */
+    @Test
+    public void theLayoutIsNamedOnlyWhenAskedAndNotStill() {
+        assertTrue(PlainDisplay.namesLayout(true, false));
+        assertFalse(PlainDisplay.namesLayout(false, false));
+        assertFalse(PlainDisplay.namesLayout(true, true));
+        assertFalse(PlainDisplay.namesLayout(false, true));
+    }
 }

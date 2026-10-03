@@ -13,12 +13,18 @@ package com.retekey;
  *       Android's own "remove animations" switch turns this on as well.</li>
  * </ul>
  *
+ * <p>A third, from issue #16: the layout's name shown in a pop-up when the layout is switched.
+ * On by default, its own switch, and silenced by No motion too, since a pop-up is a picture shown
+ * and taken away.
+ *
  * <p>Android-free: {@link KeyboardPalette} and the keyboard view apply what this decides.
  */
 final class PlainDisplay {
     /** Preference keys, in the same {@code retekey_view} preferences as the theme. */
     static final String KEY_MONOCHROME = "monochrome";
     static final String KEY_STILL = "still_keys";
+    /** On by default, unlike the two above. */
+    static final String KEY_LAYOUT_NAME = "layout_name_toast";
 
     /** Indexes into {@link #monochrome(boolean)}, in {@link KeyboardPalette}'s own order. */
     static final int BACKGROUND = 0;
@@ -62,6 +68,11 @@ final class PlainDisplay {
     /** Whether keys stay still: the user asked, or Android has animations switched off. */
     static boolean still(boolean asked, float animatorDurationScale) {
         return asked || animatorDurationScale == 0.0f;
+    }
+
+    /** Whether a layout switch names the new layout: the user wants it, and keys are not still. */
+    static boolean namesLayout(boolean asked, boolean still) {
+        return asked && !still;
     }
 
     private static int grey(int level) {

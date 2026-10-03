@@ -107,6 +107,7 @@
     <string name="terminal_has_no_selection">A terminal has no selection to copy or cut.</string>
     <string name="settings_echo_hint">The box that shows what you just typed, over the keyboard. A finger covers the key it presses, which is why it is there — but it is a box over the keys, so it can be turned off, and made see-through enough to read the row underneath.</string>
     <string name="settings_still">No motion: nothing flashes, shades or pops up when a key is pressed (also on when Android\'s \"Remove animations\" is on)</string>
+    <string name="settings_layout_name">Name the layout in a pop-up when switching layouts (never under No motion)</string>
     <string name="settings_echo_enabled">Show what was typed over the keyboard</string>
     <string name="settings_echo_opacity">Box opacity</string>
     <string name="settings_clip_label">Clipboard and kept text</string>

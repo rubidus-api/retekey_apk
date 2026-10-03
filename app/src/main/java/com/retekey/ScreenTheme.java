@@ -54,16 +54,26 @@ final class ScreenTheme {
         return PlainDisplay.still(flag(context, PlainDisplay.KEY_STILL), scale);
     }
 
+    /** Whether switching layout names the new one in a pop-up (issue #16). */
+    static boolean namesLayout(Context context) {
+        return PlainDisplay.namesLayout(
+            flag(context, PlainDisplay.KEY_LAYOUT_NAME, true), still(context));
+    }
+
     static void setFlag(Context context, String key, boolean value) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(key, value).apply();
     }
 
     private static boolean flag(Context context, String key) {
+        return flag(context, key, false);
+    }
+
+    private static boolean flag(Context context, String key, boolean unset) {
         try {
-            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, false);
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, unset);
         } catch (RuntimeException noPreferences) {
-            return false;
+            return unset;
         }
     }
 

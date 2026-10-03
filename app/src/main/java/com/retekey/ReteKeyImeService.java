@@ -791,9 +791,14 @@ public class ReteKeyImeService extends InputMethodService {
     /** How far either side of the cursor a word is looked for. Longer than any word worth one. */
     private static final int WORD_LOOKAROUND = 64;
 
-    /** Names the layout the globe key just moved to, so a five-way cycle is not a guessing game. */
+    /**
+     * Names the layout the globe key just moved to, so a five-way cycle is not a guessing game —
+     * unless the user turned that off or asked for No motion (issue #16).
+     */
     private void announceLayout(KeyboardLayoutId id) {
-        showFunctionToast(LetterLayouts.screenName(id));
+        if (ScreenTheme.namesLayout(this)) {
+            showFunctionToast(LetterLayouts.screenName(id));
+        }
     }
 
     private SharedPreferences viewPrefs() {
@@ -2330,7 +2335,9 @@ public class ReteKeyImeService extends InputMethodService {
         dispatcher.reset();
         hardwareKoreanMode = !hardwareKoreanMode;
         applyHardwareMode();
-        showFunctionToast(getString(hardwareKoreanMode ? R.string.mode_korean : R.string.mode_english));
+        if (ScreenTheme.namesLayout(this)) {
+            showFunctionToast(getString(hardwareKoreanMode ? R.string.mode_korean : R.string.mode_english));
+        }
     }
 
     /**

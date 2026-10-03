@@ -2805,6 +2805,22 @@ and a scroll view never draws its end glow.
 Platform widgets bring their own motion; find it by counting — ripple backgrounds, animated
 drawables, over-scroll — in each panel with the switch on.
 
+### 15.70 A still keyboard that still announced itself
+
+**What happened.** Switching layout — the globe key, or 한/영 on a physical keyboard — names the
+new layout in a toast. Issue #16, from the reporter who asked for No motion, asked for a way to
+turn it off: on E-Ink the toast is two refreshes and a ghost, like the flash No motion took away.
+A toast is drawn by the system, not by any view of ours, so 15.69's count of the IME's own views
+could never have found it.
+
+**The fix.** A switch of its own, on by default ("Name the layout in a pop-up when switching
+layouts"), and No motion silences it too (`PlainDisplay.namesLayout`). The toasts that report an
+outcome — the theme the gesture moved to, a refused copy in a terminal, a truncated remote paste,
+a write the editor refused — are not switches and still show.
+
+**Rule.** Count what the IME asks the system to show as well as what it draws: toasts and any
+other window it opens belong to the same display switch.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

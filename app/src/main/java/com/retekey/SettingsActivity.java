@@ -221,6 +221,12 @@ public final class SettingsActivity extends Activity {
             KeyFeedback.KEY_SOUND, KeyFeedback.DEFAULT_SOUND);
 
         root.addView(flagBox(R.string.settings_still, PlainDisplay.KEY_STILL));
+        CheckBox layoutName = new CheckBox(this);
+        layoutName.setText(R.string.settings_layout_name);
+        layoutName.setChecked(prefs().getBoolean(PlainDisplay.KEY_LAYOUT_NAME, true));
+        layoutName.setOnCheckedChangeListener((b, checked) ->
+            ScreenTheme.setFlag(this, PlainDisplay.KEY_LAYOUT_NAME, checked));
+        root.addView(layoutName);
         root.addView(sectionHint(R.string.settings_echo_hint));
         CheckBox echo = new CheckBox(this);
         echo.setText(R.string.settings_echo_enabled);

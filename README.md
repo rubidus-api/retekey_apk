@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.0** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.1** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)
 
 # ReteKey IME
 
@@ -47,13 +47,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.0** —
-[retekey-0.2.0.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) (698 KB; the Android 4.0 build is 560 KB)
+Current release: **v0.2.1** —
+[retekey-0.2.1.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) (698 KB; the Android 4.0 build is 560 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -165,7 +165,8 @@ never open the keypad page you will never see the parts you do not need.
   `1234567890` on the top row, `!@#$%^&*;` on the middle one, and `_-:='"?` on the bottom one.
 - **Light, dark, or the system's own** — your choice, with the Material You palette on Android 12+.
 - **For E-Ink**: a monochrome drawing, outlined black-and-white keys, and a no-motion switch that
-  drops the press shade, the flash and the echo box.
+  drops the press shade, the flash, the echo box and the layout-name pop-up (which can also be
+  turned off on its own).
 - **The box that echoes what you typed** can be turned off, or made as see-through as you like, so
   the keys under it stay readable; a hold that offers a choice is drawn in a colour of its own, so
   choosing never looks like typing.

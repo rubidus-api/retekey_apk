@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.0** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)
+**한국어** | [English](README.md) — **ReteKey IME v0.2.1** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)
 
 # ReteKey IME
 
@@ -47,13 +47,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.0** —
-[retekey-0.2.0.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.0/retekey-0.2.0.apk) (698 KB; 안드로이드 4.0 빌드는 560 KB)
+현재 릴리즈: **v0.2.1** —
+[retekey-0.2.1.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) (698 KB; 안드로이드 4.0 빌드는 560 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -161,8 +161,8 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
   글자 자판의 윗줄에는 `1234567890`, 가운뎃줄에는 `!@#$%^&*;`, 아랫줄에는 `_-:='"?`가 들어 있습니다.
 - **라이트·다크·시스템 중에서 고르십니다** — 안드로이드 12 이상에서는 Material You 색까지
   따라갑니다.
-- **E-Ink 를 위해** — 테두리만 있는 흑백 키로 그리는 흑백 모드와, 누름 음영·번쩍임·글자 상자를 없애는
-  움직임 없음 스위치가 있습니다.
+- **E-Ink 를 위해** — 테두리만 있는 흑백 키로 그리는 흑백 모드와, 누름 음영·번쩍임·글자 상자·배열 이름
+  팝업을 없애는 움직임 없음 스위치가 있습니다. 배열 이름 팝업은 따로 끌 수도 있습니다.
 - **방금 친 글자를 보여 주는 상자**는 끄거나 원하시는 만큼 투명하게 할 수 있어서 아래 키가 비칩니다.
   홀드로 여럿 중에서 고르는 순간은 따로 정한 색으로 그려서, 고르는 일이 치는 일처럼 보이지 않습니다.
 
