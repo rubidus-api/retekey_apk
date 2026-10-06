@@ -1,4 +1,5 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.1** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.1** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)<br>
+Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
 
