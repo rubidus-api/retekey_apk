@@ -52,7 +52,7 @@ public final class SettingsOutline {
         HEIGHT,
         /** How tall the action bar is, within that. On an orientation's settings page. */
         BAR_HEIGHT,
-        /** How wide the gap round each key is drawn. On an orientation's settings page. */
+        /** How much of a cell lies between two keys, which no key owns. On an orientation page. */
         KEY_GAP,
         /** The floating panel and its opacity. On an orientation's settings page. */
         FLOATING,

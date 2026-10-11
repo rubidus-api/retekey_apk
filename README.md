@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.2** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.3** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -48,13 +48,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.2** —
-[retekey-0.2.2.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2.apk) (701 KB; the Android 4.0 build is 562 KB)
+Current release: **v0.2.3** —
+[retekey-0.2.3.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk) (703 KB; the Android 4.0 build is 563 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -586,8 +586,8 @@ The settings screen uses stock controls only and follows the system theme:
 - **Colour scheme** — System, Light, or Dark. System is the default and follows the device; the other two hold whichever you pick, for the keyboard and for the app's own screens alike. On Android 12+ the colours themselves still come from the system's Material You palette.
 - **Portrait settings** and **Landscape settings** — the keyboard's height, the action bar's height, the gap between keys and the floating panel are **remembered separately for a screen held upright and one held sideways**, and each screen has a page of its own. Which orientation you are setting is the page you are on.
   - **Keyboard height** — how much of the screen's height the keyboard takes, from 1% to 50%. The number on the slider is the number on the screen: 25% is a quarter of it. A keyboard set before this was a percentage keeps exactly the size it had.
-  - **Action bar height** — the bar's own height on this screen, from half its usual height to double. The bar is part of the keyboard's height, not added to it, so a taller bar leaves less for the keys.
-  - **Gap between keys** — how wide the gap drawn round each key is on this screen, from none to three times the usual. Only the drawing changes: a key still answers a touch anywhere in its cell.
+  - **Action bar height** — the bar's own height on this screen, from 2% to 25% of the screen's height: the same unit as the keyboard height. The bar is part of the keyboard's height, not added to it, so a keyboard at 30% with a bar at 8% leaves the keys 22%, and the bar never takes more than half the keyboard. Until you set it, it is the height it always was.
+  - **Gap between keys** — how much space lies between two keys on this screen, from none to 40% of the width of one key cell (a key one column wide; wider keys get the same gap). The gap is not part of any key: a touch between two keys presses nothing. Until you set it, it is the gap it always was. **Back to usual** forgets either setting.
   - **Floating keyboard** — whether to use it on this screen, and how solid it is (1–100%).
 - **Layout (portrait)** and **Layout (landscape)** — which layouts the layout key walks through, and their order, kept separately for each screen. They have pages of their own rather than sharing the settings above: the list is one row per layout, and there are many. The layouts you have not enabled are grouped by language and each group starts shut, so the page opens as a list of languages rather than of layouts. Each of these pages also carries **which layout a plugged-in or Bluetooth keyboard follows** while one of them is on the screen — **the two need not match**: type Dvorak on the screen and Colemak on the keys, or leave the keys as their caps are printed. **Each layout answers to itself unless you say otherwise** — Colemak on the screen means Colemak on the keys — and a layout with no physical form of its own, like 천지인, answers to the one its language has. A layout's three-letter abbreviation says which side it is on: **capitals for the screen**, as the layout key paints them, **lower case for the keys**. Only layouts with more than one physical form are offered: English's three, Turkish's two, Bulgarian's two and Thai's two; Korean has one, 2벌식. The pairing is kept per screen too, like the list it sits under.
 - **Key-press feedback** — visual, vibration, and sound strengths, each 0–100% (30, 10 and 10 by default).

@@ -144,15 +144,19 @@ public final class SettingsActivity extends Activity {
                 root.addView(sectionHeader(R.string.settings_bar_height_label));
                 root.addView(sectionHint(R.string.settings_bar_height_hint));
                 addOrientedPercent(root, R.string.settings_bar_height_value,
-                    ActionBarHeightSettings.KEY_PERCENT, ActionBarHeightSettings.MIN_PERCENT,
-                    ActionBarHeightSettings.MAX_PERCENT, ActionBarHeightSettings.DEFAULT_PERCENT);
+                    R.string.settings_bar_height_usual,
+                    ActionBarHeightSettings.KEY_SCREEN_PERCENT,
+                    ActionBarHeightSettings.LEGACY_KEY_PERCENT,
+                    ActionBarHeightSettings.MIN_PERCENT, ActionBarHeightSettings.MAX_PERCENT,
+                    usualBarPercent());
                 break;
             case KEY_GAP:
                 root.addView(sectionHeader(R.string.settings_key_gap_label));
                 root.addView(sectionHint(R.string.settings_key_gap_hint));
                 addOrientedPercent(root, R.string.settings_key_gap_value,
-                    KeyGapSettings.KEY_PERCENT, KeyGapSettings.MIN_PERCENT,
-                    KeyGapSettings.MAX_PERCENT, KeyGapSettings.DEFAULT_PERCENT);
+                    R.string.settings_key_gap_usual,
+                    KeyGapSettings.KEY_CELL_PERCENT, KeyGapSettings.LEGACY_KEY_PERCENT,
+                    KeyGapSettings.MIN_PERCENT, KeyGapSettings.MAX_PERCENT, usualGapPercent());
                 break;
             case FLOATING:
                 addFloatingControls(root);
@@ -224,47 +228,77 @@ public final class SettingsActivity extends Activity {
     }
 
     /**
-     * A percentage kept for the orientation being edited: a label saying what it is now, a slider,
-     * and a button that puts it back to what it is until someone moves it.
+     * A percentage kept for the orientation this page edits, with its own way back. Until it is
+     * set it says so, and the slider rests where the usual size falls on this screen; the button
+     * forgets the setting — in the unit 0.2.2 stored it in too — rather than writing a number.
      */
-    private void addOrientedPercent(LinearLayout root, int valueRes, String prefKey,
-            int min, int max, int def) {
+    private void addOrientedPercent(LinearLayout root, int valueRes, int usualRes, String prefKey,
+            String legacyKey, int min, int max, int usual) {
         TextView label = new TextView(this);
         Compat.setTextAppearance(label, android.R.style.TextAppearance_DeviceDefault_Medium);
         root.addView(label);
 
         SeekBar bar = new SeekBar(this);
         rangeSlider(bar, min, max);
-        int start = Math.max(min, Math.min(max,
-            OrientedPrefs.getInt(prefs(), prefKey, editing, def)));
-        setSliderValue(bar, min, start);
-        label.setText(getString(valueRes, start));
+        int stored = OrientedPrefs.getInt(prefs(), prefKey, editing, -1);
+        int start = Math.max(min, Math.min(max, stored < 0 ? usual : stored));
         bar.setPadding(dp(4), dp(12), dp(4), dp(12));
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
-                int value = sliderValue(progress, min);
                 // Building the page moves the slider too; only a person's move is a setting, so
-                // an orientation nobody has set keeps following the default.
+                // an orientation nobody has set keeps following the usual size.
                 if (fromUser) {
+                    int value = sliderValue(progress, min);
                     OrientedPrefs.putInt(prefs(), prefKey, editing, value);
+                    label.setText(getString(valueRes, value));
                 }
-                label.setText(getString(valueRes, value));
             }
         });
+        setSliderValue(bar, min, start);
+        label.setText(getString(stored < 0 ? usualRes : valueRes, start));
         root.addView(bar, matchWidth());
 
         Button reset = new Button(this);
-        reset.setText(R.string.settings_reset_percent);
+        reset.setText(R.string.settings_reset_usual);
         reset.setAllCaps(false);
         reset.setOnClickListener(view -> {
-            OrientedPrefs.putInt(prefs(), prefKey, editing, def);
-            setSliderValue(bar, min, def);
+            prefs().edit().remove(editing.key(prefKey)).remove(editing.key(legacyKey)).apply();
+            int back = Math.max(min, Math.min(max,
+                prefKey.equals(KeyGapSettings.KEY_CELL_PERCENT)
+                    ? usualGapPercent() : usualBarPercent()));
+            setSliderValue(bar, min, back);
+            label.setText(getString(usualRes, back));
         });
         LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         resetParams.gravity = Gravity.END;
         root.addView(reset, resetParams);
+    }
+
+    /** Where the bar's untouched height falls on the screen this page edits, in percent. */
+    private int usualBarPercent() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        return ActionBarHeightSettings.percentFor(
+            ActionBarHeightSettings.usualPx(
+                OrientedPrefs.getInt(prefs(), ActionBarHeightSettings.LEGACY_KEY_PERCENT, editing,
+                    ActionBarHeightSettings.LEGACY_DEFAULT_PERCENT),
+                metrics.density),
+            KeyboardHeightPrefs.screenHeightPx(editing, metrics));
+    }
+
+    /** Where the untouched gap falls on a ten-column page of the screen this page edits. */
+    private int usualGapPercent() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int width = editing == ScreenOrientation.LANDSCAPE
+            ? Math.max(metrics.widthPixels, metrics.heightPixels)
+            : Math.min(metrics.widthPixels, metrics.heightPixels);
+        return KeyGapSettings.percentFor(
+            KeyGapSettings.usualPx(
+                OrientedPrefs.getInt(prefs(), KeyGapSettings.LEGACY_KEY_PERCENT, editing,
+                    KeyGapSettings.LEGACY_DEFAULT_PERCENT),
+                metrics.density),
+            width / 10);
     }
 
     /** What a key press does besides typing: a flash, a buzz, a click. */

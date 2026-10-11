@@ -786,7 +786,11 @@ keyboard rather than a bug: **which key is this**, **whose finger is it**, and *
 to hit-test against that visible face so a near-boundary tap cannot reach the neighbour. Don't. The
 gap belongs to the picture, not to the target — inset hit boxes leave a dead band between every
 pair of keys, and on a 240dpi phone that band is a third of the keyboard's area answering nothing
-(§15.16). Hit test against the whole grid cell, with the same edges the drawing uses:
+(§15.16). Hit test against the whole grid cell, with the same edges the drawing uses.
+
+*Since 0.2.3 this project does the opposite, by its owner's decision (2026-10-12): the gap between
+two faces presses nothing. The measurement above still stands; §15.16 has what changed and what
+did not.* The cell arithmetic is the same either way:
 
 ```java
 private int rowAt(KeyboardLayout layout, float y) {
@@ -1483,6 +1487,18 @@ you trade a rare wrong letter for a common missing one, and the missing one is w
 Prefer hysteresis (a slop the finger must exceed) over a dead zone (an area that answers nothing),
 and let the target tile the surface with no space left over. A unit test can assert exactly that:
 sample every few pixels of every layout and require a key at each one.
+
+**Reversed in 0.2.3 (owner's decision, 2026-10-12).** Once the gap became a setting (0.2.2), the
+owner asked for the gap to be taken out of the touch target: the space between two faces is not a
+key, at any gap size, the untouched 4dp included. `TouchTargets.resolve` returns null there. What
+this section measured is still true, and is the price of that decision: at the usual gap on a
+480 px, ten-column page, 12 px of every 48 across answer nothing. Three things keep it from being
+the old defect whole. The rim outside the outermost faces is not between two keys and still
+answers. A finger already on a key keeps it across a gap (the slop rule above is untouched), and a
+lift is never hit-tested again, so only a finger that *comes down* in a gap is lost. And the gap
+is now the user's to set: 0% gives back a target with no holes. The inset used for the hit test is
+the one used for the drawing, cut the same way (`KeyGapSettings.fit`), so what is drawn is what
+answers.
 
 ### 15.17 A syllable committed before the letter was finished
 
@@ -2820,6 +2836,24 @@ a write the editor refused — are not switches and still show.
 
 **Rule.** Count what the IME asks the system to show as well as what it draws: toasts and any
 other window it opens belong to the same display switch.
+
+### 15.71 A label sized for a key it was no longer drawn on
+
+**What happened.** 0.2.2 let the gap round a key be widened to three times its usual size. A label
+was fitted to its *cell*, on the unspoken assumption that the face is the cell less a fixed 4dp. At
+a wide gap on a 480 px screen the bottom row's words — Ctrl, Meta, Alt, Tab — ran off faces that
+had become narrower than the text sized for them. It was seen in a rendered picture before the
+release and shipped as a known issue.
+
+**The fix.** The label's room, and its smallest allowed size, shrink in the proportion the face
+has narrowed from its usual width (`drawKey`). At the usual gap and below, sizes are exactly what
+they were; only a widened gap shrinks a label. The first attempt subtracted the extra gap from the
+cell and left the size floor alone, and the rendered picture did not change at all: the allowance
+was nine tenths of the *cell*, already wider than the usual face.
+
+**Rule.** When a constant becomes a setting, find everything that was sized on the assumption it
+was constant. Fit text to the surface it is drawn on, not to the grid that surface was cut from —
+and render the extremes of a new setting on the narrowest screen before calling it done.
 
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 

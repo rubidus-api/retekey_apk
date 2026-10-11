@@ -45,7 +45,7 @@ final class ActionBarFrame extends LinearLayout {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         // Docked, the frame is exactly as tall as the keyboard would be on its own; floating, the
         // panel's frame hands down an exact height. Either way the two children divide it: the bar
-        // keeps its own height and the keyboard takes the rest.
+        // keeps its own height, up to half, and the keyboard takes the rest.
         int height;
         switch (MeasureSpec.getMode(heightMeasureSpec)) {
             case MeasureSpec.EXACTLY:
@@ -58,7 +58,7 @@ final class ActionBarFrame extends LinearLayout {
                 height = keyboard.desiredHeightPx();
                 break;
         }
-        int bandForBar = Math.min(bar.barHeightPx(), height);
+        int bandForBar = ActionBarHeightSettings.within(bar.barHeightPx(), height);
         bar.measure(
             MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
             MeasureSpec.makeMeasureSpec(bandForBar, MeasureSpec.EXACTLY));

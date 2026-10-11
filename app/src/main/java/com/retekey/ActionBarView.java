@@ -49,14 +49,17 @@ final class ActionBarView extends HorizontalScrollView {
     }
 
     private static final int GAP_DP = 3;
+    /** The height the bar's labels were sized for. */
+    private static final int USUAL_HEIGHT_DP = 40;
     private static final int LABEL_SP = 15;
 
     private final LinearLayout row;
     private final KeyboardPalette palette;
     /** No press shade when the keys are to stay still (issue #15). */
     private final boolean still;
-    /** The bar's own height setting for the orientation it was built in. */
-    private final int heightPercent;
+    /** The bar's height while its setting is untouched, and as set for this orientation. */
+    private final int usualHeightPx;
+    private final int heightPx;
     private final Handler handler = new Handler(Looper.getMainLooper());
     /** The chords held down right now. They stay down until pressed again. */
     private final Set<BarSlot> latched = new HashSet<>();
@@ -68,10 +71,20 @@ final class ActionBarView extends HorizontalScrollView {
         super(context);
         palette = KeyboardPalette.resolve(context);
         still = ScreenTheme.still(context);
-        heightPercent = ActionBarHeightSettings.clamp(OrientedPrefs.getInt(
-            context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE),
-            ActionBarHeightSettings.KEY_PERCENT, OrientedPrefs.current(context),
-            ActionBarHeightSettings.DEFAULT_PERCENT));
+        android.content.SharedPreferences prefs =
+            context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE);
+        ScreenOrientation orientation = OrientedPrefs.current(context);
+        android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+        usualHeightPx = ActionBarHeightSettings.usualPx(
+            OrientedPrefs.getInt(prefs, ActionBarHeightSettings.LEGACY_KEY_PERCENT, orientation,
+                ActionBarHeightSettings.LEGACY_DEFAULT_PERCENT),
+            metrics.density);
+        int percent = OrientedPrefs.getInt(prefs, ActionBarHeightSettings.KEY_SCREEN_PERCENT,
+            orientation, ActionBarHeightSettings.UNSET);
+        heightPx = percent < 0
+            ? usualHeightPx
+            : ActionBarHeightSettings.heightPx(
+                percent, KeyboardHeightPrefs.screenHeightPx(orientation, metrics));
         setFillViewport(true);
         setHorizontalScrollBarEnabled(false);
         setBackgroundColor(palette.background);
@@ -101,8 +114,7 @@ final class ActionBarView extends HorizontalScrollView {
 
     /** The strip's height in pixels, so the frame around it can account for it. */
     int barHeightPx() {
-        return ActionBarHeightSettings.heightPx(
-            heightPercent, getResources().getDisplayMetrics().density);
+        return heightPx;
     }
 
     private LinearLayout.LayoutParams slotParams() {
@@ -119,7 +131,7 @@ final class ActionBarView extends HorizontalScrollView {
         float usual = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP, LABEL_SP, getResources().getDisplayMetrics());
         view.setTextSize(TypedValue.COMPLEX_UNIT_PX, ActionBarHeightSettings.labelPx(
-            heightPercent, usual, barHeightPx() - 2 * dp(GAP_DP)));
+            heightPx, dp(USUAL_HEIGHT_DP), usual, barHeightPx() - 2 * dp(GAP_DP)));
         view.setTextColor(palette.keyText);
         view.setBackgroundColor(palette.keyFace);
         int pad = dp(14);
@@ -289,8 +301,12 @@ final class ActionBarView extends HorizontalScrollView {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec,
-            MeasureSpec.makeMeasureSpec(barHeightPx(), MeasureSpec.EXACTLY));
+        // A frame that has worked out the bar's band says so exactly, and is believed: it may be
+        // less than the bar asks for, where the keys would otherwise be left with nothing.
+        int height = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY
+            ? Math.min(barHeightPx(), MeasureSpec.getSize(heightMeasureSpec))
+            : barHeightPx();
+        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
     }
 
     private int dp(int value) {

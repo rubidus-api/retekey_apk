@@ -3,8 +3,9 @@ package com.retekey;
 import java.util.List;
 
 /**
- * Which key a touch belongs to. Every pixel still belongs to some key; what changes is who owns
- * the strip along an edge where a costly key meets one that types.
+ * Which key a touch belongs to, or none: the gap between two key faces is not a key, and a touch
+ * that lands there presses nothing (owner's rule, 2026-10-12). Within the faces, what changes is
+ * who owns the strip along an edge where a costly key meets one that types.
  *
  * <p>A near miss is not equally cheap everywhere. Landing on the neighbouring letter is one wrong
  * letter. Landing on 123 or Move turns the whole 12-key pad into digits or a cursor cluster, and
@@ -55,6 +56,18 @@ final class TouchTargets {
      */
     static int[] resolve(KeyboardLayout layout, int width, int height, float x, float y,
                          JamoExpectation.Kind expected) {
+        return resolve(layout, width, height, x, y, expected, 0);
+    }
+
+    /**
+     * The same, with the gap drawn on each side of a key face, in pixels. A touch between two
+     * faces belongs to neither and resolves to null. The rim of the keyboard is not between two
+     * keys, so the outermost keys still answer all the way to the edge.
+     *
+     * @param gapPx the gap as set, before {@link KeyGapSettings#fit} cuts it to what a key affords
+     */
+    static int[] resolve(KeyboardLayout layout, int width, int height, float x, float y,
+                         JamoExpectation.Kind expected, int gapPx) {
         if (layout == null || width <= 0 || height <= 0 || x < 0 || y < 0 || x >= width || y >= height) {
             return null;
         }
@@ -62,6 +75,9 @@ final class TouchTargets {
         int row = Math.min(rows - 1, (int) (y * rows / height));
         int key = keyIndex(layout, row, x, width);
         SoftwareKeySpec hit = layout.rows().get(row).get(key);
+        if (gapPx > 0 && inGap(layout, row, key, width, height, x, y, gapPx)) {
+            return null;
+        }
         if (!isCostly(hit)) {
             int spelled = spellingNeighbour(layout, row, key, x, width, expected);
             return new int[] {row, spelled < 0 ? key : spelled};
@@ -94,6 +110,22 @@ final class TouchTargets {
             }
         }
         return new int[] {row, key};
+    }
+
+    /** Whether a point inside this key's cell is off its face, on a side another key shares. */
+    private static boolean inGap(KeyboardLayout layout, int row, int key, int width, int height,
+                                 float x, float y, int gapPx) {
+        int startColumn = layout.startColumn(row, key);
+        int endColumn = startColumn + layout.rows().get(row).get(key).columnSpan();
+        int left = layout.columnEdge(startColumn, width);
+        int right = layout.columnEdge(endColumn, width);
+        int top = layout.rowEdge(row, height);
+        int bottom = layout.rowEdge(row + 1, height);
+        int gap = KeyGapSettings.fit(gapPx, right - left, bottom - top);
+        return (startColumn > 0 && x < left + gap)
+            || (endColumn < layout.columns() && x >= right - gap)
+            || (row > 0 && y < top + gap)
+            || (row + 1 < layout.rows().size() && y >= bottom - gap);
     }
 
     private static int keyIndex(KeyboardLayout layout, int row, float x, int width) {

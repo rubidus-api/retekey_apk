@@ -157,13 +157,12 @@ public final class ReteKeyboardView extends View {
     private static final float KEY_RADIUS_DP = 5.0f;
     private static final float KEY_SHADOW_DP = 2.0f;
 
-    /** The gap drawn around each key at 100%, the one the keyboard always had. */
+    /** The gap on each side of a key that the keyboard always had, which labels are sized for. */
     private final int baseKeyGapPx;
-    /**
-     * The gap this orientation is set to ({@link KeyGapSettings}). Drawing only: the touch target
-     * is the whole cell, so the space between keys still belongs to a key. See TouchTargeting.
-     */
-    private int keyGapPx;
+    /** The gap while this orientation's setting is untouched ({@link KeyGapSettings}). */
+    private int usualKeyGapPx;
+    /** The gap this orientation is set to, in percent of one cell, or {@code UNSET}. */
+    private int keyGapPercent = KeyGapSettings.UNSET;
     /** How far a finger may wander before it is judged to have left its key. */
     private final int touchSlopPx;
     private final int flickDistancePx;
@@ -244,8 +243,8 @@ public final class ReteKeyboardView extends View {
         super(context);
         this.sink = Objects.requireNonNull(sink, "sink");
         float density = context.getResources().getDisplayMetrics().density;
-        this.baseKeyGapPx = KeyGapSettings.gapPx(KeyGapSettings.DEFAULT_PERCENT, density);
-        this.keyGapPx = storedKeyGapPx();
+        this.baseKeyGapPx = KeyGapSettings.usualPx(KeyGapSettings.LEGACY_DEFAULT_PERCENT, density);
+        loadKeyGap();
         this.touchSlopPx = ViewConfiguration.get(context).getScaledTouchSlop();
         this.flickDistancePx = Math.max(touchSlopPx, Math.round(FLICK_DP * density));
         this.retargetPx = Math.max(touchSlopPx, Math.round(RETARGET_DP * density));
@@ -502,7 +501,7 @@ public final class ReteKeyboardView extends View {
             KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS));
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
             KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
-        keyGapPx = storedKeyGapPx();
+        loadKeyGap();
         // Read the key this orientation actually writes. Reading the un-suffixed one meant every
         // preference change — including the height's own write — put the height back to default,
         // which is why neither the size keys nor the settings slider appeared to do anything.
@@ -896,7 +895,7 @@ public final class ReteKeyboardView extends View {
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld
             + "|" + capsLocked + "|"
             + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext())
-            + "|" + ScreenTheme.monochrome(getContext()) + "|" + keyGapPx;
+            + "|" + ScreenTheme.monochrome(getContext()) + "|" + keyGapPercent + "|" + usualKeyGapPx;
     }
 
     /**
@@ -959,16 +958,31 @@ public final class ReteKeyboardView extends View {
         return LegacyGlyphs.label(key.label(), android.os.Build.VERSION.SDK_INT);
     }
 
-    /** The gap this cell can afford: the setting, less on a cell too small to give that much. */
+    /** The gap this key can afford: the setting, less on a key too small to give that much. */
     private int gapFor(int left, int top, int right, int bottom) {
-        return KeyGapSettings.fit(keyGapPx, baseKeyGapPx, right - left, bottom - top);
+        return KeyGapSettings.fit(keyGapPx(), right - left, bottom - top);
     }
 
-    /** The gap set for the orientation the keyboard is in. */
-    private int storedKeyGapPx() {
-        return KeyGapSettings.gapPx(
-            OrientedPrefs.getInt(prefs(), KeyGapSettings.KEY_PERCENT, orientation(),
-                KeyGapSettings.DEFAULT_PERCENT),
+    /**
+     * The gap on each side of a key face for the layout now showing, as set. A set percentage is
+     * of one cell of this layout at this width, so a ten-column page and a five-column pad given
+     * the same number get the same proportions rather than the same pixels.
+     */
+    int keyGapPx() {
+        if (keyGapPercent == KeyGapSettings.UNSET) {
+            return usualKeyGapPx;
+        }
+        return KeyGapSettings.sidePx(keyGapPercent, layout().columnEdge(1, getWidth()));
+    }
+
+    /** Reads the gap set for the orientation the keyboard is in, in whichever unit it was set. */
+    private void loadKeyGap() {
+        int percent = OrientedPrefs.getInt(
+            prefs(), KeyGapSettings.KEY_CELL_PERCENT, orientation(), KeyGapSettings.UNSET);
+        keyGapPercent = percent < 0 ? KeyGapSettings.UNSET : KeyGapSettings.clamp(percent);
+        usualKeyGapPx = KeyGapSettings.usualPx(
+            OrientedPrefs.getInt(prefs(), KeyGapSettings.LEGACY_KEY_PERCENT, orientation(),
+                KeyGapSettings.LEGACY_DEFAULT_PERCENT),
             getResources().getDisplayMetrics().density);
     }
 
@@ -1030,7 +1044,16 @@ public final class ReteKeyboardView extends View {
             drawSpaceMark(canvas, l, t, r, b);
         } else {
             String label = labelOf(key);
-            fitLabel(label, right - left, bottom - top);
+            // A label is sized for its cell on the understanding that the face is the cell less
+            // the gap the keyboard always had. A wider gap narrows the face, and the label is
+            // given that much less in proportion, or a word would run off it (0.2.2, §15.71).
+            float narrowed = 1.0f;
+            int usualFace = right - left - 2 * baseKeyGapPx;
+            if (gap > baseKeyGapPx && usualFace > 0) {
+                narrowed = (r - l) / usualFace;
+            }
+            fitLabel(label, Math.round((right - left) * narrowed),
+                Math.round((bottom - top) * narrowed), narrowed);
             float x = (left + right) * 0.5f;
             float y = top + (bottom - top) * 0.62f;
             boolean boldToggleCap = LAYOUT_TOGGLE_KEY_ID.equals(key.stableKeyId());
@@ -1133,10 +1156,15 @@ public final class ReteKeyboardView extends View {
         return modifierLatches.isLocked(key.control());
     }
 
-    /** Sizes {@link #paint} so {@code label} fits a cell of the given size, tracking cell size. */
-    private void fitLabel(String label, int cellWidth, int cellHeight) {
+    /**
+     * Sizes {@link #paint} so {@code label} fits a cell of the given size, tracking cell size.
+     * {@code narrowed} is how much of its usual width the key has kept: 1 at the usual gap.
+     */
+    private void fitLabel(String label, int cellWidth, int cellHeight, float narrowed) {
         float cap = cellHeight * KeyLabelFit.HEIGHT_RATIO;
-        float minSize = 8.5f * getResources().getDisplayMetrics().density;
+        // The floor is what keeps a word readable on a full-width key. A key narrowed by a
+        // widened gap takes the floor down with it, or the floor is what pushes the word off it.
+        float minSize = 8.5f * getResources().getDisplayMetrics().density * narrowed;
         paint.setTextSize(cap);
         float measured = paint.measureText(label);
         float size = KeyLabelFit.fitSize(
@@ -1186,15 +1214,16 @@ public final class ReteKeyboardView extends View {
         // modifier chord is two fingers down at once, and must remain one.
         settlePendingTaps();
         KeyboardLayout layout = layout();
-        int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y, expectedJamo);
+        int[] target = TouchTargets.resolve(
+            layout, getWidth(), getHeight(), x, y, expectedJamo, keyGapPx());
         if (target == null) {
             return;
         }
         int rowIndex = target[0];
         int keyIndex = target[1];
-        // Every pixel of the keyboard belongs to a key. The gap drawn around each face is a gap in
-        // the picture only: a touch target with dead space between the keys throws away roughly a
-        // third of the area, and every tap that lands there is a keystroke the user has to repeat.
+        // The gap between two faces is not a key: a finger that comes down there starts nothing
+        // (resolve returned null above). A finger already on a key keeps it while it crosses a
+        // gap, and takes the next key only once it is on that key's face.
         Touch touch = new Touch(pointerId, rowIndex, keyIndex, gridSignature(), x, y);
         touches.put(pointerId, touch);
         armModifierOnPress(touch, layout.rows().get(rowIndex).get(keyIndex));
@@ -1317,7 +1346,8 @@ public final class ReteKeyboardView extends View {
             if (!driftedOffKey(layout, touch, x, y)) {
                 continue;
             }
-            int[] target = TouchTargets.resolve(layout, getWidth(), getHeight(), x, y);
+            int[] target = TouchTargets.resolve(
+                layout, getWidth(), getHeight(), x, y, JamoExpectation.Kind.NONE, keyGapPx());
             if (target == null || (target[0] == touch.row && target[1] == touch.key)) {
                 continue;
             }

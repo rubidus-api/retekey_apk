@@ -133,4 +133,90 @@ public final class TouchTargetsTest {
         assertEquals("touch.ko2.bieup", at(ko, edge - 1, y));
         assertEquals("touch.ko2.jieut", at(ko, edge + 1, y));
     }
+
+    private static String at(KeyboardLayout layout, float x, float y, int gapPx) {
+        int[] t = TouchTargets.resolve(layout, W, H, x, y, JamoExpectation.Kind.NONE, gapPx);
+        return t == null ? null : layout.rows().get(t[0]).get(t[1]).stableKeyId();
+    }
+
+    @Test
+    public void theGapBetweenTwoKeysBelongsToNeither() {
+        // Owner's rule, 2026-10-12: the space between keys is not a key. 6 px is taken from each
+        // side of a cell, so 12 px astride a shared edge answer nothing.
+        KeyboardLayout ko = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        float edge = colEdge(ko, 3);
+        float y = ko.rowEdge(0, H) + 25;
+        String left = at(ko, edge - 20, y, 0);
+        String right = at(ko, edge + 20, y, 0);
+        assertEquals(null, at(ko, edge - 5, y, 6));
+        assertEquals(null, at(ko, edge + 5, y, 6));
+        assertEquals(left, at(ko, edge - 7, y, 6));
+        assertEquals(right, at(ko, edge + 6, y, 6));
+        // And between two rows.
+        float rowEdge = ko.rowEdge(1, H);
+        float x = colEdge(ko, 3) + 24;
+        assertEquals(null, at(ko, x, rowEdge - 5, 6));
+        assertEquals(null, at(ko, x, rowEdge + 5, 6));
+        assertEquals(at(ko, x, rowEdge - 20, 0), at(ko, x, rowEdge - 7, 6));
+        assertEquals(at(ko, x, rowEdge + 20, 0), at(ko, x, rowEdge + 6, 6));
+    }
+
+    @Test
+    public void withNoGapEveryPixelIsStillAKey() {
+        KeyboardLayout ko = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        for (int x = 0; x < W; x++) {
+            for (int y = 0; y < H; y += 7) {
+                assertEquals(at(ko, x, y), at(ko, x, y, 0));
+            }
+        }
+    }
+
+    @Test
+    public void theRimOfTheKeyboardIsNotAGapBetweenKeys() {
+        // The margin outside the outermost faces has a key on one side only. A thumb coming in
+        // from the bezel lands there, and it still gets the key it was reaching for.
+        KeyboardLayout ko = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        assertEquals(at(ko, 20, 25, 0), at(ko, 1, 1, 6));
+        assertEquals(at(ko, W - 20, 25, 0), at(ko, W - 1, 1, 6));
+        assertEquals(at(ko, 20, H - 25, 0), at(ko, 1, H - 1, 6));
+        assertEquals(at(ko, W - 20, H - 25, 0), at(ko, W - 1, H - 1, 6));
+    }
+
+    @Test
+    public void aKeyTwoCellsWideHasNoGapInItsMiddle() {
+        KeyboardLayout ko = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        int last = ko.rows().size() - 1;
+        int index = -1;
+        for (int i = 0; i < ko.rows().get(last).size(); i++) {
+            if ("touch.text.space".equals(ko.rows().get(last).get(i).stableKeyId())) {
+                index = i;
+            }
+        }
+        int start = ko.startColumn(last, index);
+        assertEquals(true, ko.rows().get(last).get(index).columnSpan() > 1);
+        assertEquals("touch.text.space", at(ko, colEdge(ko, start + 1), H - 25, 6));
+        assertEquals("touch.text.space", at(ko, colEdge(ko, start + 1) - 3, H - 25, 6));
+    }
+
+    @Test
+    public void aGapTooWideForItsKeyStillLeavesHalfTheKeyToTouch() {
+        // Cells here are 48 by 50. A 40 px gap would leave nothing; it stops at a quarter of the
+        // cell, exactly as the drawing does, so what is drawn is what answers.
+        KeyboardLayout ko = KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        float left = colEdge(ko, 3);
+        assertEquals(null, at(ko, left + 11, 25, 40));
+        assertEquals(at(ko, left + 24, 25, 0), at(ko, left + 12, 25, 40));
+        assertEquals(at(ko, left + 24, 25, 0), at(ko, left + 24, 25, 40));
+    }
+
+    @Test
+    public void aCostlyKeyStillGivesItsEdgeOnceTheGapIsCrossed() {
+        KeyboardLayout cji = KeyboardLayouts.phone(KeyboardLayoutId.KO_CHEONJIIN, PhoneOverlay.NONE);
+        float boundary = colEdge(cji, 2);
+        float cell = colEdge(cji, 2) - colEdge(cji, 1);
+        float y = cji.rowEdge(0, H) + 25;
+        assertEquals(null, at(cji, boundary - 3, y, 6));
+        assertEquals("touch.cheonjiin.i", at(cji, boundary - cell * 0.2f, y, 6));
+        assertEquals("touch.phone.overlay.digits", at(cji, boundary - cell * 0.6f, y, 6));
+    }
 }
