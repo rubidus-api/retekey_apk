@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.1** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.2** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -48,13 +48,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.1** —
-[retekey-0.2.1.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.1/retekey-0.2.1.apk) (698 KB; 안드로이드 4.0 빌드는 560 KB)
+현재 릴리즈: **v0.2.2** —
+[retekey-0.2.2.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.2/retekey-0.2.2.apk) (701 KB; 안드로이드 4.0 빌드는 562 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -558,12 +558,16 @@ Ctrl+V 는 Ctrl+V 로 프로그램에 그대로 갑니다. 원격 데스크톱�
 - **색 테마** — 시스템·라이트·다크 중에서 고르십니다. 기본값인 시스템은 기기 설정을 따르고, 나머지
   둘은 기기가 어떻든 고르신 쪽을 지킵니다. 키보드와 앱 화면에 모두 함께 적용되며, 안드로이드 12 이상
   에서는 색 자체는 여전히 시스템의 Material You 팔레트에서 가져옵니다.
-- **세로 화면 설정**과 **가로 화면 설정** — 키보드 높이와 플로팅 키보드는 **세로와 가로에 대해 따로
+- **세로 화면 설정**과 **가로 화면 설정** — 키보드 높이, 액션 바 높이, 키 사이 간격, 플로팅 키보드는 **세로와 가로에 대해 따로
   기억되며**, 각각 **제 페이지**를 갖습니다. 지금 어느 쪽을 설정하는지는 "지금 있는 페이지"가 곧 답이고,
   다른 쪽을 보려면 그 페이지를 열면 됩니다. 설정을 바꾸려고 기기를 돌릴 일은 없습니다.
   - **키보드 높이** — 키보드가 화면 세로의 몇 퍼센트를 차지할지 1%부터 50%까지 정하십니다. 슬라이더에
     적힌 숫자가 곧 화면에서 보이는 그 비율이며, 25%면 화면의 사분의 일입니다. 퍼센트로 바뀌기 전에
     맞춰 두신 높이는 그대로 유지됩니다.
+  - **액션 바 높이** — 이 화면 방향에서 액션 바만의 높이를 평소의 절반부터 두 배까지 정하십니다. 액션 바는
+    키보드 높이에 더해지는 것이 아니라 그 안에 들어 있으므로, 바를 키우면 키에 남는 높이가 줄어듭니다.
+  - **키 사이 간격** — 이 화면 방향에서 키 둘레에 그리는 간격을 없음부터 평소의 세 배까지 정하십니다.
+    그림만 바뀝니다. 키는 여전히 제 칸 어디를 눌러도 눌립니다.
   - **플로팅 키보드** — 이 화면 방향에서 쓸지 여부와 얼마나 진하게 보일지(1–100%)를 정합니다.
 - **Layout (portrait)**와 **Layout (landscape)** — 자판 키가 돌아가며 보여 줄 자판과 그 순서를 화면
   방향마다 따로 정합니다. 위의 설정과 한 페이지를 쓰지 않고 따로 둔 까닭은, 이 목록이 자판 하나에 한

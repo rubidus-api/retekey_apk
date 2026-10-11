@@ -23,6 +23,13 @@
     <string name="settings_back">← Back to main screen</string>
     <string name="settings_height_label">Keyboard height</string>
     <string name="settings_height_hint">How much of the screen\'s height the keyboard takes, from 1% to 50%. The menu page\'s size keys move it too, two points at a time.</string>
+    <string name="settings_bar_height_label">Action bar height</string>
+    <string name="settings_bar_height_hint">How tall the action bar is on this screen, from half its usual height to double. The bar is part of the keyboard\'s height, not added to it: a taller bar leaves less for the keys, so raise the keyboard height with it if the keys get short.</string>
+    <string name="settings_bar_height_value">%1$d%% of the usual height</string>
+    <string name="settings_key_gap_label">Gap between keys</string>
+    <string name="settings_key_gap_hint">How wide the gap drawn round each key is on this screen, from none to three times the usual. It changes only what is drawn: a key answers a touch anywhere in its cell, gap included. On a very short key the gap stops at a quarter of the key.</string>
+    <string name="settings_key_gap_value">%1$d%% of the usual gap</string>
+    <string name="settings_reset_percent">Back to 100%</string>
     <string name="settings_height_value">%1$d%% of the screen height</string>
     <string name="settings_bar_label">Action bar</string>
     <string name="settings_bar_hint">A strip above the keys for the things that are not letters: selecting, the clipboard, moving the cursor, text of your own, key combinations you assemble. It has a screen of its own.</string>
@@ -60,8 +67,8 @@
     <string name="settings_hwlayout_label">Physical keyboard layouts</string>
     <string name="settings_hwlayout_hint">Which layout a plugged-in or Bluetooth keyboard follows while a layout is on the screen. They need not match: you can type Dvorak on the screen and Colemak on the keys. Only layouts with more than one physical form are listed — Korean has one, 2벌식, which 천지인 and 나랏글 already use.</string>
     <string name="settings_hwlayout_row">On screen: %1$s — physical keyboard:</string>
-    <string name="settings_portrait_hint">Keyboard height and the floating panel, as they are for a screen held upright. The layouts for this screen have a page of their own.</string>
-    <string name="settings_landscape_hint">Keyboard height and the floating panel, as they are for a screen held sideways. The layouts for this screen have a page of their own.</string>
+    <string name="settings_portrait_hint">The keyboard\'s height, the action bar\'s height, the gap between keys and the floating panel, as they are for a screen held upright. The layouts for this screen have a page of their own.</string>
+    <string name="settings_landscape_hint">The keyboard\'s height, the action bar\'s height, the gap between keys and the floating panel, as they are for a screen held sideways. The layouts for this screen have a page of their own.</string>
     <string name="settings_layouts_group_shut">▸ %1$s  (%2$d)</string>
     <string name="settings_layouts_group_open">▾ %1$s  (%2$d)</string>
     <string name="settings_layout_portrait_title">Layout (portrait)</string>

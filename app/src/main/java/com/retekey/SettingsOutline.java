@@ -8,8 +8,9 @@ import java.util.List;
 /**
  * What the settings screens hold, and in what order.
  *
- * <p>Three settings are stored separately for a screen held upright and one held sideways: the
- * keyboard's height, the floating panel, and the layout list. They began scattered through one
+ * <p>Several settings are stored separately for a screen held upright and one held sideways: the
+ * keyboard's height (with the action bar's own height and the gap round the keys), the floating
+ * panel, and the layout list. They began scattered through one
  * long page with a toggle near the top saying which orientation was being edited, which meant
  * remembering a line of small print and scrolling back to a switch (issue #6). They then moved to
  * a page per orientation — better, but that page was, in practice, mostly the layout list: one
@@ -49,6 +50,10 @@ public final class SettingsOutline {
         HARDWARE_LAYOUTS,
         /** How much of the screen the keyboard takes. On an orientation's settings page. */
         HEIGHT,
+        /** How tall the action bar is, within that. On an orientation's settings page. */
+        BAR_HEIGHT,
+        /** How wide the gap round each key is drawn. On an orientation's settings page. */
+        KEY_GAP,
         /** The floating panel and its opacity. On an orientation's settings page. */
         FLOATING,
         /** Which layouts are enabled, and their order. The whole of a layout page. */
@@ -56,7 +61,8 @@ public final class SettingsOutline {
 
         /** Whether this section's value is stored separately for each screen orientation. */
         public boolean isPerOrientation() {
-            return this == HEIGHT || this == FLOATING || this == LAYOUTS
+            return this == HEIGHT || this == BAR_HEIGHT || this == KEY_GAP
+                || this == FLOATING || this == LAYOUTS
                 || this == HARDWARE_LAYOUTS;
         }
     }
@@ -76,9 +82,9 @@ public final class SettingsOutline {
         Section.CLIPBOARD,
         Section.USER_LAYOUT));
 
-    /** One orientation's settings page: the two small things kept per screen. */
+    /** One orientation's settings page: the sizes kept per screen, then the floating panel. */
     public static final List<Section> ORIENTATION_PAGE = Collections.unmodifiableList(
-        Arrays.asList(Section.HEIGHT, Section.FLOATING));
+        Arrays.asList(Section.HEIGHT, Section.BAR_HEIGHT, Section.KEY_GAP, Section.FLOATING));
 
     /**
      * One orientation's layout page: which layouts this screen walks through, and — for the ones

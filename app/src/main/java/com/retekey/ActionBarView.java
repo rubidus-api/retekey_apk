@@ -48,8 +48,6 @@ final class ActionBarView extends HorizontalScrollView {
         void onPress(boolean down);
     }
 
-    /** How tall the strip is. Shorter than a key row: it is a shelf, not another row of keys. */
-    private static final int HEIGHT_DP = 40;
     private static final int GAP_DP = 3;
     private static final int LABEL_SP = 15;
 
@@ -57,6 +55,8 @@ final class ActionBarView extends HorizontalScrollView {
     private final KeyboardPalette palette;
     /** No press shade when the keys are to stay still (issue #15). */
     private final boolean still;
+    /** The bar's own height setting for the orientation it was built in. */
+    private final int heightPercent;
     private final Handler handler = new Handler(Looper.getMainLooper());
     /** The chords held down right now. They stay down until pressed again. */
     private final Set<BarSlot> latched = new HashSet<>();
@@ -68,6 +68,10 @@ final class ActionBarView extends HorizontalScrollView {
         super(context);
         palette = KeyboardPalette.resolve(context);
         still = ScreenTheme.still(context);
+        heightPercent = ActionBarHeightSettings.clamp(OrientedPrefs.getInt(
+            context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE),
+            ActionBarHeightSettings.KEY_PERCENT, OrientedPrefs.current(context),
+            ActionBarHeightSettings.DEFAULT_PERCENT));
         setFillViewport(true);
         setHorizontalScrollBarEnabled(false);
         setBackgroundColor(palette.background);
@@ -97,7 +101,8 @@ final class ActionBarView extends HorizontalScrollView {
 
     /** The strip's height in pixels, so the frame around it can account for it. */
     int barHeightPx() {
-        return dp(HEIGHT_DP);
+        return ActionBarHeightSettings.heightPx(
+            heightPercent, getResources().getDisplayMetrics().density);
     }
 
     private LinearLayout.LayoutParams slotParams() {
@@ -111,7 +116,10 @@ final class ActionBarView extends HorizontalScrollView {
         TextView view = new TextView(getContext());
         view.setText(slot.label());
         view.setGravity(Gravity.CENTER);
-        view.setTextSize(TypedValue.COMPLEX_UNIT_SP, LABEL_SP);
+        float usual = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP, LABEL_SP, getResources().getDisplayMetrics());
+        view.setTextSize(TypedValue.COMPLEX_UNIT_PX, ActionBarHeightSettings.labelPx(
+            heightPercent, usual, barHeightPx() - 2 * dp(GAP_DP)));
         view.setTextColor(palette.keyText);
         view.setBackgroundColor(palette.keyFace);
         int pad = dp(14);

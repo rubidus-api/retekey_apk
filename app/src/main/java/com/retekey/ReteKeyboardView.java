@@ -154,14 +154,16 @@ public final class ReteKeyboardView extends View {
      */
     private static final int MULTI_TAP_TIMEOUT_MS = 800;
 
-    /** Gap (in dp) drawn around each key. Drawing only: the touch target is the whole cell, so
-     * the space between keys still belongs to a key. See TouchTargeting. */
-    private static final float KEY_GAP_DP = 4.0f;
     private static final float KEY_RADIUS_DP = 5.0f;
     private static final float KEY_SHADOW_DP = 2.0f;
 
-    /** {@link #KEY_GAP_DP} resolved to pixels for this display; set in the constructor. */
-    private final int keyGapPx;
+    /** The gap drawn around each key at 100%, the one the keyboard always had. */
+    private final int baseKeyGapPx;
+    /**
+     * The gap this orientation is set to ({@link KeyGapSettings}). Drawing only: the touch target
+     * is the whole cell, so the space between keys still belongs to a key. See TouchTargeting.
+     */
+    private int keyGapPx;
     /** How far a finger may wander before it is judged to have left its key. */
     private final int touchSlopPx;
     private final int flickDistancePx;
@@ -242,7 +244,8 @@ public final class ReteKeyboardView extends View {
         super(context);
         this.sink = Objects.requireNonNull(sink, "sink");
         float density = context.getResources().getDisplayMetrics().density;
-        this.keyGapPx = Math.round(KEY_GAP_DP * density);
+        this.baseKeyGapPx = KeyGapSettings.gapPx(KeyGapSettings.DEFAULT_PERCENT, density);
+        this.keyGapPx = storedKeyGapPx();
         this.touchSlopPx = ViewConfiguration.get(context).getScaledTouchSlop();
         this.flickDistancePx = Math.max(touchSlopPx, Math.round(FLICK_DP * density));
         this.retargetPx = Math.max(touchSlopPx, Math.round(RETARGET_DP * density));
@@ -499,6 +502,7 @@ public final class ReteKeyboardView extends View {
             KeyRepeatSettings.KEY_DELAY_MS, KeyRepeatSettings.DEFAULT_DELAY_MS));
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
             KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
+        keyGapPx = storedKeyGapPx();
         // Read the key this orientation actually writes. Reading the un-suffixed one meant every
         // preference change — including the height's own write — put the height back to default,
         // which is why neither the size keys nor the settings slider appeared to do anything.
@@ -651,8 +655,8 @@ public final class ReteKeyboardView extends View {
                 int left = layout.columnEdge(startColumn, width);
                 int right = layout.columnEdge(startColumn + key.columnSpan(), width);
                 // Cut each key face out of the wash; what is left is exactly the gaps.
-                Compat.clipOut(canvas,
-                    left + keyGapPx, top + keyGapPx, right - keyGapPx, bottom - keyGapPx);
+                int gap = gapFor(left, top, right, bottom);
+                Compat.clipOut(canvas, left + gap, top + gap, right - gap, bottom - gap);
             }
         }
         canvas.drawRect(0.0f, 0.0f, width, height, paint);
@@ -892,7 +896,7 @@ public final class ReteKeyboardView extends View {
             + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld
             + "|" + capsLocked + "|"
             + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext())
-            + "|" + ScreenTheme.monochrome(getContext());
+            + "|" + ScreenTheme.monochrome(getContext()) + "|" + keyGapPx;
     }
 
     /**
@@ -955,6 +959,19 @@ public final class ReteKeyboardView extends View {
         return LegacyGlyphs.label(key.label(), android.os.Build.VERSION.SDK_INT);
     }
 
+    /** The gap this cell can afford: the setting, less on a cell too small to give that much. */
+    private int gapFor(int left, int top, int right, int bottom) {
+        return KeyGapSettings.fit(keyGapPx, baseKeyGapPx, right - left, bottom - top);
+    }
+
+    /** The gap set for the orientation the keyboard is in. */
+    private int storedKeyGapPx() {
+        return KeyGapSettings.gapPx(
+            OrientedPrefs.getInt(prefs(), KeyGapSettings.KEY_PERCENT, orientation(),
+                KeyGapSettings.DEFAULT_PERCENT),
+            getResources().getDisplayMetrics().density);
+    }
+
     /** Draws one raised, rounded key with its label and long-press hint into the cache canvas. */
     private void drawKey(Canvas canvas, SoftwareKeySpec key,
             int left, int top, int right, int bottom) {
@@ -989,10 +1006,11 @@ public final class ReteKeyboardView extends View {
      */
     private void drawKey(Canvas canvas, SoftwareKeySpec key,
             int left, int top, int right, int bottom, int fill) {
-        float l = left + keyGapPx;
-        float t = top + keyGapPx;
-        float r = right - keyGapPx;
-        float b = bottom - keyGapPx;
+        int gap = gapFor(left, top, right, bottom);
+        float l = left + gap;
+        float t = top + gap;
+        float r = right - gap;
+        float b = bottom - gap;
         drawKeyShape(canvas, l, t, r, b, keyRadiusPx, fill);
         // The ink follows the fill, not the theme: a held key is painted strongly enough that the
         // ordinary label colour would sink into it.

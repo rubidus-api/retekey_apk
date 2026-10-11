@@ -114,7 +114,8 @@ public class ReteKeyImeService extends InputMethodService {
      */
     private final SharedPreferences.OnSharedPreferenceChangeListener barPrefsListener =
         (changed, key) -> {
-            if (ActionBarSlots.KEY_ENABLED.equals(key) || ActionBarSlots.KEY_SLOTS.equals(key)) {
+            if (ActionBarSlots.KEY_ENABLED.equals(key) || ActionBarSlots.KEY_SLOTS.equals(key)
+                    || ActionBarHeightSettings.isKey(key)) {
                 rebuildInputView();
             }
         };

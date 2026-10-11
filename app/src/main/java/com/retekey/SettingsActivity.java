@@ -140,6 +140,20 @@ public final class SettingsActivity extends Activity {
             case LAYOUTS:
                 addLayoutControls(root);
                 break;
+            case BAR_HEIGHT:
+                root.addView(sectionHeader(R.string.settings_bar_height_label));
+                root.addView(sectionHint(R.string.settings_bar_height_hint));
+                addOrientedPercent(root, R.string.settings_bar_height_value,
+                    ActionBarHeightSettings.KEY_PERCENT, ActionBarHeightSettings.MIN_PERCENT,
+                    ActionBarHeightSettings.MAX_PERCENT, ActionBarHeightSettings.DEFAULT_PERCENT);
+                break;
+            case KEY_GAP:
+                root.addView(sectionHeader(R.string.settings_key_gap_label));
+                root.addView(sectionHint(R.string.settings_key_gap_hint));
+                addOrientedPercent(root, R.string.settings_key_gap_value,
+                    KeyGapSettings.KEY_PERCENT, KeyGapSettings.MIN_PERCENT,
+                    KeyGapSettings.MAX_PERCENT, KeyGapSettings.DEFAULT_PERCENT);
+                break;
             case FLOATING:
                 addFloatingControls(root);
                 break;
@@ -203,6 +217,50 @@ public final class SettingsActivity extends Activity {
         reset.setText(R.string.settings_reset_height);
         reset.setAllCaps(false);
         reset.setOnClickListener(this::resetHeight);
+        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        resetParams.gravity = Gravity.END;
+        root.addView(reset, resetParams);
+    }
+
+    /**
+     * A percentage kept for the orientation being edited: a label saying what it is now, a slider,
+     * and a button that puts it back to what it is until someone moves it.
+     */
+    private void addOrientedPercent(LinearLayout root, int valueRes, String prefKey,
+            int min, int max, int def) {
+        TextView label = new TextView(this);
+        Compat.setTextAppearance(label, android.R.style.TextAppearance_DeviceDefault_Medium);
+        root.addView(label);
+
+        SeekBar bar = new SeekBar(this);
+        rangeSlider(bar, min, max);
+        int start = Math.max(min, Math.min(max,
+            OrientedPrefs.getInt(prefs(), prefKey, editing, def)));
+        setSliderValue(bar, min, start);
+        label.setText(getString(valueRes, start));
+        bar.setPadding(dp(4), dp(12), dp(4), dp(12));
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override
+            public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                int value = sliderValue(progress, min);
+                // Building the page moves the slider too; only a person's move is a setting, so
+                // an orientation nobody has set keeps following the default.
+                if (fromUser) {
+                    OrientedPrefs.putInt(prefs(), prefKey, editing, value);
+                }
+                label.setText(getString(valueRes, value));
+            }
+        });
+        root.addView(bar, matchWidth());
+
+        Button reset = new Button(this);
+        reset.setText(R.string.settings_reset_percent);
+        reset.setAllCaps(false);
+        reset.setOnClickListener(view -> {
+            OrientedPrefs.putInt(prefs(), prefKey, editing, def);
+            setSliderValue(bar, min, def);
+        });
         LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         resetParams.gravity = Gravity.END;
