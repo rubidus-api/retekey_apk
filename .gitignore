@@ -56,3 +56,5 @@ local.properties
 /scripts/install-hook.sh
 /scripts/readme-topline.sh
 /scripts/commit-both.sh
+
+/MAP.md
