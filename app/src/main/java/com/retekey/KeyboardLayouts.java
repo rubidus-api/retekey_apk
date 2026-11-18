@@ -440,7 +440,7 @@ public final class KeyboardLayouts {
                 SoftwareKeySpec key = SoftwareKeySpec.enabled(
                     "touch.rd." + letter,
                     RemoteDesktopLayouts.letterCap(id, letter, shifted),
-                    SemanticInput.rawKey(RawKey.valueOf(
+                    SemanticInput.physicalKey(RawKey.valueOf(
                         String.valueOf(Character.toUpperCase(letter)))));
                 if (i < holds.length()) {
                     key = key.withLongPress(String.valueOf(holds.charAt(i)));
@@ -449,27 +449,38 @@ public final class KeyboardLayouts {
             }
             if (row == 1) {
                 keys.add(SoftwareKeySpec.enabled(
-                    "touch.rd.backspace", "⌫", SemanticInput.rawKey(RawKey.BACKSPACE)));
+                    "touch.rd.backspace", "⌫", SemanticInput.physicalKey(RawKey.BACKSPACE)));
             }
             if (row == 2) {
                 keys.add(SoftwareKeySpec.enabled("touch.rd.period",
                     RemoteDesktopLayouts.periodCap(id, shifted),
-                    SemanticInput.rawKey(RawKey.PERIOD)));
+                    SemanticInput.physicalKey(RawKey.PERIOD)));
                 keys.add(SoftwareKeySpec.enabled(
-                    "touch.rd.enter", "⏎", SemanticInput.rawKey(RawKey.ENTER)));
+                    "touch.rd.enter", "⏎", SemanticInput.physicalKey(RawKey.ENTER)));
             }
             rows.add(keys);
         }
+        // A Korean far side reads the right Ctrl as 한자 and the right Alt as 한/영 (owner,
+        // 2026-11-18), so the 2-beolsik page puts them either side of space where a Korean
+        // keyboard has them, in Tab's and Esc's cells; both are a tap away on the !# page.
+        boolean korean = id == KeyboardLayoutId.KO_DUBEOLSIK;
         rows.add(KeyboardLayout.row(
             SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL),
             SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META),
             SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT),
-            tabKey(),
+            korean
+                ? SoftwareKeySpec.enabled(
+                    "touch.rd.hanja", "漢", SemanticInput.physicalKey(RawKey.CTRL_RIGHT))
+                : SoftwareKeySpec.enabled(
+                    "touch.rd.tab", "Tab", SemanticInput.physicalKey(RawKey.TAB)),
             SoftwareKeySpec
-                .enabled("touch.rd.space", "space", SemanticInput.rawKey(RawKey.SPACE))
+                .enabled("touch.rd.space", "space", SemanticInput.physicalKey(RawKey.SPACE))
                 .withColumnSpan(SPACE_COLUMN_SPAN),
-            SoftwareKeySpec.enabled(
-                "touch.rd.escape", "Esc", SemanticInput.rawKey(RawKey.ESCAPE)),
+            korean
+                ? SoftwareKeySpec.enabled(
+                    "touch.rd.hanyeong", "한/영", SemanticInput.physicalKey(RawKey.ALT_RIGHT))
+                : SoftwareKeySpec.enabled(
+                    "touch.rd.escape", "Esc", SemanticInput.physicalKey(RawKey.ESCAPE)),
             specialCharsKey(),
             // Where the globe is: the way out of the mode, with the menu still on its hold.
             SoftwareKeySpec

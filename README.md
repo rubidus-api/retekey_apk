@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.4** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.5** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -49,13 +49,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.4** —
-[retekey-0.2.4.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) (706 KB; the Android 4.0 build is 565 KB)
+Current release: **v0.2.5** —
+[retekey-0.2.5.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5.apk) (707 KB; the Android 4.0 build is 566 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -402,7 +402,10 @@ the key drawn ㅂ sends `q`, and the far side's IME makes ㅂ of it.
 Pick the layout in **Settings → Remote desktop**: the list is the layouts this keyboard already has a
 physical-keyboard table for — 2beolsik first, then QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, Russian,
 Arabic and the rest. Shift goes out as a real Shift, space, backspace, Enter and the full stop go out
-as keys too, and Ctrl, Alt and Meta make chords as usual. The top row holds the digits and the other
+as keys too, and Ctrl, Alt and Meta make chords as usual. On the 2beolsik page the cells beside
+space are **漢**, the right Ctrl, and **한/영**, the right Alt — the keys a Korean IME reads as 한자
+and 한/영 — where a Korean keyboard has them; Tab and Esc, which other layouts keep there, are on
+the **!#** page. The top row holds the digits and the other
 rows the usual symbols, typed as characters. **RD** where the layout key usually is turns the mode
 off again; holding it opens the menu. The mode stays on until you turn it off.
 

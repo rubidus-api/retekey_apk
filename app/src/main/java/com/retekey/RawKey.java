@@ -44,5 +44,8 @@ public enum RawKey {
     CTRL_LEFT, SHIFT_LEFT, ALT_LEFT, META_LEFT,
     // The period key, for the remote-desktop page: the far side's IME reads it by position — it
     // is ю on a Russian layout — so it has to arrive as the key, not as a "." this side typed.
-    PERIOD
+    PERIOD,
+    // The right-hand Ctrl and Alt, as keys of their own. A Korean IME reads them as 한자 and
+    // 한/영 (owner, 2026-11-18), which is what the remote-desktop page sends them for.
+    CTRL_RIGHT, ALT_RIGHT
 }

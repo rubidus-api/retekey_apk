@@ -50,7 +50,7 @@ public final class ScaffoldInputProcessor implements StatelessInputProcessor {
                 );
             case RAW_KEY:
                 return DispatchResult.handled(
-                    KeyAction.rawKey(input.rawKey(), input.modifiers(), input.rawKeyPhase())
+                    KeyAction.rawKey(input)
                 );
             case TRANSFORM:
                 // A Hangul transformation means nothing to this processor.

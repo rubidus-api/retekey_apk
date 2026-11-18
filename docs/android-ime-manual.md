@@ -2855,6 +2855,26 @@ was nine tenths of the *cell*, already wider than the usual face.
 was constant. Fit text to the surface it is drawn on, not to the grid that surface was cut from —
 and render the extremes of a new setting on the narrowest screen before calling it done.
 
+### 15.72 A key that was a key on this side and a letter on the other
+
+**What happened.** 0.2.4's remote-desktop page sent every key as a raw key event, so that the far
+side's IME would compose from keys rather than receive finished characters. But a raw key with no
+modifier went out in the soft shape — no scan code, the virtual keyboard's source — and the relay
+code already said what that shape means to a remote-desktop client: its soft path takes a lone
+letter as typed text. Only a key carrying a modifier was dressed as hardware, because only chords
+had needed it. The unit tests checked which `RawKey` each cell sent, and the emulator's local
+editor typed the same letters either way, so neither could tell the two shapes apart. It surfaced
+when 0.2.5's 한/영 and 한자 keys were checked by logging what the editor received: scan code 0.
+
+**The fix.** `SemanticInput.physicalKey` marks a raw key to be sent as a physical keyboard sends
+it, with or without modifiers; the mark rides through `KeyAction.rawKey(SemanticInput)` to the
+executor, which dresses it as hardware. Every key on the remote-desktop page is one, and a test
+requires each of them to have a scan code.
+
+**Rule.** When a feature depends on how an event is shaped rather than on what it carries, test
+the shape: log the receiving side's view of the event (source, scan code, meta), not only the
+text it produced.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.4** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.5** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -49,13 +49,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.4** —
-[retekey-0.2.4.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) (706 KB; 안드로이드 4.0 빌드는 565 KB)
+현재 릴리즈: **v0.2.5** —
+[retekey-0.2.5.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.5/retekey-0.2.5.apk) (707 KB; 안드로이드 4.0 빌드는 566 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -387,7 +387,9 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 자판은 **설정 → Remote desktop**에서 고릅니다. 목록은 이 키보드가 물리 키보드용으로 이미 갖고 있는
 자판들입니다. 2벌식이 맨 위에 있고, QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, 러시아어, 아랍어 등이
 뒤따릅니다. Shift는 진짜 Shift로 나가고, 스페이스·백스페이스·엔터·마침표도 키로 나갑니다. Ctrl, Alt,
-Meta는 평소처럼 조합 키를 만듭니다. 맨 윗줄을 길게 누르면 숫자가, 나머지 줄에서는 평소의 기호가
+Meta는 평소처럼 조합 키를 만듭니다. 2벌식 페이지에서는 스페이스 양옆이 **漢**(오른쪽 Ctrl)과
+**한/영**(오른쪽 Alt)입니다. 한국어 입력기가 한자 키와 한/영 키로 읽는 키이고, 한국어 키보드와 같은
+자리에 있습니다. 다른 자판에서 그 자리에 있는 Tab과 Esc는 **!#** 페이지에 있습니다. 맨 윗줄을 길게 누르면 숫자가, 나머지 줄에서는 평소의 기호가
 글자로 입력됩니다. 평소 자판 전환 키가 있던 자리의 **RD** 를 누르면 모드가 꺼지고, 길게 누르면 메뉴가
 열립니다. 모드는 끌 때까지 켜진 채로 남습니다.
 

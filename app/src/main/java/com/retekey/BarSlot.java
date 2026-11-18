@@ -161,6 +161,9 @@ final class BarSlot {
             case MENU: return "Menu";
             case SEARCH: return "Search";
             case SPACE: return "Space";
+            case PERIOD: return ".";
+            case CTRL_RIGHT: return "RCtrl";
+            case ALT_RIGHT: return "RAlt";
             default:
                 break;
         }

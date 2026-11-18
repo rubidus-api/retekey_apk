@@ -41,6 +41,9 @@ public final class RemoteDesktopLayoutTest {
                         assertEquals(id + " " + letters.charAt(i), expected, input.rawKey());
                         // Shift travels with the press (the view folds it in), not in the key.
                         assertTrue(input.modifiers().isEmpty());
+                        // Sent the way a plugged-in keyboard sends it, so a relay takes it as a
+                        // key for the far IME rather than as a letter to type.
+                        assertTrue(input.isPhysical());
                         seen.add(input.rawKey());
                     }
                 }
@@ -79,6 +82,91 @@ public final class RemoteDesktopLayoutTest {
         KeyboardLayout page = KeyboardLayouts.remoteDesktop(KeyboardLayoutId.KO_DUBEOLSIK, false);
         List<SoftwareKeySpec> bottom = page.rows().get(3);
         assertEquals(ControlKey.REMOTE_DESKTOP, bottom.get(bottom.size() - 1).control());
+    }
+
+    @Test
+    public void theKoreanPageCarriesHanjaAndHanYeongWhereAKoreanKeyboardDoes() {
+        // On the far side's Korean IME, 한/영 is the right Alt and 한자 the right Ctrl (owner,
+        // 2026-11-18). They take Tab's and Esc's cells, either side of space, as on the hardware.
+        for (boolean shifted : new boolean[] {false, true}) {
+            KeyboardLayout page = KeyboardLayouts.remoteDesktop(
+                KeyboardLayoutId.KO_DUBEOLSIK, shifted);
+            List<SoftwareKeySpec> bottom = page.rows().get(3);
+            int space = bottom.indexOf(page.findById("touch.rd.space"));
+            SoftwareKeySpec hanja = bottom.get(space - 1);
+            SoftwareKeySpec hanYeong = bottom.get(space + 1);
+            assertEquals("漢", hanja.label());
+            assertEquals(RawKey.CTRL_RIGHT, hanja.semanticInput().rawKey());
+            assertEquals("한/영", hanYeong.label());
+            assertEquals(RawKey.ALT_RIGHT, hanYeong.semanticInput().rawKey());
+            assertEquals(ControlKey.CTRL, bottom.get(0).control());
+            assertEquals(ControlKey.META, bottom.get(1).control());
+            assertEquals(ControlKey.ALT, bottom.get(2).control());
+            assertEquals(null, page.findById("touch.rd.escape"));
+        }
+        KeyboardLayout russian = KeyboardLayouts.remoteDesktop(KeyboardLayoutId.RU_JCUKEN, false);
+        assertEquals(null, russian.findById("touch.rd.hanja"));
+        assertEquals(null, russian.findById("touch.rd.hanyeong"));
+        assertNotNull(russian.findById("touch.rd.escape"));
+        assertNotNull(russian.findById("touch.rd.tab"));
+    }
+
+    @Test
+    public void theRightHandModifiersReachTheEditorAsThemselves() {
+        assertEquals(android.view.KeyEvent.KEYCODE_ALT_RIGHT,
+            InputConnectionEditorBridge.keyCodeFor(RawKey.ALT_RIGHT));
+        assertEquals(android.view.KeyEvent.KEYCODE_CTRL_RIGHT,
+            InputConnectionEditorBridge.keyCodeFor(RawKey.CTRL_RIGHT));
+        assertEquals(100, InputConnectionEditorBridge.scanCodeFor(RawKey.ALT_RIGHT));
+        assertEquals(97, InputConnectionEditorBridge.scanCodeFor(RawKey.CTRL_RIGHT));
+        assertEquals("RAlt", BarSlot.keyName(RawKey.ALT_RIGHT));
+        assertEquals("RCtrl", BarSlot.keyName(RawKey.CTRL_RIGHT));
+        assertEquals(".", BarSlot.keyName(RawKey.PERIOD));
+    }
+
+    @Test
+    public void everyKeyEventOnThePageIsSentAsAPhysicalKey() {
+        for (KeyboardLayoutId id : RemoteDesktopLayouts.candidates()) {
+            for (List<SoftwareKeySpec> row : KeyboardLayouts.remoteDesktop(id, false).rows()) {
+                for (SoftwareKeySpec key : row) {
+                    SemanticInput input = key.semanticInput();
+                    if (input != null && input.kind() == SemanticInput.Kind.RAW_KEY
+                            && key.stableKeyId().startsWith("touch.rd.")) {
+                        assertTrue(id + " " + key.stableKeyId(), input.isPhysical());
+                        assertTrue(InputConnectionEditorBridge.scanCodeFor(input.rawKey()) > 0);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void aPhysicalKeyStaysPhysicalThroughTheProcessorAndShift() {
+        SemanticInput q = SemanticInput.physicalKey(RawKey.Q);
+        assertTrue(q.withModifiers(java.util.EnumSet.of(KeyModifier.SHIFT)).isPhysical());
+        assertFalse(SemanticInput.rawKey(RawKey.Q).isPhysical());
+        HangulInputProcessor processor = new HangulInputProcessor(() -> EditorProfile.richText(
+            false, false, false, false, false, 0, -1));
+        List<KeyAction> actions = processor.process(q).actions();
+        assertEquals(1, actions.size());
+        assertTrue(actions.get(0).isPhysical());
+        assertFalse(processor.process(SemanticInput.rawKey(RawKey.Q)).actions().get(0)
+            .isPhysical());
+    }
+
+    @Test
+    public void aPhysicalKeyWithoutModifiersReachesTheBridgeDressedAsHardware() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        EditorBounds cursor = EditorBounds.of(1, 1, -1, -1);
+        TransitionPlan<String> plan = TransitionPlan.of(1, 0, DispatchResult.Disposition.HANDLED,
+            "state", cursor, java.util.Collections.singletonList(
+                KeyAction.rawKey(SemanticInput.physicalKey(RawKey.ALT_RIGHT))));
+        new CheckedEditorExecutor().execute(plan,
+            ExecutionContext.active(1, 0, cursor, EditorCapabilities.richText(false, false)),
+            () -> EditorEndpoint.of(1, bridge));
+        assertEquals(java.util.Arrays.asList(
+            "sendRawKey:key=ALT_RIGHT:modifiers=[]:hw:action=DOWN",
+            "sendRawKey:key=ALT_RIGHT:modifiers=[]:hw:action=UP"), bridge.trace());
     }
 
     @Test

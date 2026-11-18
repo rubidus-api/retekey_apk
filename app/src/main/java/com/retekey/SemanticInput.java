@@ -44,6 +44,8 @@ public final class SemanticInput {
     private final Set<KeyModifier> modifiers;
     private final boolean correction;
     private final RawKeyPhase rawKeyPhase;
+    /** Whether a raw key goes out dressed as a physical keyboard's event; see physicalKey. */
+    private boolean physical;
 
     private SemanticInput(
         Kind kind,
@@ -131,6 +133,23 @@ public final class SemanticInput {
         return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, modifiers, false, phase);
     }
 
+    /**
+     * A raw key sent the way a plugged-in keyboard sends it — keyboard source, real scan code —
+     * even with no modifier held. A remote-desktop relay types a soft key event as a character,
+     * which the far side's IME never sees; a physical one it forwards as a key, which that IME
+     * composes from. The remote-desktop page's keys are these.
+     */
+    public static SemanticInput physicalKey(RawKey rawKey) {
+        SemanticInput input = rawKey(rawKey);
+        input.physical = true;
+        return input;
+    }
+
+    /** Whether this raw key is sent as a physical keyboard's event. */
+    public boolean isPhysical() {
+        return physical;
+    }
+
     /** The same raw key with an added set of modifiers folded in. */
     public SemanticInput withModifiers(Set<KeyModifier> extra) {
         if (kind != Kind.RAW_KEY) {
@@ -142,7 +161,10 @@ public final class SemanticInput {
         EnumSet<KeyModifier> merged = EnumSet.noneOf(KeyModifier.class);
         merged.addAll(modifiers);
         merged.addAll(extra);
-        return new SemanticInput(Kind.RAW_KEY, "", null, rawKey, merged, false, rawKeyPhase);
+        SemanticInput folded =
+            new SemanticInput(Kind.RAW_KEY, "", null, rawKey, merged, false, rawKeyPhase);
+        folded.physical = physical;
+        return folded;
     }
 
     public static SemanticInput deleteBackward() {
@@ -233,12 +255,14 @@ public final class SemanticInput {
             && Objects.equals(jamo, that.jamo)
             && rawKey == that.rawKey
             && rawKeyPhase == that.rawKeyPhase
-            && modifiers.equals(that.modifiers);
+            && modifiers.equals(that.modifiers)
+            && physical == that.physical;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, jamo, rawKey, modifiers, correction, rawKeyPhase, transform);
+        return Objects.hash(
+            kind, text, jamo, rawKey, modifiers, correction, rawKeyPhase, transform, physical);
     }
 
     @Override
@@ -251,6 +275,7 @@ public final class SemanticInput {
             ", modifiers=" + modifiers +
             ", rawKeyPhase=" + rawKeyPhase +
             ", correction=" + correction +
+            ", physical=" + physical +
             '}';
     }
 }

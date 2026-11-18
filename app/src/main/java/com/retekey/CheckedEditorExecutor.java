@@ -327,7 +327,10 @@ public final class CheckedEditorExecutor {
         //   Ctrl+A 는 되므로, 프레임 있는 코드는 이벤트를 **물리 키보드 모양**(키보드 source,
         //   실제 스캔코드, 소프트 플래그 제거)으로 입혀 릴레이의 하드웨어 경로 — 수식 상태를
         //   추적해 조합하는 경로 — 를 타게 한다. 글자에는 meta 도 도로 싣는다.
-        boolean dressAsHardware = !frame.isEmpty();
+        // A key from the remote-desktop page is dressed so with or without a frame: its whole
+        // point is to reach the far side as a key, never as a character typed there.
+        boolean dressAsHardware = !frame.isEmpty()
+            || action.kind() == KeyAction.Kind.RAW_KEY && action.isPhysical();
         // The chord owns every modifier it pressed until it has let it go (review R01). A press
         // is attempted only while the session is still this one, and after a refused, throwing
         // or stale press nothing more is pressed: Ctrl+C whose Ctrl failed must not arrive as a

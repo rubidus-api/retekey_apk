@@ -209,7 +209,7 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
                 return primaryAction();
             case RAW_KEY:
                 return flushThen(
-                    KeyAction.rawKey(input.rawKey(), input.modifiers(), input.rawKeyPhase()));
+                    KeyAction.rawKey(input));
             case TRANSFORM:
                 return transform(input.transform());
             default:

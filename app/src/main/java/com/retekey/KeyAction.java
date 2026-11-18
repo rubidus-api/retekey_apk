@@ -46,6 +46,8 @@ public final class KeyAction {
     private final RawKey rawKey;
     private final Set<KeyModifier> modifiers;
     private final RawKeyPhase rawKeyPhase;
+    /** Whether this raw key goes out as a physical keyboard's event (SemanticInput.physicalKey). */
+    private boolean physical;
 
     private KeyAction(
         Kind kind,
@@ -136,6 +138,18 @@ public final class KeyAction {
         return new KeyAction(Kind.RAW_KEY, "", 0, rawKey, modifiers, phase);
     }
 
+    /** The raw key a raw-key input asks for: its modifiers, its phase, and how it is sent. */
+    public static KeyAction rawKey(SemanticInput input) {
+        KeyAction action = rawKey(input.rawKey(), input.modifiers(), input.rawKeyPhase());
+        action.physical = input.isPhysical();
+        return action;
+    }
+
+    /** Whether this raw key is sent as a physical keyboard's event. */
+    public boolean isPhysical() {
+        return physical;
+    }
+
     /** Which half of a press this raw key is; {@link RawKeyPhase#TAP} for everything else. */
     public RawKeyPhase rawKeyPhase() {
         return rawKeyPhase;
@@ -187,12 +201,13 @@ public final class KeyAction {
             && actionId == that.actionId
             && rawKey == that.rawKey
             && rawKeyPhase == that.rawKeyPhase
-            && modifiers.equals(that.modifiers);
+            && modifiers.equals(that.modifiers)
+            && physical == that.physical;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, actionId, rawKey, modifiers, rawKeyPhase);
+        return Objects.hash(kind, text, actionId, rawKey, modifiers, rawKeyPhase, physical);
     }
 
     @Override
