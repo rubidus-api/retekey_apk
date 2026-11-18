@@ -164,6 +164,16 @@ final class BarSlot {
             case PERIOD: return ".";
             case CTRL_RIGHT: return "RCtrl";
             case ALT_RIGHT: return "RAlt";
+            case GRAVE: return "`";
+            case MINUS: return "-";
+            case EQUALS: return "=";
+            case LEFT_BRACKET: return "[";
+            case RIGHT_BRACKET: return "]";
+            case BACKSLASH: return "\\";
+            case SEMICOLON: return ";";
+            case APOSTROPHE: return "'";
+            case COMMA: return ",";
+            case SLASH: return "/";
             default:
                 break;
         }

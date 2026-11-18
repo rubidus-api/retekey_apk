@@ -1715,7 +1715,19 @@ public final class ReteKeyboardView extends View {
      */
     private void send(ProjectKeyEvent event) {
         typedCount++;
-        sink.accept(event);
+        sink.accept(remoteDesktopMode ? asUsKey(event) : event);
+    }
+
+    /**
+     * In remote-desktop mode the keyboard is a US keyboard wearing other caps (owner, 2026-11-18):
+     * a character typed from the !# page or a hold goes out as the US key that types it, Shift
+     * included, and that page's Backspace, Enter and Esc as a keyboard's keys, so the far
+     * machine's IME reads them by position. What a US keyboard has no key for stays text.
+     */
+    private static ProjectKeyEvent asUsKey(ProjectKeyEvent event) {
+        SemanticInput input = event.semanticInput();
+        SemanticInput key = RemoteDesktopKeys.asUsKey(input);
+        return key == input ? event : ProjectKeyEvent.softwareDown(event.stableKeyId(), key);
     }
 
     /** Drops a finger's timers and its claim on a key. */

@@ -47,5 +47,9 @@ public enum RawKey {
     PERIOD,
     // The right-hand Ctrl and Alt, as keys of their own. A Korean IME reads them as 한자 and
     // 한/영 (owner, 2026-11-18), which is what the remote-desktop page sends them for.
-    CTRL_RIGHT, ALT_RIGHT
+    CTRL_RIGHT, ALT_RIGHT,
+    // The rest of a US keyboard's punctuation keys. In remote-desktop mode every printable ASCII
+    // character goes out as the US key that types it (RemoteDesktopKeys), so these have to exist.
+    GRAVE, MINUS, EQUALS, LEFT_BRACKET, RIGHT_BRACKET, BACKSLASH,
+    SEMICOLON, APOSTROPHE, COMMA, SLASH
 }

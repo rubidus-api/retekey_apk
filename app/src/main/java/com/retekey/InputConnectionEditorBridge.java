@@ -204,11 +204,28 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case PERIOD: return 52;
             case CTRL_RIGHT: return 97;
             case ALT_RIGHT: return 100;
+            case GRAVE: return 41;
+            case MINUS: return 12;
+            case EQUALS: return 13;
+            case LEFT_BRACKET: return 26;
+            case RIGHT_BRACKET: return 27;
+            case BACKSLASH: return 43;
+            case SEMICOLON: return 39;
+            case APOSTROPHE: return 40;
+            case COMMA: return 51;
+            case SLASH: return 53;
+            case DIGIT_0: return 11;
             case LEFT: return 105;
             case RIGHT: return 106;
             case UP: return 103;
             case DOWN: return 108;
-            default: return 0;
+            default:
+                if (key.ordinal() > RawKey.DIGIT_0.ordinal()
+                    && key.ordinal() <= RawKey.DIGIT_9.ordinal()) {
+                    // 1..9 are evdev 2..10, in order; 0 comes after 9, as on the keyboard.
+                    return 1 + (key.ordinal() - RawKey.DIGIT_0.ordinal());
+                }
+                return 0;
         }
     }
 
@@ -254,6 +271,16 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case PERIOD: return KeyEvent.KEYCODE_PERIOD;
             case CTRL_RIGHT: return KeyEvent.KEYCODE_CTRL_RIGHT;
             case ALT_RIGHT: return KeyEvent.KEYCODE_ALT_RIGHT;
+            case GRAVE: return KeyEvent.KEYCODE_GRAVE;
+            case MINUS: return KeyEvent.KEYCODE_MINUS;
+            case EQUALS: return KeyEvent.KEYCODE_EQUALS;
+            case LEFT_BRACKET: return KeyEvent.KEYCODE_LEFT_BRACKET;
+            case RIGHT_BRACKET: return KeyEvent.KEYCODE_RIGHT_BRACKET;
+            case BACKSLASH: return KeyEvent.KEYCODE_BACKSLASH;
+            case SEMICOLON: return KeyEvent.KEYCODE_SEMICOLON;
+            case APOSTROPHE: return KeyEvent.KEYCODE_APOSTROPHE;
+            case COMMA: return KeyEvent.KEYCODE_COMMA;
+            case SLASH: return KeyEvent.KEYCODE_SLASH;
             default:
                 if (key.ordinal() >= RawKey.DIGIT_0.ordinal()
                     && key.ordinal() <= RawKey.DIGIT_9.ordinal()) {
