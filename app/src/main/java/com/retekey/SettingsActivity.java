@@ -929,35 +929,37 @@ public final class SettingsActivity extends Activity {
     }
 
     /**
-     * The caps the remote-desktop page wears: one of the layouts this keyboard has a physical
-     * table for. One list, read top to bottom, since there are more than a row of buttons holds.
+     * The layouts the remote-desktop page can wear on this screen: any number of those this
+     * keyboard has a physical table for, checked like the layout list, kept per orientation
+     * (owner, 2026-11-18). The globe on the page walks them. One stays checked at least: the
+     * page has to wear something.
      */
     private void addRemoteDesktopControls(LinearLayout root) {
         root.addView(sectionHeader(R.string.settings_remote_label));
         root.addView(sectionHint(R.string.settings_remote_hint));
-        KeyboardLayoutId chosen = RemoteDesktopLayouts.resolve(
-            prefs().getString(RemoteDesktopLayouts.PREF_KEY, null));
-        android.widget.RadioGroup group = new android.widget.RadioGroup(this);
-        group.setOrientation(LinearLayout.VERTICAL);
-        int nextId = 1;
+        final java.util.Set<KeyboardLayoutId> chosen =
+            java.util.EnumSet.noneOf(KeyboardLayoutId.class);
+        chosen.addAll(RemoteDesktopLayouts.parseList(
+            OrientedPrefs.getString(prefs(), RemoteDesktopLayouts.PREF_LIST, editing, null),
+            prefs().getString(RemoteDesktopLayouts.PREF_KEY, null)));
         for (KeyboardLayoutId candidate : RemoteDesktopLayouts.candidates()) {
-            android.widget.RadioButton option = new android.widget.RadioButton(this);
-            // The group needs ids to keep one checked; generateViewId is API 17, the legacy
-            // build runs on 14, and nothing else on this page is looked up by id.
-            option.setId(nextId++);
+            CheckBox option = new CheckBox(this);
             option.setText(LetterLayouts.hardwareName(candidate));
-            group.addView(option);
-            if (candidate == chosen) {
-                option.setChecked(true);
-            }
-            option.setOnCheckedChangeListener((b, checked) -> {
+            option.setChecked(chosen.contains(candidate));
+            option.setOnCheckedChangeListener((box, checked) -> {
                 if (checked) {
-                    prefs().edit()
-                        .putString(RemoteDesktopLayouts.PREF_KEY, candidate.name()).apply();
+                    chosen.add(candidate);
+                } else if (chosen.size() > 1) {
+                    chosen.remove(candidate);
+                } else {
+                    box.setChecked(true);
+                    return;
                 }
+                OrientedPrefs.putString(prefs(), RemoteDesktopLayouts.PREF_LIST, editing,
+                    RemoteDesktopLayouts.encodeList(chosen));
             });
+            root.addView(option, matchWidth());
         }
-        root.addView(group, matchWidth());
     }
 
     // ---- The clipboard, and text shared into ReteKey ----

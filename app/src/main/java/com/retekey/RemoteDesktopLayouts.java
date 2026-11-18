@@ -22,13 +22,26 @@ import java.util.Map;
  * what those layouts have there too. Layouts that compose (Telex, romaji) or have no physical
  * form (천지인, a flick grid) are not offered: their keys do not stand for one character each.
  *
- * <p>The choice is one for every screen, not per orientation: the far machine's layout does not
- * turn with the phone. Android-free, so the caps and the fallbacks are unit tested.
+ * <p>Several layouts can be chosen, and the globe on the page walks them; the list is kept per
+ * screen orientation, like the layout list (owner, 2026-11-18). Android-free, so the caps, the
+ * list and its fallbacks are unit tested.
  */
 public final class RemoteDesktopLayouts {
 
-    /** The preference holding the chosen layout, by its enum name. */
+    /**
+     * The one layout the settings chose before 0.2.7, by its enum name. Read only while no list
+     * is stored, as the list's starting point ({@link #parseList}); nothing writes it any more.
+     */
     public static final String PREF_KEY = "remote_desktop_layout";
+
+    /** The layout the page wears now, the globe's place in the list, by its enum name. */
+    public static final String PREF_CURRENT = "remote_desktop_current";
+
+    /**
+     * The layouts the globe walks while the mode is on, comma-separated enum names, kept per
+     * screen orientation like the layout list (owner, 2026-11-18).
+     */
+    public static final String PREF_LIST = "remote_desktop_layouts";
 
     /** Whether the remote-desktop page is on. */
     public static final String PREF_MODE = "remote_desktop_mode";
@@ -117,6 +130,72 @@ public final class RemoteDesktopLayouts {
             }
         }
         return DEFAULT;
+    }
+
+    /**
+     * The chosen list, in the order the settings show the candidates. Nothing (or nothing
+     * offered) stored gives 2-beolsik and QWERTY; a single layout chosen before the list existed
+     * is kept, with QWERTY beside it, since English is the other thing a far side types.
+     */
+    public static List<KeyboardLayoutId> parseList(String stored, String legacySingle) {
+        java.util.Set<KeyboardLayoutId> chosen = java.util.EnumSet.noneOf(KeyboardLayoutId.class);
+        if (stored != null) {
+            for (String name : stored.split(",")) {
+                KeyboardLayoutId id = offeredByName(name.trim());
+                if (id != null) {
+                    chosen.add(id);
+                }
+            }
+        }
+        if (chosen.isEmpty()) {
+            KeyboardLayoutId single = offeredByName(legacySingle);
+            chosen.add(single != null ? single : DEFAULT);
+            chosen.add(KeyboardLayoutId.EN_QWERTY);
+        }
+        List<KeyboardLayoutId> ordered = new ArrayList<>(chosen.size());
+        for (KeyboardLayoutId id : CANDIDATES) {
+            if (chosen.contains(id)) {
+                ordered.add(id);
+            }
+        }
+        return Collections.unmodifiableList(ordered);
+    }
+
+    /** The list as {@link #parseList} reads it back. */
+    public static String encodeList(java.util.Set<KeyboardLayoutId> chosen) {
+        StringBuilder out = new StringBuilder();
+        for (KeyboardLayoutId id : CANDIDATES) {
+            if (chosen.contains(id)) {
+                if (out.length() > 0) {
+                    out.append(',');
+                }
+                out.append(id.name());
+            }
+        }
+        return out.toString();
+    }
+
+    /** The layout to wear: the stored one if this screen's list has it, else the list's first. */
+    public static KeyboardLayoutId current(List<KeyboardLayoutId> list, KeyboardLayoutId stored) {
+        return list.contains(stored) ? stored : list.get(0);
+    }
+
+    /** The layout after {@code from} in {@code list}, round to the first after the last. */
+    public static KeyboardLayoutId next(List<KeyboardLayoutId> list, KeyboardLayoutId from) {
+        int at = list.indexOf(from);
+        return list.get((at + 1) % list.size());
+    }
+
+    private static KeyboardLayoutId offeredByName(String name) {
+        if (name == null) {
+            return null;
+        }
+        for (KeyboardLayoutId id : CANDIDATES) {
+            if (id.name().equals(name)) {
+                return id;
+            }
+        }
+        return null;
     }
 
     /** The cap for the US letter {@code letter} (lower case) on {@code id}'s page. */

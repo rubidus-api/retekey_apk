@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.6** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.7** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -49,13 +49,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.6** —
-[retekey-0.2.6.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6.apk) (709 KB; 안드로이드 4.0 빌드는 567 KB)
+현재 릴리즈: **v0.2.7** —
+[retekey-0.2.7.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk) (710 KB; 안드로이드 4.0 빌드는 567 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -384,14 +384,16 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 
 ![2벌식을 입은 원격 데스크톱 페이지](assets/keyboard-remote-korean.png)
 
-자판은 **설정 → Remote desktop**에서 고릅니다. 목록은 이 키보드가 물리 키보드용으로 이미 갖고 있는
-자판들입니다. 2벌식이 맨 위에 있고, QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, 러시아어, 아랍어 등이
-뒤따릅니다. Shift는 진짜 Shift로 나가고, 스페이스·백스페이스·엔터·마침표도 키로 나갑니다. Ctrl, Alt,
+자판은 **Layout (portrait)** 와 **Layout (landscape)** 페이지의 **Remote desktop** 에서 체크합니다.
+화면 방향마다 목록을 따로 두고, 몇 개든 체크할 수 있습니다. 목록은 이 키보드가 물리 키보드용으로 이미
+갖고 있는 자판들입니다. 2벌식이 맨 위에 있고, QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, 러시아어, 아랍어
+등이 뒤따릅니다. 처음에는 2벌식과 QWERTY가 체크되어 있습니다. Shift는 진짜 Shift로 나가고, 스페이스·백스페이스·엔터·마침표도 키로 나갑니다. Ctrl, Alt,
 Meta는 평소처럼 조합 키를 만듭니다. 2벌식 페이지에서는 스페이스 양옆이 **漢**(오른쪽 Ctrl)과
 **한/영**(오른쪽 Alt)입니다. 한국어 입력기가 한자 키와 한/영 키로 읽는 키이고, 한국어 키보드와 같은
 자리에 있습니다. 다른 자판에서 그 자리에 있는 Tab과 Esc는 **!#** 페이지에 있습니다. 맨 윗줄을 길게 누르면 숫자가,
-나머지 줄에서는 평소의 기호가 나옵니다. 평소 자판 전환 키가 있던 자리의 **RD** 를 누르면 모드가
-꺼지고, 길게 누르면 메뉴가 열립니다. 모드는 끌 때까지 켜진 채로 남습니다.
+나머지 줄에서는 평소의 기호가 나옵니다. 지구본 키는 체크한 자판 사이를 오가고, 모드는
+그대로 둡니다. 키 위에는 다음 자판 이름이 보이고, 모드가 켜져 있는 동안 강조색으로 칠해집니다. 길게
+누르면 메뉴가 열리고, 메뉴의 **RDsk** 로 모드를 끕니다. 그때까지 모드는 켜진 채로 남습니다.
 
 모드가 켜져 있는 동안 키보드 전체는 키캡만 바꿔 끼운 미국식 영어 키보드입니다. 이쪽에서는 아무것도
 조합하지 않습니다. 길게 누르거나 **!#** 페이지에서 친 숫자와 기호(`[ ] ; ' , /`, `!`, `?` 등)는 미국식

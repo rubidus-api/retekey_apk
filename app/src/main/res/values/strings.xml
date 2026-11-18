@@ -92,7 +92,7 @@
     <string name="settings_terminal_hint">A terminal cannot underline a syllable while you build it. Either the keyboard shows it on its own strip and sends it when it closes, or it is typed into the terminal and taken back with every stroke.</string>
     <string name="settings_terminal_on_strip">Show the syllable on the keyboard\'s strip</string>
     <string name="settings_remote_label">Remote desktop</string>
-    <string name="settings_remote_hint">RDsk on the menu page turns the remote-desktop keyboard on and off. It shows the caps of the layout chosen here, but every key sends the US key at its place, so the remote computer\'s own input method does the typing — for SPICE, RDP and the like. Pick the layout the remote computer is set to.</string>
+    <string name="settings_remote_hint">RDsk on the menu page turns the remote-desktop keyboard on, and it stays on until RDsk turns it off. It shows the caps of a layout checked here, but every key sends the US key at its place, so the remote computer\'s own input method does the typing — for SPICE, RDP and the like. Check the layouts the remote computer uses; the globe on the page moves between them. This screen keeps its own list.</string>
     <string name="settings_repeat_label">Key auto-repeat</string>
     <string name="settings_repeat_hint">Holding a key repeats it — space, enter, backspace, and the arrow keys. Keys that hold an alternate character type that instead.</string>
     <string name="settings_repeat_enabled">Enable auto-repeat</string>

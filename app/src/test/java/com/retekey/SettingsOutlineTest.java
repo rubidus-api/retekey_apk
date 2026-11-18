@@ -63,7 +63,7 @@ public final class SettingsOutlineTest {
         // screen: none of them is a submenu of another (owner's request).
         assertEquals(
             Arrays.asList(Section.THEME, Section.SYSTEM_BAND, Section.FEEDBACK, Section.REPEAT,
-                Section.HARDWARE, Section.TERMINAL, Section.REMOTE_DESKTOP,
+                Section.HARDWARE, Section.TERMINAL,
                 Section.CLIPBOARD, Section.USER_LAYOUT),
             SettingsOutline.MAIN);
     }
@@ -79,10 +79,12 @@ public final class SettingsOutlineTest {
     }
 
     @Test
-    public void theRemoteDesktopLayoutIsOneChoiceForEveryScreen() {
-        // The far machine's keyboard layout does not turn with the phone.
-        assertTrue(SettingsOutline.MAIN.contains(Section.REMOTE_DESKTOP));
-        assertFalse(Section.REMOTE_DESKTOP.isPerOrientation());
+    public void theRemoteDesktopLayoutsAreChosenPerScreenBesideTheLayoutList() {
+        // Owner, 2026-11-18: several remote layouts, checked like the layout list, and set for
+        // portrait and landscape separately.
+        assertTrue(SettingsOutline.LAYOUT_PAGE.contains(Section.REMOTE_DESKTOP));
+        assertFalse(SettingsOutline.MAIN.contains(Section.REMOTE_DESKTOP));
+        assertTrue(Section.REMOTE_DESKTOP.isPerOrientation());
     }
 
     @Test

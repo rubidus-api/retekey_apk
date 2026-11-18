@@ -42,7 +42,7 @@ public final class SettingsOutline {
         HARDWARE,
         /** Where a terminal's half-built syllable is shown. */
         TERMINAL,
-        /** Which physical layout's caps the remote-desktop page wears. */
+        /** Which physical layouts' caps the remote-desktop page wears. On a layout page. */
         REMOTE_DESKTOP,
         /** Whether the keyboard follows Android's clipboard, and how long shared text is kept. */
         CLIPBOARD,
@@ -65,7 +65,7 @@ public final class SettingsOutline {
         public boolean isPerOrientation() {
             return this == HEIGHT || this == BAR_HEIGHT || this == KEY_GAP
                 || this == FLOATING || this == LAYOUTS
-                || this == HARDWARE_LAYOUTS;
+                || this == HARDWARE_LAYOUTS || this == REMOTE_DESKTOP;
         }
     }
 
@@ -81,7 +81,6 @@ public final class SettingsOutline {
         Section.REPEAT,
         Section.HARDWARE,
         Section.TERMINAL,
-        Section.REMOTE_DESKTOP,
         Section.CLIPBOARD,
         Section.USER_LAYOUT));
 
@@ -96,7 +95,7 @@ public final class SettingsOutline {
      * to a different physical layout from the same phone held upright.
      */
     public static final List<Section> LAYOUT_PAGE = Collections.unmodifiableList(
-        Arrays.asList(Section.LAYOUTS, Section.HARDWARE_LAYOUTS));
+        Arrays.asList(Section.LAYOUTS, Section.HARDWARE_LAYOUTS, Section.REMOTE_DESKTOP));
 
     private SettingsOutline() {
     }

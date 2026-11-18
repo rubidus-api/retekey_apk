@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.6** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.7** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -49,13 +49,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.6** —
-[retekey-0.2.6.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.6/retekey-0.2.6.apk) (709 KB; the Android 4.0 build is 567 KB)
+Current release: **v0.2.7** —
+[retekey-0.2.7.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk) (710 KB; the Android 4.0 build is 567 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -399,15 +399,16 @@ the key drawn ㅂ sends `q`, and the far side's IME makes ㅂ of it.
 
 ![The remote-desktop page wearing 2beolsik](assets/keyboard-remote-korean.png)
 
-Pick the layout in **Settings → Remote desktop**: the list is the layouts this keyboard already has a
-physical-keyboard table for — 2beolsik first, then QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, Russian,
-Arabic and the rest. Shift goes out as a real Shift, space, backspace, Enter and the full stop go out
+Check the layouts on **Layout (portrait)** and **Layout (landscape)**, under **Remote desktop** — each
+screen keeps its own list, and any number can be checked. The list is the layouts this keyboard
+already has a physical-keyboard table for — 2beolsik first, then QWERTY, Dvorak, Colemak, QWERTZ,
+AZERTY, Russian, Arabic and the rest; 2beolsik and QWERTY are checked to begin with. Shift goes out as a real Shift, space, backspace, Enter and the full stop go out
 as keys too, and Ctrl, Alt and Meta make chords as usual. On the 2beolsik page the cells beside
 space are **漢**, the right Ctrl, and **한/영**, the right Alt — the keys a Korean IME reads as 한자
 and 한/영 — where a Korean keyboard has them; Tab and Esc, which other layouts keep there, are on
-the **!#** page. The top row holds the digits and the other rows the usual symbols. **RD** where
-the layout key usually is turns the mode off again; holding it opens the menu. The mode stays on
-until you turn it off.
+the **!#** page. The top row holds the digits and the other rows the usual symbols. The globe moves between the
+checked layouts and stays in the mode; its cap names the next one, and its accent says the mode is
+on. Holding it opens the menu, whose **RDsk** turns the mode off. Until then it stays on.
 
 While the mode is on, the whole keyboard is a US keyboard with other caps on it. Nothing is composed
 on this side: a digit or symbol from a hold or from the **!#** page — `[ ] ; ' , /`, `!`, `?` and

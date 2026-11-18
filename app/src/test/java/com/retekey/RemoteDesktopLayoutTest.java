@@ -2,6 +2,7 @@ package com.retekey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -78,10 +79,62 @@ public final class RemoteDesktopLayoutTest {
     }
 
     @Test
-    public void theRemoteToggleSitsWhereTheGlobeIsSoTheModeCanBeLeftFromThePage() {
+    public void theGlobeStaysAndWalksTheRemoteLayoutsInsteadOfLeavingTheMode() {
+        // Owner, 2026-11-18: the mode runs until it is turned off (from the menu's RDsk); the
+        // globe on its page moves between the remote layouts chosen in settings.
         KeyboardLayout page = KeyboardLayouts.remoteDesktop(KeyboardLayoutId.KO_DUBEOLSIK, false);
         List<SoftwareKeySpec> bottom = page.rows().get(3);
-        assertEquals(ControlKey.REMOTE_DESKTOP, bottom.get(bottom.size() - 1).control());
+        SoftwareKeySpec last = bottom.get(bottom.size() - 1);
+        assertEquals(ControlKey.LAYOUT_TOGGLE, last.control());
+        assertEquals(ControlKey.MENU_LAYER, last.longPressControl());
+        for (List<SoftwareKeySpec> row : page.rows()) {
+            for (SoftwareKeySpec key : row) {
+                assertNotEquals(key.stableKeyId(), ControlKey.REMOTE_DESKTOP, key.control());
+            }
+        }
+    }
+
+    @Test
+    public void theChosenListDefaultsToTwoBeolsikAndQwerty() {
+        assertEquals(java.util.Arrays.asList(KeyboardLayoutId.KO_DUBEOLSIK,
+            KeyboardLayoutId.EN_QWERTY), RemoteDesktopLayouts.parseList(null, null));
+        assertEquals(java.util.Arrays.asList(KeyboardLayoutId.KO_DUBEOLSIK,
+            KeyboardLayoutId.EN_QWERTY), RemoteDesktopLayouts.parseList("", null));
+        assertEquals(java.util.Arrays.asList(KeyboardLayoutId.KO_DUBEOLSIK,
+            KeyboardLayoutId.EN_QWERTY), RemoteDesktopLayouts.parseList("VI_TELEX", null));
+    }
+
+    @Test
+    public void aSingleChoiceFromBeforeTheListIsKeptAndQwertyJoinsIt() {
+        assertEquals(java.util.Arrays.asList(KeyboardLayoutId.EN_QWERTY,
+            KeyboardLayoutId.RU_JCUKEN), RemoteDesktopLayouts.parseList(null, "RU_JCUKEN"));
+        assertEquals(java.util.Arrays.asList(KeyboardLayoutId.EN_QWERTY),
+            RemoteDesktopLayouts.parseList(null, "EN_QWERTY"));
+    }
+
+    @Test
+    public void theListKeepsTheCandidatesOrderAndRoundTrips() {
+        List<KeyboardLayoutId> list = RemoteDesktopLayouts.parseList(
+            "RU_JCUKEN,KO_DUBEOLSIK,bogus,RU_JCUKEN", null);
+        assertEquals(java.util.Arrays.asList(KeyboardLayoutId.KO_DUBEOLSIK,
+            KeyboardLayoutId.RU_JCUKEN), list);
+        assertEquals(list, RemoteDesktopLayouts.parseList(
+            RemoteDesktopLayouts.encodeList(new java.util.HashSet<>(list)), "DE_QWERTZ"));
+    }
+
+    @Test
+    public void theGlobeWalksTheListAndWrapsRound() {
+        List<KeyboardLayoutId> list = java.util.Arrays.asList(
+            KeyboardLayoutId.KO_DUBEOLSIK, KeyboardLayoutId.EN_QWERTY, KeyboardLayoutId.RU_JCUKEN);
+        assertEquals(KeyboardLayoutId.EN_QWERTY,
+            RemoteDesktopLayouts.next(list, KeyboardLayoutId.KO_DUBEOLSIK));
+        assertEquals(KeyboardLayoutId.KO_DUBEOLSIK,
+            RemoteDesktopLayouts.next(list, KeyboardLayoutId.RU_JCUKEN));
+        assertEquals("a layout dropped from this screen's list gives way to the first",
+            KeyboardLayoutId.KO_DUBEOLSIK,
+            RemoteDesktopLayouts.current(list, KeyboardLayoutId.DE_QWERTZ));
+        assertEquals(KeyboardLayoutId.RU_JCUKEN,
+            RemoteDesktopLayouts.current(list, KeyboardLayoutId.RU_JCUKEN));
     }
 
     @Test

@@ -482,11 +482,10 @@ public final class KeyboardLayouts {
                 : SoftwareKeySpec.enabled(
                     "touch.rd.escape", "Esc", SemanticInput.physicalKey(RawKey.ESCAPE)),
             specialCharsKey(),
-            // Where the globe is: the way out of the mode, with the menu still on its hold.
-            SoftwareKeySpec
-                .control("touch.rd.toggle", "RD", ControlKey.REMOTE_DESKTOP)
-                .withLongPressControl(ControlKey.MENU_LAYER)
-                .withLongPressHint("m")
+            // The globe walks the remote layouts chosen for this screen and stays in the mode,
+            // which runs until the menu's RDsk turns it off (owner, 2026-11-18); its hold is the
+            // menu, as everywhere.
+            layoutToggleKey()
         ));
         return KeyboardLayout.of(id, shifted, COLUMNS, rows);
     }

@@ -124,6 +124,11 @@ public final class ReteKeyboardView extends View {
      */
     private boolean remoteDesktopMode;
     private KeyboardLayoutId remoteDesktopLayout = RemoteDesktopLayouts.DEFAULT;
+    /** The remote layouts chosen for the orientation last read, and what they were parsed from. */
+    private java.util.List<KeyboardLayoutId> remoteDesktopList;
+    private String remoteDesktopListSource;
+    /** A screenshot of one remote layout, not the user's list. */
+    private boolean remoteDesktopPreview;
 
     /** What the 12-key pages' own cells show: Hangul, digits, or the cursor cluster. */
     private PhoneOverlay phoneOverlay = PhoneOverlay.NONE;
@@ -468,7 +473,8 @@ public final class ReteKeyboardView extends View {
             default:
                 if (remoteDesktopMode) {
                     return KeyboardLayouts.remoteDesktop(
-                        remoteDesktopLayout, shiftLayer.isActive());
+                        RemoteDesktopLayouts.current(remoteDesktopList(), remoteDesktopLayout),
+                        shiftLayer.isActive());
                 }
                 if (phoneOverlay != PhoneOverlay.NONE
                     && (letterLayoutId == KeyboardLayoutId.KO_CHEONJIIN
@@ -515,8 +521,11 @@ public final class ReteKeyboardView extends View {
             KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
         loadKeyGap();
         remoteDesktopMode = prefs().getBoolean(RemoteDesktopLayouts.PREF_MODE, false);
-        remoteDesktopLayout = RemoteDesktopLayouts.resolve(
-            prefs().getString(RemoteDesktopLayouts.PREF_KEY, null));
+        if (!remoteDesktopPreview) {
+            remoteDesktopLayout = RemoteDesktopLayouts.resolve(
+                prefs().getString(RemoteDesktopLayouts.PREF_CURRENT,
+                    prefs().getString(RemoteDesktopLayouts.PREF_KEY, null)));
+        }
         // Read the key this orientation actually writes. Reading the un-suffixed one meant every
         // preference change — including the height's own write — put the height back to default,
         // which is why neither the size keys nor the settings slider appeared to do anything.
@@ -924,6 +933,13 @@ public final class ReteKeyboardView extends View {
      * for a press that never happens — the key was right and the label was wrong.
      */
     private String nextLayoutCaption() {
+        if (remoteDesktopMode) {
+            java.util.List<KeyboardLayoutId> list = remoteDesktopList();
+            KeyboardLayoutId now = RemoteDesktopLayouts.current(list, remoteDesktopLayout);
+            return LetterLayouts.keyCapName(page == Page.LETTERS
+                    ? RemoteDesktopLayouts.next(list, now) : now)
+                .toUpperCase(java.util.Locale.ROOT);
+        }
         KeyboardLayoutId destination = page == Page.LETTERS
             ? LetterLayouts.next(letterOrder(), letterLayoutId)
             : letterLayoutId;
@@ -1724,6 +1740,24 @@ public final class ReteKeyboardView extends View {
      * included, and that page's Backspace, Enter and Esc as a keyboard's keys, so the far
      * machine's IME reads them by position. What a US keyboard has no key for stays text.
      */
+    /** This orientation's remote layouts, re-read only when the stored list changes. */
+    private java.util.List<KeyboardLayoutId> remoteDesktopList() {
+        if (remoteDesktopPreview) {
+            // The picture shows the list a first run has: this layout, with QWERTY beside it.
+            return RemoteDesktopLayouts.parseList(
+                remoteDesktopLayout.name() + "," + KeyboardLayoutId.EN_QWERTY.name(), null);
+        }
+        String stored = OrientedPrefs.getString(
+            prefs(), RemoteDesktopLayouts.PREF_LIST, orientation(), null);
+        String source = orientation() + "|" + stored;
+        if (remoteDesktopList == null || !source.equals(remoteDesktopListSource)) {
+            remoteDesktopList = RemoteDesktopLayouts.parseList(stored,
+                prefs().getString(RemoteDesktopLayouts.PREF_KEY, null));
+            remoteDesktopListSource = source;
+        }
+        return remoteDesktopList;
+    }
+
     private static ProjectKeyEvent asUsKey(ProjectKeyEvent event) {
         SemanticInput input = event.semanticInput();
         SemanticInput key = RemoteDesktopKeys.asUsKey(input);
@@ -2167,6 +2201,7 @@ public final class ReteKeyboardView extends View {
                 // remote:LAYOUT[:shift] — the remote-desktop page wearing that layout's caps.
                 page = Page.LETTERS;
                 remoteDesktopMode = true;
+                remoteDesktopPreview = true;
                 remoteDesktopLayout = KeyboardLayoutId.valueOf(parts[1]);
                 if (parts.length > 2) {
                     shiftLayer.tap();
@@ -2321,8 +2356,17 @@ public final class ReteKeyboardView extends View {
                 break;
             case LAYOUT_TOGGLE:
                 // The globe walks the layouts the user enabled, in their order. From another page
-                // it just returns to letters, keeping the layout that was last in use.
-                if (page == Page.LETTERS) {
+                // it just returns to letters, keeping the layout that was last in use. In
+                // remote-desktop mode it walks that mode's own list and stays in the mode.
+                if (remoteDesktopMode) {
+                    if (page == Page.LETTERS) {
+                        java.util.List<KeyboardLayoutId> list = remoteDesktopList();
+                        remoteDesktopLayout = RemoteDesktopLayouts.next(
+                            list, RemoteDesktopLayouts.current(list, remoteDesktopLayout));
+                        prefs().edit().putString(
+                            RemoteDesktopLayouts.PREF_CURRENT, remoteDesktopLayout.name()).apply();
+                    }
+                } else if (page == Page.LETTERS) {
                     letterLayoutId = LetterLayouts.next(letterOrder(), letterLayoutId);
                     phoneOverlay = PhoneOverlay.NONE;
                     resetPhoneInterpreters();
@@ -2511,7 +2555,9 @@ public final class ReteKeyboardView extends View {
             if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
                 return palette.keyAccent;
             }
-            if (control == ControlKey.REMOTE_DESKTOP && remoteDesktopMode) {
+            if (remoteDesktopMode
+                    && (control == ControlKey.REMOTE_DESKTOP || control == ControlKey.LAYOUT_TOGGLE)) {
+                // The globe wears the accent while the mode is on: it is walking the remote list.
                 return palette.keyAccent;
             }
             if (modifierLatches.isLocked(control)) {
