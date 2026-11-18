@@ -90,5 +90,10 @@ public enum ControlKey {
      * Caps Lock. One tap sends the key and flips the face, the way the key on a real keyboard
      * toggles: there is no "armed" state here, the editor's own lock is what changes.
      */
-    CAPS_LOCK
+    CAPS_LOCK,
+    /**
+     * Turns the remote-desktop page on or off: the caps of the physical layout chosen in settings,
+     * each key sending the US key at its position, so a remote machine's own IME composes.
+     */
+    REMOTE_DESKTOP
 }

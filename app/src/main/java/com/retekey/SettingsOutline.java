@@ -42,6 +42,8 @@ public final class SettingsOutline {
         HARDWARE,
         /** Where a terminal's half-built syllable is shown. */
         TERMINAL,
+        /** Which physical layout's caps the remote-desktop page wears. */
+        REMOTE_DESKTOP,
         /** Whether the keyboard follows Android's clipboard, and how long shared text is kept. */
         CLIPBOARD,
         /** The layout the user installed from a file of their own. */
@@ -79,6 +81,7 @@ public final class SettingsOutline {
         Section.REPEAT,
         Section.HARDWARE,
         Section.TERMINAL,
+        Section.REMOTE_DESKTOP,
         Section.CLIPBOARD,
         Section.USER_LAYOUT));
 

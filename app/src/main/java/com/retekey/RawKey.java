@@ -41,5 +41,8 @@ public enum RawKey {
     //   상태를 세우는 것은 진짜 Ctrl 키의 down/up 이다. 그것이 없으면 Ctrl+C 가 저쪽에 그냥
     //   `c` 로 도착한다(사용자 보고 2026-08-29 — 액션바 잘라내기·복사와 Ctrl+X/C/V/A 가
     //   원격에서만 죽었다). 왼쪽 것만 둔다: 한 벌이면 충분하고, 오른쪽은 뜻이 같다.
-    CTRL_LEFT, SHIFT_LEFT, ALT_LEFT, META_LEFT
+    CTRL_LEFT, SHIFT_LEFT, ALT_LEFT, META_LEFT,
+    // The period key, for the remote-desktop page: the far side's IME reads it by position — it
+    // is ю on a Russian layout — so it has to arrive as the key, not as a "." this side typed.
+    PERIOD
 }

@@ -77,13 +77,25 @@ public final class MenuPageTest {
 
     @Test
     public void thePlaceholderTilesStayDisabled() {
-        for (String id : Arrays.asList("touch.menu.emoji",
-            "touch.menu.onehand.left", "touch.menu.onehand.full")) {
+        for (String id : Arrays.asList("touch.menu.emoji", "touch.menu.onehand.left")) {
             SoftwareKeySpec key = menu.findById(id);
             assertNotNull(id, key);
             assertFalse(id + " stays disabled", key.enabled());
             assertFalse(id + " is not a control yet", key.isControl());
         }
+    }
+
+    /**
+     * The cell reserved for "Full" turns the remote-desktop page on and off (owner's request,
+     * 2026-11-18): third row, second column, beside 1Hand.
+     */
+    @Test
+    public void theRemoteDesktopTileTakesTheFullPlaceholder() {
+        assertEquals(null, menu.findById("touch.menu.onehand.full"));
+        SoftwareKeySpec key = menu.rows().get(2).get(1);
+        assertEquals("touch.menu.remote", key.stableKeyId());
+        assertTrue(key.isControl());
+        assertEquals(ControlKey.REMOTE_DESKTOP, key.control());
     }
 
     /** The Theme tile walks the colour scheme: system, light, dark. */

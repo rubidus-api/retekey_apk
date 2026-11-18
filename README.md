@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.3** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.4** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -24,6 +24,7 @@ and the special keys most keyboards leave out.
 - [Who it is for](#who-it-is-for)
 - [Features](#features)
 - [Layout](#layout)
+- [Remote desktop keyboard](#remote-desktop-keyboard)
 - [User layouts](#user-layouts)
 - [Floating keyboard](#floating-keyboard)
 - [Notepad](#notepad)
@@ -48,13 +49,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.3** —
-[retekey-0.2.3.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk) (703 KB; the Android 4.0 build is 563 KB)
+Current release: **v0.2.4** —
+[retekey-0.2.4.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) (706 KB; the Android 4.0 build is 565 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -372,7 +373,8 @@ keyboard itself.
 | Switch | switch keyboard | open the system input-method picker |
 | Manage | manage keyboards | open the system screen for enabling keyboards |
 | Flt | floating | turn the floating panel on or off |
-| 1Hand / Full | one-handed | *not built yet* |
+| 1Hand | one-handed | *not built yet* |
+| RDsk | remote desktop | turn the [remote-desktop keyboard](#remote-desktop-keyboard) on or off |
 | Theme | theme | walk the colour scheme: system → light → dark |
 | ★1 / ★2 | custom | *not built yet* |
 | Set | settings | open ReteKey's own settings |
@@ -385,6 +387,28 @@ keyboard itself.
 
 The muted keys are drawn but do nothing: they are the places the features will go, marked so the
 page does not shift under you when they arrive.
+
+## Remote desktop keyboard
+
+A remote desktop — SPICE, RDP and the like — has an input method of its own on the far computer.
+What this keyboard composes reaches it as finished characters, which that input method never sees,
+so typing *through* it needs keys rather than characters. The menu page's **RDsk** key turns the
+letters page into one that does exactly that: it wears the caps of a physical layout, but every key
+sends the US key at its place, the way a plugged-in keyboard would. With the far side set to Korean,
+the key drawn ㅂ sends `q`, and the far side's IME makes ㅂ of it.
+
+![The remote-desktop page wearing 2beolsik](assets/keyboard-remote-korean.png)
+
+Pick the layout in **Settings → Remote desktop**: the list is the layouts this keyboard already has a
+physical-keyboard table for — 2beolsik first, then QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, Russian,
+Arabic and the rest. Shift goes out as a real Shift, space, backspace, Enter and the full stop go out
+as keys too, and Ctrl, Alt and Meta make chords as usual. The top row holds the digits and the other
+rows the usual symbols, typed as characters. **RD** where the layout key usually is turns the mode
+off again; holding it opens the menu. The mode stays on until you turn it off.
+
+What the page does not have: the keys right of `p`, `l` and `m` beyond the full stop (`[ ] ; ' , /`),
+which some layouts use for letters — Russian х ъ ж э б, for one. A physical keyboard plugged in
+while the mode is on types the way it always does.
 
 ## User layouts
 

@@ -201,6 +201,7 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case TAB: return 15;
             case ESCAPE: return 1;
             case SPACE: return 57;
+            case PERIOD: return 52;
             case LEFT: return 105;
             case RIGHT: return 106;
             case UP: return 103;
@@ -248,6 +249,7 @@ public final class InputConnectionEditorBridge implements EditorBridge {
             case F11: return KeyEvent.KEYCODE_F11;
             case F12: return KeyEvent.KEYCODE_F12;
             case SPACE: return KeyEvent.KEYCODE_SPACE;
+            case PERIOD: return KeyEvent.KEYCODE_PERIOD;
             default:
                 if (key.ordinal() >= RawKey.DIGIT_0.ordinal()
                     && key.ordinal() <= RawKey.DIGIT_9.ordinal()) {

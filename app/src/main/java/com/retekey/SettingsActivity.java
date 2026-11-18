@@ -179,6 +179,9 @@ public final class SettingsActivity extends Activity {
             case TERMINAL:
                 addTerminalControls(root);
                 break;
+            case REMOTE_DESKTOP:
+                addRemoteDesktopControls(root);
+                break;
             case CLIPBOARD:
                 addClipboardControls(root);
                 break;
@@ -923,6 +926,38 @@ public final class SettingsActivity extends Activity {
         onStrip.setOnCheckedChangeListener((b, checked) -> prefs().edit()
             .putBoolean(TerminalCompositionSettings.KEY_ON_STRIP, checked).apply());
         root.addView(onStrip);
+    }
+
+    /**
+     * The caps the remote-desktop page wears: one of the layouts this keyboard has a physical
+     * table for. One list, read top to bottom, since there are more than a row of buttons holds.
+     */
+    private void addRemoteDesktopControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_remote_label));
+        root.addView(sectionHint(R.string.settings_remote_hint));
+        KeyboardLayoutId chosen = RemoteDesktopLayouts.resolve(
+            prefs().getString(RemoteDesktopLayouts.PREF_KEY, null));
+        android.widget.RadioGroup group = new android.widget.RadioGroup(this);
+        group.setOrientation(LinearLayout.VERTICAL);
+        int nextId = 1;
+        for (KeyboardLayoutId candidate : RemoteDesktopLayouts.candidates()) {
+            android.widget.RadioButton option = new android.widget.RadioButton(this);
+            // The group needs ids to keep one checked; generateViewId is API 17, the legacy
+            // build runs on 14, and nothing else on this page is looked up by id.
+            option.setId(nextId++);
+            option.setText(LetterLayouts.hardwareName(candidate));
+            group.addView(option);
+            if (candidate == chosen) {
+                option.setChecked(true);
+            }
+            option.setOnCheckedChangeListener((b, checked) -> {
+                if (checked) {
+                    prefs().edit()
+                        .putString(RemoteDesktopLayouts.PREF_KEY, candidate.name()).apply();
+                }
+            });
+        }
+        root.addView(group, matchWidth());
     }
 
     // ---- The clipboard, and text shared into ReteKey ----

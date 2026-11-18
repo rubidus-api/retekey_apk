@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.3** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.4** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -24,6 +24,7 @@
 - [누구를 위한 키보드인가](#누구를-위한-키보드인가)
 - [기능](#기능)
 - [자판 배열](#자판-배열)
+- [원격 데스크톱 자판](#원격-데스크톱-자판)
 - [내가 만드는 자판](#내가-만드는-자판)
 - [플로팅 키보드](#플로팅-키보드)
 - [메모장](#메모장)
@@ -48,13 +49,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.3** —
-[retekey-0.2.3.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.3/retekey-0.2.3.apk) (703 KB; 안드로이드 4.0 빌드는 563 KB)
+현재 릴리즈: **v0.2.4** —
+[retekey-0.2.4.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.4/retekey-0.2.4.apk) (706 KB; 안드로이드 4.0 빌드는 565 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -357,7 +358,8 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 | Switch | 키보드 전환 | 시스템 키보드 선택 창을 엽니다 |
 | Manage | 키보드 관리 | 키보드를 켜고 끄는 시스템 화면을 엽니다 |
 | Flt | 플로팅 | 플로팅 패널을 켜거나 끕니다 |
-| 1Hand / Full | 한 손 | *아직 만들지 않았습니다* |
+| 1Hand | 한 손 | *아직 만들지 않았습니다* |
+| RDsk | 원격 데스크톱 | [원격 데스크톱 자판](#원격-데스크톱-자판)을 켜고 끕니다 |
 | Theme | 테마 | 색 테마를 차례로 바꿉니다: 시스템 → 라이트 → 다크 |
 | ★1 / ★2 | 사용자 지정 | *아직 만들지 않았습니다* |
 | Set | 설정 | ReteKey의 설정을 엽니다 |
@@ -370,6 +372,28 @@ Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또�
 
 흐리게 표시된 키들은 그려져 있을 뿐 아무 일도 하지 않습니다. 앞으로 그 기능이 들어갈 자리를 미리
 잡아 둔 것으로, 나중에 기능이 생겨도 페이지 배치가 흔들리지 않게 하려는 것입니다.
+
+## 원격 데스크톱 자판
+
+원격 데스크톱(SPICE, RDP 같은 것)은 저쪽 컴퓨터에 자기 입력기를 따로 갖고 있습니다. 이 키보드가
+조합한 글자는 다 만들어진 글자로 도착하기 때문에 저쪽 입력기는 그것을 보지 못합니다. 그래서 저쪽
+입력기*로* 치려면 글자가 아니라 키를 보내야 합니다. 메뉴 페이지의 **RDsk** 키를 누르면 글자 페이지가
+바로 그렇게 동작하는 페이지로 바뀝니다. 키 위에는 물리 자판의 글자가 보이지만, 모든 키는 그
+자리에 있는 미국식 키를 보냅니다. 물리 키보드를 꽂았을 때와 같습니다. 저쪽이 한국어로 되어
+있으면 ㅂ이라고 쓰인 키는 `q` 를 보내고, 저쪽 입력기가 그것으로 ㅂ을 만듭니다.
+
+![2벌식을 입은 원격 데스크톱 페이지](assets/keyboard-remote-korean.png)
+
+자판은 **설정 → Remote desktop**에서 고릅니다. 목록은 이 키보드가 물리 키보드용으로 이미 갖고 있는
+자판들입니다. 2벌식이 맨 위에 있고, QWERTY, Dvorak, Colemak, QWERTZ, AZERTY, 러시아어, 아랍어 등이
+뒤따릅니다. Shift는 진짜 Shift로 나가고, 스페이스·백스페이스·엔터·마침표도 키로 나갑니다. Ctrl, Alt,
+Meta는 평소처럼 조합 키를 만듭니다. 맨 윗줄을 길게 누르면 숫자가, 나머지 줄에서는 평소의 기호가
+글자로 입력됩니다. 평소 자판 전환 키가 있던 자리의 **RD** 를 누르면 모드가 꺼지고, 길게 누르면 메뉴가
+열립니다. 모드는 끌 때까지 켜진 채로 남습니다.
+
+이 페이지에 없는 것: 마침표 말고 `p`, `l`, `m` 오른쪽에 있는 키들(`[ ] ; ' , /`)입니다. 어떤 자판은
+여기에 글자를 둡니다. 러시아어의 х ъ ж э б 가 그렇습니다. 모드가 켜져 있을 때 꽂은 물리 키보드는
+평소처럼 입력됩니다.
 
 ## 내가 만드는 자판
 

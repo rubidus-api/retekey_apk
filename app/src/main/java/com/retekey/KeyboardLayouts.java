@@ -403,6 +403,83 @@ public final class KeyboardLayouts {
         return MENU;
     }
 
+    /** Built on first use and kept: the view asks for its layout on every draw and touch. */
+    private static final java.util.Map<KeyboardLayoutId, KeyboardLayout[]> REMOTE_PAGES =
+        new java.util.EnumMap<>(KeyboardLayoutId.class);
+
+    /**
+     * The remote-desktop page wearing {@code id}'s caps (RemoteDesktopLayouts). Every key there is
+     * a key event — the US letter at its position, the period, space, backspace and Enter — so a
+     * remote machine's own IME is what composes; Shift goes with the press as a real Shift. The
+     * holds are the letter pages' digits and symbols, typed as text.
+     */
+    public static KeyboardLayout remoteDesktop(KeyboardLayoutId id, boolean shifted) {
+        // computeIfAbsent is API 24; the legacy build runs on 14.
+        synchronized (REMOTE_PAGES) {
+            KeyboardLayout[] pair = REMOTE_PAGES.get(id);
+            if (pair == null) {
+                pair = new KeyboardLayout[] {
+                    buildRemoteDesktop(id, false), buildRemoteDesktop(id, true)};
+                REMOTE_PAGES.put(id, pair);
+            }
+            return pair[shifted ? 1 : 0];
+        }
+    }
+
+    private static KeyboardLayout buildRemoteDesktop(KeyboardLayoutId id, boolean shifted) {
+        String[] letters = RemoteDesktopLayouts.LETTER_ROWS;
+        List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
+        for (int row = 0; row < letters.length; row++) {
+            List<SoftwareKeySpec> keys = new ArrayList<>(10);
+            if (row == 2) {
+                keys.add(shiftKey(shifted));
+            }
+            String holds = HOLDS_10_9_7[row];
+            for (int i = 0; i < letters[row].length(); i++) {
+                char letter = letters[row].charAt(i);
+                SoftwareKeySpec key = SoftwareKeySpec.enabled(
+                    "touch.rd." + letter,
+                    RemoteDesktopLayouts.letterCap(id, letter, shifted),
+                    SemanticInput.rawKey(RawKey.valueOf(
+                        String.valueOf(Character.toUpperCase(letter)))));
+                if (i < holds.length()) {
+                    key = key.withLongPress(String.valueOf(holds.charAt(i)));
+                }
+                keys.add(key);
+            }
+            if (row == 1) {
+                keys.add(SoftwareKeySpec.enabled(
+                    "touch.rd.backspace", "⌫", SemanticInput.rawKey(RawKey.BACKSPACE)));
+            }
+            if (row == 2) {
+                keys.add(SoftwareKeySpec.enabled("touch.rd.period",
+                    RemoteDesktopLayouts.periodCap(id, shifted),
+                    SemanticInput.rawKey(RawKey.PERIOD)));
+                keys.add(SoftwareKeySpec.enabled(
+                    "touch.rd.enter", "⏎", SemanticInput.rawKey(RawKey.ENTER)));
+            }
+            rows.add(keys);
+        }
+        rows.add(KeyboardLayout.row(
+            SoftwareKeySpec.control("touch.modifier.ctrl", "Ctrl", ControlKey.CTRL),
+            SoftwareKeySpec.control("touch.modifier.meta", "Meta", ControlKey.META),
+            SoftwareKeySpec.control("touch.modifier.alt", "Alt", ControlKey.ALT),
+            tabKey(),
+            SoftwareKeySpec
+                .enabled("touch.rd.space", "space", SemanticInput.rawKey(RawKey.SPACE))
+                .withColumnSpan(SPACE_COLUMN_SPAN),
+            SoftwareKeySpec.enabled(
+                "touch.rd.escape", "Esc", SemanticInput.rawKey(RawKey.ESCAPE)),
+            specialCharsKey(),
+            // Where the globe is: the way out of the mode, with the menu still on its hold.
+            SoftwareKeySpec
+                .control("touch.rd.toggle", "RD", ControlKey.REMOTE_DESKTOP)
+                .withLongPressControl(ControlKey.MENU_LAYER)
+                .withLongPressHint("m")
+        ));
+        return KeyboardLayout.of(id, shifted, COLUMNS, rows);
+    }
+
     /** The special-keys page in a specific keypad/function mode. */
     public static KeyboardLayout specialKeys(NumpadMode mode) {
         if (mode == null) {
@@ -1884,7 +1961,8 @@ public final class KeyboardLayouts {
         ));
         rows.add(KeyboardLayout.row(
             menuDisabled("onehand.left", "1Hand"),
-            menuDisabled("onehand.full", "Full"),
+            // Where "Full" was reserved: the remote-desktop page (owner's request, 2026-11-18).
+            menuControl("remote", "RDsk", ControlKey.REMOTE_DESKTOP),
             menuControl("theme", "Theme", ControlKey.THEME_CYCLE),
             menuControl("unicode", "Uni", ControlKey.UNICODE_INPUT),
             menuControl("notepad", "Memo", ControlKey.NOTEPAD),

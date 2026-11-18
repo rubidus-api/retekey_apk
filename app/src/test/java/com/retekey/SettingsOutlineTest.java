@@ -63,7 +63,7 @@ public final class SettingsOutlineTest {
         // screen: none of them is a submenu of another (owner's request).
         assertEquals(
             Arrays.asList(Section.THEME, Section.SYSTEM_BAND, Section.FEEDBACK, Section.REPEAT,
-                Section.HARDWARE, Section.TERMINAL,
+                Section.HARDWARE, Section.TERMINAL, Section.REMOTE_DESKTOP,
                 Section.CLIPBOARD, Section.USER_LAYOUT),
             SettingsOutline.MAIN);
     }
@@ -76,6 +76,13 @@ public final class SettingsOutlineTest {
         assertTrue(Section.HARDWARE_LAYOUTS.isPerOrientation());
         assertEquals("the list comes first, the pairing reads as a note on it",
             Section.LAYOUTS, SettingsOutline.LAYOUT_PAGE.get(0));
+    }
+
+    @Test
+    public void theRemoteDesktopLayoutIsOneChoiceForEveryScreen() {
+        // The far machine's keyboard layout does not turn with the phone.
+        assertTrue(SettingsOutline.MAIN.contains(Section.REMOTE_DESKTOP));
+        assertFalse(Section.REMOTE_DESKTOP.isPerOrientation());
     }
 
     @Test

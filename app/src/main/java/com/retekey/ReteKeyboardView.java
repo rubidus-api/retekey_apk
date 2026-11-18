@@ -117,6 +117,14 @@ public final class ReteKeyboardView extends View {
         (changed, key) -> reloadPreferences();
     private enum Page { LETTERS, SPECIAL_CHARS, SPECIAL_KEYS, MENU }
 
+    /**
+     * Whether the letters page is the remote-desktop page: the chosen physical layout's caps, every
+     * key a key event (RemoteDesktopLayouts). Kept across sessions — it is a mode for an app one
+     * goes back to, and the menu tile or the page's own RD key turns it off.
+     */
+    private boolean remoteDesktopMode;
+    private KeyboardLayoutId remoteDesktopLayout = RemoteDesktopLayouts.DEFAULT;
+
     /** What the 12-key pages' own cells show: Hangul, digits, or the cursor cluster. */
     private PhoneOverlay phoneOverlay = PhoneOverlay.NONE;
     /** Whether a code point is being typed, in which case the keys are the hex pad. */
@@ -458,6 +466,10 @@ public final class ReteKeyboardView extends View {
             case MENU:
                 return KeyboardLayouts.menu();
             default:
+                if (remoteDesktopMode) {
+                    return KeyboardLayouts.remoteDesktop(
+                        remoteDesktopLayout, shiftLayer.isActive());
+                }
                 if (phoneOverlay != PhoneOverlay.NONE
                     && (letterLayoutId == KeyboardLayoutId.KO_CHEONJIIN
                         || letterLayoutId == KeyboardLayoutId.KO_NARATGEUL
@@ -502,6 +514,9 @@ public final class ReteKeyboardView extends View {
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
             KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
         loadKeyGap();
+        remoteDesktopMode = prefs().getBoolean(RemoteDesktopLayouts.PREF_MODE, false);
+        remoteDesktopLayout = RemoteDesktopLayouts.resolve(
+            prefs().getString(RemoteDesktopLayouts.PREF_KEY, null));
         // Read the key this orientation actually writes. Reading the un-suffixed one meant every
         // preference change — including the height's own write — put the height back to default,
         // which is why neither the size keys nor the settings slider appeared to do anything.
@@ -2136,6 +2151,15 @@ public final class ReteKeyboardView extends View {
                 letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
                 shiftLayer.tap();
                 break;
+            case "remote":
+                // remote:LAYOUT[:shift] — the remote-desktop page wearing that layout's caps.
+                page = Page.LETTERS;
+                remoteDesktopMode = true;
+                remoteDesktopLayout = KeyboardLayoutId.valueOf(parts[1]);
+                if (parts.length > 2) {
+                    shiftLayer.tap();
+                }
+                break;
             case "fiverow":
                 // A five-row page — a digit row over QWERTY — at the same keyboard height, for the
                 // picture that proves the geometry divides by the row count rather than assuming
@@ -2436,6 +2460,13 @@ public final class ReteKeyboardView extends View {
             case CAPS_LOCK:
                 toggleCapsLock();
                 break;
+            case REMOTE_DESKTOP:
+                // On or off, the letters are where it shows: from the menu it goes straight there.
+                remoteDesktopMode = !remoteDesktopMode;
+                prefs().edit().putBoolean(RemoteDesktopLayouts.PREF_MODE, remoteDesktopMode).apply();
+                page = Page.LETTERS;
+                shiftLayer.clear();
+                break;
             default:
                 break;
         }
@@ -2466,6 +2497,9 @@ public final class ReteKeyboardView extends View {
                 return palette.keyAccent;
             }
             if (control == ControlKey.FUNCTION_LOCK && numpadMode == NumpadMode.FUNCTIONS) {
+                return palette.keyAccent;
+            }
+            if (control == ControlKey.REMOTE_DESKTOP && remoteDesktopMode) {
                 return palette.keyAccent;
             }
             if (modifierLatches.isLocked(control)) {
