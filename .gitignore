@@ -51,14 +51,5 @@ local.properties
 
 # agy-only customization layer (local)
 /.agents/
-/scripts/sot-check.sh
-/scripts/claim.sh
-/scripts/install-hook.sh
-/scripts/readme-topline.sh
-/scripts/commit-both.sh
 
 /MAP.md
-/scripts/gh-push.sh
-/scripts/gh-release.sh
-/scripts/code-map.py
-/scripts/doc-toc.py
