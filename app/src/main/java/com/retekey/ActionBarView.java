@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The strip above the keys: the actions that are not letters, visible while you type.
+ * The strip above or below the keys: the actions that are not letters, visible while you type.
  *
  * <p>Everything on it exists elsewhere already — the menu page has tiles, the pads have overlays —
  * and what none of those has is being reachable without hiding the text you are working on. The bar

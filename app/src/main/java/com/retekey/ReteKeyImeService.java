@@ -115,7 +115,7 @@ public class ReteKeyImeService extends InputMethodService {
     private final SharedPreferences.OnSharedPreferenceChangeListener barPrefsListener =
         (changed, key) -> {
             if (ActionBarSlots.KEY_ENABLED.equals(key) || ActionBarSlots.KEY_SLOTS.equals(key)
-                    || ActionBarHeightSettings.isKey(key)) {
+                    || ActionBarHeightSettings.isKey(key) || ActionBarPosition.isKey(key)) {
                 rebuildInputView();
             }
         };
@@ -124,6 +124,8 @@ public class ReteKeyImeService extends InputMethodService {
     private ClipboardPanelView clipboardPanel;
     /** Whether the input view now on screen was built with the action bar. */
     private boolean builtWithBar;
+    /** Which side of the keys the action bar was placed on in the current input view. */
+    private ActionBarPosition builtBarPosition = ActionBarPosition.ABOVE;
     /** The frame that reserves the system's bottom band, so it can be asked to measure again. */
     private SystemBandFrame bandFrame;
     /** What the keyboard remembers of what was cut and copied through it. */
@@ -325,9 +327,9 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /**
-     * The keyboard with the action bar above it, when the user has asked for one. The bar is a
-     * strip of the actions that are not letters — selection, the clipboard, cursor movement — kept
-     * visible while typing instead of behind a page change.
+     * The keyboard with the action bar above or below it, when the user has asked for one. The bar
+     * is a strip of the actions that are not letters — selection, the clipboard, cursor movement —
+     * kept visible while typing instead of behind a page change.
      */
     private View withActionBar(ReteKeyboardView keyboard) {
         builtWithBar = viewPrefs().getBoolean(
@@ -335,6 +337,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (!builtWithBar) {
             return keyboard;
         }
+        ActionBarPosition position = actionBarPosition(
+            builtFor != null ? builtFor : OrientedPrefs.current(this));
+        builtBarPosition = position;
         ActionBarView bar = new ActionBarView(this);
         bar.setSlots(ActionBarSlots.parse(viewPrefs().getString(ActionBarSlots.KEY_SLOTS, null)));
         bar.setRepeatTimings(
@@ -383,7 +388,12 @@ public class ReteKeyImeService extends InputMethodService {
                 sendBarChord(slot, down ? RawKeyPhase.HOLD : RawKeyPhase.RELEASE);
             }
         });
-        return new ActionBarFrame(this, bar, keyboard);
+        return new ActionBarFrame(this, bar, keyboard, position);
+    }
+
+    private ActionBarPosition actionBarPosition(ScreenOrientation orientation) {
+        return ActionBarPosition.parse(
+            OrientedPrefs.getString(viewPrefs(), ActionBarPosition.PREF_KEY, orientation, null));
     }
 
     /** One press on the action bar. */
@@ -1783,11 +1793,12 @@ public class ReteKeyImeService extends InputMethodService {
             // were the settings screen's, not the keyboard's.
             bandFrame.refreshBand();
         }
-        // A safety net for the same problem: if the bar was switched on while this view was off
-        // screen, the listener may have fired when there was nothing to rebuild.
+        // A safety net for the same problem: if the bar was switched on or moved while this view
+        // was off screen, the listener may have fired when there was nothing to rebuild.
         boolean wanted = viewPrefs().getBoolean(
             ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED);
-        if (wanted != builtWithBar) {
+        ActionBarPosition wantedPosition = actionBarPosition(OrientedPrefs.current(this));
+        if (wanted != builtWithBar || (wanted && wantedPosition != builtBarPosition)) {
             rebuildInputView();
         }
     }

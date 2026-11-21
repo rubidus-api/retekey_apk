@@ -150,6 +150,9 @@ public final class SettingsActivity extends Activity {
                     ActionBarHeightSettings.MIN_PERCENT, ActionBarHeightSettings.MAX_PERCENT,
                     usualBarPercent());
                 break;
+            case BAR_POSITION:
+                addBarPositionControls(root);
+                break;
             case KEY_GAP:
                 root.addView(sectionHeader(R.string.settings_key_gap_label));
                 root.addView(sectionHint(R.string.settings_key_gap_hint));
@@ -302,6 +305,48 @@ public final class SettingsActivity extends Activity {
                     KeyGapSettings.LEGACY_DEFAULT_PERCENT),
                 metrics.density),
             width / 10);
+    }
+
+    /** Whether the action bar sits above or below the keys in this orientation. */
+    private void addBarPositionControls(LinearLayout root) {
+        root.addView(sectionHeader(R.string.settings_bar_position_label));
+        root.addView(sectionHint(R.string.settings_bar_position_hint));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        Button above = new Button(this);
+        above.setAllCaps(false);
+        above.setLayoutParams(new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        Button below = new Button(this);
+        below.setAllCaps(false);
+        below.setLayoutParams(new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        ActionBarPosition current = ActionBarPosition.parse(
+            OrientedPrefs.getString(prefs(), ActionBarPosition.PREF_KEY, editing, null));
+        updateBarPositionButtons(above, below, current);
+        above.setOnClickListener(view -> {
+            OrientedPrefs.putString(
+                prefs(), ActionBarPosition.PREF_KEY, editing, ActionBarPosition.ABOVE.stored());
+            updateBarPositionButtons(above, below, ActionBarPosition.ABOVE);
+        });
+        below.setOnClickListener(view -> {
+            OrientedPrefs.putString(
+                prefs(), ActionBarPosition.PREF_KEY, editing, ActionBarPosition.BELOW.stored());
+            updateBarPositionButtons(above, below, ActionBarPosition.BELOW);
+        });
+        row.addView(above);
+        row.addView(below);
+        root.addView(row, matchWidth());
+    }
+
+    private void updateBarPositionButtons(
+            Button above, Button below, ActionBarPosition current) {
+        String aboveTitle = getString(R.string.settings_bar_position_above);
+        String belowTitle = getString(R.string.settings_bar_position_below);
+        above.setText(current == ActionBarPosition.ABOVE ? "● " + aboveTitle : aboveTitle);
+        above.setEnabled(current != ActionBarPosition.ABOVE);
+        below.setText(current == ActionBarPosition.BELOW ? "● " + belowTitle : belowTitle);
+        below.setEnabled(current != ActionBarPosition.BELOW);
     }
 
     /** What a key press does besides typing: a flash, a buzz, a click. */

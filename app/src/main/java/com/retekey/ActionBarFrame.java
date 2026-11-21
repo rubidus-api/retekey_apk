@@ -4,7 +4,7 @@ import android.content.Context;
 import android.widget.LinearLayout;
 
 /**
- * The keyboard with the action bar above it.
+ * The keyboard with the action bar above or below it.
  *
  * <p>The bar is part of the keyboard's height, not added on top of it: the height setting is the
  * share of the screen the whole keyboard takes, bar included, so turning the bar on does not push
@@ -19,17 +19,33 @@ import android.widget.LinearLayout;
 final class ActionBarFrame extends LinearLayout {
     private final ActionBarView bar;
     private final ReteKeyboardView keyboard;
+    private final ActionBarPosition position;
 
     ActionBarFrame(Context context, ActionBarView bar, ReteKeyboardView keyboard) {
+        this(context, bar, keyboard, ActionBarPosition.ABOVE);
+    }
+
+    ActionBarFrame(
+            Context context,
+            ActionBarView bar,
+            ReteKeyboardView keyboard,
+            ActionBarPosition position) {
         super(context);
         this.bar = bar;
         this.keyboard = keyboard;
+        this.position = position == null ? ActionBarPosition.ABOVE : position;
         setOrientation(VERTICAL);
         // No background: the bar and the keyboard each paint their own, and a colour here would
         // sit behind a floating panel and cancel the translucency it exists for.
-        addView(bar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        addView(keyboard, new LayoutParams(
-            LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        if (this.position == ActionBarPosition.BELOW) {
+            addView(keyboard, new LayoutParams(
+                LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+            addView(bar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        } else {
+            addView(bar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+            addView(keyboard, new LayoutParams(
+                LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        }
     }
 
     ActionBarView bar() {
@@ -38,6 +54,10 @@ final class ActionBarFrame extends LinearLayout {
 
     ReteKeyboardView keyboard() {
         return keyboard;
+    }
+
+    ActionBarPosition position() {
+        return position;
     }
 
     @Override

@@ -26,14 +26,25 @@ public final class SettingsOutlineTest {
 
     @Test
     public void anOrientationsSettingsPageHoldsTheSmallThingsKeptPerScreen() {
-        // The three sizes together — the keyboard, the bar inside it, the gap round its keys —
-        // and then the floating panel.
-        assertEquals(Arrays.asList(Section.HEIGHT, Section.BAR_HEIGHT, Section.KEY_GAP,
-                Section.FLOATING),
+        // The sizes together — the keyboard, the bar inside it, the bar's place, the gap round
+        // its keys — and then the floating panel.
+        assertEquals(Arrays.asList(Section.HEIGHT, Section.BAR_HEIGHT, Section.BAR_POSITION,
+                Section.KEY_GAP, Section.FLOATING),
             SettingsOutline.ORIENTATION_PAGE);
         for (Section section : SettingsOutline.ORIENTATION_PAGE) {
             assertTrue(section + " is stored per orientation", section.isPerOrientation());
         }
+    }
+
+    @Test
+    public void actionBarPositionSitsOnEachOrientationsSettingsPageBesideBarHeight() {
+        assertTrue(Section.BAR_POSITION.isPerOrientation());
+        assertTrue(SettingsOutline.ORIENTATION_PAGE.contains(Section.BAR_POSITION));
+        assertFalse(SettingsOutline.MAIN.contains(Section.BAR_POSITION));
+        assertFalse(SettingsOutline.LAYOUT_PAGE.contains(Section.BAR_POSITION));
+        assertEquals(
+            SettingsOutline.ORIENTATION_PAGE.indexOf(Section.BAR_HEIGHT) + 1,
+            SettingsOutline.ORIENTATION_PAGE.indexOf(Section.BAR_POSITION));
     }
 
     @Test

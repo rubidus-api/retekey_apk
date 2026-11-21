@@ -54,6 +54,8 @@ public final class SettingsOutline {
         HEIGHT,
         /** How tall the action bar is, within that. On an orientation's settings page. */
         BAR_HEIGHT,
+        /** Whether the action bar sits above or below the keys. On an orientation's settings page. */
+        BAR_POSITION,
         /** How much of a cell lies between two keys, which no key owns. On an orientation page. */
         KEY_GAP,
         /** The floating panel and its opacity. On an orientation's settings page. */
@@ -63,7 +65,7 @@ public final class SettingsOutline {
 
         /** Whether this section's value is stored separately for each screen orientation. */
         public boolean isPerOrientation() {
-            return this == HEIGHT || this == BAR_HEIGHT || this == KEY_GAP
+            return this == HEIGHT || this == BAR_HEIGHT || this == BAR_POSITION || this == KEY_GAP
                 || this == FLOATING || this == LAYOUTS
                 || this == HARDWARE_LAYOUTS || this == REMOTE_DESKTOP;
         }
@@ -86,7 +88,8 @@ public final class SettingsOutline {
 
     /** One orientation's settings page: the sizes kept per screen, then the floating panel. */
     public static final List<Section> ORIENTATION_PAGE = Collections.unmodifiableList(
-        Arrays.asList(Section.HEIGHT, Section.BAR_HEIGHT, Section.KEY_GAP, Section.FLOATING));
+        Arrays.asList(Section.HEIGHT, Section.BAR_HEIGHT, Section.BAR_POSITION,
+            Section.KEY_GAP, Section.FLOATING));
 
     /**
      * One orientation's layout page: which layouts this screen walks through, and — for the ones

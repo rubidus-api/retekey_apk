@@ -27,6 +27,10 @@
     <string name="settings_bar_height_hint">How tall the action bar is on this screen, as a share of the screen\'s height: the same unit as the keyboard height above. The bar is part of the keyboard\'s height, not added to it, so a keyboard at 30% with a bar at 8% leaves the keys 22%. However tall it is set, the bar leaves the keys half the keyboard.</string>
     <string name="settings_bar_height_value">%1$d%% of the screen\'s height</string>
     <string name="settings_bar_height_usual">Not set: the usual height, about %1$d%% of this screen</string>
+    <string name="settings_bar_position_label">Action bar position</string>
+    <string name="settings_bar_position_hint">Whether the action bar sits above or below the keys on this screen — docked and floating alike. Putting it below the keys lifts the bottom row away from the bottom edge of the keyboard.</string>
+    <string name="settings_bar_position_above">Above the keys</string>
+    <string name="settings_bar_position_below">Below the keys</string>
     <string name="settings_key_gap_label">Gap between keys</string>
     <string name="settings_key_gap_hint">How much space lies between two keys on this screen, as a share of the width of one key cell: a key one column wide. Wider keys get the same gap. The gap is not part of any key: a touch between two keys presses nothing, so a wider gap leaves less of each key to hit. A gap never takes more than half of a key.</string>
     <string name="settings_key_gap_value">%1$d%% of one key cell</string>
@@ -34,13 +38,13 @@
     <string name="settings_reset_usual">Back to usual</string>
     <string name="settings_height_value">%1$d%% of the screen height</string>
     <string name="settings_bar_label">Action bar</string>
-    <string name="settings_bar_hint">A strip above the keys for the things that are not letters: selecting, the clipboard, moving the cursor, text of your own, key combinations you assemble. It has a screen of its own.</string>
+    <string name="settings_bar_hint">A strip above or below the keys for the things that are not letters: selecting, the clipboard, moving the cursor, text of your own, key combinations you assemble. It has a screen of its own.</string>
     <string name="settings_bar_enabled">Show the action bar</string>
     <string name="settings_bar_reset">Default order</string>
     <string name="settings_bar_open">Open action bar settings…</string>
     <string name="bar_settings_title">Action bar settings</string>
     <string name="settings_back_to_settings">← Back to settings</string>
-    <string name="bar_settings_hint">The strip above the keys. Drag a row by its ≡ handle to order it, ▲ ▼ to nudge, ✕ to take it off. Tap a text or key-combination row to edit it.</string>
+    <string name="bar_settings_hint">The strip above or below the keys (set its position and height per screen in Portrait/Landscape settings). Drag a row by its ≡ handle to order it, ▲ ▼ to nudge, ✕ to take it off. Tap a text or key-combination row to edit it.</string>
     <string name="bar_settings_on_the_bar">On the bar</string>
     <string name="bar_settings_spare">Not on the bar</string>
     <string name="bar_settings_spare_hint">Built-in actions you have not put on it. ＋ adds one to the end.</string>
@@ -69,8 +73,8 @@
     <string name="settings_hwlayout_label">Physical keyboard layouts</string>
     <string name="settings_hwlayout_hint">Which layout a plugged-in or Bluetooth keyboard follows while a layout is on the screen. They need not match: you can type Dvorak on the screen and Colemak on the keys. Only layouts with more than one physical form are listed — Korean has one, 2벌식, which 천지인 and 나랏글 already use.</string>
     <string name="settings_hwlayout_row">On screen: %1$s — physical keyboard:</string>
-    <string name="settings_portrait_hint">The keyboard\'s height, the action bar\'s height, the gap between keys and the floating panel, as they are for a screen held upright. The layouts for this screen have a page of their own.</string>
-    <string name="settings_landscape_hint">The keyboard\'s height, the action bar\'s height, the gap between keys and the floating panel, as they are for a screen held sideways. The layouts for this screen have a page of their own.</string>
+    <string name="settings_portrait_hint">The keyboard\'s height, the action bar\'s height and position, the gap between keys and the floating panel, as they are for a screen held upright. The layouts for this screen have a page of their own.</string>
+    <string name="settings_landscape_hint">The keyboard\'s height, the action bar\'s height and position, the gap between keys and the floating panel, as they are for a screen held sideways. The layouts for this screen have a page of their own.</string>
     <string name="settings_layouts_group_shut">▸ %1$s  (%2$d)</string>
     <string name="settings_layouts_group_open">▾ %1$s  (%2$d)</string>
     <string name="settings_layout_portrait_title">Layout (portrait)</string>

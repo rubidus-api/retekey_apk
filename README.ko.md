@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.7** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.8** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.8/retekey-0.2.8.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.8/retekey-0.2.8-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -49,13 +49,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.8/retekey-0.2.8.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.8/retekey-0.2.8-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.7** —
-[retekey-0.2.7.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.7/retekey-0.2.7.apk) (710 KB; 안드로이드 4.0 빌드는 567 KB)
+현재 릴리즈: **v0.2.8** —
+[retekey-0.2.8.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.8/retekey-0.2.8.apk) (712 KB; 안드로이드 4.0 빌드는 569 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
@@ -136,8 +136,8 @@ Home/End, PgUp/PgDn, Ins, 앞쪽 삭제(Del), PrtSc(`Prt`)** — 비슷하게 �
 - **숫자 입력창에는 키패드로** — 전화번호·금액·PIN·날짜처럼 숫자를 받는 칸에서는 12키 Keypad로
   먼저 열립니다. 거기서 자판 키로 원하시는 자판으로 넘어갈 수 있고, 다음 일반 입력창에서는 쓰시던
   자판으로 돌아옵니다.
-- **상단 동작 바**(원하실 때만) — 단어 선택, 전체 선택, 잘라내기·복사·붙여넣기, 화살표를 원하는
-  순서로 올려 두는 띠입니다. 기본은 꺼져 있습니다.
+- **동작 바**(원하실 때만) — 단어 선택, 전체 선택, 잘라내기·복사·붙여넣기, 화살표를 원하는
+  순서로 키 위나 아래에 올려 두는 띠입니다. 기본은 꺼져 있습니다.
 - **시스템 버튼 자리를 비웁니다** — 많은 ROM이 화면 맨 아래에 그리는 키보드 숨김·키보드 전환 버튼의
   띠를 그대로 남겨, 우리 키가 그 아래 깔려 눌리지 않는 일이 없습니다. 정확히는 **키보드 창 위에 실제로 겹치는 만큼만** 비웁니다. 인셋 값은
   화면에 대한 설명이라 같은 내비게이션 바를 보고하면서도 키보드를 그 위에 올려 두는 기기와 그 아래까지
@@ -589,7 +589,7 @@ Ctrl+V 는 Ctrl+V 로 프로그램에 그대로 갑니다. 원격 데스크톱�
 - **색 테마** — 시스템·라이트·다크 중에서 고르십니다. 기본값인 시스템은 기기 설정을 따르고, 나머지
   둘은 기기가 어떻든 고르신 쪽을 지킵니다. 키보드와 앱 화면에 모두 함께 적용되며, 안드로이드 12 이상
   에서는 색 자체는 여전히 시스템의 Material You 팔레트에서 가져옵니다.
-- **세로 화면 설정**과 **가로 화면 설정** — 키보드 높이, 액션 바 높이, 키 사이 간격, 플로팅 키보드는 **세로와 가로에 대해 따로
+- **세로 화면 설정**과 **가로 화면 설정** — 키보드 높이, 액션 바 높이와 위치, 키 사이 간격, 플로팅 키보드는 **세로와 가로에 대해 따로
   기억되며**, 각각 **제 페이지**를 갖습니다. 지금 어느 쪽을 설정하는지는 "지금 있는 페이지"가 곧 답이고,
   다른 쪽을 보려면 그 페이지를 열면 됩니다. 설정을 바꾸려고 기기를 돌릴 일은 없습니다.
   - **키보드 높이** — 키보드가 화면 세로의 몇 퍼센트를 차지할지 1%부터 50%까지 정하십니다. 슬라이더에
@@ -599,6 +599,7 @@ Ctrl+V 는 Ctrl+V 로 프로그램에 그대로 갑니다. 원격 데스크톱�
     높이와 같은 단위입니다. 액션 바는 키보드 높이에 더해지는 것이 아니라 그 안에 들어 있으므로, 키보드가
     30%이고 바가 8%면 키에 22%가 남습니다. 바는 키보드의 절반을 넘지 않습니다. 정하시기 전에는 늘 쓰던
     높이 그대로입니다.
+  - **액션 바 위치** — 이 화면 방향에서 액션 바를 키 위나 키 아래 중 어디에 둘지 정합니다(고정·플로팅 키보드 모두 적용). 키 아래에 두면 맨 아랫줄 키가 키보드 아래쪽 가장자리에서 한 칸 위로 올라옵니다.
   - **키 사이 간격** — 이 화면 방향에서 두 키 사이의 간격을 없음부터 키 한 칸(한 열짜리 키) 너비의
     40%까지 정하십니다. 두 칸 이상을 차지하는 키도 같은 간격을 갖습니다. 간격은 어느 키의 것도 아니어서,
     두 키 사이를 누르면 아무것도 눌리지 않습니다. 정하시기 전에는 늘 쓰던 간격 그대로입니다. **Back to
@@ -627,12 +628,12 @@ Ctrl+V 는 Ctrl+V 로 프로그램에 그대로 갑니다. 원격 데스크톱�
 색**으로 표시되고, 고르는 띠 자체도 그 색으로 칠해집니다. 그래서 길게 누르다 엉뚱한 대안에 닿았을 때
 한눈에 보입니다.
 
-## 상단 동작 바
+## 동작 바
 
 기본은 꺼져 있습니다. **전용 화면**이 따로 있습니다 — 앱 첫 화면이나 설정의 버튼에서 여는 **Action
 bar settings** 입니다. 거기서 켜고 무엇을 올릴지 정하십시오. 줄 왼쪽의 **≡** 손잡이를 잡고 끌어 순서를
-바꾸고, **▲ ▼**로 한 칸씩 밀고, **✕**로 내리고, **Default order**로 처음 순서로 돌아갑니다. 키 위에
-놓이며, 항목이 화면보다 길면 옆으로 밀어 볼 수 있습니다. 바는 키보드 높이 안에 함께 들어갑니다 —
+바꾸고, **▲ ▼**로 한 칸씩 밀고, **✕**로 내리고, **Default order**로 처음 순서로 돌아갑니다. 키 위나
+아래(세로/가로 화면 설정에서 위치와 높이를 정하며, 고정·플로팅 키보드 모두 적용됩니다)에 놓이며, 항목이 화면보다 길면 옆으로 밀어 볼 수 있습니다. 바는 키보드 높이 안에 함께 들어갑니다 —
 바는 키보드의 일부이지 덧붙이는 것이 아니므로, 켠다고 키보드가 앱 쪽으로 더 올라오지 않습니다.
 켠 뒤 줄이 낮게 느껴지면 키보드 높이를 올리십시오.
 
