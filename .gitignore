@@ -51,5 +51,3 @@ local.properties
 
 # agy-only customization layer (local)
 /.agents/
-
-/MAP.md
