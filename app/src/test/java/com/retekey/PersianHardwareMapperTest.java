@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
+import com.retekey.core.PersianHardwareMapper;
 
 /** A US physical keyboard typing Persian, on the Windows Persian layout's positions. */
 public final class PersianHardwareMapperTest {

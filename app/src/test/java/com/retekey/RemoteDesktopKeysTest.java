@@ -4,6 +4,10 @@ import java.util.Collections;
 import java.util.EnumSet;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.RemoteDesktopKeys;
+import com.retekey.core.SemanticInput;
 
 /**
  * In remote-desktop mode a printable ASCII character goes out as the US key that types it, the

@@ -2,6 +2,13 @@ package com.retekey;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorBridge;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorTextResult;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawEditorKey;
+import com.retekey.core.RawKey;
 
 /**
  * Editors as the keyboard meets them, each modelled on what was measured: what reaches the

@@ -2,6 +2,7 @@ package com.retekey;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.retekey.core.RecordCodec;
 
 /**
  * How the notes are written down and read back.

@@ -100,8 +100,13 @@ final class SystemBarInsets {
             return 0;
         }
         if (sdkInt < TAPPABLE_INSETS_SDK) {
-            // Before tappable-element insets there is one number and no way to tell what is in it.
-            return Math.max(0, systemWindowBottom);
+            // Before tappable-element insets there is only systemWindowBottom, yet liftPx
+            // still tells Automatic whether the framework already raised the window.
+            int furniture = Math.max(0, systemWindowBottom);
+            if (mode == Mode.ALWAYS || liftPx == LIFT_UNKNOWN) {
+                return furniture;
+            }
+            return Math.max(0, furniture - Math.max(0, liftPx));
         }
         int furniture = furniturePx(tappableBottom, navigationBottom);
         if (mode == Mode.ALWAYS) {

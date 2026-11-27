@@ -4,6 +4,8 @@ import android.view.inputmethod.InputConnection;
 import java.lang.reflect.Proxy;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorTextResult;
 
 public final class InputConnectionEditorBridgeTest {
     @Test

@@ -2,6 +2,7 @@ package com.retekey;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.retekey.core.RecordCodec;
 
 /**
  * How the shared-in text is written down and read back — the clip codec's shape, with the moment

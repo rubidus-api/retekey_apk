@@ -6,6 +6,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +65,7 @@ public final class HanjaCandidatesView extends LinearLayout {
     /** Shows candidates for {@code reading}, starting at the first page. */
     public void show(String reading, List<Item> items) {
         this.reading = reading == null ? "" : reading;
-        this.items = items == null ? new ArrayList<>() : items;
+        this.items = items == null ? new ArrayList<>() : new ArrayList<>(items);
         this.page = 0;
         palette = KeyboardPalette.resolve(getContext());
         setBackgroundColor(palette.background);
@@ -117,6 +118,8 @@ public final class HanjaCandidatesView extends LinearLayout {
         removeAllViews();
         addView(buildHeader());
 
+        LinearLayout grid = new LinearLayout(getContext());
+        grid.setOrientation(VERTICAL);
         int start = page * PAGE_SIZE;
         for (int r = 0; r < ROWS; r++) {
             LinearLayout row = new LinearLayout(getContext());
@@ -136,9 +139,44 @@ public final class HanjaCandidatesView extends LinearLayout {
                 }
             }
             if (rowHasContent) {
-                addView(row);
+                grid.addView(row);
             }
         }
+        ScrollView scroller = new ScrollView(getContext());
+        if (ScreenTheme.still(getContext())) {
+            scroller.setOverScrollMode(OVER_SCROLL_NEVER);
+        }
+        scroller.addView(grid, new LayoutParams(
+            LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        addView(scroller, new LayoutParams(
+            LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (getChildCount() != 2 || MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
+        }
+        int maxH = MeasureSpec.getSize(heightMeasureSpec);
+        int padH = getPaddingLeft() + getPaddingRight();
+        int padV = getPaddingTop() + getPaddingBottom();
+        int childWSpec = MeasureSpec.makeMeasureSpec(
+            Math.max(0, MeasureSpec.getSize(widthMeasureSpec) - padH),
+            MeasureSpec.getMode(widthMeasureSpec));
+        View header = getChildAt(0);
+        View scroller = getChildAt(1);
+        header.measure(childWSpec, MeasureSpec.makeMeasureSpec(maxH, MeasureSpec.AT_MOST));
+        int remain = Math.max(0, maxH - header.getMeasuredHeight() - padV);
+        scroller.measure(childWSpec, MeasureSpec.makeMeasureSpec(remain, MeasureSpec.AT_MOST));
+        int naturalH = header.getMeasuredHeight() + scroller.getMeasuredHeight() + padV;
+        int measuredH = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY
+            ? maxH
+            : Math.min(maxH, naturalH);
+        int measuredW = resolveSize(
+            Math.max(header.getMeasuredWidth(), scroller.getMeasuredWidth()) + padH,
+            widthMeasureSpec);
+        setMeasuredDimension(measuredW, measuredH);
     }
 
     private LinearLayout buildHeader() {
@@ -238,13 +276,23 @@ public final class HanjaCandidatesView extends LinearLayout {
         index.setPadding(0, 0, dp(4), 0);
         cell.addView(index);
 
+        boolean hasGloss = item.gloss != null && !item.gloss.isEmpty();
+        boolean longValue = item.value != null
+            && item.value.codePointCount(0, item.value.length()) > 2;
         TextView value = new TextView(getContext());
         value.setText(item.value);
         value.setTextColor(palette.keyText);
-        value.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-        cell.addView(value);
+        value.setTextSize(TypedValue.COMPLEX_UNIT_SP, longValue ? 13 : 22);
+        value.setMaxLines(2);
+        value.setEllipsize(TextUtils.TruncateAt.END);
+        if (!hasGloss || longValue) {
+            cell.addView(value, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        } else {
+            cell.addView(value);
+        }
 
-        if (item.gloss != null && !item.gloss.isEmpty()) {
+        if (hasGloss) {
             // The gloss reads alongside the character, not under it, and takes whatever width is
             // left; when that is not enough it wraps onto a second line rather than being cut.
             TextView gloss = new TextView(getContext());
@@ -253,8 +301,10 @@ public final class HanjaCandidatesView extends LinearLayout {
             gloss.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
             gloss.setMaxLines(2);
             gloss.setEllipsize(TextUtils.TruncateAt.END);
-            LinearLayout.LayoutParams glossParams = new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            LinearLayout.LayoutParams glossParams = longValue
+                ? new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                : new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
             glossParams.leftMargin = dp(4);
             cell.addView(gloss, glossParams);
         }

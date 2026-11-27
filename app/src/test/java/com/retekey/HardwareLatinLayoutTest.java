@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNotNull;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.SemanticInput;
 
 /**
  * The physical-keyboard tables for Dvorak and Colemak, checked against this app's own soft

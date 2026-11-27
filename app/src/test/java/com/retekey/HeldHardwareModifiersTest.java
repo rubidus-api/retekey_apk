@@ -4,6 +4,7 @@ import android.view.KeyEvent;
 import java.util.EnumSet;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
 
 /**
  * The modifiers held on a physical keyboard, which the action bar's arrows carry. They belong to
@@ -87,5 +88,17 @@ public final class HeldHardwareModifiersTest {
         held.onKey(ONE, KeyEvent.KEYCODE_CTRL_LEFT, true);
         held.reconcile(OTHER, KeyEvent.KEYCODE_A, 0);
         Assert.assertEquals(EnumSet.of(KeyModifier.CTRL), held.held());
+    }
+
+    @Test
+    public void reconcileFallsBackToGenericMetaBitWhenSideBitsAreAbsent() {
+        HeldHardwareModifiers held = new HeldHardwareModifiers();
+        held.onKey(ONE, KeyEvent.KEYCODE_CTRL_LEFT, true);
+        held.reconcile(ONE, KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON);
+        Assert.assertEquals(EnumSet.of(KeyModifier.CTRL), held.held());
+
+        // When explicit side bits exist and only the opposite side is pressed, left Ctrl drops.
+        held.reconcile(ONE, KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_RIGHT_ON);
+        Assert.assertTrue(held.held().isEmpty());
     }
 }

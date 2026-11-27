@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.ControlKey;
+import com.retekey.core.NaratgeulInterpreter;
+import com.retekey.core.SemanticInput;
 
 /**
  * The frame the two 12-key pages share: the modifiers own the leftmost column, the menu and pad

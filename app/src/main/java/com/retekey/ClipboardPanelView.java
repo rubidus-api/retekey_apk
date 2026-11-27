@@ -8,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import java.util.List;
+import com.retekey.core.Scalars;
 
 /**
  * The clipboard list, above the keyboard.
@@ -70,6 +71,20 @@ final class ClipboardPanelView extends LinearLayout {
 
     void setListener(Listener listener) {
         this.listener = listener;
+    }
+
+    /** Package-private test seam for instrumentation harnesses. */
+    void pasteForTest(String text) {
+        if (listener != null) {
+            listener.onPaste(text);
+        }
+    }
+
+    /** Package-private test seam for instrumentation harnesses. */
+    void typeKeptForTest(String text) {
+        if (listener != null) {
+            listener.onTypeKept(text);
+        }
     }
 
     /** Fills the panel. Called again after every pin, forget or clear. */
@@ -248,7 +263,7 @@ final class ClipboardPanelView extends LinearLayout {
 
     private static String oneLine(String text) {
         String flat = text.replace('\n', ' ').replace('\r', ' ').trim();
-        return flat.length() > 120 ? flat.substring(0, 120) + "…" : flat;
+        return flat.length() > 120 ? Scalars.truncate(flat, 120) + "…" : flat;
     }
 
     private int dp(int value) {

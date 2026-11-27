@@ -53,4 +53,13 @@ public final class EchoLabelTest {
 
         assertNull(ReteKeyboardView.echoLabel(escape, null));
     }
+
+    @Test
+    public void remoteDesktopLetterKeysEchoTheirCapWhileControlsEchoNothing() {
+        KeyboardLayout rd = KeyboardLayouts.remoteDesktop(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        assertEquals("ㅂ", ReteKeyboardView.echoLabel(rd.findById("touch.rd.q"), null));
+        assertEquals(".", ReteKeyboardView.echoLabel(rd.findById("touch.rd.period"), null));
+        assertNull(ReteKeyboardView.echoLabel(rd.findById("touch.rd.backspace"), null));
+        assertNull(ReteKeyboardView.echoLabel(rd.findById("touch.rd.space"), null));
+    }
 }

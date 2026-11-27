@@ -8,6 +8,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,6 +17,21 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.ControlKey;
+import com.retekey.core.FlickDirection;
+import com.retekey.core.Fn;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.KeyRepeatSettings;
+import com.retekey.core.LatchState;
+import com.retekey.core.ModifierLatches;
+import com.retekey.core.MultiTapCycle;
+import com.retekey.core.NaratgeulInterpreter;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.RawKey;
+import com.retekey.core.RawKeyPhase;
+import com.retekey.core.RemoteDesktopKeys;
+import com.retekey.core.SemanticInput;
 
 @SuppressLint("ViewConstructor")
 public final class ReteKeyboardView extends View {
@@ -36,11 +52,15 @@ public final class ReteKeyboardView extends View {
     private static final String LAYOUT_TOGGLE_KEY_ID = "touch.layout.toggle";
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final android.graphics.RectF scratchRect = new android.graphics.RectF();
+    private final Path spaceMarkPath = new Path();
     private final InputSink sink;
     private final KeyFeedback feedback;
     private final LatchState shiftLayer = new LatchState();
     /** Ctrl, Meta and Alt: tap to arm for one key, hold to lock. */
     private final ModifierLatches modifierLatches = new ModifierLatches();
+    private final ModifierCoordinator modifiers =
+        new ModifierCoordinator(shiftLayer, modifierLatches);
     /**
      * Whether Tab is currently latched down. Not an armed modifier: the editor has been sent Tab's
      * down half and has not been sent the up, so as far as it knows a finger is still on the key.
@@ -57,8 +77,8 @@ public final class ReteKeyboardView extends View {
      */
     private final class Touch {
         final int pointerId;
-        final float downX;
-        final float downY;
+        float downX;
+        float downY;
         // The grid this finger's indexes were taken from. Another finger can switch the page
         // mid-press, and row/key would then point into a different keyboard.
         final String grid;
@@ -251,6 +271,7 @@ public final class ReteKeyboardView extends View {
     private String baseSignature;
     // Colours resolved to the current light/dark (and Material You) theme; refreshed on rebuild.
     private KeyboardPalette palette;
+    private Object accessibilityProvider;
 
     public ReteKeyboardView(Context context, InputSink sink) {
         super(context);
@@ -267,6 +288,30 @@ public final class ReteKeyboardView extends View {
         setFocusable(true);
         setFocusableInTouchMode(true);
         setClickable(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            accessibilityProvider = KeyboardAccessibilityProvider.install(this,
+                new KeyboardAccessibilityProvider.HostCallbacks() {
+                    @Override
+                    public KeyboardLayout currentLayout() {
+                        return layout();
+                    }
+
+                    @Override
+                    public ModifierCoordinator modifiers() {
+                        return modifiers;
+                    }
+
+                    @Override
+                    public void activateTap(int rowIndex, int keyIndex) {
+                        activateCellForAccessibility(rowIndex, keyIndex);
+                    }
+
+                    @Override
+                    public boolean activateLongPress(int rowIndex, int keyIndex) {
+                        return activateLongPressForAccessibility(rowIndex, keyIndex);
+                    }
+                });
+        }
         feedback = new KeyFeedback(context);
         feedback.reload(prefs());
         letterLayoutId = restoreLetterLayout();
@@ -324,10 +369,19 @@ public final class ReteKeyboardView extends View {
         return letterLayoutId;
     }
 
+    private java.util.List<KeyboardLayoutId> cachedLetterOrder;
+    private String cachedLetterOrderSource;
+
     /** The layouts the globe key walks, as the user ordered them in settings. */
     private java.util.List<KeyboardLayoutId> letterOrder() {
-        return LetterLayouts.parse(
-            OrientedPrefs.getString(prefs(), LetterLayouts.KEY_ORDER, orientation(), null));
+        ScreenOrientation orient = orientation();
+        String stored = OrientedPrefs.getString(prefs(), LetterLayouts.KEY_ORDER, orient, null);
+        String source = orient + "|" + stored;
+        if (cachedLetterOrder == null || !source.equals(cachedLetterOrderSource)) {
+            cachedLetterOrder = LetterLayouts.parse(stored);
+            cachedLetterOrderSource = source;
+        }
+        return cachedLetterOrder;
     }
 
     /**
@@ -341,11 +395,12 @@ public final class ReteKeyboardView extends View {
             // put the user back on the letters page they had left on purpose.
             return;
         }
+        cancelAllTouches();
         numericField = numeric;
         letterLayoutId = numeric ? KeyboardLayoutId.PAD_KEYPAD : restoreLetterLayout();
         page = Page.LETTERS;
         phoneOverlay = PhoneOverlay.NONE;
-        shiftLayer.clear();
+        modifiers.clearShift();
         requestLayout();
         invalidate();
     }
@@ -360,6 +415,8 @@ public final class ReteKeyboardView extends View {
 
     /** Re-reads the layout order and lands on a layout that is still enabled. */
     public void reloadLetterLayouts() {
+        cachedLetterOrder = null;
+        cachedLetterOrderSource = null;
         java.util.List<KeyboardLayoutId> order = letterOrder();
         if (!order.contains(letterLayoutId)) {
             letterLayoutId = LetterLayouts.firstOf(order);
@@ -474,16 +531,16 @@ public final class ReteKeyboardView extends View {
                 if (remoteDesktopMode) {
                     return KeyboardLayouts.remoteDesktop(
                         RemoteDesktopLayouts.current(remoteDesktopList(), remoteDesktopLayout),
-                        shiftLayer.isActive());
+                        modifiers.shiftActive());
                 }
                 if (phoneOverlay != PhoneOverlay.NONE
                     && (letterLayoutId == KeyboardLayoutId.KO_CHEONJIIN
                         || letterLayoutId == KeyboardLayoutId.KO_NARATGEUL
                         || letterLayoutId == KeyboardLayoutId.JA_FLICK)) {
                     return KeyboardLayouts.phone(
-                        letterLayoutId, phoneOverlay, shiftLayer.isActive());
+                        letterLayoutId, phoneOverlay, modifiers.shiftActive());
                 }
-                return KeyboardLayouts.of(letterLayoutId, shiftLayer.isActive());
+                return KeyboardLayouts.of(letterLayoutId, modifiers.shiftActive());
         }
     }
 
@@ -491,12 +548,18 @@ public final class ReteKeyboardView extends View {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         prefs().registerOnSharedPreferenceChangeListener(prefsListener);
+        feedback.prepare();
         reloadPreferences();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         prefs().unregisterOnSharedPreferenceChangeListener(prefsListener);
+        cancelAllTouches();
+        removeCallbacks(endMultiTap);
+        removeCallbacks(onFlashElapsed);
+        flashing = false;
+        flashLabel = null;
         if (baseBitmap != null) {
             baseBitmap.recycle();
             baseBitmap = null;
@@ -507,6 +570,8 @@ public final class ReteKeyboardView extends View {
 
     /** Applies persisted settings (feedback strengths and height) to the on-screen keyboard. */
     private void reloadPreferences() {
+        cachedLetterOrder = null;
+        cachedLetterOrderSource = null;
         feedback.reload(prefs());
         repeatEnabled = prefs().getBoolean(
             KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED);
@@ -520,12 +585,18 @@ public final class ReteKeyboardView extends View {
         repeatIntervalMs = KeyRepeatSettings.clampInterval(prefs().getInt(
             KeyRepeatSettings.KEY_INTERVAL_MS, KeyRepeatSettings.DEFAULT_INTERVAL_MS));
         loadKeyGap();
-        remoteDesktopMode = prefs().getBoolean(RemoteDesktopLayouts.PREF_MODE, false);
+        boolean nextRemoteMode = prefs().getBoolean(RemoteDesktopLayouts.PREF_MODE, false);
+        KeyboardLayoutId nextRemoteLayout = remoteDesktopLayout;
         if (!remoteDesktopPreview) {
-            remoteDesktopLayout = RemoteDesktopLayouts.resolve(
+            nextRemoteLayout = RemoteDesktopLayouts.resolve(
                 prefs().getString(RemoteDesktopLayouts.PREF_CURRENT,
                     prefs().getString(RemoteDesktopLayouts.PREF_KEY, null)));
         }
+        if (nextRemoteMode != remoteDesktopMode || nextRemoteLayout != remoteDesktopLayout) {
+            cancelAllTouches();
+        }
+        remoteDesktopMode = nextRemoteMode;
+        remoteDesktopLayout = nextRemoteLayout;
         // Read the key this orientation actually writes. Reading the un-suffixed one meant every
         // preference change — including the height's own write — put the height back to default,
         // which is why neither the size keys nor the settings slider appeared to do anything.
@@ -548,31 +619,21 @@ public final class ReteKeyboardView extends View {
         if (!ModifierLatches.handles(control)) {
             return;
         }
-        modifierLatches.tap(control);
+        modifiers.tap(control);
         invalidate();
     }
 
     public void setModifierLockFromBar(ControlKey control, boolean down) {
-        if (control == ControlKey.SHIFT) {
-            // Shift is the layout's own latch rather than one of the three, so a bar slot holding
-            // it locks the same state the Shift key does.
-            if (shiftLayer.isLocked() != down) {
-                shiftLayer.toggleLock();
-                invalidate();
-            }
+        if (control != ControlKey.SHIFT && !ModifierLatches.handles(control)) {
             return;
         }
-        if (!ModifierLatches.handles(control) || modifierLatches.isLocked(control) == down) {
-            return;
-        }
-        modifierLatches.hold(control);
+        modifiers.setLockFromBar(control, down);
         invalidate();
     }
 
     /** Clears transient one-shot and pointer state when the editor session changes. */
     public void resetLayerState() {
-        shiftLayer.clear();
-        modifierLatches.clear();
+        modifiers.clearAll();
         releaseTabHoldIfLatched();
         cancelAllTouches();
         feedback.reload(prefs());
@@ -629,9 +690,23 @@ public final class ReteKeyboardView extends View {
             case TEXT:
             case JAMO:
                 return key.label();
+            case RAW_KEY:
+                if (input.isPhysical() && key.stableKeyId().startsWith("touch.rd.")
+                        && isRemoteDesktopLetterOrPeriod(input.rawKey())) {
+                    return key.label();
+                }
+                return null;
             default:
                 return null;
         }
+    }
+
+    private static boolean isRemoteDesktopLetterOrPeriod(RawKey key) {
+        if (key == null) {
+            return false;
+        }
+        return key == RawKey.PERIOD
+            || (key.ordinal() >= RawKey.A.ordinal() && key.ordinal() <= RawKey.Z.ordinal());
     }
 
     @Override
@@ -709,7 +784,7 @@ public final class ReteKeyboardView extends View {
         int face = flashFromChoice ? palette.choiceAccent : palette.keyAccent;
         paint.setColor(EchoBoxSettings.withOpacity(face, echoBoxOpacity));
         Compat.drawRoundRect(
-            canvas, left, top, left + boxWidth, top + boxHeight, radius, paint);
+            canvas, scratchRect, left, top, left + boxWidth, top + boxHeight, radius, paint);
         paint.setColor(EchoBoxSettings.inkWithOpacity(palette.inkOn(face), echoBoxOpacity));
         canvas.drawText(
             flashLabel, centerX, top + boxHeight * 0.5f - (paint.descent() + paint.ascent()) / 2.0f,
@@ -731,9 +806,10 @@ public final class ReteKeyboardView extends View {
             return;
         }
         KeyboardLayout layout = layout();
+        String grid = gridSignature();
         for (int i = 0; i < touches.size(); i++) {
             Touch touch = touches.valueAt(i);
-            if (touch.row >= layout.rows().size()) {
+            if (!touch.grid.equals(grid) || touch.row >= layout.rows().size()) {
                 continue;
             }
             List<SoftwareKeySpec> row = layout.rows().get(touch.row);
@@ -761,9 +837,11 @@ public final class ReteKeyboardView extends View {
      */
     private void drawFlickGuides(Canvas canvas, int width, int height) {
         KeyboardLayout layout = layout();
+        String grid = gridSignature();
         for (int i = 0; i < touches.size(); i++) {
             Touch touch = touches.valueAt(i);
-            if (!touch.guideOpen || touch.row >= layout.rows().size()) {
+            if (!touch.guideOpen || !touch.grid.equals(grid)
+                    || touch.row >= layout.rows().size()) {
                 continue;
             }
             List<SoftwareKeySpec> row = layout.rows().get(touch.row);
@@ -814,10 +892,12 @@ public final class ReteKeyboardView extends View {
      */
     private void drawHoldPickers(Canvas canvas, int width, int height) {
         KeyboardLayout layout = layout();
+        String grid = gridSignature();
         for (int i = 0; i < touches.size(); i++) {
             Touch touch = touches.valueAt(i);
             HoldPicker picker = touch.picker;
-            if (picker == null || touch.row >= layout.rows().size()) {
+            if (picker == null || !touch.grid.equals(grid)
+                    || touch.row >= layout.rows().size()) {
                 continue;
             }
             List<SoftwareKeySpec> row = layout.rows().get(touch.row);
@@ -866,9 +946,7 @@ public final class ReteKeyboardView extends View {
         // so the strip reads as a choice being made rather than as more pressed keys.
         int fill = aimed
             ? palette.choiceAccent
-            : palette.outlined
-                ? palette.keyFace
-                : ChoiceHue.softOf(palette.keyAccent, palette.keyFace);
+            : palette.choiceSoft;
         drawKeyShape(canvas, centreX - half, centreY - half, centreX + half, centreY + half,
             radius, fill);
         paint.setColor(palette.inkOn(fill));
@@ -915,9 +993,9 @@ public final class ReteKeyboardView extends View {
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + nextLayoutCaption() + "|" + numpadMode
             + "|" + phoneOverlay + "|" + unicodeEntry + "|" + unicodePreview
-            + "|" + shiftLayer.isActive()
-            + "|" + shiftLayer.isLocked() + "|" + modifierLatches.signature() + "|" + tabHeld
-            + "|" + capsLocked + "|"
+            + "|" + remoteDesktopMode + "|" + remoteDesktopLayout
+            + "|" + UserLayouts.revision() + "|" + (previewLayout != null)
+            + "|" + modifiers.signature() + "|" + tabHeld + "|" + capsLocked + "|"
             + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext())
             + "|" + ScreenTheme.monochrome(getContext()) + "|" + keyGapPercent + "|" + usualKeyGapPx;
     }
@@ -1033,15 +1111,16 @@ public final class ReteKeyboardView extends View {
         paint.setColor(palette.keyShadow);
         if (palette.outlined) {
             float edge = Math.max(1.0f, keyShadowPx * 0.5f);
-            Compat.drawRoundRect(canvas, l, t, r, b, radius, paint);
+            Compat.drawRoundRect(canvas, scratchRect, l, t, r, b, radius, paint);
             paint.setColor(fill);
-            Compat.drawRoundRect(canvas, l + edge, t + edge, r - edge, b - edge,
+            Compat.drawRoundRect(canvas, scratchRect, l + edge, t + edge, r - edge, b - edge,
                 Math.max(0.0f, radius - edge), paint);
             return;
         }
-        Compat.drawRoundRect(canvas, l, t + keyShadowPx, r, b + keyShadowPx, radius, paint);
+        Compat.drawRoundRect(
+            canvas, scratchRect, l, t + keyShadowPx, r, b + keyShadowPx, radius, paint);
         paint.setColor(fill);
-        Compat.drawRoundRect(canvas, l, t, r, b, radius, paint);
+        Compat.drawRoundRect(canvas, scratchRect, l, t, r, b, radius, paint);
     }
 
     /**
@@ -1069,7 +1148,7 @@ public final class ReteKeyboardView extends View {
                 ? palette.inkOn(fill)
                 : palette.keyTextMuted;
         paint.setColor(ink);
-        if (SPACE_KEY_ID.equals(key.stableKeyId())) {
+        if (isSpaceKey(key)) {
             // The space bar says what it is by its shape, the way a space bar always has. A word
             // there is both the longest label on the keyboard and the least necessary one.
             drawSpaceMark(canvas, l, t, r, b);
@@ -1128,7 +1207,7 @@ public final class ReteKeyboardView extends View {
             // held ones are drawn inverted — and a second mark saying the same thing was one mark
             // too many. The branch stays so these keys do not fall through to the hold dot below:
             // that they can be held is what the fill is already telling you.
-        } else if (key.hasLongPress() || key.hasLongPressControl()) {
+        } else if (key.hasLongPressControl()) {
             paint.setColor(palette.hintOn(fill));
             canvas.drawCircle(r - keyRadiusPx, t + keyRadiusPx, 3.0f, paint);
         }
@@ -1154,13 +1233,23 @@ public final class ReteKeyboardView extends View {
         Paint.Style style = paint.getStyle();
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(stroke);
-        Path box = new Path();
-        box.moveTo(left, top);
-        box.lineTo(left, bottom);
-        box.lineTo(right, bottom);
-        box.lineTo(right, top);
-        canvas.drawPath(box, paint);
+        spaceMarkPath.rewind();
+        spaceMarkPath.moveTo(left, top);
+        spaceMarkPath.lineTo(left, bottom);
+        spaceMarkPath.lineTo(right, bottom);
+        spaceMarkPath.lineTo(right, top);
+        canvas.drawPath(spaceMarkPath, paint);
         paint.setStyle(style);
+    }
+
+    private static boolean isSpaceKey(SoftwareKeySpec key) {
+        String id = key.stableKeyId();
+        return SPACE_KEY_ID.equals(id) || "touch.rd.space".equals(id);
+    }
+
+    private static boolean isTabKey(SoftwareKeySpec key) {
+        String id = key.stableKeyId();
+        return TAB_KEY_ID.equals(id) || "touch.rd.tab".equals(id);
     }
 
     /** Whether holding this key keeps it down: Shift, the three modifiers, and Tab. */
@@ -1170,7 +1259,7 @@ public final class ReteKeyboardView extends View {
                 || key.control() == ControlKey.CAPS_LOCK
                 || ModifierLatches.handles(key.control());
         }
-        return TAB_KEY_ID.equals(key.stableKeyId());
+        return isTabKey(key);
     }
 
     /** Whether it is being held right now — locked, not merely armed for the next key. */
@@ -1179,12 +1268,12 @@ public final class ReteKeyboardView extends View {
             return tabHeld;
         }
         if (key.control() == ControlKey.SHIFT) {
-            return shiftLayer.isLocked();
+            return modifiers.shiftLocked();
         }
         if (key.control() == ControlKey.CAPS_LOCK) {
             return capsLocked;
         }
-        return modifierLatches.isLocked(key.control());
+        return modifiers.modifierLocked(key.control());
     }
 
     /**
@@ -1252,16 +1341,21 @@ public final class ReteKeyboardView extends View {
         }
         int rowIndex = target[0];
         int keyIndex = target[1];
+        SoftwareKeySpec hitKey = layout.rows().get(rowIndex).get(keyIndex);
+        if (!hitKey.enabled() && !hitKey.isControl()) {
+            // Vacated / disabled cells do not accept presses or fire click feedback.
+            return;
+        }
         // The gap between two faces is not a key: a finger that comes down there starts nothing
         // (resolve returned null above). A finger already on a key keeps it while it crosses a
         // gap, and takes the next key only once it is on that key's face.
         Touch touch = new Touch(pointerId, rowIndex, keyIndex, gridSignature(), x, y);
         touches.put(pointerId, touch);
-        armModifierOnPress(touch, layout.rows().get(rowIndex).get(keyIndex));
+        armModifierOnPress(touch, hitKey);
         // Give immediate press feedback: a haptic tick, a click sound, and a visual highlight.
         feedback.playKeyDown();
         invalidate();
-        armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+        armTimers(touch, hitKey);
     }
 
     /**
@@ -1275,15 +1369,10 @@ public final class ReteKeyboardView extends View {
             return;
         }
         ControlKey control = key.control();
-        if (control == ControlKey.SHIFT) {
-            touch.latchBeforePress = shiftLayer.state();
-            shiftLayer.tap();
-        } else if (ModifierLatches.handles(control)) {
-            touch.latchBeforePress = modifierLatches.stateOf(control);
-            modifierLatches.tap(control);
-        } else {
+        if (control != ControlKey.SHIFT && !ModifierLatches.handles(control)) {
             return;
         }
+        touch.latchBeforePress = modifiers.press(control);
         touch.heldModifier = control;
         touch.typedAtDown = typedCount;
         invalidate();
@@ -1297,25 +1386,22 @@ public final class ReteKeyboardView extends View {
         if (touch.heldModifier == null || typedCount == touch.typedAtDown) {
             return;
         }
-        if (touch.heldModifier == ControlKey.SHIFT) {
-            consumeOneShotShift();
-        } else {
-            consumeOneShotModifiers();
+        if (modifiers.releaseAfterTyped(touch.heldModifier, holdsTheSameModifier(touch))) {
+            invalidate();
         }
     }
 
     /** A finger's hold and repeat timers, armed for whichever key it is on now. */
     private void armTimers(Touch touch, SoftwareKeySpec key) {
-        // Shift, and any key with a long press, react to a hold.
-        if (key.hasLongPress()
-            || key.hasLongPressControl()
-            || (key.isControl()
-                && (key.control() == ControlKey.SHIFT
-                    || ModifierLatches.handles(key.control())))) {
-            postDelayed(touch.onHold, holdDelayFor(key));
-        } else if (repeatEnabled && repeatsOnHold(key)) {
-            // Ordinary keys with no long press auto-repeat while held.
-            postDelayed(touch.onRepeat, repeatDelayMs);
+        switch (KeyHoldPolicy.actionFor(key, repeatEnabled)) {
+            case HOLD:
+                postDelayed(touch.onHold, holdDelayFor(key));
+                break;
+            case REPEAT:
+                postDelayed(touch.onRepeat, repeatDelayMs);
+                break;
+            default:
+                break;
         }
     }
 
@@ -1384,12 +1470,21 @@ public final class ReteKeyboardView extends View {
             }
             int rowIndex = target[0];
             int keyIndex = target[1];
+            SoftwareKeySpec nextKey = layout.rows().get(rowIndex).get(keyIndex);
             removeCallbacks(touch.onHold);
             removeCallbacks(touch.onRepeat);
+            if (touch.heldModifier != null) {
+                unwindModifier(touch);
+                touch.heldModifier = null;
+                touch.latchBeforePress = null;
+            }
             touch.row = rowIndex;
             touch.key = keyIndex;
+            touch.downX = x;
+            touch.downY = y;
+            armModifierOnPress(touch, nextKey);
             invalidate();
-            armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
+            armTimers(touch, nextKey);
         }
     }
 
@@ -1588,13 +1683,23 @@ public final class ReteKeyboardView extends View {
     /** What the grid of cells depends on: the same keys in the same places means the same value. */
     private String gridSignature() {
         return page + "|" + letterLayoutId + "|" + numpadMode + "|" + phoneOverlay
-            + "|" + unicodeEntry;
+            + "|" + unicodeEntry + "|" + remoteDesktopMode + "|" + UserLayouts.revision();
     }
 
-    /** Keys that fire again while held: plain text/edit/raw keys, but not controls or layer keys. */
-    private static boolean repeatsOnHold(SoftwareKeySpec key) {
-        return key.enabled() && !key.isControl()
-            && !key.hasLongPress() && !key.hasLongPressControl();
+    /** Returns the live key for {@code touch} if the grid and coordinates are still valid. */
+    private SoftwareKeySpec keyForTouch(Touch touch) {
+        if (!touch.grid.equals(gridSignature())) {
+            return null;
+        }
+        java.util.List<java.util.List<SoftwareKeySpec>> rows = layout().rows();
+        if (touch.row < 0 || touch.row >= rows.size()) {
+            return null;
+        }
+        java.util.List<SoftwareKeySpec> row = rows.get(touch.row);
+        if (touch.key < 0 || touch.key >= row.size()) {
+            return null;
+        }
+        return row.get(touch.key);
     }
 
     /** Fires the held key once and schedules the next repeat, until the finger lifts. */
@@ -1602,12 +1707,21 @@ public final class ReteKeyboardView extends View {
         if (touches.get(touch.pointerId) != touch) {
             return;
         }
-        SoftwareKeySpec key = layout().rows().get(touch.row).get(touch.key);
-        if (!repeatsOnHold(key)) {
+        SoftwareKeySpec key = keyForTouch(touch);
+        if (key == null) {
+            forget(touch);
+            invalidate();
+            return;
+        }
+        if (!KeyHoldPolicy.repeatsOnHold(key)) {
             return;
         }
         if (!emitPhoneKey(key)) {
             send(pressEventWithModifiers(key));
+            if (key.semanticInput() != null
+                    && key.semanticInput().kind() == SemanticInput.Kind.RAW_KEY) {
+                consumeRawKeyModifiers();
+            }
         }
         touch.repeatFired = true;
         feedback.playKeyDown();
@@ -1691,7 +1805,12 @@ public final class ReteKeyboardView extends View {
         if (!emitPhoneKey(held)) {
             send(pressEventWithModifiers(held));
         }
-        consumeOneShotShift();
+        if (held.semanticInput() != null
+                && held.semanticInput().kind() == SemanticInput.Kind.RAW_KEY) {
+            consumeRawKeyModifiers();
+        } else {
+            consumeOneShotShift();
+        }
         flashKeyboard(held, null);
         performClick();
     }
@@ -1791,22 +1910,12 @@ public final class ReteKeyboardView extends View {
      * stayed armed and shifted whatever was typed next (review finding R11).
      */
     private void unwindModifier(Touch touch) {
-        ControlKey control = touch.heldModifier;
-        if (control == null) {
-            return;
-        }
-        if (typedCount != touch.typedAtDown) {
-            releaseModifier(touch);
-            return;
-        }
-        if (holdsTheSameModifier(touch)) {
-            // Another finger is still on it: that one owns the state now.
-            return;
-        }
-        if (control == ControlKey.SHIFT) {
-            shiftLayer.restore(touch.latchBeforePress);
-        } else {
-            modifierLatches.restore(control, touch.latchBeforePress);
+        if (modifiers.unwind(
+                touch.heldModifier,
+                touch.latchBeforePress,
+                typedCount != touch.typedAtDown,
+                holdsTheSameModifier(touch))) {
+            invalidate();
         }
     }
 
@@ -1832,7 +1941,7 @@ public final class ReteKeyboardView extends View {
      * modifiers are one-shot: consumed after the chord.
      */
     private boolean tryArmedModifierChord(SoftwareKeySpec key) {
-        Set<KeyModifier> mods = modifierLatches.active();
+        Set<KeyModifier> mods = modifiers.chordModifiersForLetter();
         if (mods.isEmpty()) {
             return false;
         }
@@ -1849,8 +1958,7 @@ public final class ReteKeyboardView extends View {
         }
         send(ProjectKeyEvent.softwareDown(
             key.stableKeyId(), SemanticInput.rawKey(rawKey, mods)));
-        consumeOneShotModifiers();
-        consumeOneShotShift();
+        consumeRawKeyModifiers();
         invalidate();
         return true;
     }
@@ -1917,13 +2025,14 @@ public final class ReteKeyboardView extends View {
      * nothing on those keys, on the pad page and on the action bar alike.
      */
     public Set<KeyModifier> rawKeyModifiers() {
-        return RawKeyModifiers.of(modifierLatches.active(), shiftLayer.isActive());
+        return modifiers.rawKeyModifiers();
     }
 
     /** Spends whatever one-shot modifiers a raw key just used, Shift included. */
     public void consumeRawKeyModifiers() {
-        consumeOneShotModifiers();
-        consumeOneShotShift();
+        if (modifiers.consumeOneShots(true, heldModifierFingers())) {
+            invalidate();
+        }
     }
 
     /** Folds the active modifiers into a raw key so it forms a chord; other keys are unchanged. */
@@ -1943,18 +2052,25 @@ public final class ReteKeyboardView extends View {
         if (touches.get(touch.pointerId) != touch) {
             return;
         }
-        SoftwareKeySpec key = layout().rows().get(touch.row).get(touch.key);
-        if (key.isControl() && key.control() == ControlKey.SHIFT) {
-            shiftLayer.toggleLock();
-            touch.holdConsumed = true;
+        SoftwareKeySpec key = keyForTouch(touch);
+        if (key == null) {
+            forget(touch);
             invalidate();
             return;
         }
-        if (key.isControl() && ModifierLatches.handles(key.control())) {
-            // Holding a modifier keeps it down until it is held again, the way a finger would.
-            modifierLatches.hold(key.control());
+        if (key.isControl() && (key.control() == ControlKey.SHIFT
+                || ModifierLatches.handles(key.control()))) {
+            // Holding a modifier toggles its lock starting from the pre-press state so holding an
+            // already-locked Shift/Ctrl/Alt/Meta unlocks it cleanly.
+            LatchState.State before = touch.heldModifier == key.control()
+                ? touch.latchBeforePress : null;
+            modifiers.hold(key.control(), before);
             touch.holdConsumed = true;
-            feedback.playKeyDown();
+            touch.heldModifier = null;
+            touch.latchBeforePress = null;
+            if (ModifierLatches.handles(key.control())) {
+                feedback.playKeyDown();
+            }
             invalidate();
             return;
         }
@@ -2111,36 +2227,21 @@ public final class ReteKeyboardView extends View {
         invalidate();
     }
 
-    private void consumeOneShotModifiers() {
-        if (isModifierFingerDown(ControlKey.CTRL)) {
-            return;
-        }
-        if (modifierLatches.consumeOneShots()) {
-            invalidate();
-        }
-    }
-
     private void consumeOneShotShift() {
-        if (isModifierFingerDown(ControlKey.SHIFT)) {
-            // Still held: it applies to every key typed under it, the way a keyboard's Shift does.
-            return;
-        }
-        if (shiftLayer.consumeOneShot()) {
+        if (modifiers.consumeOneShots(false, heldModifierFingers())) {
             invalidate();
         }
     }
 
-    /** Whether a finger is on that modifier's key right now. */
-    private boolean isModifierFingerDown(ControlKey control) {
+    private Set<ControlKey> heldModifierFingers() {
+        EnumSet<ControlKey> held = EnumSet.noneOf(ControlKey.class);
         for (int i = 0; i < touches.size(); i++) {
-            Touch touch = touches.valueAt(i);
-            if (touch.heldModifier == control
-                || (control != ControlKey.SHIFT && touch.heldModifier != null
-                    && touch.heldModifier != ControlKey.SHIFT)) {
-                return true;
+            ControlKey mod = touches.valueAt(i).heldModifier;
+            if (mod != null) {
+                held.add(mod);
             }
         }
-        return false;
+        return held;
     }
 
     /**
@@ -2148,8 +2249,10 @@ public final class ReteKeyboardView extends View {
      * the keyboard itself; this is the same door with a different handle.
      */
     public void showSpecialChars() {
+        cancelAllTouches();
+        resetPhoneInterpreters();
         page = Page.SPECIAL_CHARS;
-        shiftLayer.clear();
+        modifiers.clearShift();
         invalidate();
     }
 
@@ -2195,7 +2298,7 @@ public final class ReteKeyboardView extends View {
                 // shifted:LAYOUT — the page with Shift down, for pictures of capitals.
                 page = Page.LETTERS;
                 letterLayoutId = KeyboardLayoutId.valueOf(parts[1]);
-                shiftLayer.tap();
+                modifiers.tapShiftForPreview();
                 break;
             case "remote":
                 // remote:LAYOUT[:shift] — the remote-desktop page wearing that layout's caps.
@@ -2204,7 +2307,7 @@ public final class ReteKeyboardView extends View {
                 remoteDesktopPreview = true;
                 remoteDesktopLayout = KeyboardLayoutId.valueOf(parts[1]);
                 if (parts.length > 2) {
-                    shiftLayer.tap();
+                    modifiers.tapShiftForPreview();
                 }
                 break;
             case "fiverow":
@@ -2322,37 +2425,124 @@ public final class ReteKeyboardView extends View {
         }
     }
 
-    private int rowAt(KeyboardLayout layout, float y) {
-        int height = getHeight();
-        if (height <= 0 || y < 0.0f || y >= height) {
-            return -1;
+    @Override
+    public boolean dispatchHoverEvent(MotionEvent event) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN
+                && accessibilityProvider != null
+                && KeyboardAccessibilityProvider.dispatchHover(accessibilityProvider, event)) {
+            return true;
         }
-        int rows = layout.rows().size();
-        return Math.min(rows - 1, (int) (y * rows / height));
+        return super.dispatchHoverEvent(event);
     }
 
-    private int keyIndexAt(KeyboardLayout layout, int rowIndex, float x) {
-        int width = getWidth();
-        if (rowIndex < 0 || width <= 0 || x < 0.0f || x >= width) {
-            return -1;
+    private void activateCellForAccessibility(int rowIndex, int keyIndex) {
+        KeyboardLayout layout = layout();
+        List<List<SoftwareKeySpec>> rows = layout.rows();
+        if (rowIndex < 0 || rowIndex >= rows.size()) {
+            return;
         }
+        List<SoftwareKeySpec> row = rows.get(rowIndex);
+        if (keyIndex < 0 || keyIndex >= row.size()) {
+            return;
+        }
+        SoftwareKeySpec key = row.get(keyIndex);
+        if (key.isControl()) {
+            applyControl(key.control());
+            flashKeyboard(key, null);
+        } else if (key.enabled()) {
+            typeTapped(key);
+        }
+        invalidate();
+    }
+
+    private boolean activateLongPressForAccessibility(int rowIndex, int keyIndex) {
+        KeyboardLayout layout = layout();
+        List<List<SoftwareKeySpec>> rows = layout.rows();
+        if (rowIndex < 0 || rowIndex >= rows.size()) {
+            return false;
+        }
+        List<SoftwareKeySpec> row = rows.get(rowIndex);
+        if (keyIndex < 0 || keyIndex >= row.size()) {
+            return false;
+        }
+        SoftwareKeySpec key = row.get(keyIndex);
+        if (key.hasLongPressControl()) {
+            applyControl(key.longPressControl());
+            invalidate();
+            return true;
+        }
+        if (key.hasLongPress()) {
+            typeLongPress(key, 0);
+            return true;
+        }
+        return false;
+    }
+
+    int[] hitTestCellForTest(KeyboardLayout layout, float x, float y) {
+        int height = getHeight();
+        int width = getWidth();
+        if (layout == null || height <= 0 || width <= 0
+                || y < 0.0f || y >= height || x < 0.0f || x >= width) {
+            return null;
+        }
+        int rows = layout.rows().size();
+        int rowIndex = Math.min(rows - 1, (int) (y * rows / height));
         int column = Math.min(layout.columns() - 1, (int) (x * layout.columns() / width));
         List<SoftwareKeySpec> keys = layout.rows().get(rowIndex);
         int cursor = 0;
         for (int index = 0; index < keys.size(); index++) {
             cursor += keys.get(index).columnSpan();
             if (column < cursor) {
-                return index;
+                return new int[] {rowIndex, index};
             }
         }
-        return keys.size() - 1;
+        return new int[] {rowIndex, keys.size() - 1};
     }
 
+    void setPageForTest(String pageName) {
+        page = Page.valueOf(pageName);
+        requestLayout();
+        invalidate();
+    }
+
+    void setLayoutForTest(KeyboardLayoutId id, PhoneOverlay overlay) {
+        letterLayoutId = id;
+        phoneOverlay = overlay == null ? PhoneOverlay.NONE : overlay;
+        requestLayout();
+        invalidate();
+    }
+
+    void tapShiftForTest(boolean lock) {
+        if (lock) {
+            modifiers.hold(ControlKey.SHIFT, null);
+        } else {
+            modifiers.tap(ControlKey.SHIFT);
+        }
+        invalidate();
+    }
+
+    void applyControlForTest(ControlKey control) {
+        applyControl(control);
+    }
+
+    void typeTappedForTest(SoftwareKeySpec key) {
+        typeTapped(key);
+    }
+
+    void typeLongPressForTest(SoftwareKeySpec key, int index) {
+        typeLongPress(key, index);
+    }
+
+    String viewStateForTest() {
+        return "page=" + page + " letterLayoutId=" + letterLayoutId
+            + " phoneOverlay=" + phoneOverlay + " numpadMode=" + numpadMode
+            + " echoBoxEnabled=" + echoBoxEnabled + " echoBoxOpacity=" + echoBoxOpacity + " ";
+    }
 
     private void applyControl(ControlKey control) {
         switch (control) {
             case SHIFT:
-                shiftLayer.tap();
+                modifiers.tap(ControlKey.SHIFT);
                 break;
             case LAYOUT_TOGGLE:
                 // The globe walks the layouts the user enabled, in their order. From another page
@@ -2376,24 +2566,28 @@ public final class ReteKeyboardView extends View {
                     }
                 }
                 page = Page.LETTERS;
-                shiftLayer.clear();
+                modifiers.clearShift();
                 break;
             case SPECIAL_CHARS_LAYER:
                 page = Page.SPECIAL_CHARS;
-                shiftLayer.clear();
+                resetPhoneInterpreters();
+                modifiers.clearShift();
                 break;
             case SPECIAL_KEYS_LAYER:
                 page = Page.SPECIAL_KEYS;
                 numpadMode = NumpadMode.NUMBERS;
-                shiftLayer.clear();
+                resetPhoneInterpreters();
+                modifiers.clearShift();
                 break;
             case MENU_LAYER:
                 page = Page.MENU;
-                shiftLayer.clear();
+                resetPhoneInterpreters();
+                modifiers.clearShift();
                 break;
             case PREVIOUS_LAYER:
                 page = Page.LETTERS;
-                shiftLayer.clear();
+                resetPhoneInterpreters();
+                modifiers.clearShift();
                 break;
             case NOTEPAD:
                 if (onNotepad != null) {
@@ -2508,7 +2702,7 @@ public final class ReteKeyboardView extends View {
             case RSHIFT:
                 // A tap arms it for one key; a hold locks it. Both are view-local: what reaches
                 // the editor is the chord the next key makes.
-                modifierLatches.tap(control);
+                modifiers.tap(control);
                 break;
             case TAB_HOLD:
                 toggleTabHold();
@@ -2521,7 +2715,8 @@ public final class ReteKeyboardView extends View {
                 remoteDesktopMode = !remoteDesktopMode;
                 prefs().edit().putBoolean(RemoteDesktopLayouts.PREF_MODE, remoteDesktopMode).apply();
                 page = Page.LETTERS;
-                shiftLayer.clear();
+                resetPhoneInterpreters();
+                modifiers.clearShift();
                 break;
             default:
                 break;
@@ -2540,10 +2735,10 @@ public final class ReteKeyboardView extends View {
         if (key.isControl()) {
             ControlKey control = key.control();
             if (control == ControlKey.SHIFT) {
-                if (shiftLayer.isLocked()) {
+                if (modifiers.shiftLocked()) {
                     return palette.keyLatchedFace();
                 }
-                if (shiftLayer.isActive()) {
+                if (modifiers.shiftActive()) {
                     return palette.keyAccent;
                 }
             }
@@ -2560,14 +2755,14 @@ public final class ReteKeyboardView extends View {
                 // The globe wears the accent while the mode is on: it is walking the remote list.
                 return palette.keyAccent;
             }
-            if (modifierLatches.isLocked(control)) {
+            if (modifiers.modifierLocked(control)) {
                 return palette.keyLatchedFace();
             }
-            if (modifierLatches.isActive(control)) {
+            if (modifiers.modifierActive(control)) {
                 return palette.keyAccent;
             }
         }
-        if (tabHeld && TAB_KEY_ID.equals(key.stableKeyId())) {
+        if (tabHeld && isTabKey(key)) {
             // Tab latched down is held, not armed, so it inverts like the modifiers do.
             return palette.keyLatchedFace();
         }

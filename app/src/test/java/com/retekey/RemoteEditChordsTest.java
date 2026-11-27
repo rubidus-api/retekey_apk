@@ -3,6 +3,8 @@ package com.retekey;
 import java.util.EnumSet;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /**
  * 원격데스크톱에서 편집 명령이 되는 코드 표.

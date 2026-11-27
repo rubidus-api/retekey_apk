@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.TelexComposer;
 
 /** Telex, checked on the words every Vietnamese keyboard is judged by. */
 public final class TelexComposerTest {
@@ -114,5 +115,41 @@ public final class TelexComposerTest {
         assertFalse(composer.accepts("."));
         assertFalse(composer.accepts("ab"));
         assertFalse(composer.accepts("ñ"));
+    }
+
+    @Test
+    public void repeatedWAndHornPairUndosWorkCleanly() {
+        assertEquals("uow", type("uoww"));
+        assertEquals("ưow", type("uwoww"));
+        assertEquals("w", type("ww"));
+        assertEquals("web", type("wweb"));
+        assertEquals("ww", type("www"));
+        assertEquals("âw", type("aaw"));
+        assertEquals("ôw", type("oow"));
+        assertEquals("new", type("new"));
+        assertEquals("view", type("view"));
+    }
+
+    @Test
+    public void nonAdjacentVietnameseMarksAreSupported() {
+        assertEquals("được", type("dduocwj"));
+        assertEquals("được", type("duocwjd"));
+        assertEquals("trường", type("truongwf"));
+        assertEquals("mười", type("muoiwf"));
+        assertEquals("người", type("nguoiwf"));
+        assertEquals("việt", type("vietej"));
+        assertEquals("tiếng", type("tiengse"));
+        assertEquals("uống", type("uongso"));
+        assertEquals("đuocw", type("dduocww"));
+    }
+
+    @Test
+    public void englishWordsKeepLiteralLetters() {
+        assertEquals("follow", type("follow"));
+        assertEquals("browser", type("browser"));
+        assertEquals("twitter", type("twitter"));
+        assertEquals("hardware", type("hardware"));
+        assertEquals("android", type("android"));
+        assertEquals("window", type("wwindow"));
     }
 }

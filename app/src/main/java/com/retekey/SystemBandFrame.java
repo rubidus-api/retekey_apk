@@ -35,7 +35,7 @@ final class SystemBandFrame extends FrameLayout {
         bandPaint.setColor(KeyboardPalette.resolve(context).background);
         setWillNotDraw(false);
         addView(content, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        tellTheChildWhatIsNotItsToFill();
+        tellTheChildWhatIsNotItsToFill(isFloating() ? 0 : band);
         if (Build.VERSION.SDK_INT >= SystemBarInsets.ANY_INSETS_SDK) {
             setFitsSystemWindows(false);
             WindowInsetsWatcher.attach(this, this::setBand);
@@ -120,7 +120,7 @@ final class SystemBandFrame extends FrameLayout {
             return;
         }
         band = px;
-        tellTheChildWhatIsNotItsToFill();
+        tellTheChildWhatIsNotItsToFill(isFloating() ? 0 : band);
         requestLayout();
     }
 
@@ -129,9 +129,9 @@ final class SystemBandFrame extends FrameLayout {
      * frame has already given away, or it comes out a band too tall and loses its bottom row off
      * the edge of the window.
      */
-    private void tellTheChildWhatIsNotItsToFill() {
+    private void tellTheChildWhatIsNotItsToFill(int reserved) {
         if (getChildCount() > 0 && getChildAt(0) instanceof BottomReserving) {
-            ((BottomReserving) getChildAt(0)).setBottomReserved(band);
+            ((BottomReserving) getChildAt(0)).setBottomReserved(reserved);
         }
     }
 
@@ -140,10 +140,13 @@ final class SystemBandFrame extends FrameLayout {
         // Padding first, so the frame's own height comes out as the keyboard's plus the band and
         // the keyboard is measured against what is left. The height setting stays a share of the
         // screen given to *keys*: the band is added below them, not taken out of them.
-        int applied = SystemBarInsets.clampToHeight(band, MeasureSpec.getSize(heightMeasureSpec));
+        int applied = isFloating()
+            ? 0
+            : SystemBarInsets.clampToHeight(band, MeasureSpec.getSize(heightMeasureSpec));
         if (getPaddingBottom() != applied) {
             setPadding(0, 0, 0, applied);
         }
+        tellTheChildWhatIsNotItsToFill(applied);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 }

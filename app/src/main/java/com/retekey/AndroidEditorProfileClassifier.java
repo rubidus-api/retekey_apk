@@ -2,6 +2,8 @@ package com.retekey;
 
 import android.text.InputType;
 import android.view.inputmethod.EditorInfo;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorProfile;
 
 public final class AndroidEditorProfileClassifier {
     private static final int API_TIRAMISU = 33;
@@ -56,14 +58,15 @@ public final class AndroidEditorProfileClassifier {
             editorInfo.actionId,
             platformApi
         );
+        if (isRemoteDesktop(editorInfo.packageName)) {
+            return profile.capabilities().deletionMode()
+                    == EditorCapabilities.DeletionMode.RICH_TEXT
+                ? profile.withDeleteByKeyEvents()
+                : profile;
+        }
         if (looksLikeATerminal(editorInfo, profile)
                 || (isTerminal(editorInfo.packageName) && hasNoCursor(editorInfo))) {
             return profile.asTerminal();
-        }
-        if (isRemoteDesktop(editorInfo.packageName)
-                && profile.capabilities().deletionMode()
-                    == EditorCapabilities.DeletionMode.RICH_TEXT) {
-            return profile.withDeleteByKeyEvents();
         }
         return profile;
     }

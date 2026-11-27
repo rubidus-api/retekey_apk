@@ -8,6 +8,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.EnumSet;
 import java.util.Collections;
 import org.junit.Test;
+import com.retekey.core.ControlKey;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.ModifierLatches;
 
 /**
  * Ctrl, Meta and Alt hold the same three states Shift does. What a chord carries, and what

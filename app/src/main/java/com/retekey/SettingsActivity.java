@@ -17,6 +17,8 @@ import android.widget.TextView;
 import com.retekey.HardwareKeyBindings.Binding;
 import java.util.ArrayList;
 import java.util.List;
+import com.retekey.core.KeyRepeatSettings;
+import com.retekey.core.TerminalCompositionSettings;
 
 /**
  * ReteKey's settings screen. Reachable from the app launcher, from the ☰ menu key on the keyboard,
@@ -27,7 +29,8 @@ import java.util.List;
  * {@code retekey_view} preferences the keyboard reads, so changes take effect next time it shows.
  */
 public final class SettingsActivity extends Activity {
-    private static final String PREFS = "retekey_view";
+    private static final int ID_SCROLLER = 0x524B0001;
+    private static final String STATE_OPEN_LANGUAGES = "open_languages";
 
     /**
      * Names the screen an orientation page edits — {@link ScreenOrientation#name()}. Absent on
@@ -54,6 +57,8 @@ public final class SettingsActivity extends Activity {
     private SeekBar slider;
     private TextView valueLabel;
     private String capturingKey;
+    private int pendingModifierKey;
+    private boolean modifierChordUsed;
     private TextView captureStatus;
     private LinearLayout hanyeongList;
     private LinearLayout hanjaList;
@@ -72,6 +77,12 @@ public final class SettingsActivity extends Activity {
         // from, and it is only ever different from the manifest's when the user has picked one.
         ScreenTheme.apply(this);
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            ArrayList<String> open = savedInstanceState.getStringArrayList(STATE_OPEN_LANGUAGES);
+            if (open != null) {
+                openLanguages.addAll(open);
+            }
+        }
         String requested = getIntent() == null ? null : getIntent().getStringExtra(EXTRA_SCREEN);
         orientationPage = requested != null;
         layoutPage = orientationPage && getIntent().hasExtra(EXTRA_LAYOUTS);
@@ -87,6 +98,12 @@ public final class SettingsActivity extends Activity {
         }
         setTitle(pageTitle());
         buildUi();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putStringArrayList(STATE_OPEN_LANGUAGES, new ArrayList<>(openLanguages));
     }
 
     /**
@@ -120,13 +137,13 @@ public final class SettingsActivity extends Activity {
 
         // The controls are taller than a phone screen, so make the whole screen scroll.
         ScrollView scroller = new ScrollView(this);
+        scroller.setId(ID_SCROLLER);
         scroller.addView(root);
         setContentView(scroller);
         ScreenFit.apply(scroller, root);
-        if (orientationPage && !layoutPage) {
-            // Shows the stored height in the label the slider just got. No other page builds a
-            // height control, and storing one from those would be writing what they never read.
-            applyPercent(currentPercent());
+        if (orientationPage && !layoutPage && valueLabel != null) {
+            // Show the current value without writing height_percent merely on screen open.
+            valueLabel.setText(getString(R.string.settings_height_value, currentPercent()));
         }
     }
 
@@ -218,7 +235,9 @@ public final class SettingsActivity extends Activity {
         slider.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                applyPercent(sliderValue(progress, KeyboardHeightPercent.MIN_PERCENT));
+                if (fromUser) {
+                    applyPercent(sliderValue(progress, KeyboardHeightPercent.MIN_PERCENT));
+                }
             }
         });
         root.addView(slider, matchWidth());
@@ -269,7 +288,7 @@ public final class SettingsActivity extends Activity {
         reset.setText(R.string.settings_reset_usual);
         reset.setAllCaps(false);
         reset.setOnClickListener(view -> {
-            prefs().edit().remove(editing.key(prefKey)).remove(editing.key(legacyKey)).apply();
+            AppPrefs.resetOriented(prefs(), editing, prefKey, legacyKey);
             int back = Math.max(min, Math.min(max,
                 prefKey.equals(KeyGapSettings.KEY_CELL_PERCENT)
                     ? usualGapPercent() : usualBarPercent()));
@@ -396,6 +415,9 @@ public final class SettingsActivity extends Activity {
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
                 int value = progress + min;
                 prefs().edit().putInt(prefKey, value).apply();
                 label.setText(getString(titleRes) + "  " + value + "%");
@@ -415,9 +437,31 @@ public final class SettingsActivity extends Activity {
         root.addView(sectionHint(R.string.settings_band_hint));
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.addView(bandButton(SystemBarInsets.Mode.AUTOMATIC, R.string.settings_band_auto));
-        row.addView(bandButton(SystemBarInsets.Mode.ALWAYS, R.string.settings_band_always));
-        row.addView(bandButton(SystemBarInsets.Mode.NEVER, R.string.settings_band_never));
+        final SystemBarInsets.Mode[] modes = {
+            SystemBarInsets.Mode.AUTOMATIC,
+            SystemBarInsets.Mode.ALWAYS,
+            SystemBarInsets.Mode.NEVER
+        };
+        final int[] titles = {
+            R.string.settings_band_auto,
+            R.string.settings_band_always,
+            R.string.settings_band_never
+        };
+        final Button[] buttons = new Button[modes.length];
+        for (int i = 0; i < modes.length; i++) {
+            final SystemBarInsets.Mode chosen = modes[i];
+            Button button = new Button(this);
+            button.setAllCaps(false);
+            button.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            button.setOnClickListener(view -> {
+                SystemBandSettings.setMode(this, chosen);
+                updateBandButtons(buttons, modes, titles, chosen);
+            });
+            buttons[i] = button;
+            row.addView(button);
+        }
+        updateBandButtons(buttons, modes, titles, SystemBandSettings.mode(this));
         root.addView(row, matchWidth());
 
         // What this phone actually reported, measured inside the keyboard's own window — the only
@@ -429,20 +473,15 @@ public final class SettingsActivity extends Activity {
         root.addView(measured, matchWidth());
     }
 
-    private Button bandButton(SystemBarInsets.Mode mode, int titleRes) {
-        SystemBarInsets.Mode current = SystemBandSettings.mode(this);
-        Button button = new Button(this);
-        String title = getString(titleRes);
-        button.setText(current == mode ? "● " + title : title);
-        button.setAllCaps(false);
-        button.setEnabled(current != mode);
-        button.setOnClickListener(view -> {
-            SystemBandSettings.setMode(this, mode);
-            recreate();
-        });
-        button.setLayoutParams(new LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        return button;
+    private void updateBandButtons(
+            Button[] buttons, SystemBarInsets.Mode[] modes, int[] titles,
+            SystemBarInsets.Mode current) {
+        for (int i = 0; i < buttons.length; i++) {
+            String title = getString(titles[i]);
+            boolean selected = modes[i] == current;
+            buttons[i].setText(selected ? "● " + title : title);
+            buttons[i].setEnabled(!selected);
+        }
     }
 
 
@@ -629,24 +668,19 @@ public final class SettingsActivity extends Activity {
      * and the caller shifts, which is what {@link #sliderValue} and {@link #setSliderValue} do.
      */
     private static void rangeSlider(SeekBar bar, int min, int max) {
-        if (Compat.canSetSeekBarMin()) {
-            bar.setMin(min);
-            bar.setMax(max);
-        } else {
-            bar.setMax(max - min);
-        }
+        SettingsUi.rangeSlider(bar, min, max);
     }
 
     private static int sliderValue(SeekBar bar, int min) {
-        return Compat.canSetSeekBarMin() ? bar.getProgress() : bar.getProgress() + min;
+        return SettingsUi.sliderValue(bar, min);
     }
 
     private static void setSliderValue(SeekBar bar, int min, int value) {
-        bar.setProgress(Compat.canSetSeekBarMin() ? value : value - min);
+        SettingsUi.setSliderValue(bar, min, value);
     }
 
     private static int sliderValue(int progress, int min) {
-        return Compat.canSetSeekBarMin() ? progress : progress + min;
+        return SettingsUi.sliderValue(progress, min);
     }
 
     private void addFloatingControls(LinearLayout root) {
@@ -680,6 +714,9 @@ public final class SettingsActivity extends Activity {
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
                 int percent = sliderValue(progress, floor);
                 FloatingKeyboardSettings.setOpacityPercent(prefs(), editing, percent);
                 label.setText(getString(R.string.settings_floating_value, percent));
@@ -793,45 +830,13 @@ public final class SettingsActivity extends Activity {
 
     /** How tall a layout row is, and how big the arrow beside it is: a comfortable touch target. */
     private static final int ROW_HEIGHT_DP = 48;
-    private static final int MOVE_BUTTON_DP = 44;
 
-    /**
-     * A square for the arrow, with air around it. A default Button is a slab: it carries a 64dp
-     * minimum width, its own padding and a background with built-in insets, which for a single
-     * glyph comes out both oversized and hard to tell apart from its neighbour. The size here is
-     * still above the 48dp touch target once the margins are counted, so it is no harder to hit.
-     */
     private LinearLayout.LayoutParams moveButtonParams(boolean first) {
-        LinearLayout.LayoutParams params =
-            new LinearLayout.LayoutParams(dp(MOVE_BUTTON_DP), dp(MOVE_BUTTON_DP));
-        params.leftMargin = dp(first ? 8 : 4);
-        params.rightMargin = first ? 0 : dp(4);
-        return params;
+        return SettingsUi.moveButtonParams(this, first);
     }
 
     private Button moveButton(String glyph, KeyboardLayoutId id, int delta, boolean usable) {
-        Button button = glyphButton(glyph, usable);
-        button.setOnClickListener(view -> moveLayout(id, delta));
-        return button;
-    }
-
-    /** A single-glyph borderless button, sized to a touch target without a Button's slab. */
-    private Button glyphButton(String glyph, boolean usable) {
-        // Borderless: the theme's own flat button, so the arrow reads as an arrow rather than as a
-        // second slab beside the layout's name, and still lights up under a finger.
-        Button button = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        button.setText(glyph);
-        button.setEnabled(usable);
-        button.setAllCaps(false);
-        // A default Button reserves 64dp of width and its own padding; neither fits one glyph.
-        button.setMinimumWidth(0);
-        button.setMinimumHeight(0);
-        button.setMinWidth(0);
-        button.setMinHeight(0);
-        button.setPadding(0, 0, 0, 0);
-        button.setGravity(Gravity.CENTER);
-        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        return button;
+        return SettingsUi.glyphButton(this, glyph, usable, view -> moveLayout(id, delta));
     }
 
     private void toggleLayout(KeyboardLayoutId id) {
@@ -911,6 +916,9 @@ public final class SettingsActivity extends Activity {
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
                 prefs().edit().putFloat(prefKey, progress / 100.0f).apply();
                 label.setText(getString(titleRes) + "  "
                     + getString(R.string.settings_percent_value, progress));
@@ -1101,6 +1109,9 @@ public final class SettingsActivity extends Activity {
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
             public void onProgressChanged(SeekBar b, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
                 int value = sliderValue(progress, min);
                 prefs().edit().putInt(prefKey, value).apply();
                 label.setText(getString(titleRes) + "  "
@@ -1189,16 +1200,20 @@ public final class SettingsActivity extends Activity {
 
     private void startCapture(String prefKey) {
         capturingKey = prefKey;
+        pendingModifierKey = 0;
+        modifierChordUsed = false;
         // Tell the keyboard to keep its hands off: a key that is already bound would otherwise do
         // its job instead of being offered here.
-        prefs().edit().putBoolean(HardwareKeyBindings.KEY_CAPTURING, true).apply();
+        HardwareKeyBindings.setCapturing(true);
         captureStatus.setText(R.string.settings_hw_capture);
         captureStatus.setVisibility(View.VISIBLE);
     }
 
     private void stopCapture() {
         capturingKey = null;
-        prefs().edit().putBoolean(HardwareKeyBindings.KEY_CAPTURING, false).apply();
+        pendingModifierKey = 0;
+        modifierChordUsed = false;
+        HardwareKeyBindings.setCapturing(false);
         if (captureStatus != null) {
             captureStatus.setVisibility(View.GONE);
         }
@@ -1211,7 +1226,7 @@ public final class SettingsActivity extends Activity {
         if (capturingKey != null) {
             stopCapture();
         } else {
-            prefs().edit().putBoolean(HardwareKeyBindings.KEY_CAPTURING, false).apply();
+            HardwareKeyBindings.setCapturing(false);
         }
     }
 
@@ -1275,16 +1290,28 @@ public final class SettingsActivity extends Activity {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             if (KeyEvent.isModifierKey(keyCode)) {
                 // Wait: a plain modifier may be the start of a chord, or a lone-modifier binding
-                // captured on its release.
+                // captured on its release. Pressing a second modifier marks it as a multi-key attempt
+                // so releasing either one does not save a stray lone modifier.
+                if (pendingModifierKey == 0) {
+                    pendingModifierKey = keyCode;
+                } else if (pendingModifierKey != keyCode) {
+                    modifierChordUsed = true;
+                }
                 return true;
             }
+            modifierChordUsed = true;
             addBinding(capturingKey, new Binding(modsOf(event), keyCode));
             stopCapture();
             return true;
         }
         if (event.getAction() == KeyEvent.ACTION_UP && KeyEvent.isModifierKey(keyCode)) {
-            addBinding(capturingKey, new Binding(0, keyCode));
-            stopCapture();
+            if (!modifierChordUsed && keyCode == pendingModifierKey) {
+                addBinding(capturingKey, new Binding(0, keyCode));
+                stopCapture();
+            } else if (modsOf(event) == 0) {
+                pendingModifierKey = 0;
+                modifierChordUsed = false;
+            }
             return true;
         }
         return true;
@@ -1319,32 +1346,23 @@ public final class SettingsActivity extends Activity {
     }
 
     private TextView sectionHeader(int textRes) {
-        TextView header = new TextView(this);
-        header.setText(textRes);
-        Compat.setTextAppearance(header, android.R.style.TextAppearance_DeviceDefault_Large);
-        header.setPadding(0, dp(28), 0, dp(2));
-        return header;
+        return SettingsUi.sectionHeader(this, textRes, 28);
     }
 
     private TextView sectionHint(int textRes) {
-        TextView hint = new TextView(this);
-        hint.setText(textRes);
-        Compat.setTextAppearance(hint, android.R.style.TextAppearance_DeviceDefault_Small);
-        hint.setPadding(0, dp(4), 0, dp(8));
-        return hint;
+        return SettingsUi.sectionHint(this, textRes);
     }
 
     private LinearLayout.LayoutParams matchWidth() {
-        return new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        return SettingsUi.matchWidth();
     }
 
     private SharedPreferences prefs() {
-        return getSharedPreferences(PREFS, MODE_PRIVATE);
+        return AppPrefs.view(this);
     }
 
     private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
+        return SettingsUi.dp(this, value);
     }
 
     /** A {@link SeekBar.OnSeekBarChangeListener} with empty start/stop callbacks. */

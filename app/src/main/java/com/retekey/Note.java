@@ -100,7 +100,11 @@ public final class Note {
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(id, stamp, title, body);
+        int result = id.hashCode();
+        result = 31 * result + stamp.hashCode();
+        result = 31 * result + title.hashCode();
+        result = 31 * result + body.hashCode();
+        return result;
     }
 
     @Override

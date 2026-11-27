@@ -5,6 +5,12 @@ import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.KeyAction;
+import com.retekey.core.ScaffoldInputProcessor;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.StatelessInputProcessor;
 
 /**
  * The Enter key emits one profile-free semantic input. Only the editor profile decides whether

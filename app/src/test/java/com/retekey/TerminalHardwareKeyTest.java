@@ -9,6 +9,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.DubeolsikHardwareMapper;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.HardwareEventNormalizer;
+import com.retekey.core.InputAction;
+import com.retekey.core.InputDispatcher;
+import com.retekey.core.KeyAction;
+import com.retekey.core.MaterializedCompositionPolicy;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.RawHardwareKeyEvent;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.TerminalHardwareKeys;
+import com.retekey.core.TransitionPlan;
 
 /**
  * A physical keyboard typing Korean into a terminal — the half of issue #7 the first fix left.

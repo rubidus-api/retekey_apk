@@ -10,36 +10,42 @@ import android.content.SharedPreferences;
  * <p>Its own file, like the clip history's, so that clearing it is one line.
  */
 final class StashStore {
-    private static final String PREFS = "retekey_stash";
     private static final String KEY_ITEMS = "kept";
     /** How long a kept item lives, in minutes; 0 means until it is removed. */
     static final String KEY_MINUTES = "stash_minutes";
+    private static final VersionedStore.Codec<StashHistory> CODEC =
+        new VersionedStore.Codec<StashHistory>() {
+            @Override
+            public StashHistory decode(String stored) {
+                return StashCodec.decode(stored);
+            }
+
+            @Override
+            public String encode(StashHistory value) {
+                return StashCodec.encode(value.items());
+            }
+
+            @Override
+            public boolean sameData(StashHistory first, StashHistory second) {
+                return first.items().equals(second.items());
+            }
+        };
 
     private StashStore() {
-    }
-
-    private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
     static StashHistory load(Context context) {
         if (context == null) {
             return StashHistory.empty();
         }
-        SharedPreferences prefs = prefs(context);
-        String stored = prefs.getString(KEY_ITEMS, "");
-        StashHistory history = StashCodec.decode(stored);
-        String rewritten = StashCodec.encode(history.items());
-        StoreMigration.rewrite(prefs, KEY_ITEMS, stored, rewritten,
-            history.items().equals(StashCodec.decode(rewritten).items()));
-        return history;
+        return VersionedStore.load(AppPrefs.stash(context), KEY_ITEMS, CODEC);
     }
 
     static void save(Context context, StashHistory history) {
         if (context == null) {
             return;
         }
-        prefs(context).edit().putString(KEY_ITEMS, StashCodec.encode(history.items())).apply();
+        VersionedStore.save(AppPrefs.stash(context), KEY_ITEMS, history, CODEC);
     }
 
     /** The user's time limit in minutes, from the keyboard's own settings file. */
@@ -47,8 +53,7 @@ final class StashStore {
         if (context == null) {
             return StashHistory.DEFAULT_MINUTES;
         }
-        return context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE)
-            .getInt(KEY_MINUTES, StashHistory.DEFAULT_MINUTES);
+        return AppPrefs.view(context).getInt(KEY_MINUTES, StashHistory.DEFAULT_MINUTES);
     }
 
     /** Loads what is still in date, writing back the pruning so it is gone for good. */

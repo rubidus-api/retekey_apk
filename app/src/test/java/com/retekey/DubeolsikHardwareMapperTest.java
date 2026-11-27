@@ -2,6 +2,9 @@ package com.retekey;
 
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DubeolsikHardwareMapper;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 public final class DubeolsikHardwareMapperTest {
     @Test

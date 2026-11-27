@@ -131,6 +131,19 @@ public final class NoteListTest {
         assertEquals("rewritten", edited.byId("id-a").body());
     }
 
+    @Test
+    public void editingATitleResortsWhenSortedByTitle() {
+        NoteList byTitle = three().sortedBy(NoteList.Sort.TITLE);
+        // Originally: GAMMA ("" -> stamp "20260712-2300"), BETA ("alpha"), ALPHA ("Beta").
+        assertEquals(Arrays.asList("id-c", "id-b", "id-a"), ids(byTitle));
+        // Rename ALPHA from "Beta" to "00first": it moves ahead of both "alpha" and "20260712-2300".
+        NoteList renamed = byTitle.replaced(ALPHA.withTitle("00first"));
+        assertEquals(Arrays.asList("id-a", "id-c", "id-b"), ids(renamed));
+        // Descending title order reverses cleanly as well.
+        NoteList desc = byTitle.sortedBy(NoteList.Sort.TITLE).replaced(ALPHA.withTitle("00first"));
+        assertEquals(Arrays.asList("id-b", "id-c", "id-a"), ids(desc));
+    }
+
     /** Two notes made in the same minute are two notes, whatever they do (review R05). */
     @Test
     public void notesWithOneStampAreStillSeparate() {
@@ -156,5 +169,34 @@ public final class NoteListTest {
         assertFalse(first.id().equals(second.id()));
         assertEquals(first.id(), first.withBody("rewritten").id());
         assertEquals(first.id(), first.withTitle("named").id());
+    }
+
+    @Test
+    public void manualOrderAndSavedSortRestoreWithoutFlippingSameMinuteTies() {
+        NoteList manual = NoteList.of(
+            Arrays.asList(ALPHA, BETA, GAMMA), NoteList.Sort.MANUAL, false);
+        assertEquals(NoteList.Sort.MANUAL, manual.sort());
+        assertEquals(Arrays.asList("20260713-1448", "20260714-0900", "20260712-2300"),
+            stamps(manual));
+
+        // Equal-stamp ties must preserve their stored relative order across reloads.
+        List<Note> tiedInput = Arrays.asList(ALPHA, TWIN, BETA);
+        NoteList firstLoad = NoteList.of(tiedInput, NoteList.Sort.STAMP, false);
+        NoteList secondLoad = NoteList.of(firstLoad.notes(), NoteList.Sort.STAMP, false);
+        assertEquals(Arrays.asList("id-b", "id-a", "id-d"), ids(firstLoad));
+        assertEquals(ids(firstLoad), ids(secondLoad));
+
+        NoteList byTitle = NoteList.of(tiedInput, NoteList.Sort.TITLE, true);
+        assertEquals(NoteList.Sort.TITLE, byTitle.sort());
+        assertTrue(byTitle.ascending());
+        assertEquals(Arrays.asList("id-b", "id-a", "id-d"), ids(byTitle));
+    }
+
+    private static List<String> ids(NoteList list) {
+        List<String> out = new java.util.ArrayList<>();
+        for (Note note : list.notes()) {
+            out.add(note.id());
+        }
+        return out;
     }
 }

@@ -36,4 +36,14 @@ public final class FlowRowMathTest {
         assertEquals(1, FlowRowMath.lineCount(new int[0], 100));
         assertArrayEquals(new int[0], FlowRowMath.lines(new int[0], 100));
     }
+
+    @Test
+    public void linesIntoPopulatesReusableBufferWithoutTrailingNoise() {
+        int[] out = new int[5];
+        assertEquals(0, FlowRowMath.linesInto(new int[] {50, 60}, 0, 100, out));
+        assertEquals(2, FlowRowMath.linesInto(new int[] {60, 60, 30, 999}, 3, 100, out));
+        assertEquals(0, out[0]);
+        assertEquals(1, out[1]);
+        assertEquals(1, out[2]);
+    }
 }

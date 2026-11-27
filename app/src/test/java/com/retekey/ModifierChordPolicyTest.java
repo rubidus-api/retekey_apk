@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.ModifierChordPolicy;
 
 public final class ModifierChordPolicyTest {
     @Test

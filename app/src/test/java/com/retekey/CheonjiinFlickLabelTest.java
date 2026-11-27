@@ -3,9 +3,13 @@ package com.retekey;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import com.retekey.CheonjiinInterpreter.Flick;
-import com.retekey.CheonjiinInterpreter.Key;
+import com.retekey.core.CheonjiinInterpreter.Flick;
+import com.retekey.core.CheonjiinInterpreter.Key;
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.HangulTables;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 /** What the guide under a held finger promises, which must be what the drag delivers. */
 public final class CheonjiinFlickLabelTest {

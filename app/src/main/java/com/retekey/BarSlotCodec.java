@@ -5,61 +5,74 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.RecordCodec;
 
 /**
  * How the action bar's slots are written down and read back.
  *
- * <p>Records are separated by U+001E and their fields by U+001F — the two characters no keyboard
- * produces — because a slot can now carry text the user wrote, and text is exactly where every
- * separator anyone can type will eventually appear. A record carrying one of them is dropped rather
- * than corrupting the record after it.
- *
- * <p>It also reads the older format: a comma-separated list of {@link BarAction} words, which is
- * what every bar stored before custom slots existed. That is why an upgrade does not silently clear
- * someone's bar; the next write is in the new format.
+ * <p>Current saves use {@link RecordCodec} (4 fields per record), so slot text and custom labels
+ * containing U+001E, U+001F, or newlines survive without loss. It also decodes the two older
+ * formats: comma-separated {@link BarAction} words, and the v1 U+001E/U+001F record format.
  */
 final class BarSlotCodec {
-    /** U+001E RECORD SEPARATOR, between slots. */
+    /** U+001E RECORD SEPARATOR, between slots in v1 format. */
     private static final String RECORD = "\u001E";
-    /** U+001F UNIT SEPARATOR, between a slot's fields. */
+    /** U+001F UNIT SEPARATOR, between a slot's fields in v1 format. */
     private static final String FIELD = "\u001F";
     private static final String BUILT_IN = "a";
     private static final String TEXT = "t";
     private static final String CHORD = "c";
+    private static final int FIELDS = 4;
+    private static final String V2_HEADER = "retekey-store 2 4\n";
 
     private BarSlotCodec() {
     }
 
-    static String encode(List<BarSlot> slots) {
-        StringBuilder out = new StringBuilder();
-        for (BarSlot slot : slots) {
-            String record = encodeOne(slot);
-            if (record == null) {
-                continue;
-            }
-            if (out.length() > 0) {
-                out.append(RECORD);
-            }
-            out.append(record);
-        }
-        return out.toString();
+    static boolean hasExpectedHeader(String stored) {
+        return stored != null && stored.startsWith(V2_HEADER);
     }
 
-    private static String encodeOne(BarSlot slot) {
+    static boolean isEmptyV2(String stored) {
+        return V2_HEADER.equals(stored);
+    }
+
+    static String encode(List<BarSlot> slots) {
+        List<String[]> records = new ArrayList<>();
+        if (slots != null) {
+            for (BarSlot slot : slots) {
+                String[] record = recordOf(slot);
+                if (record != null) {
+                    records.add(record);
+                }
+            }
+        }
+        return RecordCodec.encode(records, FIELDS);
+    }
+
+    private static String[] recordOf(BarSlot slot) {
+        if (slot == null) {
+            return null;
+        }
         switch (slot.kind()) {
             case BUILT_IN:
-                return BUILT_IN + FIELD + slot.action().stored();
+                return slot.action() == null
+                    ? null
+                    : new String[] {BUILT_IN, slot.action().stored(), "", ""};
             case TEXT:
-                if (unsafe(slot.text()) || unsafe(slot.customLabel())) {
+                if (slot.text() == null || slot.text().isEmpty()) {
                     return null;
                 }
-                return TEXT + FIELD + slot.text() + FIELD + nullToEmpty(slot.customLabel());
+                return new String[] {TEXT, slot.text(), nullToEmpty(slot.customLabel()), ""};
             default:
-                if (slot.key() == null || unsafe(slot.customLabel())) {
+                if (slot.key() == null) {
                     return null;
                 }
-                return CHORD + FIELD + modifiers(slot.modifiers()) + FIELD + slot.key().name()
-                    + FIELD + nullToEmpty(slot.customLabel());
+                return new String[] {
+                    CHORD, modifiers(slot.modifiers()), slot.key().name(),
+                    nullToEmpty(slot.customLabel())
+                };
         }
     }
 
@@ -68,8 +81,17 @@ final class BarSlotCodec {
         if (stored == null || stored.isEmpty()) {
             return slots;
         }
+        if (RecordCodec.isNewFormat(stored)) {
+            for (String[] fields : RecordCodec.decode(stored, FIELDS)) {
+                BarSlot slot = decodeFields(fields);
+                if (slot != null) {
+                    slots.add(slot);
+                }
+            }
+            return slots;
+        }
         if (!stored.contains(RECORD) && !stored.contains(FIELD)) {
-            // The old format: nothing but built-in actions, separated by commas.
+            // The oldest format: nothing but built-in actions, separated by commas.
             for (String word : stored.split(",")) {
                 BarAction action = BarAction.parse(word.trim());
                 if (action != null) {
@@ -79,7 +101,7 @@ final class BarSlotCodec {
             return slots;
         }
         for (String record : stored.split(RECORD, -1)) {
-            BarSlot slot = decodeOne(record);
+            BarSlot slot = decodeFields(record.split(FIELD, -1));
             if (slot != null) {
                 slots.add(slot);
             }
@@ -87,9 +109,8 @@ final class BarSlotCodec {
         return slots;
     }
 
-    private static BarSlot decodeOne(String record) {
-        String[] fields = record.split(FIELD, -1);
-        if (fields.length < 2) {
+    private static BarSlot decodeFields(String[] fields) {
+        if (fields == null || fields.length < 2) {
             return null;
         }
         if (BUILT_IN.equals(fields[0])) {
@@ -146,10 +167,6 @@ final class BarSlotCodec {
             }
         }
         return modifiers;
-    }
-
-    private static boolean unsafe(String value) {
-        return value != null && (value.contains(RECORD) || value.contains(FIELD));
     }
 
     private static String nullToEmpty(String value) {

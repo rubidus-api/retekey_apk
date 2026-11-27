@@ -24,6 +24,8 @@ public final class HanjaDictionary {
     private static final String GLOSSES = "hanja_hunum.idx";
 
     private static volatile MappedHanjaTable table;
+    private static final java.util.concurrent.atomic.AtomicBoolean PRELOADING =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
 
     private HanjaDictionary() {
     }
@@ -48,8 +50,21 @@ public final class HanjaDictionary {
      * pages in, and doing that on the thread a keystroke arrives on is how a keyboard stutters.
      */
     public static void preload(Context context) {
-        Context app = context.getApplicationContext();
-        new Thread(() -> get(app), "hanja-preload").start();
+        if (table != null || !PRELOADING.compareAndSet(false, true)) {
+            return;
+        }
+        final Context app = context.getApplicationContext();
+        new Thread(() -> {
+            try {
+                MappedHanjaTable loaded = get(app);
+                // Touch the root pages so the first keystroke conversion does not stall.
+                loaded.candidates("가");
+                loaded.readings("家");
+                loaded.gloss("家");
+            } catch (RuntimeException failed) {
+                PRELOADING.set(false);
+            }
+        }, "hanja-preload").start();
     }
 
     private static SortedIndex open(Context context, String assetName) {

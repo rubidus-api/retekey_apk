@@ -2,6 +2,7 @@ package com.retekey;
 
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.EditorBounds;
 
 public final class EditorBoundsTest {
     @Test

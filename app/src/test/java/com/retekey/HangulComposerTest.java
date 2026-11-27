@@ -9,6 +9,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
+import com.retekey.core.HangulComposer;
+import com.retekey.core.SemanticJamo;
 
 /**
  * The 2-beolsik composer. The sanitized vectors are the input-key-sequence to output-string pairs
@@ -185,6 +187,14 @@ public final class HangulComposerTest {
         HangulComposer composer = feed("dhk"); // 와 (ㅇㅘ)
         assertEquals("오", composer.backspace().preedit()); // ㅘ -> ㅗ, not ㅇ
         assertEquals("ㅇ", composer.backspace().preedit());
+    }
+
+    @Test
+    public void backspaceDecomposesABareCompoundVowel() {
+        HangulComposer composer = feed("hk"); // ㅗ + ㅏ = ㅘ (no choseong)
+        assertEquals("ㅗ", composer.backspace().preedit());
+        assertEquals("", composer.backspace().preedit());
+        assertFalse(composer.isComposing());
     }
 
     @Test

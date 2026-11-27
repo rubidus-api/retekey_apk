@@ -43,13 +43,22 @@ final class ActionBarSlots {
     }
 
     /**
-     * Reads a stored bar. An empty or unreadable one falls back to the default, which is what the
-     * bar looked like the first time it was switched on; emptiness is stored as the bar being off,
-     * not as a bar of nothing.
+     * Reads a stored bar. Unset or unreadable legacy strings fall back to the default; an empty bar
+     * explicitly stored in v2 {@link RecordCodec} form stays empty instead of coming back with the
+     * default slots.
      */
     static List<BarSlot> parse(String stored) {
+        if (BarSlotCodec.isEmptyV2(stored)) {
+            return new ArrayList<>();
+        }
         List<BarSlot> slots = BarSlotCodec.decode(stored);
-        return slots.isEmpty() ? defaults() : slots;
+        if (!slots.isEmpty()) {
+            return slots;
+        }
+        if (BarSlotCodec.hasExpectedHeader(stored)) {
+            return slots;
+        }
+        return defaults();
     }
 
     /** The stored form of a bar. */

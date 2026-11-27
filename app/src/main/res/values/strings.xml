@@ -37,11 +37,8 @@
     <string name="settings_key_gap_usual">Not set: the usual gap, about %1$d%% of a cell on a ten-column page</string>
     <string name="settings_reset_usual">Back to usual</string>
     <string name="settings_height_value">%1$d%% of the screen height</string>
-    <string name="settings_bar_label">Action bar</string>
-    <string name="settings_bar_hint">A strip above or below the keys for the things that are not letters: selecting, the clipboard, moving the cursor, text of your own, key combinations you assemble. It has a screen of its own.</string>
     <string name="settings_bar_enabled">Show the action bar</string>
     <string name="settings_bar_reset">Default order</string>
-    <string name="settings_bar_open">Open action bar settings…</string>
     <string name="bar_settings_title">Action bar settings</string>
     <string name="settings_back_to_settings">← Back to settings</string>
     <string name="bar_settings_hint">The strip above or below the keys (set its position and height per screen in Portrait/Landscape settings). Drag a row by its ≡ handle to order it, ▲ ▼ to nudge, ✕ to take it off. Tap a text or key-combination row to edit it.</string>
@@ -50,6 +47,8 @@
     <string name="bar_settings_spare_hint">Built-in actions you have not put on it. ＋ adds one to the end.</string>
     <string name="bar_settings_add_text">+ Text…</string>
     <string name="bar_settings_add_chord">+ Key combination…</string>
+    <string name="bar_settings_edit_text">Edit text</string>
+    <string name="bar_settings_edit_chord">Edit key combination</string>
     <string name="bar_settings_text_hint">What to type</string>
     <string name="bar_settings_label_hint">What the key says (optional)</string>
     <string name="bar_settings_pick_key">Key</string>
@@ -69,7 +68,6 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_floating_enabled">Use the floating keyboard on this screen</string>
-    <string name="settings_preview">Preview</string>
     <string name="settings_hwlayout_label">Physical keyboard layouts</string>
     <string name="settings_hwlayout_hint">Which layout a plugged-in or Bluetooth keyboard follows while a layout is on the screen. They need not match: you can type Dvorak on the screen and Colemak on the keys. Only layouts with more than one physical form are listed — Korean has one, 2벌식, which 천지인 and 나랏글 already use.</string>
     <string name="settings_hwlayout_row">On screen: %1$s — physical keyboard:</string>
@@ -81,7 +79,6 @@
     <string name="settings_layout_portrait_hint">Which layouts the layout key walks through, and their order, for a screen held upright.</string>
     <string name="settings_layout_landscape_title">Layout (landscape)</string>
     <string name="settings_layout_landscape_hint">Which layouts the layout key walks through, and their order, for a screen held sideways.</string>
-    <string name="settings_page_open">Open %1$s</string>
     <string name="settings_portrait_title">Portrait settings</string>
     <string name="settings_landscape_title">Landscape settings</string>
     <string name="settings_reset_height">Default height</string>
@@ -118,7 +115,6 @@
 
     <string name="mode_korean">한글</string>
     <string name="mode_english">English</string>
-    <string name="hanja_pending">한자 키 인식됨 — 변환 기능은 준비 중입니다.</string>
     <string name="terminal_has_no_selection">A terminal has no selection to copy or cut.</string>
     <string name="settings_echo_hint">The box that shows what you just typed, over the keyboard. A finger covers the key it presses, which is why it is there — but it is a box over the keys, so it can be turned off, and made see-through enough to read the row underneath.</string>
     <string name="settings_still">No motion: nothing flashes, shades or pops up when a key is pressed (also on when Android\'s \"Remove animations\" is on)</string>

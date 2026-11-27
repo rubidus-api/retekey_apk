@@ -3,6 +3,16 @@ package com.retekey;
 import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.HardwareEventNormalizer;
+import com.retekey.core.InputAction;
+import com.retekey.core.InputDispatcher;
+import com.retekey.core.InputSource;
+import com.retekey.core.KeyAction;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.RawHardwareKeyEvent;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 public final class HardwareEventNormalizerTest {
     @Test
@@ -189,5 +199,18 @@ public final class HardwareEventNormalizerTest {
 
         Assert.assertEquals(3, repeat.repeatCount());
         Assert.assertEquals(SemanticInput.text("a"), repeat.semanticInput());
+    }
+
+    @Test
+    public void explicitMappedInputOverridesValidDeadKeyOnNonEnglishSystemLayout() {
+        SemanticInput cyrillic = SemanticInput.text("э");
+        ProjectKeyEvent event = HardwareEventNormalizer.normalize(
+            rawDown(0x80000000 | 0x00B4).mappedInput(cyrillic).build()
+        );
+
+        Assert.assertFalse(event.hasDeadKey());
+        Assert.assertEquals(cyrillic, event.semanticInput());
+        Assert.assertEquals(DispatchResult.handled(KeyAction.commitText("э")),
+            new InputDispatcher().dispatch(event));
     }
 }

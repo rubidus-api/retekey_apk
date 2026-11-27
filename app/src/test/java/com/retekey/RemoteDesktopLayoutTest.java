@@ -10,6 +10,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.ControlKey;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.TransitionPlan;
 
 /**
  * The remote-desktop page: a physical layout's caps on a QWERTY's keys. Each key sends the US
@@ -311,5 +325,15 @@ public final class RemoteDesktopLayoutTest {
         assertEquals(android.view.KeyEvent.KEYCODE_PERIOD,
             InputConnectionEditorBridge.keyCodeFor(RawKey.PERIOD));
         assertEquals(52, InputConnectionEditorBridge.scanCodeFor(RawKey.PERIOD));
+    }
+
+    @Test
+    public void currentAndNextHandleEmptyListsSafely() {
+        List<KeyboardLayoutId> empty = java.util.Collections.emptyList();
+        assertEquals(RemoteDesktopLayouts.DEFAULT, RemoteDesktopLayouts.current(empty, null));
+        assertEquals(KeyboardLayoutId.RU_JCUKEN,
+            RemoteDesktopLayouts.current(empty, KeyboardLayoutId.RU_JCUKEN));
+        assertEquals(RemoteDesktopLayouts.DEFAULT,
+            RemoteDesktopLayouts.next(empty, KeyboardLayoutId.EN_QWERTY));
     }
 }

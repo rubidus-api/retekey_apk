@@ -3,6 +3,7 @@ package com.retekey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.retekey.core.Scalars;
 
 /**
  * Text shared into ReteKey and kept for the user to type somewhere else — without the system

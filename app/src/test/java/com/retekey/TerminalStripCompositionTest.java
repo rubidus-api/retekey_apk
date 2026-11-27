@@ -9,6 +9,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.IdleSyllableSettle;
+import com.retekey.core.InputSessionController;
+import com.retekey.core.KeyAction;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
+import com.retekey.core.TerminalCompositionSettings;
+import com.retekey.core.TransitionPlan;
 
 /**
  * Building a syllable for an editor that never sees it — the answer to the whole take-back class
@@ -113,6 +128,29 @@ public final class TerminalStripCompositionTest {
         boolean materialises = profile.capabilities().deleteByKeyEvents()
             && !profile.capabilities().composesOffScreen();
         assertFalse(IdleSyllableSettle.shouldArm(materialises, true));
+    }
+
+    @Test
+    public void emptyOffScreenPlanExecutesWithoutFailureOnRawKeyTerminal() {
+        EditorProfile profile = terminalWithTheStrip();
+        HangulInputProcessor processor = new HangulInputProcessor(() -> profile);
+        InputSessionController<String> session = new InputSessionController<>();
+        long generation = session.start("", EditorBounds.unknown(), profile.capabilities());
+        SimulatedEditors.Screen screen = SimulatedEditors.terminal();
+        CheckedEditorExecutor executor = new CheckedEditorExecutor();
+
+        DispatchResult dispatch = processor.process(consonant(0));
+        assertTrue(dispatch.actions().isEmpty());
+
+        TransitionPlan<String> plan = session.plan(dispatch, "", EditorBounds.unknown());
+        ExecutionResult executed = executor.execute(
+            plan,
+            ExecutionContext.active(generation, plan.baseRevision(), EditorBounds.unknown(),
+                profile.capabilities()),
+            () -> EditorEndpoint.of(generation, screen));
+        assertEquals(ExecutionResult.Outcome.NO_EDITOR_ACTIONS, executed.outcome());
+        assertFalse(executed.isFailure());
+        assertEquals("ㄱ", processor.composingText());
     }
 
     /** The actions the editor would receive, in order — composing calls never reach it. */

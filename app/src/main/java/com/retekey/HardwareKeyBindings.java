@@ -3,6 +3,7 @@ package com.retekey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * User-assigned physical-keyboard shortcuts for the 한/영 toggle and the 한자 key. Each function may
@@ -27,7 +28,20 @@ public final class HardwareKeyBindings {
      * report, 2026-09-16). The two live in one app and share these preferences, which is channel
      * enough for "not now".
      */
-    static final String KEY_CAPTURING = "hw_capture_in_progress";
+    /**
+     * In-process guard set while the settings screen is waiting for the user to press a shortcut,
+     * so a bound key is captured instead of running its function. Kept in memory rather than
+     * persisted on disk so an unexpected kill never leaves shortcuts permanently disabled.
+     */
+    private static final AtomicBoolean CAPTURING = new AtomicBoolean(false);
+
+    static void setCapturing(boolean active) {
+        CAPTURING.set(active);
+    }
+
+    static boolean isCapturing() {
+        return CAPTURING.get();
+    }
 
     /**
      * What each function is bound to before the user says otherwise.

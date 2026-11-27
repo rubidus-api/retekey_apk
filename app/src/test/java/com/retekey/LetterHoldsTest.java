@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
 
 /**
  * The hold alternates on the letter pages: digits on the top row, the shifted number-row symbols on

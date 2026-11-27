@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /**
  * The action bar's own settings screen.
@@ -32,12 +34,15 @@ import java.util.Set;
  * device's light/dark theme and the user's own colour choice.
  */
 public final class ActionBarSettingsActivity extends Activity {
-    private static final String PREFS = "retekey_view";
+    private static final int ID_SCROLLER = 0x524B0002;
     private static final int ROW_HEIGHT_DP = 48;
-    private static final int MOVE_BUTTON_DP = 44;
 
     private LinearLayout slotList;
     private LinearLayout spareList;
+    private CheckBox enabledBox;
+    private boolean syncingEnabledBox;
+    private AlertDialog activeDialog;
+    private AlertDialog keyPickerDialog;
     /** The slot a finger is carrying while a row is dragged to a new place. */
     private Integer draggingIndex;
     /** The row the drop would land on, drawn with a heavy line across its top while dragging. */
@@ -51,6 +56,15 @@ public final class ActionBarSettingsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setTitle(R.string.bar_settings_title);
         buildUi();
+    }
+
+    @Override
+    protected void onDestroy() {
+        dismissDialog(keyPickerDialog);
+        keyPickerDialog = null;
+        dismissDialog(activeDialog);
+        activeDialog = null;
+        super.onDestroy();
     }
 
     private void buildUi() {
@@ -70,13 +84,16 @@ public final class ActionBarSettingsActivity extends Activity {
 
         root.addView(hint(R.string.bar_settings_hint));
 
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText(R.string.settings_bar_enabled);
-        enabled.setChecked(prefs().getBoolean(
+        enabledBox = new CheckBox(this);
+        enabledBox.setText(R.string.settings_bar_enabled);
+        enabledBox.setChecked(prefs().getBoolean(
             ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED));
-        enabled.setOnCheckedChangeListener((b, checked) ->
-            prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, checked).apply());
-        root.addView(enabled);
+        enabledBox.setOnCheckedChangeListener((b, checked) -> {
+            if (!syncingEnabledBox) {
+                prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, checked).apply();
+            }
+        });
+        root.addView(enabledBox);
 
         root.addView(header(R.string.bar_settings_on_the_bar));
         slotList = new LinearLayout(this);
@@ -106,6 +123,7 @@ public final class ActionBarSettingsActivity extends Activity {
         root.addView(reset, resetParams);
 
         ScrollView scroller = new ScrollView(this);
+        scroller.setId(ID_SCROLLER);
         scroller.addView(root);
         setContentView(scroller);
         ScreenFit.apply(scroller, root);
@@ -209,6 +227,7 @@ public final class ActionBarSettingsActivity extends Activity {
             if (event.getActionMasked() != MotionEvent.ACTION_DOWN) {
                 return false;
             }
+            view.performClick();
             draggingIndex = index;
             // The shadow is the whole row, not the handle that was touched: what follows the
             // finger should look like the thing being moved.
@@ -278,9 +297,15 @@ public final class ActionBarSettingsActivity extends Activity {
     private View divider() {
         View line = new View(this);
         TypedValue colour = new TypedValue();
-        int ink = getTheme().resolveAttribute(android.R.attr.textColorPrimary, colour, true)
-            ? getResources().getColor(colour.resourceId)
-            : 0xFF808080;
+        int ink = 0xFF808080;
+        if (getTheme().resolveAttribute(android.R.attr.textColorPrimary, colour, true)) {
+            if (colour.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                    && colour.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+                ink = colour.data;
+            } else if (colour.resourceId != 0) {
+                ink = Compat.getColor(this, colour.resourceId);
+            }
+        }
         line.setBackgroundColor(ink);
         line.setAlpha(0.35f);
         dividers.add(line);
@@ -331,6 +356,34 @@ public final class ActionBarSettingsActivity extends Activity {
 
     // ---- adding a piece of text ----
 
+    private void showActiveDialog(AlertDialog dialog) {
+        dismissDialog(activeDialog);
+        activeDialog = dialog;
+        dialog.setOnDismissListener(d -> {
+            if (activeDialog == dialog) {
+                activeDialog = null;
+            }
+        });
+        dialog.show();
+    }
+
+    private void showKeyPickerDialog(AlertDialog dialog) {
+        dismissDialog(keyPickerDialog);
+        keyPickerDialog = dialog;
+        dialog.setOnDismissListener(d -> {
+            if (keyPickerDialog == dialog) {
+                keyPickerDialog = null;
+            }
+        });
+        dialog.show();
+    }
+
+    private static void dismissDialog(AlertDialog dialog) {
+        if (dialog != null && dialog.isShowing()) {
+            dialog.dismiss();
+        }
+    }
+
     /** @param index the slot being edited, or null to add a new one */
     private void askForText(Integer index) {
         BarSlot existing = index == null ? null : slots().get(index);
@@ -355,10 +408,10 @@ public final class ActionBarSettingsActivity extends Activity {
         }
         form.addView(label, matchWidth());
 
-        new AlertDialog.Builder(this)
-            .setTitle(R.string.bar_settings_add_text)
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(index == null ? R.string.bar_settings_add_text : R.string.bar_settings_edit_text)
             .setView(form)
-            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+            .setPositiveButton(android.R.string.ok, (d, which) -> {
                 String typed = text.getText().toString();
                 if (typed.isEmpty()) {
                     return;
@@ -371,7 +424,8 @@ public final class ActionBarSettingsActivity extends Activity {
                 }
             })
             .setNegativeButton(android.R.string.cancel, null)
-            .show();
+            .create();
+        showActiveDialog(dialog);
     }
 
     // ---- adding a key combination ----
@@ -419,13 +473,13 @@ public final class ActionBarSettingsActivity extends Activity {
         final Button key = new Button(this);
         key.setAllCaps(false);
         key.setText(getString(R.string.bar_settings_key_is, keyNames[Math.max(0, chosen[0])]));
-        key.setOnClickListener(view -> new AlertDialog.Builder(this)
+        key.setOnClickListener(view -> showKeyPickerDialog(new AlertDialog.Builder(this)
             .setTitle(R.string.bar_settings_pick_key)
             .setItems(keyNames, (dialog, which) -> {
                 chosen[0] = which;
                 key.setText(getString(R.string.bar_settings_key_is, keyNames[which]));
             })
-            .show());
+            .create()));
         form.addView(key, matchWidth());
 
         final EditText label = new EditText(this);
@@ -438,10 +492,10 @@ public final class ActionBarSettingsActivity extends Activity {
 
         form.addView(hint(R.string.bar_settings_chord_note));
 
-        new AlertDialog.Builder(this)
-            .setTitle(R.string.bar_settings_add_chord)
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(index == null ? R.string.bar_settings_add_chord : R.string.bar_settings_edit_chord)
             .setView(form)
-            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+            .setPositiveButton(android.R.string.ok, (d, which) -> {
                 if (chosen[0] < 0) {
                     return;
                 }
@@ -454,7 +508,8 @@ public final class ActionBarSettingsActivity extends Activity {
                 }
             })
             .setNegativeButton(android.R.string.cancel, null)
-            .show();
+            .create();
+        showActiveDialog(dialog);
     }
 
     // ---- storage ----
@@ -464,35 +519,36 @@ public final class ActionBarSettingsActivity extends Activity {
     }
 
     private void store(List<BarSlot> slots) {
+        SharedPreferences.Editor editor = prefs().edit()
+            .putString(ActionBarSlots.KEY_SLOTS, ActionBarSlots.format(slots));
         if (slots.isEmpty()) {
-            // An empty bar reads back as the default, which would look like the slots came back by
-            // themselves; emptiness is the bar being off.
-            prefs().edit().putBoolean(ActionBarSlots.KEY_ENABLED, false).apply();
+            // Emptiness is stored explicitly in v2, and also switches the bar off with the box synced.
+            editor.putBoolean(ActionBarSlots.KEY_ENABLED, false);
+            if (enabledBox != null && enabledBox.isChecked()) {
+                syncingEnabledBox = true;
+                try {
+                    enabledBox.setChecked(false);
+                } finally {
+                    syncingEnabledBox = false;
+                }
+            }
         }
-        prefs().edit().putString(ActionBarSlots.KEY_SLOTS, ActionBarSlots.format(slots)).apply();
+        editor.apply();
         refresh();
     }
 
     private SharedPreferences prefs() {
-        return getSharedPreferences(PREFS, MODE_PRIVATE);
+        return AppPrefs.view(this);
     }
 
     // ---- small views ----
 
     private TextView header(int textRes) {
-        TextView view = new TextView(this);
-        view.setText(textRes);
-        Compat.setTextAppearance(view, android.R.style.TextAppearance_DeviceDefault_Large);
-        view.setPadding(0, dp(24), 0, dp(2));
-        return view;
+        return SettingsUi.sectionHeader(this, textRes, 24);
     }
 
     private TextView hint(int textRes) {
-        TextView view = new TextView(this);
-        view.setText(textRes);
-        Compat.setTextAppearance(view, android.R.style.TextAppearance_DeviceDefault_Small);
-        view.setPadding(0, dp(4), 0, dp(8));
-        return view;
+        return SettingsUi.sectionHint(this, textRes);
     }
 
     private Button wideButton(int textRes, View.OnClickListener onClick) {
@@ -506,37 +562,18 @@ public final class ActionBarSettingsActivity extends Activity {
     }
 
     private Button glyphButton(String glyph, boolean usable, View.OnClickListener onClick) {
-        Button button = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        button.setText(glyph);
-        button.setEnabled(usable);
-        button.setAllCaps(false);
-        button.setMinimumWidth(0);
-        button.setMinimumHeight(0);
-        button.setMinWidth(0);
-        button.setMinHeight(0);
-        button.setPadding(0, 0, 0, 0);
-        button.setGravity(Gravity.CENTER);
-        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        if (onClick != null) {
-            button.setOnClickListener(onClick);
-        }
-        return button;
+        return SettingsUi.glyphButton(this, glyph, usable, onClick);
     }
 
     private LinearLayout.LayoutParams moveParams(boolean first) {
-        LinearLayout.LayoutParams params =
-            new LinearLayout.LayoutParams(dp(MOVE_BUTTON_DP), dp(MOVE_BUTTON_DP));
-        params.leftMargin = dp(first ? 8 : 4);
-        params.rightMargin = first ? 0 : dp(4);
-        return params;
+        return SettingsUi.moveButtonParams(this, first);
     }
 
     private LinearLayout.LayoutParams matchWidth() {
-        return new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        return SettingsUi.matchWidth();
     }
 
     private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
+        return SettingsUi.dp(this, value);
     }
 }

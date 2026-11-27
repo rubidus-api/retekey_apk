@@ -93,4 +93,53 @@ public final class StoreMigrationTest {
         Assert.assertFalse(prefs.contains(KEY));
         Assert.assertFalse(prefs.contains(KEY + "_v1"));
     }
+
+    @Test
+    public void damagedCurrentStoreCommitsBackupOnlyOnceAcrossRepeatedLoads() {
+        final int[] commits = {0};
+        final LockedPreferences delegate = new LockedPreferences();
+        SharedPreferences counting = new SharedPreferences() {
+            @Override public java.util.Map<String, ?> getAll() { return delegate.getAll(); }
+            @Override public String getString(String k, String d) { return delegate.getString(k, d); }
+            @Override public java.util.Set<String> getStringSet(String k, java.util.Set<String> d) { return delegate.getStringSet(k, d); }
+            @Override public int getInt(String k, int d) { return delegate.getInt(k, d); }
+            @Override public long getLong(String k, long d) { return delegate.getLong(k, d); }
+            @Override public float getFloat(String k, float d) { return delegate.getFloat(k, d); }
+            @Override public boolean getBoolean(String k, boolean d) { return delegate.getBoolean(k, d); }
+            @Override public boolean contains(String k) { return delegate.contains(k); }
+            @Override public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) { delegate.registerOnSharedPreferenceChangeListener(l); }
+            @Override public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) { delegate.unregisterOnSharedPreferenceChangeListener(l); }
+            @Override public Editor edit() {
+                final Editor inner = delegate.edit();
+                return new Editor() {
+                    @Override public Editor putString(String k, String v) { inner.putString(k, v); return this; }
+                    @Override public Editor putStringSet(String k, java.util.Set<String> v) { inner.putStringSet(k, v); return this; }
+                    @Override public Editor putInt(String k, int v) { inner.putInt(k, v); return this; }
+                    @Override public Editor putLong(String k, long v) { inner.putLong(k, v); return this; }
+                    @Override public Editor putFloat(String k, float v) { inner.putFloat(k, v); return this; }
+                    @Override public Editor putBoolean(String k, boolean v) { inner.putBoolean(k, v); return this; }
+                    @Override public Editor remove(String k) { inner.remove(k); return this; }
+                    @Override public Editor clear() { inner.clear(); return this; }
+                    @Override public boolean commit() { commits[0]++; return inner.commit(); }
+                    @Override public void apply() { inner.apply(); }
+                };
+            }
+        };
+
+        String whole = ClipCodec.encode(ClipCodec.decode("0\u001Fone\u001E0\u001Ftwo").clips());
+        String cut = whole.substring(0, whole.length() - 2);
+        delegate.edit().putString(KEY, cut).commit();
+
+        VersionedStore.Codec<ClipHistory> codec = new VersionedStore.Codec<ClipHistory>() {
+            @Override public ClipHistory decode(String s) { return ClipCodec.decode(s); }
+            @Override public String encode(ClipHistory h) { return ClipCodec.encode(h.clips()); }
+            @Override public boolean sameData(ClipHistory a, ClipHistory b) { return a.clips().equals(b.clips()); }
+        };
+
+        Assert.assertEquals(1, VersionedStore.load(counting, KEY, codec).clips().size());
+        Assert.assertEquals(1, commits[0]);
+        Assert.assertEquals(1, VersionedStore.load(counting, KEY, codec).clips().size());
+        Assert.assertEquals("repeated load of already-backed-up damaged store must not rewrite",
+            1, commits[0]);
+    }
 }

@@ -96,6 +96,12 @@ public final class SystemBarInsetsTest {
     public void beforeTappableInsetsTheSystemWindowInsetIsAllThereIs() {
         assertEquals(96, auto(28, 0, 0, true, 96, 0));
         assertEquals(96, auto(20, 0, 0, true, 96, 0));
+        // API 20-28 still subtracts framework lift, keeps full furniture while unknown, and Always overrides.
+        assertEquals(0, auto(28, 0, 0, true, 96, 96));
+        assertEquals(36, auto(24, 0, 0, true, 96, 60));
+        assertEquals(96, auto(24, 0, 0, true, 96, SystemBarInsets.LIFT_UNKNOWN));
+        assertEquals(96, SystemBarInsets.bandPx(
+            24, 0, 0, true, 96, 96, SystemBarInsets.Mode.ALWAYS));
     }
 
     @Test

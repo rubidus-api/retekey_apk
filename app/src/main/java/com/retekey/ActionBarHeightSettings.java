@@ -76,9 +76,9 @@ final class ActionBarHeightSettings {
      */
     static float labelPx(int barPx, int usualBarPx, float usualLabelPx, int facePx) {
         if (barPx >= usualBarPx) {
-            return usualLabelPx;
+            return Math.max(1.0f, usualLabelPx);
         }
-        return Math.min(usualLabelPx, facePx * LABEL_SHARE);
+        return Math.max(1.0f, Math.min(usualLabelPx, facePx * LABEL_SHARE));
     }
 
     /** Whether a changed preference is this setting, for either orientation, in either unit. */

@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.Scalars;
 
 /** What the keyboard remembers of what was copied through it — and what it refuses to remember. */
 public final class ClipHistoryTest {
@@ -69,6 +70,8 @@ public final class ClipHistoryTest {
         }
         ClipHistory history = ClipHistory.empty().record(huge, false);
         assertEquals(ClipHistory.MAX_LENGTH, history.clips().get(0).text.length());
+        assertEquals(Scalars.truncate(huge.toString(), ClipHistory.MAX_LENGTH),
+            history.clips().get(0).text);
     }
 
     @Test

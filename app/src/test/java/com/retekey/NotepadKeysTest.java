@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 import com.retekey.NotepadKeys.Command;
 import java.util.EnumSet;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /** The notepad's own reading of editing keys — which used to fall through to the app behind. */
 public final class NotepadKeysTest {
@@ -64,5 +66,21 @@ public final class NotepadKeysTest {
         assertEquals(0, NotepadKeys.wordLeft(text, 5));
         assertEquals(9, NotepadKeys.wordRight(text, 5));
         assertEquals(text.length(), NotepadKeys.wordRight(text, 10));
+    }
+
+    @Test
+    public void cursorAndWordHelpersKeepSupplementaryPairsWhole() {
+        String mixed = "a😀한\uD840\uDC00글!";
+        // Index 1 is '😀' (UTF-16 1..3).
+        assertEquals(3, NotepadKeys.nextCodePoint(mixed, 1));
+        assertEquals(1, NotepadKeys.prevCodePoint(mixed, 3));
+        assertEquals("😀", NotepadKeys.codePointBefore(mixed, 3));
+        // Inside the CJK Ext-B pair at 4..6 (`\uD840\uDC00` is a letter): wordLeft/Right and wordBounds snap safely.
+        assertEquals(3, NotepadKeys.wordLeft(mixed, 5));
+        assertEquals(7, NotepadKeys.wordRight(mixed, 4));
+        int[] bounds = NotepadKeys.wordBounds(mixed, 5);
+        assertEquals(3, bounds[0]);
+        assertEquals(7, bounds[1]);
+        assertEquals("한\uD840\uDC00글", mixed.substring(bounds[0], bounds[1]));
     }
 }

@@ -91,6 +91,11 @@ public final class FloatingKeyboardSettings {
         store(prefs, "", bounds);
     }
 
+    public static void store(
+            SharedPreferences prefs, ScreenOrientation orientation, FloatingKeyboardBounds bounds) {
+        store(prefs, "", orientation, bounds);
+    }
+
     public static void store(SharedPreferences prefs, String prefix, FloatingKeyboardBounds bounds) {
         if (prefs == null || bounds == null) {
             return;
@@ -107,9 +112,36 @@ public final class FloatingKeyboardSettings {
             .apply();
     }
 
+    public static void store(
+            SharedPreferences prefs, String prefix, ScreenOrientation orientation,
+            FloatingKeyboardBounds bounds) {
+        if (prefs == null || bounds == null) {
+            return;
+        }
+        if (orientation == null) {
+            store(prefs, prefix, bounds);
+            return;
+        }
+        String p = prefix == null ? "" : prefix;
+        prefs.edit()
+            .putBoolean(orientation.key(p + KEY_SIDE_LEFT), bounds.isLeft())
+            .putInt(orientation.key(p + KEY_LEFT), bounds.left())
+            .putInt(orientation.key(p + KEY_TOP), bounds.top())
+            .putInt(orientation.key(p + KEY_WIDTH), bounds.width())
+            .putInt(orientation.key(p + KEY_HEIGHT), bounds.height())
+            .putInt(orientation.key(p + KEY_SCREEN_WIDTH), bounds.screenWidth())
+            .putInt(orientation.key(p + KEY_SCREEN_HEIGHT), bounds.screenHeight())
+            .apply();
+    }
+
     /** The stored panel, or {@code null} when the user has never placed one. */
     public static FloatingKeyboardBounds load(SharedPreferences prefs) {
         return load(prefs, "");
+    }
+
+    public static FloatingKeyboardBounds load(
+            SharedPreferences prefs, ScreenOrientation orientation) {
+        return load(prefs, "", orientation);
     }
 
     public static FloatingKeyboardBounds load(SharedPreferences prefs, String prefix) {
@@ -117,23 +149,48 @@ public final class FloatingKeyboardSettings {
             return null;
         }
         String p = prefix == null ? "" : prefix;
-        int screenWidth = prefs.getInt(p + KEY_SCREEN_WIDTH, 0);
-        int screenHeight = prefs.getInt(p + KEY_SCREEN_HEIGHT, 0);
-        int width = prefs.getInt(p + KEY_WIDTH, 0);
-        int height = prefs.getInt(p + KEY_HEIGHT, 0);
+        return readBounds(prefs, p, null);
+    }
+
+    public static FloatingKeyboardBounds load(
+            SharedPreferences prefs, String prefix, ScreenOrientation orientation) {
+        if (prefs == null) {
+            return null;
+        }
+        if (orientation == null) {
+            return load(prefs, prefix);
+        }
+        String p = prefix == null ? "" : prefix;
+        if (!prefs.contains(orientation.key(p + KEY_SCREEN_WIDTH))) {
+            return load(prefs, prefix);
+        }
+        return readBounds(prefs, p, orientation);
+    }
+
+    private static FloatingKeyboardBounds readBounds(
+            SharedPreferences prefs, String prefix, ScreenOrientation orientation) {
+        int screenWidth = prefs.getInt(boundKey(prefix, orientation, KEY_SCREEN_WIDTH), 0);
+        int screenHeight = prefs.getInt(boundKey(prefix, orientation, KEY_SCREEN_HEIGHT), 0);
+        int width = prefs.getInt(boundKey(prefix, orientation, KEY_WIDTH), 0);
+        int height = prefs.getInt(boundKey(prefix, orientation, KEY_HEIGHT), 0);
         if (screenWidth <= 0 || screenHeight <= 0 || width <= 0 || height <= 0) {
             return null;
         }
         return FloatingKeyboardBounds.of(
             screenWidth,
             screenHeight,
-            prefs.getBoolean(p + KEY_SIDE_LEFT, false)
+            prefs.getBoolean(boundKey(prefix, orientation, KEY_SIDE_LEFT), false)
                 ? FloatingKeyboardBounds.Side.LEFT
                 : FloatingKeyboardBounds.Side.RIGHT,
-            prefs.getInt(p + KEY_LEFT, 0),
-            prefs.getInt(p + KEY_TOP, 0),
+            prefs.getInt(boundKey(prefix, orientation, KEY_LEFT), 0),
+            prefs.getInt(boundKey(prefix, orientation, KEY_TOP), 0),
             width,
             height
         );
+    }
+
+    private static String boundKey(String prefix, ScreenOrientation orientation, String baseKey) {
+        String key = prefix + baseKey;
+        return orientation == null ? key : orientation.key(key);
     }
 }

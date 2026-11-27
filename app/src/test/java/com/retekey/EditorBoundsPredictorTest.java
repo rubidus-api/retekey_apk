@@ -4,6 +4,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorBoundsPredictor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.RawKey;
+import com.retekey.core.RawKeyPhase;
 
 public final class EditorBoundsPredictorTest {
     /**
@@ -113,6 +118,17 @@ public final class EditorBoundsPredictorTest {
             EditorBoundsPredictor.after(
                 EditorBounds.unknown(),
                 Collections.singletonList(KeyAction.commitText("x"))
+            )
+        );
+    }
+
+    @Test
+    public void emptyRecomposeClearsComposingSpan() {
+        Assert.assertEquals(
+            EditorBounds.of(2, 2, -1, -1),
+            EditorBoundsPredictor.after(
+                EditorBounds.of(3, 3, -1, -1),
+                Collections.singletonList(KeyAction.recomposePrevious(1, ""))
             )
         );
     }

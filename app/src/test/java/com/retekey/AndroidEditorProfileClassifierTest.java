@@ -5,6 +5,10 @@ import android.view.inputmethod.EditorInfo;
 import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.EditorActionPolicy;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.KeyAction;
 
 public final class AndroidEditorProfileClassifierTest {
     @Test
@@ -192,5 +196,34 @@ public final class AndroidEditorProfileClassifierTest {
         Assert.assertTrue("an ordinary field keeps its composing region",
             capabilities.hasSurroundingText());
         Assert.assertTrue("still never read, never remembered", capabilities.isSensitive());
+    }
+
+    @Test
+    public void editorKindsAndRemoteDesktopPriorityAreExplicit() {
+        Assert.assertEquals(EditorCapabilities.EditorKind.UNSUPPORTED,
+            EditorCapabilities.unsupported().kind());
+        Assert.assertEquals(EditorCapabilities.EditorKind.RICH_TEXT,
+            EditorCapabilities.richText(false, false).kind());
+        Assert.assertEquals(EditorCapabilities.EditorKind.TERMINAL,
+            EditorCapabilities.rawKey().kind());
+
+        EditorCapabilities term = EditorCapabilities.richText(false, false).asTerminal();
+        Assert.assertEquals(EditorCapabilities.EditorKind.TERMINAL, term.kind());
+        Assert.assertFalse(term.withDeleteByKeyEvents().hasSurroundingText());
+        Assert.assertEquals(EditorCapabilities.EditorKind.TERMINAL,
+            term.withDeleteByKeyEvents().kind());
+
+        // A remote-desktop app reporting no cursor and visible password stays REMOTE_DESKTOP.
+        android.view.inputmethod.EditorInfo rdp = new android.view.inputmethod.EditorInfo();
+        rdp.inputType = android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+        rdp.packageName = "com.microsoft.rdc.androidx";
+        rdp.initialSelStart = -1;
+        rdp.initialSelEnd = -1;
+        EditorCapabilities caps = AndroidEditorProfileClassifier.classify(rdp, 33).capabilities();
+        Assert.assertEquals(EditorCapabilities.EditorKind.REMOTE_DESKTOP, caps.kind());
+        Assert.assertTrue(caps.isRemoteDesktop());
+        Assert.assertFalse(caps.isTerminal());
     }
 }

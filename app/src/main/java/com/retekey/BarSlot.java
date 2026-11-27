@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.Scalars;
 
 /**
  * One place on the action bar.
@@ -191,7 +194,7 @@ final class BarSlot {
         }
         String flat = value.replace('\n', ' ').replace('\r', ' ').trim();
         // Trimmed before the ellipsis, so a cap does not read "a very long …".
-        return flat.length() > 12 ? flat.substring(0, 12).trim() + "…" : flat;
+        return flat.length() > 12 ? Scalars.truncate(flat, 12).trim() + "…" : flat;
     }
 
     /** The keys a chord can be built on, in the order the picker offers them. */

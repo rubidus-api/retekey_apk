@@ -5,6 +5,17 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorBoundsPredictor;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.InputSessionController;
+import com.retekey.core.KeyAction;
+import com.retekey.core.SelectionReconcileResult;
+import com.retekey.core.SynchronizationState;
+import com.retekey.core.TransitionPlan;
 
 public final class InputSessionControllerTest {
     private static final EditorCapabilities RICH = EditorCapabilities.richText(false, false);
@@ -460,6 +471,27 @@ public final class InputSessionControllerTest {
             "deleteCodePoints:before=1:after=0",
             "endBatchEdit"
         ), deleteBridge.trace());
+    }
+
+    @Test
+    public void reReportingConfirmedBoundsResetsDriftedWorkingBoundsAndTracksExecuting() {
+        InputSessionController<String> controller = new InputSessionController<>(4);
+        long gen = controller.start("neutral", START, RICH);
+
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        java.util.concurrent.atomic.AtomicBoolean sawExecuting =
+            new java.util.concurrent.atomic.AtomicBoolean();
+        bridge.runAt(1, () -> sawExecuting.set(controller.isExecuting()));
+
+        executeSuccess(controller, gen, "after-write", ONE, bridge);
+        Assert.assertTrue(sawExecuting.get());
+        Assert.assertFalse(controller.isExecuting());
+        Assert.assertEquals(ONE, controller.workingBounds());
+
+        // Editor re-reports START (0..0) because write was clamped; workingBounds must snap back.
+        Assert.assertEquals(SelectionReconcileResult.DUPLICATE_OR_DELAYED,
+            controller.updateSelection(gen, START));
+        Assert.assertEquals(START, controller.workingBounds());
     }
 
     private static void executeSuccess(

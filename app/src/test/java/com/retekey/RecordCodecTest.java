@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.RecordCodec;
 
 /**
  * The stored form of the notes, the clip history and the shared-text stash. The old form separated
@@ -82,5 +83,17 @@ public final class RecordCodecTest {
             new String[] {"a", "b", "c"}), 3);
         Assert.assertTrue(RecordCodec.decode(threeFields, 2).isEmpty());
         Assert.assertEquals(1, RecordCodec.decode(threeFields, 3).size());
+    }
+
+    @Test
+    public void nonPositiveFieldCountIsRejectedWithoutSpinning() {
+        Assert.assertTrue(RecordCodec.decode("retekey-store 2 0\n", 0).isEmpty());
+        Assert.assertTrue(RecordCodec.decode("retekey-store 2 -1\n", -1).isEmpty());
+        try {
+            RecordCodec.encode(Collections.singletonList(new String[] {"a"}), 0);
+            Assert.fail("expected IllegalArgumentException for zero fields");
+        } catch (IllegalArgumentException expected) {
+            // expected
+        }
     }
 }

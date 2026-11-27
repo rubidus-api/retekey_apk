@@ -38,6 +38,7 @@ final class KeyboardPalette {
      * {@link ChoiceHue}).
      */
     final int choiceAccent;
+    final int choiceSoft;
     /**
      * Keys drawn as an outline in {@link #keyShadow} round the face, instead of a face raised on a
      * lip: the monochrome palette's way of showing a key's edge without a second shade (issue #15).
@@ -48,8 +49,8 @@ final class KeyboardPalette {
             int keyAccentSoft, int keyText, int keyTextMuted, int keyShadow, int hint, int pressTint) {
         this(background, keyFace, keyDisabled, keyAccent, keyAccentSoft, keyText, keyTextMuted,
             keyShadow, hint, pressTint,
-            KeyLabelContrast.prefersDarkInk(Color.red(keyText), Color.green(keyText),
-                Color.blue(keyText)) ? Color.rgb(248, 250, 253) : Color.rgb(18, 20, 24));
+            KeyLabelContrast.inversePrefersDarkInk(Color.red(keyText), Color.green(keyText),
+                Color.blue(keyText)) ? Color.rgb(18, 20, 24) : Color.rgb(248, 250, 253));
     }
 
     private KeyboardPalette(int background, int keyFace, int keyDisabled, int keyAccent,
@@ -78,6 +79,7 @@ final class KeyboardPalette {
         // and reads in the same theme as everything around it. Monochrome gives a grey instead.
         this.choiceAccent = choiceAccent;
         this.outlined = outlined;
+        this.choiceSoft = outlined ? keyFace : ChoiceHue.softOf(keyAccent, keyFace);
     }
 
     /**
@@ -86,11 +88,10 @@ final class KeyboardPalette {
      * per theme — it follows the fill's own luminance.
      */
     int inkOn(int fill) {
-        boolean fillWantsDarkInk =
-            KeyLabelContrast.prefersDarkInk(Color.red(fill), Color.green(fill), Color.blue(fill));
-        boolean ordinaryInkIsDark = KeyLabelContrast.prefersDarkInk(
-            Color.red(keyText), Color.green(keyText), Color.blue(keyText));
-        return fillWantsDarkInk == ordinaryInkIsDark ? keyTextInverse : keyText;
+        return KeyLabelContrast.useInverseInk(
+                Color.red(fill), Color.green(fill), Color.blue(fill),
+                Color.red(keyText), Color.green(keyText), Color.blue(keyText))
+            ? keyTextInverse : keyText;
     }
 
     /**
@@ -155,6 +156,7 @@ final class KeyboardPalette {
         return Compat.getColor(context, colorRes);
     }
 
+    @android.annotation.TargetApi(Build.VERSION_CODES.S)
     private static KeyboardPalette dynamic(Context context, boolean night) {
         if (night) {
             return new KeyboardPalette(

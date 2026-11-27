@@ -2,9 +2,16 @@ package com.retekey;
 
 import static org.junit.Assert.assertEquals;
 
-import com.retekey.SemanticInput.Transform;
+import com.retekey.core.SemanticInput.Transform;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
+import com.retekey.core.TelexComposer;
 
 /**
  * 획추가/쌍자음 after the interpreter's run has been lost — a session restart, a hardware key, a
@@ -122,6 +129,31 @@ public final class NaratgeulTransformFallbackTest {
         assertEquals("각", editor.text());
         editor.transform(Transform.TWIN);
         assertEquals("갂", editor.text());
+    }
+
+    @Test
+    public void splitCompoundFinalCanBeRejoinedOnImmediateRepeat() {
+        Editor editor = new Editor("많");
+        editor.transform(Transform.STROKE); // 만 + composing ㅇ
+        assertEquals("만ㅇ", editor.text());
+        editor.transform(Transform.STROKE); // ㅇ -> ㅎ rejoins 만 as 많
+        assertEquals("많", editor.text());
+    }
+
+    @Test
+    public void richEditorColdTransformUsesRecomposePreviousAndSkipsActiveLatin() {
+        HangulInputProcessor rich = new HangulInputProcessor(
+            () -> EditorProfile.richText(false, false, false, false, false, 0, -1),
+            () -> "가");
+        DispatchResult res = rich.process(SemanticInput.transform(Transform.STROKE));
+        assertEquals(java.util.Collections.singletonList(KeyAction.recomposePrevious(1, "갸")),
+            res.actions());
+
+        rich.reset();
+        rich.setLatinComposer(new TelexComposer());
+        rich.process(SemanticInput.text("a"));
+        assertEquals(java.util.Collections.emptyList(),
+            rich.process(SemanticInput.transform(Transform.STROKE)).actions());
     }
 
     /** Committed text plus composing region, with the processor reading its own text back. */

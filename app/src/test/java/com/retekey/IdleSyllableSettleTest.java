@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.IdleSyllableSettle;
 
 /** When a materialised syllable is let go of after a pause (issue #7). */
 public final class IdleSyllableSettleTest {

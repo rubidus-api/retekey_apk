@@ -63,7 +63,7 @@ public final class HardwareLayoutChoice {
      * they are offered. Empty when the screen layout is not a letter layout at all.
      */
     public static List<KeyboardLayoutId> candidates(KeyboardLayoutId screenLayout) {
-        if (screenLayout == null) {
+        if (screenLayout == null || !LetterLayouts.ALL.contains(screenLayout)) {
             return Collections.emptyList();
         }
         String language = LetterLayouts.languageTag(screenLayout);

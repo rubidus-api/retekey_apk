@@ -3,11 +3,18 @@ package com.retekey;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.retekey.NaratgeulInterpreter.Key;
+import com.retekey.core.NaratgeulInterpreter.Key;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.NaratgeulInterpreter;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 /** The 나랏글 automaton: a consonant block plus the stroke and doubling keys. */
 public final class NaratgeulInterpreterTest {
@@ -166,6 +173,23 @@ public final class NaratgeulInterpreterTest {
         interpreter.reset();
 
         assertTrue(interpreter.press(Key.STROKE).isEmpty());
+    }
+
+    @Test
+    public void bareCompoundVowelReplacementEmitsNoEditorDeleteBackward() {
+        EditorProfile profile = EditorProfile.richText(false, false, true, false, false, 0, -1);
+        HangulInputProcessor processor = new HangulInputProcessor(() -> profile);
+        Key[] sequence = { Key.O, Key.A, Key.I }; // ㅗ ㅏ ㅣ -> ㅘ -> ㅙ
+        for (Key key : sequence) {
+            for (SemanticInput input : interpreter.press(key)) {
+                DispatchResult result = processor.process(input);
+                for (KeyAction action : result.actions()) {
+                    assertTrue("must not delete previously committed editor text",
+                        action.kind() != KeyAction.Kind.DELETE_BACKWARD);
+                }
+            }
+        }
+        assertEquals("ㅙ", processor.composingText());
     }
 
     private static List<SemanticInput> consonant(int index) {

@@ -2,6 +2,18 @@ package com.retekey;
 
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.HardwareEventNormalizer;
+import com.retekey.core.InputAction;
+import com.retekey.core.InputDispatcher;
+import com.retekey.core.InputSource;
+import com.retekey.core.KeyAction;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.RawHardwareKeyEvent;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 public final class HardwareKeyLifecycleTest {
     @Test
@@ -227,6 +239,32 @@ public final class HardwareKeyLifecycleTest {
             DispatchResult.delegate(),
             dispatcher.dispatch(keyMultiple(7, 30, false))
         );
+    }
+
+    @Test
+    public void capacityOverflowDoesNotMutateStatefulProcessorAndForgetDeviceClearsKeys() {
+        HangulInputProcessor processor = new HangulInputProcessor(
+            () -> EditorProfile.richText(false, false, false, false, false, 0, -1));
+        InputDispatcher dispatcher = new InputDispatcher(processor);
+
+        for (int keyCode = 1; keyCode <= 31; keyCode++) {
+            Assert.assertTrue(dispatcher.dispatch(textDown(7, keyCode)).isHandled());
+        }
+        Assert.assertTrue(dispatcher.dispatch(textDown(8, 10)).isHandled());
+        // Capacity full: a Hangul jamo down must delegate BEFORE invoking/mutating the composer.
+        ProjectKeyEvent overflowJamo = ProjectKeyEvent.builder(InputSource.HARDWARE, InputAction.DOWN)
+            .keyCode(33)
+            .deviceId(7)
+            .semanticInput(SemanticInput.jamo(SemanticJamo.contextualConsonant(0)))
+            .build();
+        Assert.assertEquals(DispatchResult.delegate(), dispatcher.dispatch(overflowJamo));
+        Assert.assertFalse(processor.isComposing());
+
+        // Disconnecting device 7 clears all 31 tracked keys from device 7, leaving room again.
+        dispatcher.forgetDevice(7);
+        Assert.assertEquals(DispatchResult.delegate(), dispatcher.dispatch(keyUp(7, 1, false)));
+        Assert.assertEquals(DispatchResult.handled(), dispatcher.dispatch(keyUp(8, 10, false)));
+        Assert.assertTrue(dispatcher.dispatch(textDown(7, 33)).isHandled());
     }
 
     private static ProjectKeyEvent textDown(int deviceId, int keyCode) {

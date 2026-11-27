@@ -3,6 +3,10 @@ package com.retekey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.ControlKey;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.SemanticInput;
 
 public final class SoftwareKeySpec {
     private final String stableKeyId;
@@ -20,7 +24,7 @@ public final class SoftwareKeySpec {
      * construction by {@link #withFlicks}, which returns a copy like every other wither; kept
      * outside the constructors so the dozen existing call chains stay untouched.
      */
-    private String[] flickTexts;
+    private final String[] flickTexts;
 
     private SoftwareKeySpec(
         String stableKeyId,
@@ -32,7 +36,7 @@ public final class SoftwareKeySpec {
         ControlKey longPressControl
     ) {
         this(stableKeyId, label, semanticInput, control, columnSpan, longPressTexts,
-            longPressControl, null);
+            longPressControl, null, null);
     }
 
     private SoftwareKeySpec(
@@ -43,9 +47,11 @@ public final class SoftwareKeySpec {
         int columnSpan,
         List<String> longPressTexts,
         ControlKey longPressControl,
-        String longPressHint
+        String longPressHint,
+        String[] flickTexts
     ) {
         this.longPressHint = longPressHint;
+        this.flickTexts = flickTexts;
         if (stableKeyId == null || stableKeyId.isEmpty()) {
             throw new IllegalArgumentException("stable key id must not be empty");
         }
@@ -122,14 +128,22 @@ public final class SoftwareKeySpec {
      * long-press character in the middle.
      */
     public SoftwareKeySpec withFlicks(String left, String up, String right, String down) {
-        SoftwareKeySpec copy = copyOf(this);
         for (String text : new String[] {left, up, right, down}) {
             if (text != null) {
                 SemanticInput.text(text); // the committable-text guard, as withLongPress uses
             }
         }
-        copy.flickTexts = new String[] {left, up, right, down};
-        return copy;
+        return new SoftwareKeySpec(
+            stableKeyId,
+            label,
+            semanticInput,
+            control,
+            columnSpan,
+            longPressTexts,
+            longPressControl,
+            longPressHint,
+            new String[] {left, up, right, down}
+        );
     }
 
     public boolean hasFlicks() {
@@ -150,23 +164,8 @@ public final class SoftwareKeySpec {
         }
     }
 
-    private static SoftwareKeySpec copyOf(SoftwareKeySpec from) {
-        SoftwareKeySpec copy = new SoftwareKeySpec(
-            from.stableKeyId,
-            from.label,
-            from.semanticInput,
-            from.control,
-            from.columnSpan,
-            from.longPressTexts,
-            from.longPressControl,
-            from.longPressHint
-        );
-        copy.flickTexts = from.flickTexts;
-        return copy;
-    }
-
     public SoftwareKeySpec withColumnSpan(int newColumnSpan) {
-        SoftwareKeySpec next = new SoftwareKeySpec(
+        return new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -174,10 +173,9 @@ public final class SoftwareKeySpec {
             newColumnSpan,
             longPressTexts,
             longPressControl,
-            longPressHint
+            longPressHint,
+            flickTexts
         );
-        next.flickTexts = flickTexts;
-        return next;
     }
 
     /**
@@ -197,17 +195,17 @@ public final class SoftwareKeySpec {
             SemanticInput.text(text);
             candidates.add(text);
         }
-        SoftwareKeySpec next = new SoftwareKeySpec(
+        return new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
             control,
             columnSpan,
             Collections.unmodifiableList(candidates),
-            longPressControl
+            longPressControl,
+            null,
+            flickTexts
         );
-        next.flickTexts = flickTexts;
-        return next;
     }
 
     /**
@@ -218,7 +216,7 @@ public final class SoftwareKeySpec {
         if (longPressCommand == null) {
             throw new IllegalArgumentException("long-press control must not be null");
         }
-        SoftwareKeySpec next = new SoftwareKeySpec(
+        return new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -226,10 +224,9 @@ public final class SoftwareKeySpec {
             columnSpan,
             longPressTexts,
             longPressCommand,
-            longPressHint
+            longPressHint,
+            flickTexts
         );
-        next.flickTexts = flickTexts;
-        return next;
     }
 
     public List<String> longPressTexts() {
@@ -256,7 +253,7 @@ public final class SoftwareKeySpec {
         if (longPressControl == null) {
             throw new IllegalStateException("a long-press hint needs a long press to describe");
         }
-        SoftwareKeySpec next = new SoftwareKeySpec(
+        return new SoftwareKeySpec(
             stableKeyId,
             label,
             semanticInput,
@@ -264,10 +261,9 @@ public final class SoftwareKeySpec {
             columnSpan,
             longPressTexts,
             longPressControl,
-            hint
+            hint,
+            flickTexts
         );
-        next.flickTexts = flickTexts;
-        return next;
     }
 
     public boolean hasLongPressHint() {

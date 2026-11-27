@@ -1,0 +1,1475 @@
+package com.retekey.core;
+
+import java.util.List;
+
+public final class CheckedEditorExecutor {
+    public ExecutionResult execute(
+        TransitionPlan<?> plan,
+        ExecutionContext context,
+        EditorEndpointProvider endpointProvider
+    ) {
+        if (plan == null || context == null || endpointProvider == null) {
+            throw new IllegalArgumentException("execution arguments must not be null");
+        }
+
+        return executeInternal(plan, context, endpointProvider)
+            .withStateBounds(context.bounds());
+    }
+
+    private ExecutionResult executeInternal(
+        TransitionPlan<?> plan,
+        ExecutionContext context,
+        EditorEndpointProvider endpointProvider
+    ) {
+        ExecutionResult preflight = preflight(plan, context);
+        if (preflight != null) {
+            return preflight;
+        }
+        if (plan.actions().isEmpty()) {
+            return actionless(plan);
+        }
+        EditorEndpoint endpoint;
+        try {
+            endpoint = endpointProvider.resolve();
+        } catch (RuntimeException ignored) {
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.CONNECTION_RESOLUTION_RUNTIME_FAILURE
+            );
+        }
+        if (endpoint == null) {
+            return notDispatched(plan, ExecutionResult.Reason.NO_CONNECTION);
+        }
+        if (endpoint.generation() != plan.generation()) {
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.ENDPOINT_GENERATION_MISMATCH
+            );
+        }
+        if (!endpoint.isCurrent()) {
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
+            );
+        }
+
+        if (endsInAKeyAfterWrites(plan.actions())) {
+            // A key pressed while a syllable is still being built: the syllable is written first,
+            // then the key goes out. The batched path cannot send a key event, and a plan of both
+            // used to throw there — the service caught it, so the syllable landed and the key was
+            // lost: 가 then Enter in Termux wrote 가 and ran nothing (interaction matrix, 0.1.175).
+            List<KeyAction> actions = plan.actions();
+            ExecutionResult written = executeInternal(
+                subPlan(plan, actions.subList(0, actions.size() - 1)), context, endpointProvider);
+            if (written.isFailure()) {
+                return result(
+                    plan,
+                    written.outcome(),
+                    written.reason(),
+                    written.cleanupReason(),
+                    written.stateEffect(),
+                    written.failedActionIndex(),
+                    written.failedOperationIndex(),
+                    written.cleanupOperationIndex(),
+                    written.operationCount(),
+                    written.failedActionKind(),
+                    written.dispatchedMutationCount(),
+                    written.remoteMutationMayHaveOccurred()
+                );
+            }
+            ExecutionResult key = executeRawCompatibility(
+                subPlan(plan, actions.subList(actions.size() - 1, actions.size())),
+                endpoint,
+                context.capabilities());
+            boolean wrote = written.dispatchedMutationCount() > 0
+                || written.remoteMutationMayHaveOccurred();
+            if (!key.isFailure()) {
+                return result(
+                    plan,
+                    ExecutionResult.Outcome.DISPATCHED,
+                    ExecutionResult.Reason.NONE,
+                    ExecutionResult.Reason.NONE,
+                    key.stateEffect(),
+                    -1,
+                    -1,
+                    -1,
+                    written.operationCount() + key.operationCount(),
+                    null,
+                    written.dispatchedMutationCount() + key.dispatchedMutationCount(),
+                    false
+                );
+            }
+            if (!wrote) {
+                int offset = written.operationCount();
+                return result(
+                    plan,
+                    key.outcome(),
+                    key.reason(),
+                    key.cleanupReason(),
+                    key.stateEffect(),
+                    actions.size() - 1,
+                    key.failedOperationIndex() < 0 ? -1 : offset + key.failedOperationIndex(),
+                    key.cleanupOperationIndex() < 0 ? -1 : offset + key.cleanupOperationIndex(),
+                    offset + key.operationCount(),
+                    actions.get(actions.size() - 1).kind(),
+                    key.dispatchedMutationCount(),
+                    key.remoteMutationMayHaveOccurred()
+                );
+            }
+            // The text is in the editor and the key is not. Reporting only the key's failure
+            // would read as "nothing happened" and keep the syllable composing that already
+            // landed (review R01): the whole plan is uncertain, with the write counted.
+            int offset = written.operationCount();
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                key.reason(),
+                key.cleanupReason(),
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                actions.size() - 1,
+                offset + Math.max(0, key.failedOperationIndex()),
+                key.cleanupOperationIndex() < 0 ? -1 : offset + key.cleanupOperationIndex(),
+                offset + key.operationCount(),
+                actions.get(actions.size() - 1).kind(),
+                written.dispatchedMutationCount() + key.dispatchedMutationCount(),
+                true
+            );
+        }
+
+        boolean rawEditor = context.capabilities().deletionMode()
+            == EditorCapabilities.DeletionMode.RAW_KEY;
+        // A raw-key editor (a terminal like Termius reporting TYPE_NULL) uses key events for
+        // deletion and enter, but plain committed text still goes through the ordinary commit path
+        // so typed characters actually land.
+        // A raw Enter (KEYCODE_ENTER) and raw keys go out as key events on ANY editor — that is how
+        // Enter reaches a terminal, and how a normal field sees a real Enter press.
+        // The single-action raw path handles exactly one action; a plan of several — the shape
+        // materialised composition takes — goes through the ordinary path, which walks them in
+        // order and, for an editor with no buffer, deletes by key event anyway.
+        if (isSingleRawKey(plan.actions())
+            || isSingleRawEnter(plan.actions())
+            || (rawEditor && plan.actions().size() == 1
+                && (plan.actions().get(0).kind() == KeyAction.Kind.DELETE_BACKWARD
+                    || plan.actions().get(0).kind() == KeyAction.Kind.PERFORM_EDITOR_ACTION))) {
+            return executeRawCompatibility(plan, endpoint, context.capabilities());
+        }
+        return executeRichPlan(plan, context, endpoint);
+    }
+
+    private static ExecutionResult preflight(TransitionPlan<?> plan, ExecutionContext context) {
+        if (!context.isAccepting()) {
+            return notDispatched(plan, ExecutionResult.Reason.SESSION_STOPPED);
+        }
+        if (plan.generation() != context.generation()) {
+            return notDispatched(plan, ExecutionResult.Reason.STALE_GENERATION);
+        }
+        if (plan.baseRevision() != context.revision()) {
+            return notDispatched(plan, ExecutionResult.Reason.STALE_REVISION);
+        }
+        if (!context.capabilities().isSupported()) {
+            return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
+        }
+        // Deletion is never refused for an unknown selection: deleteSurroundingTextInCodePoints
+        // deletes relative to the editor's own cursor, so it works whether or not the IME knows
+        // the position. Refusing it here is what made backspace stop working in terminals once
+        // they reported an unknown selection.
+        // Composing is not what makes a field private. A sensitive field is one this keyboard
+        // must not *read* and must not remember — both still hold below — but refusing to compose
+        // in one means Korean cannot be typed there at all, and a terminal reports the
+        // visible-password variation precisely because it wants no suggestions (issue #7).
+        if (context.capabilities().deletionMode()
+            == EditorCapabilities.DeletionMode.RAW_KEY
+            && !plan.actions().isEmpty()
+            && !isTerminalWritable(plan.actions())) {
+            return notDispatched(plan, ExecutionResult.Reason.UNSUPPORTED_EDITOR);
+        }
+        return null;
+    }
+
+    /**
+     * Whether every action in this plan is one an editor with no composing region can take:
+     * committed text, a delete, a key. Composition arrives already rewritten into these
+     * (HangulInputProcessor's by-commits path), and it arrives as a plan of several actions —
+     * take back what was materialised, then commit what replaces it — so the old rule of "one
+     * action, and only these kinds" refused every Korean syllable in a terminal (issue #7).
+     */
+    private static boolean isTerminalWritable(List<KeyAction> actions) {
+        if (actions.isEmpty()) {
+            return false;
+        }
+        for (KeyAction action : actions) {
+            switch (action.kind()) {
+                case COMMIT_TEXT:
+                case DELETE_BACKWARD:
+                case DELETE_RECENT:
+                case RECOMPOSE_PREVIOUS:
+                case RAW_ENTER:
+                case RAW_KEY:
+                case PERFORM_EDITOR_ACTION:
+                    break;
+                default:
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isSingleRawCompatibleAction(List<KeyAction> actions) {
+        if (actions.size() != 1) {
+            return false;
+        }
+        KeyAction.Kind kind = actions.get(0).kind();
+        return kind == KeyAction.Kind.DELETE_BACKWARD
+            // Taking back what we just committed is how a syllable is rewritten where there is no
+            // composing region. Refusing it left the terminal with the first jamo of every
+            // syllable still on screen, and left backspace with nothing to do (issue #7).
+            || kind == KeyAction.Kind.DELETE_RECENT
+            || kind == KeyAction.Kind.RAW_ENTER
+            || kind == KeyAction.Kind.RAW_KEY
+            || kind == KeyAction.Kind.PERFORM_EDITOR_ACTION;
+    }
+
+    private static boolean isSingleCommitText(List<KeyAction> actions) {
+        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.COMMIT_TEXT;
+    }
+
+    /** Writes of text followed by one key event — the shape a flush before a key takes. */
+    private static boolean endsInAKeyAfterWrites(List<KeyAction> actions) {
+        if (actions.size() < 2) {
+            return false;
+        }
+        KeyAction.Kind last = actions.get(actions.size() - 1).kind();
+        if (last != KeyAction.Kind.RAW_KEY && last != KeyAction.Kind.RAW_ENTER) {
+            return false;
+        }
+        for (int i = 0; i < actions.size() - 1; i++) {
+            switch (actions.get(i).kind()) {
+                case RAW_KEY:
+                case RAW_ENTER:
+                case PERFORM_EDITOR_ACTION:
+                    return false;
+                default:
+                    break;
+            }
+        }
+        return true;
+    }
+
+    private static <S> TransitionPlan<S> subPlan(TransitionPlan<S> plan, List<KeyAction> actions) {
+        return TransitionPlan.of(plan.generation(), plan.baseRevision(), plan.disposition(),
+            plan.proposedState(), plan.expectedBounds(), new java.util.ArrayList<>(actions));
+    }
+
+    private static boolean isSingleRawKey(List<KeyAction> actions) {
+        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.RAW_KEY;
+    }
+
+    private static boolean isSingleRawEnter(List<KeyAction> actions) {
+        return actions.size() == 1 && actions.get(0).kind() == KeyAction.Kind.RAW_ENTER;
+    }
+
+    private static boolean containsAction(List<KeyAction> actions, KeyAction.Kind kind) {
+        for (KeyAction action : actions) {
+            if (action.kind() == kind) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * 이 코드를 감쌀 **진짜 수식키**들 — 원격데스크톱 프로파일에서만, 그리고 코드가 있을 때만.
+     * 순서는 고정이다(Ctrl → Shift → Alt → Meta): 같은 코드가 언제나 같은 열로 나가야
+     * 저쪽에서 재현된다.
+     */
+    private static java.util.List<RawKey> modifierFrame(
+        EditorCapabilities capabilities,
+        java.util.Set<KeyModifier> modifiers,
+        boolean physical
+    ) {
+        if (capabilities == null || modifiers.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        java.util.List<RawKey> frame = new java.util.ArrayList<>(4);
+        if (!physical && !capabilities.deleteByKeyEvents()) {
+            // An ordinary text field needs Shift's own press before the arrow: it decides whether
+            // an arrow selects from the Shift key having been pressed (MetaKeyKeyListener), not
+            // from the meta state carried on the arrow, so without this the bar's Shift+arrow only
+            // moved the cursor (§15.39). The other modifiers stay as they were: the field turns
+            // them into its own shortcuts from the meta state alone.
+            if (modifiers.contains(KeyModifier.SHIFT)) {
+                frame.add(RawKey.SHIFT_LEFT);
+            }
+            return frame;
+        }
+        if (modifiers.contains(KeyModifier.CTRL)) {
+            frame.add(RawKey.CTRL_LEFT);
+        }
+        if (modifiers.contains(KeyModifier.SHIFT)) {
+            frame.add(RawKey.SHIFT_LEFT);
+        }
+        if (modifiers.contains(KeyModifier.ALT)) {
+            frame.add(RawKey.ALT_LEFT);
+        }
+        if (modifiers.contains(KeyModifier.META)) {
+            frame.add(RawKey.META_LEFT);
+        }
+        return frame;
+    }
+
+    private static KeyModifier modifierOf(RawKey key) {
+        switch (key) {
+            case CTRL_LEFT: return KeyModifier.CTRL;
+            case SHIFT_LEFT: return KeyModifier.SHIFT;
+            case ALT_LEFT: return KeyModifier.ALT;
+            default: return KeyModifier.META;
+        }
+    }
+
+    private static ExecutionResult executeRawCompatibility(
+        TransitionPlan<?> plan,
+        EditorEndpoint endpoint,
+        EditorCapabilities capabilities
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        KeyAction action = plan.actions().get(0);
+        if (action.kind() == KeyAction.Kind.PERFORM_EDITOR_ACTION) {
+            return executeFocusAction(plan, endpoint, action, 0, 0);
+        }
+        RawKey rawKey;
+        java.util.Set<KeyModifier> modifiers;
+        if (action.kind() == KeyAction.Kind.RAW_KEY) {
+            rawKey = action.rawKey();
+            modifiers = action.modifiers();
+        } else {
+            rawKey = action.kind() == KeyAction.Kind.RAW_ENTER
+                ? RawKey.ENTER
+                : RawKey.BACKSPACE;
+            modifiers = java.util.Collections.emptySet();
+        }
+        RawKeyPhase phase = action.kind() == KeyAction.Kind.RAW_KEY
+            ? action.rawKeyPhase()
+            : RawKeyPhase.TAP;
+        if (phase != RawKeyPhase.TAP) {
+            return executeRawKeyHalf(
+                plan, endpoint, capabilities, action, rawKey, modifiers, phase);
+        }
+        boolean physical = action.kind() == KeyAction.Kind.RAW_KEY && action.isPhysical();
+        // ★★★ **원격데스크톱에서는 수식키를 진짜로 누른다** (2026-08-29, 사용자 보고).
+        //   릴레이 뒤에는 텍스트 뷰가 없고 저쪽은 **진짜 OS** 다: 릴레이는 KeyEvent 를 저쪽
+        //   키 입력으로 옮기면서 **metaState 를 안 본다**. 그래서 Ctrl+C 가 `c` 로 도착했고,
+        //   액션바의 잘라내기·복사와 터치 자판의 Ctrl+X/C/V/A 가 **원격에서만** 죽어 있었다.
+        //   ⇒ 그 프로파일에서만 코드를 프레임으로 감싼다: Ctrl down → C down/up → Ctrl up.
+        //   ☞ 로컬 편집기는 **그대로** 둔다 — 거기서는 metaState 하나면 TextView 가 읽고,
+        //     수식키를 따로 보내면 다른 앱의 단축키까지 깨울 수 있다.
+        java.util.List<RawKey> frame = modifierFrame(capabilities, modifiers, physical);
+        // ★★ 프레임이 있으면 본 키는 **맨 키**로 보낸다 (2026-08-29, 사용자 계측).
+        //   원격 키 테스터가 보여준 것: 우리 Ctrl 은 저쪽에 도착하는데 **글자가 안 온다**.
+        //   meta 를 실은 글자의 유니코드는 제어문자(Ctrl+B=0x02)가 되고, 릴레이는 그런
+        //   이벤트를 입력 문자가 아니라며 거른다. 릴레이 자체 Ctrl 기능이 잘 되는 이유가
+        //   정확히 이 모양이다 — Ctrl 상태 + 평범한 글자. 저쪽 OS 의 수식 상태는 프레임의
+        //   진짜 Ctrl down 이 이미 세워 두었으므로, 글자에 meta 를 겹쳐 실을 이유가 없다.
+        // ★★★ v0.1.144 의 "맨 글자" 는 도착은 시켰지만 **조합이 안 됐다** (사용자 실기): 릴레이의
+        //   소프트 경로는 이벤트를 하나씩 처리해 Ctrl 따로, a 따로 원격에 넣는다. 물리 키보드의
+        //   Ctrl+A 는 되므로, 프레임 있는 코드는 이벤트를 **물리 키보드 모양**(키보드 source,
+        //   실제 스캔코드, 소프트 플래그 제거)으로 입혀 릴레이의 하드웨어 경로 — 수식 상태를
+        //   추적해 조합하는 경로 — 를 타게 한다. 글자에는 meta 도 도로 싣는다.
+        // A key from the remote-desktop page is dressed so with or without a frame: its whole
+        // point is to reach the far side as a key, never as a character typed there.
+        boolean dressAsHardware = !frame.isEmpty() || physical;
+        // The chord owns every modifier it pressed until it has let it go (review R01). A press
+        // is attempted only while the session is still this one, and after a refused, throwing
+        // or stale press nothing more is pressed: Ctrl+C whose Ctrl failed must not arrive as a
+        // bare C. Whatever was pressed is released in the finally below, in reverse, through this
+        // endpoint's own bridge — the connection it was pressed on, never whichever editor
+        // replaced it. If that connection is already gone the release cannot reach it either;
+        // the result then says a modifier may be left down instead of claiming a shortcut.
+        java.util.Set<KeyModifier> held = java.util.EnumSet.noneOf(KeyModifier.class);
+        java.util.List<RawKey> pressed = new java.util.ArrayList<>(frame.size());
+        int operation = 0;
+        EditorCallResult prerequisite = null;
+        int prerequisiteIndex = -1;
+        EditorCallResult down = null;
+        EditorCallResult up = null;
+        int downIndex = -1;
+        int upIndex = -1;
+        int staleDownIndex = -1;
+        ExecutionResult.Reason releaseReason = ExecutionResult.Reason.NONE;
+        int releaseIndex = -1;
+        try {
+            for (RawKey modifierKey : frame) {
+                java.util.Set<KeyModifier> chord = java.util.EnumSet.copyOf(held);
+                chord.add(modifierOf(modifierKey));
+                if (!endpoint.isCurrent()) {
+                    prerequisite = EditorCallResult.staleSession();
+                    prerequisiteIndex = operation;
+                    break;
+                }
+                pressed.add(modifierKey);
+                held.add(modifierOf(modifierKey));
+                prerequisiteIndex = operation++;
+                EditorCallResult modifierDown = safeCall(() -> bridge.sendRawKey(
+                    RawEditorKey.hardware(modifierKey, chord, RawEditorKey.Action.DOWN)));
+                if (!modifierDown.isSucceeded()) {
+                    prerequisite = modifierDown;
+                    break;
+                }
+            }
+            if (prerequisite == null) {
+                boolean hw = dressAsHardware;
+                down = guardedCall(endpoint, () -> bridge.sendRawKey(hw
+                    ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.DOWN)
+                    : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.DOWN)));
+                if (down.isStaleSession()) {
+                    staleDownIndex = operation;
+                } else {
+                    downIndex = operation++;
+                    up = safeCall(() -> bridge.sendRawKey(hw
+                        ? RawEditorKey.hardware(rawKey, modifiers, RawEditorKey.Action.UP)
+                        : RawEditorKey.of(rawKey, modifiers, RawEditorKey.Action.UP)));
+                    upIndex = operation++;
+                }
+            }
+        } finally {
+            // 누른 역순으로 놓는다 — 실제 손가락이 그렇게 하고, 저쪽 OS 도 그 순서를 기대한다.
+            // One release failing does not skip the rest.
+            for (int i = pressed.size() - 1; i >= 0; i--) {
+                RawKey modifierKey = pressed.get(i);
+                held.remove(modifierOf(modifierKey));
+                java.util.Set<KeyModifier> stillHeld = java.util.EnumSet.copyOf(held);
+                EditorCallResult release = safeCall(() -> bridge.sendRawKey(
+                    RawEditorKey.hardware(modifierKey, stillHeld, RawEditorKey.Action.UP)));
+                int index = operation++;
+                if (!release.isSucceeded() && releaseReason == ExecutionResult.Reason.NONE) {
+                    releaseReason = reasonForOperation(release);
+                    releaseIndex = index;
+                }
+            }
+        }
+
+        boolean keyNotSent = prerequisite != null || down.isStaleSession();
+        if (keyNotSent && pressed.isEmpty()) {
+            // Nothing reached the editor, so there is nothing to let go of.
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
+            );
+        }
+        if (keyNotSent) {
+            // A modifier went down (and was released, as far as this connection allows); the key
+            // never went. On a remote desktop a lone Alt or Meta tap is not nothing.
+            EditorCallResult failed = prerequisite != null ? prerequisite : down;
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                reasonForOperation(failed),
+                releaseReason,
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                0,
+                prerequisite != null ? prerequisiteIndex : staleDownIndex,
+                releaseIndex,
+                operation,
+                action.kind(),
+                0,
+                true
+            );
+        }
+        if (!down.isSucceeded() || !up.isSucceeded()) {
+            EditorCallResult primary = down.isSucceeded() ? up : down;
+            boolean bothFailed = !down.isSucceeded() && !up.isSucceeded();
+            ExecutionResult.Reason cleanup = releaseReason != ExecutionResult.Reason.NONE
+                ? releaseReason
+                : (bothFailed ? reasonForOperation(up) : ExecutionResult.Reason.NONE);
+            int cleanupOp = releaseReason != ExecutionResult.Reason.NONE
+                ? releaseIndex
+                : (bothFailed ? upIndex : -1);
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                reasonForOperation(primary),
+                cleanup,
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                0,
+                down.isSucceeded() ? upIndex : downIndex,
+                cleanupOp,
+                operation,
+                action.kind(),
+                down.isSucceeded() ? 1 : 0,
+                true
+            );
+        }
+        if (releaseReason != ExecutionResult.Reason.NONE) {
+            // The key landed, but a modifier may still be down on the far side — the batch path's
+            // rule for a failed endBatchEdit after good writes.
+            return result(
+                plan,
+                ExecutionResult.Outcome.UNCERTAIN,
+                releaseReason,
+                releaseReason,
+                ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                0,
+                releaseIndex,
+                releaseIndex,
+                operation,
+                action.kind(),
+                1,
+                true
+            );
+        }
+
+        return result(
+            plan,
+            ExecutionResult.Outcome.DISPATCHED,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.ADOPT_PROPOSED_AWAITING_CONFIRMATION,
+            -1,
+            -1,
+            -1,
+            operation,
+            null,
+            1,
+            false
+        );
+    }
+
+    /**
+     * Sends one half of a key press — the down that latches a key and leaves it held, or the up
+     * that ends it. One editor call, so there is no half-done pair to unwind: it either lands or
+     * it does not.
+     */
+    private static ExecutionResult executeRawKeyHalf(
+        TransitionPlan<?> plan,
+        EditorEndpoint endpoint,
+        EditorCapabilities capabilities,
+        KeyAction action,
+        RawKey rawKey,
+        java.util.Set<KeyModifier> modifiers,
+        RawKeyPhase phase
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        RawEditorKey.Action half = phase == RawKeyPhase.HOLD
+            ? RawEditorKey.Action.DOWN
+            : RawEditorKey.Action.UP;
+        boolean hw = (action.kind() == KeyAction.Kind.RAW_KEY && action.isPhysical())
+            || (capabilities != null && capabilities.deleteByKeyEvents());
+        EditorCallResult sent = guardedCall(endpoint, () -> bridge.sendRawKey(hw
+            ? RawEditorKey.hardware(rawKey, modifiers, half)
+            : RawEditorKey.of(rawKey, modifiers, half)));
+        if (sent.isStaleSession()) {
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
+            );
+        }
+        if (!sent.isSucceeded()) {
+            boolean uncertain = sent.kind() == EditorCallResult.Kind.RUNTIME_FAILURE;
+            return result(
+                plan,
+                uncertain
+                    ? ExecutionResult.Outcome.UNCERTAIN
+                    : ExecutionResult.Outcome.NOT_DISPATCHED,
+                reasonForOperation(sent),
+                ExecutionResult.Reason.NONE,
+                uncertain
+                    ? ExecutionResult.StateEffect.RESET_DESYNCHRONIZED
+                    : ExecutionResult.StateEffect.KEEP_CURRENT,
+                0,
+                0,
+                -1,
+                1,
+                action.kind(),
+                0,
+                uncertain
+            );
+        }
+        return result(
+            plan,
+            ExecutionResult.Outcome.DISPATCHED,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.ADOPT_PROPOSED_AWAITING_CONFIRMATION,
+            -1,
+            -1,
+            -1,
+            1,
+            null,
+            1,
+            false
+        );
+    }
+
+    private static ExecutionResult executeRichPlan(
+        TransitionPlan<?> plan,
+        ExecutionContext context,
+        EditorEndpoint endpoint
+    ) {
+        List<KeyAction> actions = plan.actions();
+        KeyAction last = actions.get(actions.size() - 1);
+        boolean hasFocusAction = last.kind() == KeyAction.Kind.PERFORM_EDITOR_ACTION;
+        int batchedActionCount = hasFocusAction ? actions.size() - 1 : actions.size();
+
+        ExecutionResult prefixResult = null;
+        if (batchedActionCount > 0) {
+            prefixResult = executeBatched(plan, context, endpoint, batchedActionCount);
+            if (prefixResult.isFailure()) {
+                return prefixResult;
+            }
+        }
+        if (!hasFocusAction) {
+            return prefixResult;
+        }
+        return executeFocusAction(
+            plan,
+            endpoint,
+            last,
+            prefixResult == null ? 0 : prefixResult.dispatchedMutationCount(),
+            prefixResult == null ? 0 : prefixResult.operationCount()
+        );
+    }
+
+    private static ExecutionResult executeFocusAction(
+        TransitionPlan<?> plan,
+        EditorEndpoint endpoint,
+        KeyAction action,
+        int previouslyDispatched,
+        int previousOperationCount
+    ) {
+        EditorCallResult call = guardedCall(
+            endpoint,
+            () -> endpoint.bridge().performEditorAction(action.actionId())
+        );
+        if (!call.isSucceeded()) {
+            if (call.isStaleSession()) {
+                if (previouslyDispatched == 0) {
+                    return notDispatched(
+                        plan, ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION);
+                }
+                return result(
+                    plan,
+                    ExecutionResult.Outcome.UNCERTAIN,
+                    ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                    ExecutionResult.Reason.NONE,
+                    ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+                    plan.actions().size() - 1,
+                    previousOperationCount,
+                    -1,
+                    previousOperationCount,
+                    action.kind(),
+                    previouslyDispatched,
+                    true
+                );
+            }
+            return uncertainOperationFailure(
+                plan,
+                call,
+                plan.actions().size() - 1,
+                previousOperationCount,
+                action.kind(),
+                previouslyDispatched,
+                previousOperationCount + 1
+            );
+        }
+        return result(
+            plan,
+            ExecutionResult.Outcome.DISPATCHED,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.ADOPT_PROPOSED_AWAITING_CONFIRMATION,
+            -1,
+            -1,
+            -1,
+            previousOperationCount + 1,
+            null,
+            previouslyDispatched + 1,
+            false
+        );
+    }
+
+    private static ExecutionResult executeBatched(
+        TransitionPlan<?> plan,
+        ExecutionContext context,
+        EditorEndpoint endpoint,
+        int actionCount
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        List<KeyAction> actions = plan.actions();
+        ExecutionResult.Reason primaryReason = ExecutionResult.Reason.NONE;
+        ExecutionResult.Reason cleanupReason = ExecutionResult.Reason.NONE;
+        int failedActionIndex = -1;
+        int failedOperationIndex = -1;
+        int cleanupOperationIndex = -1;
+        KeyAction.Kind failedActionKind = null;
+        int dispatched = 0;
+        int operationIndex = 0;
+        boolean confirmedNoEffect = false;
+        boolean remoteMutationMayHaveOccurred = false;
+        EditorBounds actionBounds = context.bounds();
+
+        EditorCallResult begin = guardedCall(endpoint, bridge::beginBatchEdit);
+        if (begin.isStaleSession()) {
+            return notDispatched(
+                plan,
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION
+            );
+        }
+        operationIndex++;
+        if (!begin.isSucceeded()) {
+            primaryReason = begin.isRejected()
+                ? ExecutionResult.Reason.BATCH_BEGIN_FALSE
+                : ExecutionResult.Reason.BATCH_BEGIN_RUNTIME_FAILURE;
+            failedOperationIndex = operationIndex - 1;
+        }
+
+        try {
+            if (primaryReason == ExecutionResult.Reason.NONE) {
+                for (int index = 0; index < actionCount; index++) {
+                    KeyAction action = actions.get(index);
+                    int actionStartOperation = operationIndex;
+                    ActionExecution actionResult = executeAction(
+                        endpoint,
+                        action,
+                        actionBounds,
+                        context.capabilities()
+                    );
+                    operationIndex += actionResult.operationCount;
+                    dispatched += actionResult.dispatchedMutationCount;
+                    confirmedNoEffect |= actionResult.confirmedNoEffect;
+                    if (!actionResult.succeeded) {
+                        primaryReason = actionResult.reason;
+                        failedActionIndex = index;
+                        failedOperationIndex = actionStartOperation
+                            + actionResult.failedOperationOffset;
+                        failedActionKind = action.kind();
+                        if (actionResult.cleanupReason != ExecutionResult.Reason.NONE) {
+                            cleanupReason = actionResult.cleanupReason;
+                            cleanupOperationIndex = actionStartOperation
+                                + actionResult.cleanupOperationOffset;
+                        }
+                        remoteMutationMayHaveOccurred = actionResult.remoteMutationMayHaveOccurred
+                            || dispatched > 0;
+                        break;
+                    }
+                    actionBounds = EditorBoundsPredictor.after(actionBounds, action);
+                }
+            }
+        } finally {
+            EditorCallResult end = safeCall(bridge::endBatchEdit);
+            operationIndex++;
+            if (!end.isSucceeded()) {
+                if (cleanupReason == ExecutionResult.Reason.NONE) {
+                    cleanupReason = end.isRejected()
+                        ? ExecutionResult.Reason.BATCH_END_FALSE
+                        : ExecutionResult.Reason.BATCH_END_RUNTIME_FAILURE;
+                    cleanupOperationIndex = operationIndex - 1;
+                }
+                if (primaryReason == ExecutionResult.Reason.NONE) {
+                    failedOperationIndex = cleanupOperationIndex;
+                }
+            }
+        }
+
+        if (primaryReason == ExecutionResult.Reason.NONE
+            && cleanupReason == ExecutionResult.Reason.NONE) {
+            return result(
+                plan,
+                dispatched == 0 && confirmedNoEffect
+                    ? ExecutionResult.Outcome.CONFIRMED_NO_EFFECT
+                    : ExecutionResult.Outcome.DISPATCHED,
+                ExecutionResult.Reason.NONE,
+                ExecutionResult.Reason.NONE,
+                dispatched == 0 && confirmedNoEffect
+                    ? ExecutionResult.StateEffect.ADOPT_PROPOSED_SYNCED
+                    : ExecutionResult.StateEffect.ADOPT_PROPOSED_AWAITING_CONFIRMATION,
+                -1,
+                -1,
+                -1,
+                operationIndex,
+                null,
+                dispatched,
+                false
+            );
+        }
+
+        ExecutionResult.Reason resultReason = primaryReason == ExecutionResult.Reason.NONE
+            ? cleanupReason
+            : primaryReason;
+        remoteMutationMayHaveOccurred |= dispatched > 0;
+        remoteMutationMayHaveOccurred |= primaryReason
+            == ExecutionResult.Reason.BATCH_BEGIN_RUNTIME_FAILURE;
+        remoteMutationMayHaveOccurred |= cleanupReason != ExecutionResult.Reason.NONE
+            && begin.isSucceeded();
+        return result(
+            plan,
+            remoteMutationMayHaveOccurred
+                ? ExecutionResult.Outcome.UNCERTAIN
+                : ExecutionResult.Outcome.NOT_DISPATCHED,
+            resultReason,
+            cleanupReason,
+            remoteMutationMayHaveOccurred
+                ? ExecutionResult.StateEffect.RESET_DESYNCHRONIZED
+                : ExecutionResult.StateEffect.KEEP_CURRENT,
+            failedActionIndex,
+            failedOperationIndex,
+            cleanupOperationIndex,
+            operationIndex,
+            failedActionKind,
+            dispatched,
+            remoteMutationMayHaveOccurred
+        );
+    }
+
+    private static ActionExecution executeAction(
+        EditorEndpoint endpoint,
+        KeyAction action,
+        EditorBounds bounds,
+        EditorCapabilities capabilities
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        switch (action.kind()) {
+            case COMMIT_TEXT:
+                return mutationCall(guardedCall(
+                    endpoint,
+                    () -> bridge.commitText(action.text(), 1)
+                ));
+            case SET_COMPOSING_TEXT:
+                return mutationCall(guardedCall(
+                    endpoint,
+                    () -> bridge.setComposingText(action.text(), 1)
+                ));
+            case FINISH_COMPOSING:
+                return mutationCall(guardedCall(endpoint, bridge::finishComposingText));
+            case DELETE_BACKWARD:
+                return executeRichDelete(endpoint, bounds, capabilities);
+            case RECOMPOSE_PREVIOUS:
+                return executeRecompose(endpoint, action, bounds);
+            case DELETE_RECENT: {
+                // Our own just-committed characters: the surrounding-text call is reliable here
+                // on every editor, remote-desktop dummies included, and cannot be key-filtered —
+                // except a terminal, where nothing behind the connection holds text for it to
+                // act on, so the take-back is the terminal's own erase character, sent as text.
+                int count = action.recentCount();
+                if (!capabilities.hasSurroundingText()) {
+                    return executeTerminalErase(endpoint, count);
+                }
+                EditorCallResult recent = guardedCall(
+                    endpoint,
+                    () -> bridge.deleteSurroundingTextInCodePoints(count, 0)
+                );
+                return recent.isSucceeded()
+                    ? ActionExecution.dispatched(1, 1)
+                    : ActionExecution.failure(reasonForOperation(recent), 1,
+                        !recent.isStaleSession());
+            }
+            case PERFORM_EDITOR_ACTION:
+            case RAW_ENTER:
+            case RAW_KEY:
+                throw new IllegalStateException("terminal action reached batched executor");
+            default:
+                throw new IllegalStateException("unsupported editor action kind");
+        }
+    }
+
+    /**
+     * Deletes {@code count} characters in a terminal by committing its own erase character, DEL
+     * (0x7f) — the exact byte Termux's Backspace key sends.
+     *
+     * <p>A backspace key event reaches the same bytes, but it travels the view's input-event
+     * queue while committed text is written to the terminal at once. A syllable redrawn as it
+     * grows is a take-back followed by a commit in one plan, and the commit overtook the key:
+     * under the emulator, 0 of 11 eight-syllable words reached Termux intact (issue #7). On the
+     * text channel the erase cannot be reordered against the syllable that follows it. A lone
+     * Backspace the user presses still goes out as a key event (executeRawCompatibility): nothing
+     * follows it in its plan, and a real key lets the terminal choose its own erase byte.
+     */
+    private static ActionExecution executeTerminalErase(EditorEndpoint endpoint, int count) {
+        EditorBridge bridge = endpoint.bridge();
+        StringBuilder erase = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            erase.append((char) 0x7f);
+        }
+        String text = erase.toString();
+        EditorCallResult result = guardedCall(endpoint, () -> bridge.commitText(text, 1));
+        return result.isSucceeded()
+            ? ActionExecution.dispatched(1, 1)
+            : ActionExecution.failure(reasonForOperation(result), 1, !result.isStaleSession());
+    }
+
+    /**
+     * Takes the characters before the cursor back into composition and replaces them, without
+     * deleting anything.
+     *
+     * <p>The three-step way — clear the composition, delete a character, compose again — asks the
+     * editor to be right about three calls in a row, and an editor that is not loses the character
+     * before the cursor: 나랏글's ㅈ (ㅅ plus a stroke) was taking the syllable before it with it in
+     * one app (owner's report, 2026-09-17). Where the editor can mark a region, one call replaces
+     * all three; where it cannot — it says so by refusing — the old way still runs.
+     */
+    private static ActionExecution executeRecompose(
+        EditorEndpoint endpoint,
+        KeyAction action,
+        EditorBounds bounds
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        int end = bounds.selectionEnd();
+        int start = end - action.recentCount();
+        int ops = 0;
+        if (start >= 0 && !bounds.hasSelectedText()) {
+            EditorCallResult region = guardedCall(
+                endpoint, () -> bridge.setComposingRegion(start, end));
+            ops++;
+            if (region.isStaleSession()) {
+                return ActionExecution.failure(
+                    ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION, ops, false);
+            }
+            if (region.kind() == EditorCallResult.Kind.RUNTIME_FAILURE) {
+                return ActionExecution.failure(
+                    ExecutionResult.Reason.OPERATION_RUNTIME_FAILURE, ops, true);
+            }
+            if (region.isSucceeded()) {
+                EditorCallResult set = guardedCall(
+                    endpoint, () -> bridge.setComposingText(action.text(), 1));
+                ops++;
+                return set.isSucceeded()
+                    ? ActionExecution.dispatched(1, ops)
+                    : ActionExecution.failure(reasonForOperation(set), ops, true);
+            }
+        }
+        // No region to mark, or the editor would not mark it: clear, delete, compose again.
+        EditorCallResult cleared = guardedCall(endpoint, () -> bridge.setComposingText("", 1));
+        ops++;
+        if (!cleared.isSucceeded()) {
+            return ActionExecution.failure(
+                reasonForOperation(cleared), ops, !cleared.isStaleSession());
+        }
+        int toDelete = action.recentCount() - 1;
+        if (toDelete > 0) {
+            EditorCallResult deleted = guardedCall(
+                endpoint, () -> bridge.deleteSurroundingTextInCodePoints(toDelete, 0));
+            ops++;
+            if (deleted.isRejected()) {
+                deleted = guardedCall(
+                    endpoint, () -> bridge.deleteSurroundingText(toDelete, 0));
+                ops++;
+            }
+            if (!deleted.isSucceeded()) {
+                return ActionExecution.failure(reasonForOperation(deleted), ops, true);
+            }
+        }
+        EditorCallResult set = guardedCall(
+            endpoint, () -> bridge.setComposingText(action.text(), 1));
+        ops++;
+        return set.isSucceeded()
+            ? ActionExecution.dispatched(1, ops)
+            : ActionExecution.failure(reasonForOperation(set), ops, true);
+    }
+
+    private static ActionExecution executeRichDelete(
+        EditorEndpoint endpoint,
+        EditorBounds bounds,
+        EditorCapabilities capabilities
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        if (!capabilities.hasSurroundingText()) {
+            // A terminal, with this delete one step of a larger plan (a correction): nothing
+            // behind the connection holds text to read back, and a key event here could be
+            // overtaken by the commit that follows it — so the erase character goes as text.
+            return executeTerminalErase(endpoint, 1);
+        }
+        if (capabilities.deleteByKeyEvents()) {
+            // A remote-desktop editor relays over two pipes — text operations and key events —
+            // and the pipes are not ordered against each other: a key-event backspace can land
+            // after a text commit that followed it, eating the retyped syllable. When the relay's
+            // buffer verifiably holds text, delete over the same text channel every commit takes,
+            // so order is preserved; the key event stays the fallback for an unknown, empty, or
+            // start-of-field buffer, for a sensitive field (never read), and for a selection,
+            // which lives on the far side.
+            int priorOperations = 0;
+            if (!bounds.hasSelectedText()
+                && !capabilities.isSensitive()
+                && bounds.selectionStart() != 0) {
+                EditorTextResult relayBefore = guardedTextCall(
+                    endpoint,
+                    () -> bridge.getTextBeforeCursor(1, 0)
+                );
+                priorOperations++;
+                if (relayBefore.kind() == EditorTextResult.Kind.STALE_SESSION) {
+                    return ActionExecution.failure(
+                        ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                        priorOperations,
+                        false
+                    );
+                }
+                if (relayBefore.hasValue() && !relayBefore.value().isEmpty()) {
+                    EditorCallResult ordered = guardedCall(
+                        endpoint,
+                        () -> bridge.deleteSurroundingTextInCodePoints(1, 0)
+                    );
+                    priorOperations++;
+                    if (ordered.isSucceeded()) {
+                        return ActionExecution.dispatched(1, priorOperations);
+                    }
+                    if (ordered.isStaleSession()) {
+                        return ActionExecution.failure(
+                            ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                            priorOperations,
+                            false
+                        );
+                    }
+                    if (!ordered.isRejected()) {
+                        return ActionExecution.failure(
+                            reasonForOperation(ordered),
+                            priorOperations,
+                            true
+                        );
+                    }
+                    // The text call was refused: the key event below still deletes remotely.
+                }
+            }
+            return executeRawDeleteFallback(endpoint, priorOperations);
+        }
+        if (bounds.hasSelectedText()) {
+            return mutationCall(guardedCall(endpoint, () -> bridge.commitText("", 1)));
+        }
+
+        EditorCallResult codePoint = guardedCall(
+            endpoint,
+            () -> bridge.deleteSurroundingTextInCodePoints(1, 0)
+        );
+        if (codePoint.isSucceeded()) {
+            return ActionExecution.dispatched(1, 1);
+        }
+        if (!codePoint.isRejected()) {
+            return ActionExecution.failure(
+                reasonForOperation(codePoint),
+                1,
+                !codePoint.isStaleSession()
+            );
+        }
+        if (!capabilities.allowLegacyCodeUnitFallback()
+        ) {
+            return ActionExecution.failure(
+                ExecutionResult.Reason.OPERATION_FALSE,
+                1,
+                true
+            );
+        }
+
+        if (capabilities.isSensitive()) {
+            return capabilities.allowRawDeleteFallback()
+                ? executeRawDeleteFallback(endpoint, 1)
+                : ActionExecution.failure(
+                    ExecutionResult.Reason.OPERATION_FALSE,
+                    1,
+                    true
+                );
+        }
+
+        EditorTextResult textBefore = guardedTextCall(
+            endpoint,
+            () -> bridge.getTextBeforeCursor(2, 0)
+        );
+        if (textBefore.kind() == EditorTextResult.Kind.STALE_SESSION) {
+            return ActionExecution.failure(
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                1,
+                false
+            );
+        }
+        if (!textBefore.hasValue()) {
+            return capabilities.allowRawDeleteFallback()
+                ? executeRawDeleteFallback(endpoint, 2)
+                : ActionExecution.failure(
+                    ExecutionResult.Reason.INVALID_SURROUNDING_TEXT,
+                    2,
+                    false
+                );
+        }
+        String text = textBefore.value();
+        if (text.isEmpty()) {
+            if (bounds.selectionStart() <= 0) {
+                // The editor itself confirms what the bounds claimed: nothing sits before the
+                // cursor, so a backspace is a no-op, not a failure.
+                return ActionExecution.noEffect(2);
+            }
+            // Empty context contradicting a known nonzero cursor: do not guess.
+            return capabilities.allowRawDeleteFallback()
+                ? executeRawDeleteFallback(endpoint, 2)
+                : ActionExecution.failure(
+                    ExecutionResult.Reason.INVALID_SURROUNDING_TEXT,
+                    2,
+                    false
+                );
+        }
+        if (hasMalformedHighOrInnerLowSurrogate(text)) {
+            return capabilities.allowRawDeleteFallback()
+                ? executeRawDeleteFallback(endpoint, 2)
+                : ActionExecution.failure(
+                    ExecutionResult.Reason.INVALID_SURROUNDING_TEXT,
+                    2,
+                    false
+                );
+        }
+        int unitCount = safeTrailingCodePointUnits(text);
+        if (unitCount == 0) {
+            return capabilities.allowRawDeleteFallback()
+                ? executeRawDeleteFallback(endpoint, 2)
+                : ActionExecution.failure(
+                    ExecutionResult.Reason.INVALID_SURROUNDING_TEXT,
+                    2,
+                    false
+                );
+        }
+
+        EditorCallResult codeUnitDelete = guardedCall(
+            endpoint,
+            () -> bridge.deleteSurroundingText(unitCount, 0)
+        );
+        if (codeUnitDelete.isSucceeded()) {
+            return ActionExecution.dispatched(1, 3);
+        }
+        return ActionExecution.failure(
+            reasonForOperation(codeUnitDelete),
+            3,
+            !codeUnitDelete.isStaleSession()
+        );
+    }
+
+    private static ActionExecution executeRawDeleteFallback(
+        EditorEndpoint endpoint,
+        int priorOperationCount
+    ) {
+        EditorBridge bridge = endpoint.bridge();
+        EditorCallResult down = guardedCall(endpoint, () -> bridge.sendRawKey(RawEditorKey.of(
+            RawKey.BACKSPACE,
+            RawEditorKey.Action.DOWN
+        )));
+        if (down.isStaleSession()) {
+            return ActionExecution.failure(
+                ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION,
+                priorOperationCount,
+                false
+            );
+        }
+        EditorCallResult up = safeCall(() -> bridge.sendRawKey(RawEditorKey.of(
+            RawKey.BACKSPACE,
+            RawEditorKey.Action.UP
+        )));
+        int operationCount = priorOperationCount + 2;
+        if (down.isSucceeded() && up.isSucceeded()) {
+            return ActionExecution.dispatched(1, operationCount);
+        }
+        EditorCallResult primary = down.isSucceeded() ? up : down;
+        return ActionExecution.failureWithOffsets(
+            reasonForOperation(primary),
+            operationCount,
+            true,
+            down.isSucceeded() ? 1 : 0,
+            down.isSucceeded() ? priorOperationCount + 1 : priorOperationCount,
+            !down.isSucceeded() && !up.isSucceeded()
+                ? reasonForOperation(up)
+                : ExecutionResult.Reason.NONE,
+            !down.isSucceeded() && !up.isSucceeded()
+                ? priorOperationCount + 1
+                : -1
+        );
+    }
+
+    private static boolean hasMalformedHighOrInnerLowSurrogate(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (Character.isHighSurrogate(ch)) {
+                if (i + 1 >= text.length() || !Character.isLowSurrogate(text.charAt(i + 1))) {
+                    return true;
+                }
+                i++;
+            } else if (Character.isLowSurrogate(ch) && i > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int safeTrailingCodePointUnits(String text) {
+        if (text.length() > 2) {
+            return 0;
+        }
+        char last = text.charAt(text.length() - 1);
+        if (Character.isHighSurrogate(last)) {
+            return 0;
+        }
+        if (!Character.isLowSurrogate(last)) {
+            return 1;
+        }
+        if (text.length() == 2 && Character.isHighSurrogate(text.charAt(0))) {
+            return 2;
+        }
+        return 0;
+    }
+
+    private static ActionExecution mutationCall(EditorCallResult callResult) {
+        if (callResult.isSucceeded()) {
+            return ActionExecution.dispatched(1, 1);
+        }
+        return ActionExecution.failure(
+            reasonForOperation(callResult),
+            1,
+            !callResult.isStaleSession()
+        );
+    }
+
+    private static ExecutionResult.Reason reasonForOperation(EditorCallResult callResult) {
+        if (callResult.isStaleSession()) {
+            return ExecutionResult.Reason.SESSION_CHANGED_DURING_EXECUTION;
+        }
+        return callResult.isRejected()
+            ? ExecutionResult.Reason.OPERATION_FALSE
+            : ExecutionResult.Reason.OPERATION_RUNTIME_FAILURE;
+    }
+
+    private static EditorCallResult safeCall(EditorCall call) {
+        try {
+            EditorCallResult result = call.invoke();
+            return result == null ? EditorCallResult.runtimeFailure() : result;
+        } catch (RuntimeException ignored) {
+            return EditorCallResult.runtimeFailure();
+        }
+    }
+
+    private static EditorCallResult guardedCall(
+        EditorEndpoint endpoint,
+        EditorCall call
+    ) {
+        return endpoint.isCurrent() ? safeCall(call) : EditorCallResult.staleSession();
+    }
+
+    private static EditorTextResult safeTextCall(EditorTextCall call) {
+        try {
+            EditorTextResult result = call.invoke();
+            return result == null ? EditorTextResult.runtimeFailure() : result;
+        } catch (RuntimeException ignored) {
+            return EditorTextResult.runtimeFailure();
+        }
+    }
+
+    private static EditorTextResult guardedTextCall(
+        EditorEndpoint endpoint,
+        EditorTextCall call
+    ) {
+        return endpoint.isCurrent() ? safeTextCall(call) : EditorTextResult.staleSession();
+    }
+
+    private static ExecutionResult actionless(TransitionPlan<?> plan) {
+        return result(
+            plan,
+            ExecutionResult.Outcome.NO_EDITOR_ACTIONS,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.ADOPT_PROPOSED_SYNCED,
+            -1,
+            -1,
+            -1,
+            0,
+            null,
+            0,
+            false
+        );
+    }
+
+    private static ExecutionResult uncertainOperationFailure(
+        TransitionPlan<?> plan,
+        EditorCallResult callResult,
+        int failedActionIndex,
+        int failedOperationIndex,
+        KeyAction.Kind failedActionKind,
+        int dispatched,
+        int operationCount
+    ) {
+        return result(
+            plan,
+            ExecutionResult.Outcome.UNCERTAIN,
+            callResult.isRejected()
+                ? ExecutionResult.Reason.OPERATION_FALSE
+                : ExecutionResult.Reason.OPERATION_RUNTIME_FAILURE,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.RESET_DESYNCHRONIZED,
+            failedActionIndex,
+            failedOperationIndex,
+            -1,
+            operationCount,
+            failedActionKind,
+            dispatched,
+            true
+        );
+    }
+
+    private static ExecutionResult notDispatched(
+        TransitionPlan<?> plan,
+        ExecutionResult.Reason reason
+    ) {
+        return result(
+            plan,
+            ExecutionResult.Outcome.NOT_DISPATCHED,
+            reason,
+            ExecutionResult.Reason.NONE,
+            ExecutionResult.StateEffect.KEEP_CURRENT,
+            -1,
+            -1,
+            -1,
+            0,
+            null,
+            0,
+            false
+        );
+    }
+
+    private static ExecutionResult result(
+        TransitionPlan<?> plan,
+        ExecutionResult.Outcome outcome,
+        ExecutionResult.Reason reason,
+        ExecutionResult.Reason cleanupReason,
+        ExecutionResult.StateEffect stateEffect,
+        int failedActionIndex,
+        int failedOperationIndex,
+        int cleanupOperationIndex,
+        int operationCount,
+        KeyAction.Kind failedActionKind,
+        int dispatchedMutationCount,
+        boolean remoteMutationMayHaveOccurred
+    ) {
+        return new ExecutionResult(
+            outcome,
+            reason,
+            cleanupReason,
+            stateEffect,
+            plan,
+            failedActionIndex,
+            failedOperationIndex,
+            cleanupOperationIndex,
+            operationCount,
+            failedActionKind,
+            dispatchedMutationCount,
+            remoteMutationMayHaveOccurred
+        );
+    }
+
+    @FunctionalInterface
+    private interface EditorCall {
+        EditorCallResult invoke();
+    }
+
+    @FunctionalInterface
+    private interface EditorTextCall {
+        EditorTextResult invoke();
+    }
+
+    private static final class ActionExecution {
+        private final boolean succeeded;
+        private final boolean confirmedNoEffect;
+        private final ExecutionResult.Reason reason;
+        private final int operationCount;
+        private final int dispatchedMutationCount;
+        private final boolean remoteMutationMayHaveOccurred;
+        private final int failedOperationOffset;
+        private final ExecutionResult.Reason cleanupReason;
+        private final int cleanupOperationOffset;
+
+        private ActionExecution(
+            boolean succeeded,
+            boolean confirmedNoEffect,
+            ExecutionResult.Reason reason,
+            int operationCount,
+            int dispatchedMutationCount,
+            boolean remoteMutationMayHaveOccurred,
+            int failedOperationOffset,
+            ExecutionResult.Reason cleanupReason,
+            int cleanupOperationOffset
+        ) {
+            this.succeeded = succeeded;
+            this.confirmedNoEffect = confirmedNoEffect;
+            this.reason = reason;
+            this.operationCount = operationCount;
+            this.dispatchedMutationCount = dispatchedMutationCount;
+            this.remoteMutationMayHaveOccurred = remoteMutationMayHaveOccurred;
+            this.failedOperationOffset = failedOperationOffset;
+            this.cleanupReason = cleanupReason;
+            this.cleanupOperationOffset = cleanupOperationOffset;
+        }
+
+        private static ActionExecution dispatched(int mutations, int operations) {
+            return new ActionExecution(
+                true,
+                false,
+                ExecutionResult.Reason.NONE,
+                operations,
+                mutations,
+                false,
+                -1,
+                ExecutionResult.Reason.NONE,
+                -1
+            );
+        }
+
+        private static ActionExecution noEffect(int operations) {
+            return new ActionExecution(
+                true,
+                true,
+                ExecutionResult.Reason.NONE,
+                operations,
+                0,
+                false,
+                -1,
+                ExecutionResult.Reason.NONE,
+                -1
+            );
+        }
+
+        private static ActionExecution failure(
+            ExecutionResult.Reason reason,
+            int operations,
+            boolean remoteMutationMayHaveOccurred
+        ) {
+            return failure(reason, operations, remoteMutationMayHaveOccurred, 0);
+        }
+
+        private static ActionExecution failure(
+            ExecutionResult.Reason reason,
+            int operations,
+            boolean remoteMutationMayHaveOccurred,
+            int dispatchedMutationCount
+        ) {
+            return failureWithOffsets(
+                reason,
+                operations,
+                remoteMutationMayHaveOccurred,
+                dispatchedMutationCount,
+                Math.max(0, operations - 1),
+                ExecutionResult.Reason.NONE,
+                -1
+            );
+        }
+
+        private static ActionExecution failureWithOffsets(
+            ExecutionResult.Reason reason,
+            int operations,
+            boolean remoteMutationMayHaveOccurred,
+            int dispatchedMutationCount,
+            int failedOperationOffset,
+            ExecutionResult.Reason cleanupReason,
+            int cleanupOperationOffset
+        ) {
+            return new ActionExecution(
+                false,
+                false,
+                reason,
+                operations,
+                dispatchedMutationCount,
+                remoteMutationMayHaveOccurred,
+                failedOperationOffset,
+                cleanupReason,
+                cleanupOperationOffset
+            );
+        }
+    }
+}

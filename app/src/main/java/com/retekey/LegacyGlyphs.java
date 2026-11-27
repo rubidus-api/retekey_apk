@@ -30,9 +30,14 @@ public final class LegacyGlyphs {
         WORDS.put("✕", "X");
         WORDS.put("‹", "<");
         WORDS.put("›", ">");
+        WORDS.put("▾", "v");
+        WORDS.put("▴", "^");
         WORDS.put("⌫", "Bksp");
         WORDS.put("⏎", "Enter");
         WORDS.put("⇧", "Shift");
+        WORDS.put("⇧•", "Shift•");
+        WORDS.put("🔎", "Find");
+        WORDS.put("⌴", "Spc");
     }
 
     private LegacyGlyphs() {

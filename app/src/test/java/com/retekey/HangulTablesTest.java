@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.HangulTables;
 
 /**
  * Exhaustive validation of the ported jamo tables against the Unicode Hangul model. A single wrong

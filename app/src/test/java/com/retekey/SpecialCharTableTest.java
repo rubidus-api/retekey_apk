@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.SpecialCharTable;
+import com.retekey.core.UnicodeEntry;
 
 /**
  * The consonant-plus-Hanja special characters. The rows are the ones a Korean IME has always
@@ -64,6 +66,8 @@ public final class SpecialCharTableTest {
                     1, candidate.codePointCount(0, candidate.length()));
                 assertTrue(UnicodeEntry.labelOf(candidate).startsWith("U+"));
             }
+            assertEquals("no duplicates in " + consonant,
+                row.size(), new java.util.HashSet<>(row).size());
         }
     }
 }

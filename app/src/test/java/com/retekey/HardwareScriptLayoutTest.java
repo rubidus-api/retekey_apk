@@ -6,6 +6,9 @@ import static org.junit.Assert.assertNotNull;
 import java.util.Locale;
 import java.util.TreeSet;
 import org.junit.Test;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.LatinAccents;
+import com.retekey.core.SemanticInput;
 
 /**
  * The physical tables for the layouts that also have a soft page of their own — Turkish F and

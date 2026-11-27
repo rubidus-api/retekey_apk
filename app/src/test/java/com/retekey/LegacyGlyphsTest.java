@@ -20,6 +20,13 @@ public final class LegacyGlyphsTest {
         assertEquals("Bksp", LegacyGlyphs.label("⌫", 19));
         assertEquals("Bksp", LegacyGlyphs.label("⌫", 14));
         assertEquals("Shift", LegacyGlyphs.label("⇧", 14));
+        assertEquals("Shift•", LegacyGlyphs.label("⇧•", 14));
+        assertEquals("Find", LegacyGlyphs.label("🔎", 14));
+        assertEquals("Spc", LegacyGlyphs.label("⌴", 14));
+        assertEquals("v", LegacyGlyphs.label("▾", 14));
+        assertEquals("^", LegacyGlyphs.label("▴", 14));
+        assertEquals("▾", LegacyGlyphs.label("▾", LegacyGlyphs.GLYPHS_FROM));
+        assertEquals("▴", LegacyGlyphs.label("▴", LegacyGlyphs.GLYPHS_FROM));
     }
 
     @Test

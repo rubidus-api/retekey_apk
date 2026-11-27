@@ -164,6 +164,33 @@ public final class UserLayoutTest {
         assertNull(UserLayout.check("a shared sentence").layout());
     }
 
+    @Test
+    public void fourRowsStandaloneCrUnpairedSurrogatesAndSupplementaryCapsAreHandled() {
+        String fourRows = GREEK + "\nrow: x y z";
+        assertNull(UserLayout.parse(fourRows));
+        assertEquals(UserLayout.Problem.NOT_THREE_ROWS, UserLayout.check(fourRows).problem());
+
+        String crOnly = GREEK.replace("\n", "\r");
+        assertTrue(UserLayout.looksLikeOne(crOnly));
+        assertNotNull(UserLayout.parse(crOnly));
+
+        String badSurrogate = GREEK.replace("row: α", "row: \uD800");
+        assertNull(UserLayout.parse(badSurrogate));
+        assertEquals(UserLayout.Problem.INVALID_TEXT, UserLayout.check(badSurrogate).problem());
+
+        String suppCap = String.join("\n",
+            "retekey-layout 1",
+            "name: EmojiCap",
+            "cap: 😀😁😂😃",
+            "row: a b",
+            "row: c d",
+            "row: e f");
+        UserLayout parsed = UserLayout.parse(suppCap);
+        assertNotNull(parsed);
+        assertEquals(3, parsed.cap().codePointCount(0, parsed.cap().length()));
+        assertEquals("😀😁😂", parsed.cap());
+    }
+
     private static String repeat(String s, int times) {
         StringBuilder out = new StringBuilder(s.length() * times);
         for (int i = 0; i < times; i++) {

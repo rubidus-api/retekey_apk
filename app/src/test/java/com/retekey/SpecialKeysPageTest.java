@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.ControlKey;
+import com.retekey.core.RawKey;
+import com.retekey.core.SemanticInput;
 
 /** Page 4: the special-keys page (keypad plus special/function keys), with Num and Fn variants. */
 public final class SpecialKeysPageTest {

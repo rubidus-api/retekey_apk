@@ -1,0 +1,303 @@
+package com.retekey.core;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Where each Latin-script language's letters live on their base keys — as <em>flicks</em>, one per
+ * direction, so no key piles its essentials into a slide-along list (the owner's rule, 2026-08-24:
+ * the digit and symbol holds must never crowd the letters a language cannot do without).
+ *
+ * <p>The directions follow the mark: the acute leans right, the grave leans left, what sits on top
+ * — circumflex, umlaut, a dot, a breve — goes up, and what hangs below or comes second — cedilla,
+ * ogonek, the diaeresis where up is taken, a stroke — goes down. Each entry is four strings, left
+ * up right down, empty where the direction has nothing.
+ */
+public final class LatinAccents {
+    private LatinAccents() {
+    }
+
+    public static final Map<String, String[]> SPANISH = table(
+        "a", " |á| | ",
+        "e", " |é| | ",
+        "i", " |í| | ",
+        "o", " |ó| | ",
+        "u", " |ú| |ü"
+    );
+
+    public static final Map<String, String[]> PORTUGUESE = table(
+        "a", "à|â|á|ã|ª",
+        "e", " |ê|é| ",
+        "i", " |í| | ",
+        "o", " |ô|ó|õ|º",
+        "u", " |ú| |ü",
+        "c", " | | |ç",
+        ".", "«| |»|€"
+    );
+
+    public static final Map<String, String[]> ITALIAN = table(
+        "a", "à| | | ",
+        "e", "è| |é| ",
+        "i", "ì| | | ",
+        "o", "ò| | | ",
+        "u", "ù| | | ",
+        ".", "«| |»|€"
+    );
+
+    public static final Map<String, String[]> POLISH = table(
+        "a", " | | |ą",
+        "c", " | |ć| ",
+        "e", " | | |ę",
+        "l", " | |ł| ",
+        "n", " | |ń| ",
+        "o", " | |ó| ",
+        "s", " | |ś| ",
+        "z", " |ż|ź| ",
+        ".", "„| |”|€"
+    );
+
+    public static final Map<String, String[]> FRENCH = table(
+        "a", "à|â|æ| ",
+        "e", "è|ê|é|ë",
+        "i", " |î| |ï",
+        "o", " |ô|œ| ",
+        "u", "ù|û| |ü",
+        "y", " | | |ÿ",
+        "c", " | | |ç"
+    );
+
+    public static final Map<String, String[]> GERMAN = table(
+        "a", " |ä| | ",
+        "o", " |ö| | ",
+        "u", " |ü| | ",
+        "s", " | | |ß",
+        ".", "„| |“|€"
+    );
+
+    public static final Map<String, String[]> TURKISH = table(
+        "u", " |ü| | ",
+        "o", " |ö| | ",
+        "g", " |ğ| | ",
+        "i", " | | |ı",
+        "s", " | | |ş",
+        "c", " | | |ç",
+        ".", "“| |”|₺"
+    );
+
+    /** Telex is the real way in; the flicks are for anyone who does not know it. */
+    public static final Map<String, String[]> VIETNAMESE = table(
+        "a", " |â| |ă",
+        "e", " |ê| | ",
+        "o", " |ô|ơ| ",
+        "u", " | |ư| ",
+        "d", " | | |đ",
+        ".", "“| |”|₫"
+    );
+
+    /**
+     * Hindi: InScript's Shift layer as the upward flick — matra to vowel, plain to aspirate —
+     * with the families the signs share: candra on ॉ, sibilants on स, nasal signs on ं.
+     */
+    public static final Map<String, String[]> HINDI = table(
+        "ौ", " |औ| | ",
+        "ै", " |ऐ| | ",
+        "ा", " |आ| | ",
+        "ी", " |ई| | ",
+        "ू", " |ऊ| | ",
+        "ब", " |भ| | ",
+        "ह", " |ङ| | ",
+        "ग", " |घ| | ",
+        "द", " |ध| | ",
+        "ज", " |झ| | ",
+        "ो", " |ओ| | ",
+        "े", " |ए| | ",
+        "्", " |अ| | ",
+        "ि", " |इ| | ",
+        "ु", " |उ| | ",
+        "प", " |फ| | ",
+        "र", " |ऱ| | ",
+        "क", " |ख| | ",
+        "त", " |थ| | ",
+        "च", " |छ| | ",
+        "ट", " |ठ| | ",
+        "ड", " |ढ| | ",
+        "म", " |ण| | ",
+        "ल", " |ळ| | ",
+        "स", " |श| |ष",
+        "य", " |य़| | ",
+        "ं", " |ँ| |ः",
+        "ृ", " |ऋ| | ",
+        "़", " |ञ| | ",
+        "ॉ", "ऍ|ऑ| |ॅ",
+        "ऽ", " |ॐ| | ",
+        "।", " |॥| | "
+    );
+
+    /**
+     * Thai: Kedmanee's Shift layer, key for key, as the upward flick; the folded letters ride
+     * their kin sideways and down. ฟ carries its whole family: ๅ left, ฤ up, ฦ right, ฝ down.
+     */
+    /**
+     * Thai Pattachote's shifted half, reached the way Kedmanee's is: an up-flick from the key
+     * that carries the base character. Transcribed with the base layer from Microsoft's KBDTH1
+     * table, key by key, so the pairs are the standard's own pairs.
+     */
+    public static final Map<String, String[]> THAI_PATTACHOTE = table(
+        "\u0E47", " |\u0E4A| | ",
+        "\u0E15", " |\u0E24| | ",
+        "\u0E22", " |\u0E46| | ",
+        "\u0E2D", " |\u0E0D| | ",
+        "\u0E23", " |\u0E29| | ",
+        "\u0E48", " |\u0E36| | ",
+        "\u0E14", " |\u0E1D| | ",
+        "\u0E21", " |\u0E0B| | ",
+        "\u0E27", " |\u0E16| | ",
+        "\u0E41", " |\u0E12| | ",
+        "\u0E43", " |\u0E2F| | ",
+        "\u0E0C", " |\u0E26| | ",
+        "\u0E49", " |\u0E4B| | ",
+        "\u0E17", " |\u0E18| | ",
+        "\u0E07", " |\u0E33| | ",
+        "\u0E01", " |\u0E13| | ",
+        "\u0E31", " |\u0E4C| | ",
+        "\u0E35", " |\u0E37| | ",
+        "\u0E32", " |\u0E1C| | ",
+        "\u0E19", " |\u0E0A| | ",
+        "\u0E40", " |\u0E42| | ",
+        "\u0E44", " |\u0E06| | ",
+        "\u0E02", " |\u0E11| | ",
+        "\u0E1A", " |\u0E0E| | ",
+        "\u0E1B", " |\u0E0F| | ",
+        "\u0E25", " |\u0E10| | ",
+        "\u0E2B", " |\u0E20| | ",
+        // Shift on this key is mai han-akat, not nikhahit: nikhahit sits on the ISO 102nd key,
+        // which a US keyboard does not have, and reading the row one cell early put it here.
+        "\u0E34", " |\u0E31| | ",
+        "\u0E04", " |\u0E28| | ",
+        "\u0E2A", " |\u0E2E| | ",
+        "\u0E30", " |\u0E1F| | ",
+        "\u0E08", " |\u0E09| | ",
+        "\u0E1E", " |\u0E2C| | ");
+
+    public static final Map<String, String[]> THAI = table(
+        "บ", " |ฐ| | ",
+        "ุ", " |ู| | ",
+        "ค", " | | |ฅ",
+        "ข", " | | |ฃ",
+        "ไ", " |\"| |ใ",
+        "ำ", " |ฎ| | ",
+        "พ", " |ฑ| | ",
+        "ะ", " |ธ| | ",
+        "ั", " |ํ| | ",
+        "ี", " |๊| | ",
+        "ร", " |ณ| | ",
+        "น", " |ฯ| | ",
+        "ย", " |ญ| | ",
+        "ล", " |ฬ| | ",
+        "ฟ", "ๅ|ฤ|ฦ|ฝ",
+        "ห", " |ฆ| | ",
+        "ก", " |ฏ| |ง",
+        "ด", " |โ| | ",
+        "เ", " |ฌ| | ",
+        "้", " |็| | ",
+        "่", " |๋| | ",
+        "า", " |ษ| | ",
+        "ส", " |ศ| | ",
+        "ว", " |ซ| | ",
+        "แ", " |ฉ| | ",
+        "อ", " |ฮ| | ",
+        "ิ", " |ฺ| | ",
+        "ื", " |์| | ",
+        "ท", " |?| | ",
+        "ม", " |ฒ| | "
+    );
+
+    /** Russian: the habitual pairs ride up — ё over е, the hard sign over the soft. */
+    public static final Map<String, String[]> RUSSIAN = table(
+        "е", " |ё| | ",
+        "ь", " |ъ| | "
+    );
+
+    /** Ukrainian: ґ rides г. */
+    public static final Map<String, String[]> UKRAINIAN = table(
+        "г", " |ґ| | "
+    );
+
+    /** Arabic: the 101 layout's Shift layer — tashkil and hamza forms — key for key. */
+    public static final Map<String, String[]> ARABIC = table(
+        "ء", " |ْ| | ",
+        "ا", " |أ| | ",
+        "ت", " |ـ| | ",
+        "ث", " |ُ| | ",
+        "ذ", " |ّ| | ",
+        "س", " |ٍ| | ",
+        "ش", " |ِ| | ",
+        "ص", " |ً| | ",
+        "ض", " |َ| | ",
+        "غ", " |إ| | ",
+        "ق", " |ٌ| | ",
+        "ى", " |آ| | "
+    );
+
+    /** Urdu: the phonetic layout's Shift layer, key for key — the paired letters ride up. */
+    public static final Map<String, String[]> URDU = table(
+        "ا", " |آ| | ",
+        "ب", " |ـ| | ",
+        "ت", " |ۃ| | ",
+        "ج", " |چ| | ",
+        "ح", " |خ| | ",
+        "د", " |ڈ| | ",
+        "ر", " |ڑ| | ",
+        "ش", " |ؤ| | ",
+        "ص", " |ض| | ",
+        "ط", " |ظ| | ",
+        "غ", " |ئ| | ",
+        "ل", " |ۂ| | ",
+        "م", " |ژ| | ",
+        "ن", " |ں| | ",
+        "و", " |ز| | ",
+        "ٹ", " |ث| | ",
+        "پ", " |ّ| | ",
+        "ک", " |گ| | ",
+        "ھ", " |ذ| | ",
+        "ہ", " |ء| | ",
+        "ی", " |ي| | ",
+        "ے", " |ۓ| | "
+    );
+
+    /** Armenian: ռ rides ր and the ligature և rides ե. */
+    public static final Map<String, String[]> ARMENIAN = table(
+        "ր", " |ռ| | ",
+        "ե", " |և| | "
+    );
+
+    
+    /** The tonos leans right; the diaeresis goes down; both together go up. */
+    public static final Map<String, String[]> GREEK = table(
+        "α", " | |ά| ",
+        "ε", " | |έ| ",
+        "η", " | |ή| ",
+        "ι", " |ΐ|ί|ϊ",
+        "ο", " | |ό| ",
+        "υ", " |ΰ|ύ|ϋ",
+        "ω", " | |ώ| ",
+        ".", "«| |»|€"
+    );
+
+    /** Pairs of base letter and a left|up|right|down string; a space (or nothing) is an empty way. */
+    private static Map<String, String[]> table(String... pairs) {
+        Map<String, String[]> map = new HashMap<>();
+        for (int i = 0; i + 1 < pairs.length; i += 2) {
+            String[] ways = pairs[i + 1].split("\\|", -1);
+            if (ways.length != 4 && ways.length != 5) {
+                throw new IllegalArgumentException("a flick entry is left|up|right|down[|hold]");
+            }
+            for (int w = 0; w < ways.length; w++) {
+                ways[w] = ways[w].trim();
+            }
+            map.put(pairs[i], ways);
+        }
+        return Collections.unmodifiableMap(map);
+    }
+}

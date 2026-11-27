@@ -1,5 +1,8 @@
 package com.retekey;
 
+import com.retekey.core.ControlKey;
+import com.retekey.core.RawKey;
+
 /**
  * What a slot on the action bar can do.
  *

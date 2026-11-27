@@ -13,7 +13,6 @@ import android.content.SharedPreferences;
  * number the owner can read.
  */
 final class SystemBandSettings {
-    private static final String PREFS = "retekey_view";
     private static final String KEY_TAPPABLE = "system_band_seen_tappable";
     private static final String KEY_NAVIGATION = "system_band_seen_navigation";
     private static final String KEY_NAV_VISIBLE = "system_band_seen_nav_visible";
@@ -24,7 +23,7 @@ final class SystemBandSettings {
     }
 
     private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return AppPrefs.view(context);
     }
 
     static SystemBarInsets.Mode mode(Context context) {
@@ -46,7 +45,16 @@ final class SystemBandSettings {
     static void remember(Context context, int tappable, int navigation, boolean navigationVisible,
             int lift, int reserved) {
         try {
-            prefs(context).edit()
+            SharedPreferences prefs = prefs(context);
+            if (prefs.contains(KEY_RESERVED)
+                    && prefs.getInt(KEY_TAPPABLE, 0) == tappable
+                    && prefs.getInt(KEY_NAVIGATION, 0) == navigation
+                    && prefs.getBoolean(KEY_NAV_VISIBLE, true) == navigationVisible
+                    && prefs.getInt(KEY_LIFT, SystemBarInsets.LIFT_UNKNOWN) == lift
+                    && prefs.getInt(KEY_RESERVED, 0) == reserved) {
+                return;
+            }
+            prefs.edit()
                 .putInt(KEY_TAPPABLE, tappable)
                 .putInt(KEY_NAVIGATION, navigation)
                 .putBoolean(KEY_NAV_VISIBLE, navigationVisible)

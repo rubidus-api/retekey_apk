@@ -3,6 +3,8 @@ package com.retekey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.retekey.core.Scalars;
+import com.retekey.core.UnicodeScalar;
 
 /**
  * A layout somebody else wrote: the letters and what they hold, and nothing else.
@@ -90,7 +92,9 @@ public final class UserLayout {
         /** No {@code name:} line, or an empty one. */
         NO_NAME,
         /** Not the three rows the keyboard's shape asks for. */
-        NOT_THREE_ROWS
+        NOT_THREE_ROWS,
+        /** Text contains unpaired UTF-16 surrogates or invalid Unicode scalars. */
+        INVALID_TEXT
     }
 
     /** What a file turned out to be: the layout, or why it is not one. */
@@ -152,7 +156,9 @@ public final class UserLayout {
             return false;
         }
         String first = withoutByteOrderMark(text).trim();
-        int end = first.indexOf('\n');
+        int lf = first.indexOf('\n');
+        int cr = first.indexOf('\r');
+        int end = lf < 0 ? cr : (cr < 0 ? lf : Math.min(lf, cr));
         if (end >= 0) {
             first = first.substring(0, end);
         }
@@ -183,6 +189,9 @@ public final class UserLayout {
             return new Checked(null, Problem.NOT_A_LAYOUT);
         }
         String body = withoutByteOrderMark(text);
+        if (!UnicodeScalar.isWellFormed(body)) {
+            return new Checked(null, Problem.INVALID_TEXT);
+        }
         if (body.length() > MAX_TEXT) {
             // Asked before the text is split, so a huge file is refused rather than taken apart.
             return new Checked(null, Problem.TOO_BIG);
@@ -208,17 +217,15 @@ public final class UserLayout {
             } else if (line.startsWith("cap:")) {
                 cap = line.substring(4).trim();
             } else if (line.startsWith("row:")) {
-                if (rows.size() < ROWS) {
-                    List<Key> keys = keysOf(line.substring(4).trim());
-                    if (keys == null) {
-                        // A key longer than a key: refused, never cut down to fit (R09).
-                        return new Checked(null, Problem.KEY_TOO_LONG);
-                    }
-                    if (keys.isEmpty()) {
-                        return new Checked(null, Problem.EMPTY_ROW);
-                    }
-                    rows.add(keys);
+                List<Key> keys = keysOf(line.substring(4).trim());
+                if (keys == null) {
+                    // A key longer than a key: refused, never cut down to fit (R09).
+                    return new Checked(null, Problem.KEY_TOO_LONG);
                 }
+                if (keys.isEmpty()) {
+                    return new Checked(null, Problem.EMPTY_ROW);
+                }
+                rows.add(keys);
             }
             // Anything else is a line from a later version of the format: ignored, not refused.
         }
@@ -264,17 +271,20 @@ public final class UserLayout {
     private static String capOf(String cap, String name) {
         String from = cap == null || cap.trim().isEmpty() ? name : cap.trim();
         StringBuilder out = new StringBuilder(3);
-        // By code point: a character outside the basic plane takes two units, and stopping
-        // between them would leave half of it on the key (R08).
-        for (int i = 0; i < from.length() && out.length() < 3;) {
+        int count = 0;
+        // By code point: a character outside the basic plane takes two units, and counting chars
+        // would allow supplementary characters to grow past three glyphs or split halves (R08).
+        for (int i = 0; i < from.length() && count < 3;) {
             int codePoint = from.codePointAt(i);
             if (!Character.isWhitespace(codePoint)) {
                 out.appendCodePoint(codePoint);
+                count++;
             }
             i += Character.charCount(codePoint);
         }
-        while (out.length() < 3) {
+        while (count < 3) {
             out.append('·');
+            count++;
         }
         return out.toString();
     }

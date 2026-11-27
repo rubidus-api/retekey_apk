@@ -3,6 +3,9 @@ package com.retekey;
 import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorTextResult;
+import com.retekey.core.TextReplacement;
 
 /**
  * The kana ゛゜小 key and a Hanja pick replace text the editor already holds: delete what is

@@ -48,6 +48,16 @@ public final class NoteList {
         return new NoteList(new ArrayList<>(notes), new LinkedHashSet<String>(), Sort.MANUAL, true);
     }
 
+    public static NoteList of(List<Note> notes, Sort sort, boolean ascending) {
+        if (sort == null || sort == Sort.MANUAL) {
+            return new NoteList(
+                new ArrayList<>(notes), new LinkedHashSet<String>(), Sort.MANUAL, ascending);
+        }
+        return new NoteList(
+            new ArrayList<>(notes), new LinkedHashSet<String>(), sort, ascending)
+            .sorted(sort, ascending);
+    }
+
     public List<Note> notes() {
         return notes;
     }
@@ -93,7 +103,7 @@ public final class NoteList {
             .sorted(sort, ascending);
     }
 
-    /** Replaces the note with this one's id, leaving the order alone. */
+    /** Replaces the note with this one's id, re-sorting when the active column is titles. */
     public NoteList replaced(Note note) {
         List<Note> next = new ArrayList<>(notes);
         for (int i = 0; i < next.size(); i++) {
@@ -102,7 +112,8 @@ public final class NoteList {
                 break;
             }
         }
-        return new NoteList(next, new LinkedHashSet<>(selected), sort, ascending);
+        NoteList updated = new NoteList(next, new LinkedHashSet<>(selected), sort, ascending);
+        return sort == Sort.TITLE ? updated.sorted(sort, ascending) : updated;
     }
 
     public Note byId(String id) {
@@ -149,10 +160,8 @@ public final class NoteList {
                     return byTitle != 0 ? byTitle : a.stamp().compareTo(b.stamp());
                 }
             };
-        Collections.sort(next, comparator);
-        if (!nextAscending) {
-            Collections.reverse(next);
-        }
+        Collections.sort(next,
+            nextAscending ? comparator : Collections.reverseOrder(comparator));
         return new NoteList(next, new LinkedHashSet<>(selected), column, nextAscending);
     }
 

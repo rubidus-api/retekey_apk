@@ -5,6 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.LatinHardwareMapper;
+import com.retekey.core.SemanticInput;
 
 /** The US-keyboard tables, spot-checked against each language's Windows layout. */
 public final class HardwareLayoutTablesTest {
@@ -57,11 +60,48 @@ public final class HardwareLayoutTablesTest {
 
     @Test
     public void asciiAndDeadKeysAreLeftToTheEditor() {
-        // Greek Q is the question mark ; (ASCII) and OEM_1 the tonos dead key: both delegate.
-        assertNull(type(KeyboardLayoutId.EL_QWERTY, "hardware.key.q", false));
+        // Greek Q types ; / : while OEM_1 is the tonos dead key (delegated).
+        assertEquals(";", type(KeyboardLayoutId.EL_QWERTY, "hardware.key.q", false));
+        assertEquals(":", type(KeyboardLayoutId.EL_QWERTY, "hardware.key.q", true));
         assertNull(type(KeyboardLayoutId.EL_QWERTY, "hardware.keycode.74", false));
         assertNull(type(KeyboardLayoutId.DE_QWERTZ, "hardware.key.q", false));
         assertNull(HardwareLayoutTables.of(KeyboardLayoutId.EN_QWERTY));
         assertNull(HardwareLayoutTables.of(KeyboardLayoutId.PL_QWERTY));
+    }
+
+    @Test
+    public void missingKeysAndCapsLockAreHandledPerLanguage() {
+        assertEquals("i", type(KeyboardLayoutId.TR_QWERTY, "hardware.keycode.75", false));
+        assertEquals("İ", type(KeyboardLayoutId.TR_QWERTY, "hardware.keycode.75", true));
+        assertEquals("I", type(KeyboardLayoutId.TR_QWERTY, "hardware.key.i", true));
+        assertEquals("لا", type(KeyboardLayoutId.AR_101, "hardware.key.b", false));
+        assertEquals("لآ", type(KeyboardLayoutId.AR_101, "hardware.key.b", true));
+        assertEquals("/", type(KeyboardLayoutId.HE_STANDARD, "hardware.key.q", false));
+        assertEquals("'", type(KeyboardLayoutId.HE_STANDARD, "hardware.key.w", false));
+        assertEquals("ґ", type(KeyboardLayoutId.UK_JCUKEN, "hardware.keycode.68", false));
+        assertEquals("Ґ", type(KeyboardLayoutId.UK_JCUKEN, "hardware.keycode.68", true));
+        assertEquals("z", type(KeyboardLayoutId.DE_QWERTZ, "hardware.key.y", false));
+        assertEquals("y", type(KeyboardLayoutId.DE_QWERTZ, "hardware.key.z", false));
+        assertEquals("a", type(KeyboardLayoutId.FR_AZERTY, "hardware.key.q", false));
+        assertEquals("2", type(KeyboardLayoutId.FR_AZERTY, "hardware.keycode.9", true));
+        assertEquals("0", type(KeyboardLayoutId.FR_AZERTY, "hardware.keycode.7", true));
+        assertEquals("ู", type(KeyboardLayoutId.TH_PATTACHOTE, "hardware.keycode.13", false));
+        assertEquals("ุ", type(KeyboardLayoutId.TH_PATTACHOTE, "hardware.keycode.13", true));
+
+        // Caps Lock flips bicameral letters, respects Shift^CapsLock, and ignores digits/symbols/Thai.
+        HardwareSemanticMapper tr = HardwareLayoutTables.of(KeyboardLayoutId.TR_QWERTY);
+        assertEquals("İ", tr.map("hardware.keycode.75", false, true).text());
+        assertEquals("i", tr.map("hardware.keycode.75", true, true).text());
+        assertEquals("I", tr.map("hardware.key.i", false, true).text());
+        assertEquals("Ф", HardwareLayoutTables.of(KeyboardLayoutId.RU_JCUKEN)
+            .map("hardware.key.a", false, true).text());
+        assertEquals("é", HardwareLayoutTables.of(KeyboardLayoutId.FR_AZERTY)
+            .map("hardware.keycode.9", false, true).text());
+        assertEquals("ู", HardwareLayoutTables.of(KeyboardLayoutId.TH_PATTACHOTE)
+            .map("hardware.keycode.13", false, true).text());
+        assertEquals("ض", HardwareLayoutTables.of(KeyboardLayoutId.AR_101)
+            .map("hardware.key.q", false, true).text());
+        assertEquals("A", LatinHardwareMapper.INSTANCE.map("hardware.key.a", false, true).text());
+        assertEquals("a", LatinHardwareMapper.INSTANCE.map("hardware.key.a", true, true).text());
     }
 }

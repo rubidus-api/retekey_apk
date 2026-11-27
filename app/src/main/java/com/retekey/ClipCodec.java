@@ -2,6 +2,7 @@ package com.retekey;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.retekey.core.RecordCodec;
 
 /**
  * How the clip history is written down and read back: two fields a clip — the pin flag and the

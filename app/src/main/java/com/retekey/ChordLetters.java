@@ -2,6 +2,7 @@ package com.retekey;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.retekey.core.RawKey;
 
 /**
  * The Latin letter a key stands for when a soft Ctrl, Alt or Meta is armed. A chord is named by

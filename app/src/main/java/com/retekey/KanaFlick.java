@@ -1,5 +1,7 @@
 package com.retekey;
 
+import com.retekey.core.CheonjiinInterpreter;
+
 /**
  * The Japanese 12-key flick pad, flick-only (Gboard's フリックのみ): a tap is the あ-column kana,
  * a flick is the column the direction names — left い, up う, right え, down お — with no cycling,
@@ -35,7 +37,7 @@ final class KanaFlick {
         "さざ", "しじ", "すず", "せぜ", "そぞ",
         "ただ", "ちぢ", "つづっ", "てで", "とど",
         "はばぱ", "ひびぴ", "ふぶぷ", "へべぺ", "ほぼぽ",
-        "あぁ", "いぃ", "うぅ", "えぇ", "おぉ",
+        "あぁ", "いぃ", "うぅゔ", "えぇ", "おぉ",
         "やゃ", "ゆゅ", "よょ", "わゎ",
     };
 

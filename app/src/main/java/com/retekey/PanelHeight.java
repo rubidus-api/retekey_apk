@@ -50,6 +50,12 @@ final class PanelHeight {
         return Math.max(0, height);
     }
 
+    /** Caps a panel height by a finite MeasureSpec bound while guarding negative inputs. */
+    static int clampToSpec(int height, int specMax) {
+        int clean = Math.max(0, height);
+        return specMax > 0 ? Math.min(clean, specMax) : clean;
+    }
+
     /**
      * The band at the top of the screen, asked of the window first and of the platform's own
      * {@code status_bar_height} when the window cannot answer — which is every device below

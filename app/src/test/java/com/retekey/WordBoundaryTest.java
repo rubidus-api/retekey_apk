@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.WordBoundary;
 
 /** The word the bar's Word button selects, read off the text either side of the cursor. */
 public final class WordBoundaryTest {
@@ -57,5 +58,18 @@ public final class WordBoundaryTest {
         // e + combining acute: the selection must not stop between them.
         WordBoundary word = WordBoundary.of("café", " au lait");
         assertEquals(5, word.before);
+    }
+
+    @Test
+    public void supplementaryPlaneLettersBelongToWords() {
+        // CJK Extension B character (U+20000, 2 UTF-16 code units).
+        String extB = new String(Character.toChars(0x20000));
+        WordBoundary before = WordBoundary.of("hi " + extB + "ab", "cd ");
+        assertEquals(extB.length() + 2, before.before);
+        assertEquals(2, before.after);
+
+        WordBoundary split = WordBoundary.of("hi " + extB, extB + "!");
+        assertEquals(extB.length(), split.before);
+        assertEquals(extB.length(), split.after);
     }
 }

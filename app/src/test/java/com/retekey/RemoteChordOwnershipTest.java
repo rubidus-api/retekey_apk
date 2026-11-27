@@ -8,6 +8,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.KeyAction;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.RawKeyPhase;
+import com.retekey.core.TransitionPlan;
 
 /**
  * A remote-desktop chord presses real modifier keys around the key (manual chapter 15a), so it
@@ -263,6 +276,61 @@ public final class RemoteChordOwnershipTest {
 
         Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
         Assert.assertTrue(bridge.trace().toString().contains("key=ENTER"));
+        Assert.assertEquals(2, result.actionKinds().size());
+        Assert.assertEquals(5, result.operationCount());
+        Assert.assertEquals(2, result.dispatchedMutationCount());
+    }
+
+    @Test
+    public void aPhysicalKeyFramesAllModifiersEvenOnRichEditors() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        KeyAction physicalCtrlC =
+            KeyAction.rawKey(RawKey.C, EnumSet.of(KeyModifier.CTRL), RawKeyPhase.TAP, true);
+        ExecutionResult result = new CheckedEditorExecutor().execute(
+            plan(physicalCtrlC),
+            ExecutionContext.active(1, 0, CURSOR, EditorCapabilities.richText(false, false)),
+            () -> EditorEndpoint.of(1, bridge));
+        Assert.assertEquals(Arrays.asList(CTRL_DOWN, C_DOWN, C_UP, CTRL_UP), bridge.trace());
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+    }
+
+    @Test
+    public void aPhysicalRawKeyHalfHonorsHardwareDressingAndRuntimeFailure() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        KeyAction holdTab = KeyAction.rawKey(
+            RawKey.TAB, EnumSet.noneOf(KeyModifier.class), RawKeyPhase.HOLD, true);
+        ExecutionResult ok = new CheckedEditorExecutor().execute(
+            plan(holdTab),
+            ExecutionContext.active(1, 0, CURSOR, EditorCapabilities.richText(false, false)),
+            () -> EditorEndpoint.of(1, bridge));
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, ok.outcome());
+        Assert.assertEquals(
+            Collections.singletonList("sendRawKey:key=TAB:modifiers=[]:hw:action=DOWN"),
+            bridge.trace());
+
+        FakeEditorBridge failBridge = new FakeEditorBridge();
+        failBridge.throwAt(1);
+        ExecutionResult failed = new CheckedEditorExecutor().execute(
+            plan(holdTab),
+            ExecutionContext.active(1, 0, CURSOR, EditorCapabilities.richText(false, false)),
+            () -> EditorEndpoint.of(1, failBridge));
+        Assert.assertEquals(ExecutionResult.Outcome.UNCERTAIN, failed.outcome());
+        Assert.assertTrue(failed.remoteMutationMayHaveOccurred());
+    }
+
+    @Test
+    public void bothDownAndUpFailingStillPreservesModifierCleanupFailure() {
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.returnAt(2, EditorCallResult.rejected()); // C DOWN
+        bridge.returnAt(3, EditorCallResult.rejected()); // C UP
+        bridge.throwAt(4);                               // CTRL UP cleanup failure
+
+        ExecutionResult result = execute(bridge, new AtomicBoolean(true), CTRL_C);
+
+        assertUncertain(result, ExecutionResult.Reason.OPERATION_FALSE);
+        Assert.assertEquals(
+            ExecutionResult.Reason.OPERATION_RUNTIME_FAILURE, result.cleanupReason());
+        Assert.assertEquals(3, result.cleanupOperationIndex());
     }
 
     private static void assertUncertain(ExecutionResult result, ExecutionResult.Reason reason) {

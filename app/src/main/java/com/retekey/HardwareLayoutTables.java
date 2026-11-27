@@ -2,17 +2,19 @@ package com.retekey;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.SemanticInput;
 
 /**
  * A US physical keyboard typing each layout's language, from the Windows layout of that language
- * (kbdlayout.info's KLC files, read exactly): only the keys whose output is the language's own —
- * non-ASCII — are mapped, so digits, punctuation and plain Latin letters keep doing what the keys
- * say, and dead keys are left alone until there is a composer to serve them (RFC-0011 G2-b) — the
- * Greek tone vowels are the soft keyboard's flicks for now, since the tonos is a dead key.
- * Greek, Hebrew, Thai and Devanagari therefore remap wholesale; German adds its umlauts and ß on
- * the right-hand keys; French puts é è ç à ù where AZERTY has them (the digit row, digits on
- * Shift, as on a real AZERTY); Turkish types ı from the i key the way its own layout does.
- * Persian has a hand-written mapper of its own for the ZWNJ; Korean, Telex and romaji have theirs.
+ * (kbdlayout.info's KLC files, read exactly): entries are registered where the layout differs from
+ * US QWERTY (non-ASCII characters, moved Latin letters/punctuation, and shifted digits/symbols),
+ * while identical US positions are left to delegate and dead keys are left alone until there is a
+ * composer to serve them (RFC-0011 G2-b). Greek, Hebrew, Thai and Devanagari remap wholesale;
+ * German adds its umlauts, ß and QWERTZ y/z swaps; French puts é è ç à ù on the digit row with
+ * digits on Shift plus its AZERTY letter/punctuation swaps; Turkish types ı from the i key and i
+ * from hardware.keycode.75. Persian has a hand-written mapper of its own for the ZWNJ; Korean,
+ * Telex and romaji have theirs.
  */
 final class HardwareLayoutTables {
     private static final Map<KeyboardLayoutId, Map<String, String[]>> TABLES = new HashMap<>();
@@ -228,6 +230,17 @@ final class HardwareLayoutTables {
             "hardware.keycode.55|\u0E30|\u0E1F",
             "hardware.keycode.56|\u0E08|\u0E09",
             "hardware.keycode.76|\u0E1E|\u0E2C",
+            // KBDTH1 digit row (incl. ู/ุ on US 6 / keycode 13)
+            "hardware.keycode.8|=|+",
+            "hardware.keycode.9|\u0E52|\"",
+            "hardware.keycode.10|\u0E53|/",
+            "hardware.keycode.11|\u0E54|,",
+            "hardware.keycode.12|\u0E55|?",
+            "hardware.keycode.13|\u0E39|\u0E38",
+            "hardware.keycode.14|\u0E57|_",
+            "hardware.keycode.15|\u0E58|.",
+            "hardware.keycode.16|\u0E59|(",
+            "hardware.keycode.7|\u0E50|)",
         });
         register(KeyboardLayoutId.EL_QWERTY, new String[] {  // KBDHE, by scan code = US position
             "hardware.key.a|α|Α",
@@ -246,6 +259,7 @@ final class HardwareLayoutTables {
             "hardware.key.n|ν|Ν",
             "hardware.key.o|ο|Ο",
             "hardware.key.p|π|Π",
+            "hardware.key.q|;|:",
             "hardware.key.r|ρ|Ρ",
             "hardware.key.s|σ|Σ",
             "hardware.key.t|τ|Τ",
@@ -273,11 +287,13 @@ final class HardwareLayoutTables {
             "hardware.key.n|מ|",
             "hardware.key.o|ם|",
             "hardware.key.p|פ|",
+            "hardware.key.q|/|",
             "hardware.key.r|ר|",
             "hardware.key.s|ד|",
             "hardware.key.t|א|",
             "hardware.key.u|ו|",
             "hardware.key.v|ה|",
+            "hardware.key.w|'|",
             "hardware.key.x|ס|",
             "hardware.key.y|ט|",
             "hardware.key.z|ז|",
@@ -286,19 +302,36 @@ final class HardwareLayoutTables {
             "hardware.keycode.74|ף|",
         });
         register(KeyboardLayoutId.FR_AZERTY, new String[] {  // KBDFR, by scan code = US position
-            "hardware.keycode.14|è|",
-            "hardware.keycode.16|ç|",
+            "hardware.key.q|a|A",
+            "hardware.key.w|z|Z",
+            "hardware.key.a|q|Q",
+            "hardware.key.z|w|W",
+            "hardware.key.m|,|?",
+            "hardware.keycode.8|&|1",
+            "hardware.keycode.9|é|2",
+            "hardware.keycode.10|\"|3",
+            "hardware.keycode.11|'|4",
+            "hardware.keycode.12|(|5",
+            "hardware.keycode.13|-|6",
+            "hardware.keycode.14|è|7",
+            "hardware.keycode.15|_|8",
+            "hardware.keycode.16|ç|9",
+            "hardware.keycode.7|à|0",
+            "hardware.keycode.55|;|.",
+            "hardware.keycode.56|:|/",
             "hardware.keycode.68|²|",
             "hardware.keycode.69||°",
             "hardware.keycode.72||£",
             "hardware.keycode.73||µ",
+            "hardware.keycode.74|m|M",
             "hardware.keycode.75|ù|",
             "hardware.keycode.76||§",
-            "hardware.keycode.7|à|",
-            "hardware.keycode.9|é|",
         });
         register(KeyboardLayoutId.DE_QWERTZ, new String[] {  // KBDGR, by scan code = US position
+            "hardware.key.y|z|Z",
+            "hardware.key.z|y|Y",
             "hardware.keycode.10||§",
+            "hardware.keycode.56|.|:",
             "hardware.keycode.68||°",
             "hardware.keycode.69|ß|",
             "hardware.keycode.71|ü|Ü",
@@ -306,14 +339,14 @@ final class HardwareLayoutTables {
             "hardware.keycode.75|ä|Ä",
         });
         register(KeyboardLayoutId.TR_QWERTY, new String[] {  // KBDTUQ, by scan code = US position
-            "hardware.key.i|ı|",
+            "hardware.key.i|ı|I",
             "hardware.keycode.55|ö|Ö",
             "hardware.keycode.56|ç|Ç",
             "hardware.keycode.68||é",
             "hardware.keycode.71|ğ|Ğ",
             "hardware.keycode.72|ü|Ü",
             "hardware.keycode.74|ş|Ş",
-            "hardware.keycode.75||İ",
+            "hardware.keycode.75|i|İ",
         });
         register(KeyboardLayoutId.ES_QWERTY, new String[] {  // KBDSP, by scan code = US position
             "hardware.keycode.10||·",
@@ -488,7 +521,7 @@ final class HardwareLayoutTables {
             "hardware.keycode.10||№",
             "hardware.keycode.55|б|Б",
             "hardware.keycode.56|ю|Ю",
-            "hardware.keycode.68|ё|Ё",
+            "hardware.keycode.68|ґ|Ґ",
             "hardware.keycode.71|х|Х",
             "hardware.keycode.72|ї|Ї",
             "hardware.keycode.74|ж|Ж",
@@ -605,6 +638,7 @@ final class HardwareLayoutTables {
         });
         register(KeyboardLayoutId.AR_101, new String[] {  // KBDA1, by scan code = US position
             "hardware.key.a|ش|ِ",
+            "hardware.key.b|لا|لآ",
             "hardware.key.c|ؤ|",
             "hardware.key.d|ي|",
             "hardware.key.e|ث|ُ",
@@ -805,13 +839,39 @@ final class HardwareLayoutTables {
         if (table == null) {
             return null;
         }
-        return (stableKeyId, shift) -> {
-            String[] pair = stableKeyId == null ? null : table.get(stableKeyId);
-            if (pair == null) {
-                return null;
+        return new HardwareSemanticMapper() {
+            @Override
+            public SemanticInput map(String stableKeyId, boolean shift) {
+                return map(stableKeyId, shift, false);
             }
-            String text = pair[shift ? 1 : 0];
-            return text == null ? null : SemanticInput.text(text);
+
+            @Override
+            public SemanticInput map(String stableKeyId, boolean shift, boolean capsLock) {
+                String[] pair = stableKeyId == null ? null : table.get(stableKeyId);
+                if (pair == null) {
+                    return null;
+                }
+                boolean effectiveShift = isCasedLetterPair(pair) ? (shift ^ capsLock) : shift;
+                String text = pair[effectiveShift ? 1 : 0];
+                return text == null ? null : SemanticInput.text(text);
+            }
         };
+    }
+
+    private static boolean isCasedLetterPair(String[] pair) {
+        String lower = pair[0];
+        String upper = pair[1];
+        if (lower == null || upper == null || lower.equals(upper)) {
+            return false;
+        }
+        if (lower.codePointCount(0, lower.length()) != 1
+                || upper.codePointCount(0, upper.length()) != 1) {
+            return false;
+        }
+        int cp0 = lower.codePointAt(0);
+        int cp1 = upper.codePointAt(0);
+        return Character.isLetter(cp0) && Character.isLetter(cp1)
+            && ((Character.isLowerCase(cp0) && Character.isUpperCase(cp1))
+                || (Character.isUpperCase(cp0) && Character.isLowerCase(cp1)));
     }
 }

@@ -81,4 +81,10 @@ public final class ActionBarHeightSettingsTest {
         assertFalse(ActionBarHeightSettings.isKey(
             ScreenOrientation.PORTRAIT.key(KeyGapSettings.KEY_CELL_PERCENT)));
     }
+
+    @Test
+    public void tinyOrNegativeFaceHeightClampsToPositivePixels() {
+        assertEquals(1.0f, ActionBarHeightSettings.labelPx(20, 80, 30.0f, 0), 0.01f);
+        assertEquals(1.0f, ActionBarHeightSettings.labelPx(20, 80, 30.0f, -10), 0.01f);
+    }
 }

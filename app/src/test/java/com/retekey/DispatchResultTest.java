@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.KeyAction;
 
 public final class DispatchResultTest {
     @Test

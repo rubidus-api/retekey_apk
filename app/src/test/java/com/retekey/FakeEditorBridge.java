@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorBridge;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorTextResult;
+import com.retekey.core.RawEditorKey;
 
 final class FakeEditorBridge implements EditorBridge {
     private final List<String> trace = new ArrayList<>();

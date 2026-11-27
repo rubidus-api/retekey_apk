@@ -85,4 +85,22 @@ public final class SortedIndexTest {
         assertNull(index.find("k099"));
         assertNull(index.find("k400"));
     }
+
+    @Test
+    public void respectsBufferSliceOffsetAndCrlfLineEndings() {
+        byte[] prefix = "JUNK_HEADER".getBytes(StandardCharsets.UTF_8);
+        String body = "#h\r\n#!maxkey 2\r\n가\t佳\r\n학교\t學校\r\n";
+        byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+        byte[] combined = new byte[prefix.length + bodyBytes.length];
+        System.arraycopy(prefix, 0, combined, 0, prefix.length);
+        System.arraycopy(bodyBytes, 0, combined, prefix.length, bodyBytes.length);
+
+        ByteBuffer buf = ByteBuffer.wrap(combined);
+        buf.position(prefix.length);
+        SortedIndex index = SortedIndex.over(buf);
+
+        assertEquals(2, index.maxKeyLength());
+        assertEquals("佳", index.find("가"));
+        assertEquals("學校", index.find("학교"));
+    }
 }

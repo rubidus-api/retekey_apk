@@ -2671,6 +2671,22 @@ Ctrl, Meta, Alt, Tab 이 자기에게 맞춰진 글자보다 좁아진 면 밖�
 **규칙.** 기능이 이벤트가 무엇을 싣는가가 아니라 어떤 모양인가에 달려 있으면 모양을 시험할 것. 받는 쪽이
 본 이벤트(출처, 스캔 코드, meta)를 기록할 것. 그 결과로 생긴 글자만 보지 말 것.
 
+### 15.73 플래그 하나가 두 가지 다른 편집기를 실어 나른 일
+
+**벌어진 일.** 터미널과 원격 데스크톱 클라이언트가 모두 같은 불리언(`deleteByKeyEvents`)으로 분류되었다. 한쪽을 위한 분기가 다른 쪽으로 새어 나가 터미널의 빈 삭제 계획·음절 되돌리기 오작동이나, 패키지 허용 목록 밖 원격 데스크톱 클라이언트에서의 수식키 프레이밍 누락(`ReteKeyImeService` / `CheckedEditorExecutor`)을 일으켰다.
+
+**고친 방법.** `EditorCapabilities.EditorKind`(`RICH_TEXT`, `REMOTE_DESKTOP`, `TERMINAL`, `UNSUPPORTED`)를 삭제 수단(`DeletionMode`)과 분리했다. 또한 동작 자체가 물리 키 입력으로 표시된 경우(`KeyAction.isPhysical()`) 패키지 허용 목록과 무관하게 하드웨어 수식키 DOWN/UP 프레이밍을 적용한다.
+
+**규칙.** 두 종류의 편집기가 같은 우회로를 공유하더라도 목적이 다르면 `EditorKind` 로 먼저 구분하고 분기할 것.
+
+### 15.74 정상 경로가 지나지 않던 모서리를 짚어 낸 감사
+
+**벌어진 일.** 전체 소스코드 감사(`rfc-0013`)에서 평범한 입력 테스트가 놓치던 경계 결함이 드러났다: `BarSlot.oneLine()`, `ClipboardPanelView`, `NotepadView` 의 UTF-16 서로게이트 쌍 절단; `BarSlotCodec` 의 구분자 취약성과 손상된 v2 저장소 백업 시 반복 `commit()`; 방향별 설정 초기화 시 레거시 키 잔존 및 `"retekey_view"` 실시간 반영 누락; `<clinit>` 에서의 전체 레이아웃 즉시 생성과 `FlowRow` 그리기 할당; TalkBack 가상 키보드 접근성 노드 부재; `InstrumentedReteKeyImeService` 의 리플렉션 의존성.
+
+**고친 방법.** `Scalars.truncate` 와 `NotepadKeys` 코드포인트 단위로 서로게이트 안전성을 보장하고, `BarSlotCodec` 을 길이 접두사 `RecordCodec` 및 단발성 `StoreMigration` 백업으로 통합했다. 설정 접근·실시간 갱신을 `AppPrefs` 로 모으고, `KeyboardLayouts` 지연 생성·`FlowRowMath.linesInto` 무할당 측정·API 16+ `KeyboardAccessibilityProvider` 가상 접근성 트리·`*ForTest` 테스트 심을 도입했으며, 순수 Java 코어를 `com.retekey.core` 패키지로 분리하고 `ops/scripts/project-check.sh` 로 `import android.*` 금지를 기계적으로 강제했다.
+
+**규칙.** 주석에만 적힌 경계는 무너진다. 코어 순수성, 서로게이트 안전성, 길이 접두사 저장 형식, 타입 검증된 테스트 심을 기계적으로 강제할 것.
+
 ## 15a. 원격 데스크톱 편집기: 뒤에 편집기가 없는 전선
 
 원격 데스크톱 클라이언트(Microsoft Remote Desktop, Chrome Remote Desktop)는 여느 편집기처럼

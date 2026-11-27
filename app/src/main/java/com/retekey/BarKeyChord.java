@@ -2,6 +2,8 @@ package com.retekey;
 
 import java.util.EnumSet;
 import java.util.Set;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /**
  * How an action-bar text slot is sent when modifiers are down. A slot that types one letter or
@@ -59,6 +61,19 @@ final class BarKeyChord {
         if (c == ' ') {
             return RawKey.SPACE;
         }
-        return null;
+        switch (c) {
+            case '`': return RawKey.GRAVE;
+            case '-': return RawKey.MINUS;
+            case '=': return RawKey.EQUALS;
+            case '[': return RawKey.LEFT_BRACKET;
+            case ']': return RawKey.RIGHT_BRACKET;
+            case '\\': return RawKey.BACKSLASH;
+            case ';': return RawKey.SEMICOLON;
+            case '\'': return RawKey.APOSTROPHE;
+            case ',': return RawKey.COMMA;
+            case '.': return RawKey.PERIOD;
+            case '/': return RawKey.SLASH;
+            default: return null;
+        }
     }
 }

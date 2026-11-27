@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.ControlKey;
+import com.retekey.core.RawKey;
+import com.retekey.core.SemanticInput;
 
 /** Page 3: the special-characters page, reached by holding the period. Every key commits text. */
 public final class SpecialCharsPageTest {

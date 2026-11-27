@@ -51,4 +51,22 @@ public final class KeyLabelContrastTest {
     public void aChannelOutsideAByteIsRejected() {
         KeyLabelContrast.relativeLuminance(0, 256, 0);
     }
+
+    @Test
+    public void inverseInkHasOppositePolarityFromOrdinaryText() {
+        // Light theme: ordinary text is dark (28,30,34), so inverse must be light (false).
+        assertFalse(KeyLabelContrast.inversePrefersDarkInk(28, 30, 34));
+        // Dark theme: ordinary text is light (230,233,239), so inverse must be dark (true).
+        assertTrue(KeyLabelContrast.inversePrefersDarkInk(230, 233, 239));
+
+        // Light theme on deep blue fill (28,90,168): needs light inverse ink.
+        assertTrue(KeyLabelContrast.useInverseInk(28, 90, 168, 28, 30, 34));
+        // Light theme on pale armed blue (138,180,232): ordinary dark ink stays readable.
+        assertFalse(KeyLabelContrast.useInverseInk(138, 180, 232, 28, 30, 34));
+
+        // Dark theme on vivid blue fill (86,150,224): needs dark inverse ink.
+        assertTrue(KeyLabelContrast.useInverseInk(86, 150, 224, 230, 233, 239));
+        // Dark theme on deep armed blue (48,78,116): ordinary light ink stays readable.
+        assertFalse(KeyLabelContrast.useInverseInk(48, 78, 116, 230, 233, 239));
+    }
 }

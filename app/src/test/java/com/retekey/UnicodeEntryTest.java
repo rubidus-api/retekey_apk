@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.UnicodeEntry;
 
 /** Typing a character by its code point: what the digits mean, and what they never mean. */
 public final class UnicodeEntryTest {
@@ -60,12 +61,21 @@ public final class UnicodeEntryTest {
         assertFalse(UnicodeEntry.isTypable(0xDFFF));
         assertFalse(UnicodeEntry.isTypable(0x110000));
         assertFalse(UnicodeEntry.isTypable(-1));
+        assertFalse(UnicodeEntry.isTypable(0));
         assertTrue(UnicodeEntry.isTypable(0x10FFFF));
         assertTrue(UnicodeEntry.isTypable(0x41));
 
         UnicodeEntry surrogate = UnicodeEntry.empty().append('d').append('8').append('0').append('0');
         assertEquals(-1, surrogate.codePoint());
         assertNull(surrogate.character());
+        UnicodeEntry nul = UnicodeEntry.empty().append('0').append('0').append('0').append('0');
+        assertEquals(-1, nul.codePoint());
+        assertNull(nul.character());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void labelRejectsNegativeCodePoint() {
+        UnicodeEntry.label(-1);
     }
 
     @Test

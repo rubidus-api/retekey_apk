@@ -137,4 +137,20 @@ public final class MappedHanjaTableTest {
         assertNull(empty.longestSuffixMatch("가", 8));
         assertNull(empty.longestSuffixReverseMatch("佳", 8));
     }
+
+    @Test
+    public void supplementaryPlaneHanjaMatchesByCodePointWithoutSplittingSurrogates() {
+        String supp = new String(Character.toChars(0x20000)); // CJK Extension B, length 2 in UTF-16
+        ByteBuffer fwd = ByteBuffer.wrap("#!maxkey 2\n".getBytes(StandardCharsets.UTF_8));
+        ByteBuffer rev = ByteBuffer.wrap(
+            ("#!maxkey 2\n" + supp + "\t일\n").getBytes(StandardCharsets.UTF_8));
+        MappedHanjaTable table = new MappedHanjaTable(
+            SortedIndex.over(fwd), SortedIndex.over(rev), SortedIndex.empty());
+
+        HanjaTable.Match match = table.longestSuffixReverseMatch("a" + supp, 1);
+        assertTrue(match != null);
+        assertEquals(supp, match.reading);
+        assertEquals(2, match.length);
+        assertEquals(java.util.Collections.singletonList("일"), match.candidates);
+    }
 }

@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.EnumSet;
 import java.util.Set;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKeyModifiers;
 
 /** What an arrow, Home or Page Down is sent with. */
 public final class RawKeyModifiersTest {

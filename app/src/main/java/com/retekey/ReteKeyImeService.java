@@ -18,6 +18,49 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import com.retekey.core.ControlKey;
+import com.retekey.core.CursorMovePolicy;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.DubeolsikHardwareMapper;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorBoundsPredictor;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.HangulComposer;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.IdleSyllableSettle;
+import com.retekey.core.InputDispatcher;
+import com.retekey.core.InputSessionController;
+import com.retekey.core.IpaPanel;
+import com.retekey.core.KeyAction;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.KeyRepeatSettings;
+import com.retekey.core.LatinComposer;
+import com.retekey.core.LatinHardwareMapper;
+import com.retekey.core.MaterializedCompositionPolicy;
+import com.retekey.core.MaterializedCursorMoves;
+import com.retekey.core.ModifierChordPolicy;
+import com.retekey.core.NumericFieldPolicy;
+import com.retekey.core.PersianHardwareMapper;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.RawKey;
+import com.retekey.core.RawKeyPhase;
+import com.retekey.core.RomajiKanaComposer;
+import com.retekey.core.Scalars;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SoftKeyboardVisibilityPolicy;
+import com.retekey.core.SpecialCharTable;
+import com.retekey.core.SynchronizationState;
+import com.retekey.core.TelexComposer;
+import com.retekey.core.TerminalCompositionSettings;
+import com.retekey.core.TerminalHardwareKeys;
+import com.retekey.core.TextReplacement;
+import com.retekey.core.TransitionPlan;
+import com.retekey.core.UnicodeEntry;
+import com.retekey.core.WordBoundary;
 
 public class ReteKeyImeService extends InputMethodService {
     private final HangulInputProcessor inputProcessor =
@@ -47,6 +90,8 @@ public class ReteKeyImeService extends InputMethodService {
     private IpaPanel ipaPanel;
     /** Physical keys whose down the panel used up, so their up is not handed to the app. */
     private final java.util.Set<Integer> keysOwnedByIpaPanel = new java.util.HashSet<>();
+    /** Physical keys whose down was handled by a service UI/shortcut, so their up is too. */
+    private final java.util.Set<Integer> consumedServiceKeys = new java.util.HashSet<>();
     /** Whether a clip on the clipboard may be kept when nobody asked (review R18). */
     private final ClipRetentionGuard clipGuard = new ClipRetentionGuard();
     /** Settings by name while the user has not unlocked yet: in memory only (review R04). */
@@ -98,7 +143,10 @@ public class ReteKeyImeService extends InputMethodService {
     /** Modifier keys held on a physical keyboard, for action-bar keys pressed meanwhile. */
     private final HeldHardwareModifiers heldHardware = new HeldHardwareModifiers();
     /** Hears when a keyboard is unplugged, so what it held is not believed afterwards. */
-    private android.hardware.input.InputManager.InputDeviceListener deviceListener;
+    private InputDeviceWatcher deviceWatcher;
+    /** Whether the focused editor requested a numeric keypad, preserved across view rebuilds. */
+    private boolean numericField;
+    private enum ActivePanel { NONE, IPA, HANJA, UNICODE, CLIPBOARD, NOTEPAD }
     /** The modifiers the action-bar press under the finger was made with, or null between presses. */
     private java.util.Set<KeyModifier> pressModifiers;
     private boolean composingStripShown;
@@ -113,12 +161,24 @@ public class ReteKeyImeService extends InputMethodService {
      * some other reason — a rotation, a restart — which is exactly what it looked like on a Note 20.
      */
     private final SharedPreferences.OnSharedPreferenceChangeListener barPrefsListener =
-        (changed, key) -> {
-            if (ActionBarSlots.KEY_ENABLED.equals(key) || ActionBarSlots.KEY_SLOTS.equals(key)
-                    || ActionBarHeightSettings.isKey(key) || ActionBarPosition.isKey(key)) {
-                rebuildInputView();
+        (changed, key) -> onViewPrefChanged(key);
+
+    private void onViewPrefChanged(String key) {
+        if (AppPrefs.requiresInputViewRebuild(key)) {
+            rebuildInputView();
+        } else if (AppPrefs.requiresOpacityRefresh(key)) {
+            if (floatingFrame != null) {
+                ScreenOrientation orientation =
+                    builtFor != null ? builtFor : OrientedPrefs.current(this);
+                floatingFrame.setOpacityPercent(
+                    FloatingKeyboardSettings.opacityPercent(viewPrefs(), orientation));
             }
-        };
+        } else if (AppPrefs.requiresBandRefresh(key)) {
+            if (bandFrame != null) {
+                bandFrame.refreshBand();
+            }
+        }
+    }
 
     /** The clipboard panel while it is open, or null. */
     private ClipboardPanelView clipboardPanel;
@@ -126,6 +186,10 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean builtWithBar;
     /** Which side of the keys the action bar was placed on in the current input view. */
     private ActionBarPosition builtBarPosition = ActionBarPosition.ABOVE;
+    private boolean pendingBuiltWithBar;
+    private ActionBarPosition pendingBuiltBarPosition = ActionBarPosition.ABOVE;
+    private int builtUiMode;
+    private boolean pendingViewRebuild;
     /** The frame that reserves the system's bottom band, so it can be asked to measure again. */
     private SystemBandFrame bandFrame;
     /** What the keyboard remembers of what was cut and copied through it. */
@@ -143,6 +207,12 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public View onCreateInputView() {
+        View root = createBandFrame();
+        commitBuiltSnapshot();
+        return root;
+    }
+
+    private View createBandFrame() {
         // Everything the IME shows goes inside the band frame, which keeps the system's own bottom
         // buttons — hide keyboard, switch keyboard — off the keys. Issue #1: without it the bottom
         // row is drawn underneath them and cannot be pressed at all.
@@ -150,8 +220,17 @@ public class ReteKeyImeService extends InputMethodService {
         return bandFrame;
     }
 
+    private void commitBuiltSnapshot() {
+        builtWithBar = pendingBuiltWithBar;
+        builtBarPosition = pendingBuiltBarPosition;
+        builtUiMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        pendingViewRebuild = false;
+    }
+
     private View buildInputView() {
         builtFor = OrientedPrefs.current(this);
+        pendingBuiltWithBar = false;
+        pendingBuiltBarPosition = ActionBarPosition.ABOVE;
         // Whatever candidate view the last build made belongs to a tree that is going away. A
         // branch below that shows candidates makes its own; left pointing at the old one, the
         // phonetic search updated a view no longer on screen and took every letter into a query
@@ -177,6 +256,7 @@ public class ReteKeyImeService extends InputMethodService {
         keyboardView.setOnThemeCycle(this::cycleTheme);
         keyboardView.setOnKanaModifier(this::applyKanaModifier);
         keyboardView.setOnLayoutChanged(this::announceLayout);
+        keyboardView.setNumericField(numericField);
         if (unicodeEntry != null && !unicodeFloating) {
             // The pad docked in place of the keys (issue #14): a rebuild must not drop it.
             keyboardView.setUnicodeEntry(true);
@@ -196,7 +276,7 @@ public class ReteKeyImeService extends InputMethodService {
             });
             hanjaView.setOnDismiss(this::endIpaPanel);
             hanjaView.show(pendingReading, pendingCandidates);
-            return new PanelFrame(this, hanjaView, withActionBar(keyboardView));
+            return new PanelFrame(this, hanjaView, withActionBar(keyboardView), true);
         }
         if (hanjaDocked) {
             // Following a docked keyboard: the list sits above it the way the phonetic search's
@@ -210,31 +290,24 @@ public class ReteKeyImeService extends InputMethodService {
             });
             hanjaView.setOnDismiss(this::hideHanjaCandidates);
             hanjaView.show(pendingReading, pendingCandidates);
-            return new PanelFrame(this, hanjaView, withActionBar(keyboardView));
+            return new PanelFrame(this, hanjaView, withActionBar(keyboardView), true);
         }
         if (clipboardPanel != null) {
             // The clipboard owns the window while it is open, the way the notepad does.
             floatingFrame = null;
-            return new PanelFrame(this, buildClipboardPanel(), withActionBar(keyboardView));
+            return new PanelFrame(this, buildClipboardPanel(), withActionBar(keyboardView), false);
         }
         if (notepad != null) {
             // The notepad owns the window while it is open: the keyboard keeps its height at the
             // bottom and the panel takes the rest of the screen.
             floatingFrame = null;
             NotepadView panel = buildNotepad();
-            return new NotepadFrame(this, panel, withActionBar(keyboardView));
+            return new PanelFrame(this, panel, withActionBar(keyboardView), false);
         }
         if (!floatingMode) {
             floatingFrame = null;
             return withActionBar(keyboardView);
         }
-        // The bar rides on the floating panel too: it is part of the keyboard, not part of being
-        // docked, and a floating keyboard is where reaching for the menu page costs most.
-        floatingFrame = new FloatingKeyboardFrame(this, withActionBar(keyboardView));
-        // One opacity for floating panels, whichever panel it is: how see-through something
-        // hovering over your document should be is a single preference, not one per panel.
-        floatingFrame.setOpacityPercent(
-            FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         if (hanjaFloating) {
             hanjaView = new HanjaCandidatesView(this);
             hanjaView.setOnPick(value -> {
@@ -258,7 +331,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
             if (hanjaBounds == null) {
                 hanjaBounds = FloatingKeyboardSettings.load(
-                    viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX);
+                    viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX, builtFor);
             }
             floatingFrame.setOnBoundsChanged(this::onHanjaBoundsChanged);
             if (hanjaBounds != null) {
@@ -266,6 +339,13 @@ public class ReteKeyImeService extends InputMethodService {
             }
             return floatingFrame;
         }
+        // The bar rides on the floating panel too: it is part of the keyboard, not part of being
+        // docked, and a floating keyboard is where reaching for the menu page costs most.
+        floatingFrame = new FloatingKeyboardFrame(this, withActionBar(keyboardView));
+        // One opacity for floating panels, whichever panel it is: how see-through something
+        // hovering over your document should be is a single preference, not one per panel.
+        floatingFrame.setOpacityPercent(
+            FloatingKeyboardSettings.opacityPercent(viewPrefs(), OrientedPrefs.current(this)));
         if (unicodeFloating) {
             keyboardView.setUnicodeEntry(true);
             // The pad's ✕ is the way out of the entry, not a way to turn the floating keyboard off.
@@ -276,7 +356,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
             if (unicodeBounds == null) {
                 unicodeBounds = FloatingKeyboardSettings.load(
-                    viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX);
+                    viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX, builtFor);
             }
             floatingFrame.setOnBoundsChanged(this::onUnicodeBoundsChanged);
             if (unicodeBounds != null) {
@@ -285,7 +365,7 @@ public class ReteKeyImeService extends InputMethodService {
             return floatingFrame;
         }
         if (floatingBounds == null) {
-            floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
+            floatingBounds = FloatingKeyboardSettings.load(viewPrefs(), builtFor);
         }
         floatingFrame.setOnClose(this::leaveFloatingMode);
         floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
@@ -305,7 +385,8 @@ public class ReteKeyImeService extends InputMethodService {
     /** Gives the floating frame the floating keyboard's place, and moves the keyboard with it. */
     private void placeLikeTheKeyboard() {
         if (floatingBounds == null) {
-            floatingBounds = FloatingKeyboardSettings.load(viewPrefs());
+            ScreenOrientation orientation = builtFor != null ? builtFor : OrientedPrefs.current(this);
+            floatingBounds = FloatingKeyboardSettings.load(viewPrefs(), orientation);
         }
         floatingFrame.setOnBoundsChanged(this::onFloatingBoundsChanged);
         if (floatingBounds != null) {
@@ -317,12 +398,17 @@ public class ReteKeyImeService extends InputMethodService {
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         ScreenOrientation now = OrientedPrefs.current(this);
-        if (now == builtFor || keyboardView == null) {
+        int uiMode = newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        if (keyboardView == null || (now == builtFor && uiMode == builtUiMode)) {
             return;
         }
-        // Turning the device sideways is a different keyboard: its height, the layouts the globe
-        // key visits, and whether there is a floating panel at all are settings of their own.
-        setInputView(onCreateInputView());
+        if (now != builtFor) {
+            floatingBounds = null;
+            unicodeBounds = null;
+            hanjaBounds = null;
+        }
+        // Turning the device sideways or switching system dark/light theme changes the view.
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -332,14 +418,14 @@ public class ReteKeyImeService extends InputMethodService {
      * kept visible while typing instead of behind a page change.
      */
     private View withActionBar(ReteKeyboardView keyboard) {
-        builtWithBar = viewPrefs().getBoolean(
+        pendingBuiltWithBar = viewPrefs().getBoolean(
             ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED);
-        if (!builtWithBar) {
+        if (!pendingBuiltWithBar) {
             return keyboard;
         }
         ActionBarPosition position = actionBarPosition(
             builtFor != null ? builtFor : OrientedPrefs.current(this));
-        builtBarPosition = position;
+        pendingBuiltBarPosition = position;
         ActionBarView bar = new ActionBarView(this);
         bar.setSlots(ActionBarSlots.parse(viewPrefs().getString(ActionBarSlots.KEY_SLOTS, null)));
         bar.setRepeatTimings(
@@ -548,6 +634,10 @@ public class ReteKeyImeService extends InputMethodService {
         if (inputConnection == null || !mayReadEditorText()) {
             return;
         }
+        if (inputProcessor.isComposing()) {
+            finishComposingInEditor();
+            inputProcessor.reset();
+        }
         CharSequence before = inputConnection.getTextBeforeCursor(WORD_LOOKAROUND, 0);
         CharSequence after = inputConnection.getTextAfterCursor(WORD_LOOKAROUND, 0);
         WordBoundary word = WordBoundary.of(before, after);
@@ -560,9 +650,9 @@ public class ReteKeyImeService extends InputMethodService {
             // selection, and guessing one would select somewhere else entirely.
             return;
         }
-        int cursor = bounds.selectionEnd();
         inputConnection.setSelection(
-            Math.max(0, cursor - word.before), cursor + word.after);
+            Math.max(0, bounds.selectionLowerBound() - word.before),
+            bounds.selectionUpperBound() + word.after);
     }
 
     /**
@@ -614,44 +704,56 @@ public class ReteKeyImeService extends InputMethodService {
                 text, isMarkedSensitive(data), android.os.SystemClock.uptimeMillis());
             boolean sensitive = !guardKeeps
                 || (fromThisField && editorProfile.capabilities().isSensitive());
-            // The list lives in storage; the first record after the keyboard starts has to add to
-            // it, not to an empty one it would then write over the whole saved history with.
-            loadClipsOnce();
-            if (text != null && text.toString().equals(forgottenClip)) {
+            // Re-read storage so edits from Settings are never overwritten by a stale cache.
+            freshClips();
+            String normalized = normalizedClip(text);
+            if (normalized != null && normalized.equals(forgottenClip)) {
                 // Taken off the list on purpose while it is still on the clipboard: leave it off
                 // until the clipboard moves on to something else.
                 return;
             }
             ClipHistory before = clips;
             ClipHistory updated = clips.record(text, sensitive);
-            if (updated != before && clipboardPanel != null) {
-                clipboardPanel.show(updated.clips());
-            }
             if (updated != clips) {
                 clips = updated;
                 ClipStore.save(this, clips);
+            }
+            if (updated != before && clipboardPanel != null) {
+                showPanelLists(clipboardPanel);
             }
         } catch (RuntimeException ignored) {
             // Reading the clipboard is best-effort: a ROM that refuses must not break Copy.
         }
     }
 
-    private void loadClipsOnce() {
-        if (!clipsLoaded) {
-            clips = ClipStore.load(this);
-            clipsLoaded = true;
+    private static String normalizedClip(CharSequence text) {
+        if (text == null) {
+            return null;
+        }
+        return Scalars.truncate(text.toString(), ClipHistory.MAX_LENGTH);
+    }
+
+    private String currentNormalizedSystemClip() {
+        try {
+            android.content.ClipboardManager manager = Compat.systemService(
+                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+            if (manager == null || !manager.hasPrimaryClip()) {
+                return null;
+            }
+            android.content.ClipData data = manager.getPrimaryClip();
+            if (data == null || data.getItemCount() == 0) {
+                return null;
+            }
+            return normalizedClip(data.getItemAt(0).coerceToText(this));
+        } catch (RuntimeException ignored) {
+            return null;
         }
     }
 
     /** Whether the app that copied this marked it private (Android 13's sensitive-content flag). */
     private static boolean isMarkedSensitive(android.content.ClipData data) {
-        android.content.ClipDescription description = data.getDescription();
-        if (description == null || android.os.Build.VERSION.SDK_INT < 24) {
-            return false;
-        }
-        android.os.PersistableBundle extras = description.getExtras();
-        return extras != null && (extras.getBoolean("android.content.extra.IS_SENSITIVE", false)
-            || extras.getBoolean("android.clipboard.extra.IS_SENSITIVE", false));
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+            && ClipSensitivityCompat.isMarkedSensitive(data);
     }
 
     /** How long the editor is given to act on a cut or copy before the clipboard is read. */
@@ -663,8 +765,8 @@ public class ReteKeyImeService extends InputMethodService {
             closeClipboardPanel();
             return;
         }
-        // One panel at a time: the clipboard takes the notepad's place rather than hiding it.
-        putNotepadAway();
+        // One panel at a time: clear any other panel so the clipboard never hides behind it.
+        clearOtherPanels(ActivePanel.CLIPBOARD);
         clips = ClipStore.load(this);
         clipsLoaded = true;
         stash = StashStore.loadPruned(this);
@@ -672,13 +774,13 @@ public class ReteKeyImeService extends InputMethodService {
         // see, whether or not the keyboard was watching when it was copied.
         recordSystemClip(false);
         clipboardPanel = new ClipboardPanelView(this);
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
     private void closeClipboardPanel() {
         clipboardPanel = null;
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -702,8 +804,7 @@ public class ReteKeyImeService extends InputMethodService {
                 // The picked clip becomes the clipboard as well, so the app's own Paste and the
                 // next paste elsewhere agree with what was just chosen.
                 putOnSystemClipboard(text);
-                dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-                    "touch.bar.clip.paste", SemanticInput.text(text)));
+                dispatchSafeText("touch.bar.clip.paste", text);
                 closeClipboardPanel();
             }
 
@@ -716,7 +817,7 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onForget(String text) {
-                forgottenClip = text;
+                forgottenClip = normalizedClip(text);
                 clips = freshClips().remove(text);
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
@@ -724,6 +825,7 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onClearAll() {
+                forgottenClip = currentNormalizedSystemClip();
                 clips = freshClips().clearUnpinned();
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
@@ -738,8 +840,7 @@ public class ReteKeyImeService extends InputMethodService {
             public void onTypeKept(String text) {
                 // Typed, and only typed: what was shared into ReteKey never reaches the clipboard,
                 // which is the whole reason someone shares it instead of copying it.
-                dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-                    "touch.stash.type", SemanticInput.text(text)));
+                dispatchSafeText("touch.stash.type", text);
                 closeClipboardPanel();
             }
 
@@ -775,7 +876,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** The shared-text list as the store has it now; see {@link #freshClips()}. */
     private StashHistory freshStash() {
-        stash = StashStore.load(this);
+        stash = StashStore.loadPruned(this);
         return stash;
     }
 
@@ -813,7 +914,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private SharedPreferences viewPrefs() {
-        return getSharedPreferences("retekey_view", MODE_PRIVATE);
+        return AppPrefs.view(this);
     }
 
     /**
@@ -859,13 +960,7 @@ public class ReteKeyImeService extends InputMethodService {
         if (userUnlocked || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             return true;
         }
-        try {
-            android.os.UserManager users = Compat.systemService(
-                this, Context.USER_SERVICE, android.os.UserManager.class);
-            userUnlocked = users == null || users.isUserUnlocked();
-        } catch (RuntimeException unknown) {
-            userUnlocked = true;
-        }
+        userUnlocked = UserUnlockWatcher.isUserUnlocked(this);
         if (userUnlocked && !unlockHandled) {
             // Unlocked, and the broadcast has not said so (yet, or ever): reopen the settings
             // from here too. Posted, never inline — this is reached from inside view
@@ -884,52 +979,17 @@ public class ReteKeyImeService extends InputMethodService {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             return;
         }
-        try {
-            android.hardware.input.InputManager input = Compat.systemService(
-                this, Context.INPUT_SERVICE, android.hardware.input.InputManager.class);
-            if (input == null) {
-                return;
-            }
-            deviceListener = new android.hardware.input.InputManager.InputDeviceListener() {
-                @Override
-                public void onInputDeviceAdded(int deviceId) {
-                }
-
-                @Override
-                public void onInputDeviceRemoved(int deviceId) {
-                    heldHardware.forgetDevice(deviceId);
-                }
-
-                @Override
-                public void onInputDeviceChanged(int deviceId) {
-                    // A keyboard that re-declared itself is not the same one holding the same
-                    // keys; what it was believed to hold is no longer evidence.
-                    heldHardware.forgetDevice(deviceId);
-                }
-            };
-            input.registerInputDeviceListener(deviceListener, mainHandler);
-        } catch (RuntimeException unavailable) {
-            logTeardownFailure("input device listener", unavailable);
-            deviceListener = null;
-        }
+        deviceWatcher = InputDeviceWatcher.start(this, mainHandler, deviceId -> {
+            heldHardware.forgetDevice(deviceId);
+            dispatcher.forgetDevice(deviceId);
+        });
     }
 
     private void stopWatchingForKeyboardsGoingAway() {
-        if (deviceListener == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            // Nothing was registered below API 16, where the listener does not exist.
-            deviceListener = null;
-            return;
+        if (deviceWatcher != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            deviceWatcher.stop(this);
         }
-        try {
-            android.hardware.input.InputManager input = Compat.systemService(
-                this, Context.INPUT_SERVICE, android.hardware.input.InputManager.class);
-            if (input != null) {
-                input.unregisterInputDeviceListener(deviceListener);
-            }
-        } catch (RuntimeException neverRegistered) {
-            // Nothing to unhook.
-        }
-        deviceListener = null;
+        deviceWatcher = null;
     }
 
     /** Waits for the first unlock when the service started before it. */
@@ -939,20 +999,8 @@ public class ReteKeyImeService extends InputMethodService {
         }
         unlockHandled = false;
         android.util.Log.i("ReteKey", "started before unlock: settings held in memory");
-        unlockReceiver = new android.content.BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onUserUnlocked();
-            }
-        };
-        try {
-            registerReceiver(unlockReceiver,
-                new android.content.IntentFilter(Intent.ACTION_USER_UNLOCKED));
-        } catch (RuntimeException refused) {
-            // The first storage read after unlock then does the reopening (isUserUnlocked).
-            logTeardownFailure("unlock receiver", refused);
-            unlockReceiver = null;
-        }
+        unlockReceiver = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+            ? UserUnlockWatcher.register(this, this::onUserUnlocked) : null;
     }
 
     /** Reopens the real settings once, after the first unlock (receiver or first read). */
@@ -972,6 +1020,9 @@ public class ReteKeyImeService extends InputMethodService {
             // The settings then take effect at the next start of a field instead.
         }
         clipsLoaded = false;
+        floatingBounds = null;
+        unicodeBounds = null;
+        hanjaBounds = null;
         if (keyboardView != null) {
             keyboardView.reloadLetterLayouts();
         }
@@ -1031,26 +1082,29 @@ public class ReteKeyImeService extends InputMethodService {
         FloatingKeyboardSettings.setEnabled(viewPrefs(), OrientedPrefs.current(this), enabled);
         // Rebuilding is the whole switch: onCreateInputView re-reads the mode and returns either
         // the bare keyboard or the floating frame around it.
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
     private void onFloatingBoundsChanged(FloatingKeyboardBounds bounds) {
         floatingBounds = bounds;
-        FloatingKeyboardSettings.store(viewPrefs(), bounds);
+        FloatingKeyboardSettings.store(
+            viewPrefs(), builtFor != null ? builtFor : OrientedPrefs.current(this), bounds);
     }
 
     /** The candidate list is its own shape too, and is put where reading it is comfortable. */
     private void onHanjaBoundsChanged(FloatingKeyboardBounds bounds) {
         hanjaBounds = bounds;
-        FloatingKeyboardSettings.store(viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX, bounds);
+        FloatingKeyboardSettings.store(viewPrefs(), FloatingKeyboardSettings.HANJA_PREFIX,
+            builtFor != null ? builtFor : OrientedPrefs.current(this), bounds);
     }
 
     /** The code-point pad is a different size and belongs elsewhere, so it remembers its own place. */
     private void onUnicodeBoundsChanged(FloatingKeyboardBounds bounds) {
         unicodeBounds = bounds;
         FloatingKeyboardSettings.store(
-            viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX, bounds);
+            viewPrefs(), FloatingKeyboardSettings.UNICODE_PREFIX,
+            builtFor != null ? builtFor : OrientedPrefs.current(this), bounds);
     }
 
     /** Opens ReteKey's settings screen from the menu's 설정 tile, hiding the keyboard behind it. */
@@ -1093,7 +1147,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Types what is on Android's clipboard into the editor, as keystrokes; false when empty. */
     private boolean typeTheClipboard(String keyId) {
-        String text = systemClipText();
+        String text = Scalars.sanitizeWellFormed(systemClipText());
         if (text == null || text.isEmpty()) {
             return false;
         }
@@ -1202,7 +1256,7 @@ public class ReteKeyImeService extends InputMethodService {
      * Ctrl+Shift+Right across it.
      */
     private boolean selectWordByRemoteChords() {
-        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+        if (editorProfile == null || !editorProfile.capabilities().isRemoteDesktop()) {
             return false;
         }
         dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
@@ -1227,20 +1281,30 @@ public class ReteKeyImeService extends InputMethodService {
         if (input == null || input.kind() != SemanticInput.Kind.TEXT) {
             return false;
         }
-        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
+        if (editorProfile == null || !editorProfile.capabilities().isRemoteDesktop()) {
             return false;
         }
         String text = input.text();
         if (text == null || text.isEmpty() || text.codePointCount(0, text.length()) <= 1) {
             return false;
         }
+        if (inputProcessor.isComposing()) {
+            execute(dispatcher.dispatch(
+                ProjectKeyEvent.softwareDown("remote.flush", SemanticInput.flush())));
+        }
+        hideHanjaCandidatesIfShown();
+        syncLatinComposer();
         int length = text.length();
         int typed = 0;
         int i = 0;
         while (i < length && typed < REMOTE_PASTE_LIMIT) {
             int end = text.offsetByCodePoints(i, 1);
-            dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-                event.stableKeyId(), SemanticInput.text(text.substring(i, end))));
+            ExecutionResult r = execute(DispatchResult.handled(
+                KeyAction.commitText(text.substring(i, end))));
+            if (r == null || r.isFailure()) {
+                showEditorFailure();
+                return true;
+            }
             i = end;
             typed++;
         }
@@ -1252,27 +1316,6 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** How many code points a remote-desktop paste will type out before giving up. */
     private static final int REMOTE_PASTE_LIMIT = 2000;
-
-
-
-    /** The clipboard's current text, or empty when it holds none (or none coercible to text). */
-    private String primaryClipText() {
-        try {
-            android.content.ClipboardManager manager = Compat.systemService(
-                this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
-            if (manager == null || !manager.hasPrimaryClip()) {
-                return "";
-            }
-            android.content.ClipData data = manager.getPrimaryClip();
-            if (data == null || data.getItemCount() == 0) {
-                return "";
-            }
-            CharSequence text = data.getItemAt(0).coerceToText(this);
-            return text == null ? "" : text.toString();
-        } catch (RuntimeException clipboardUnavailable) {
-            return "";
-        }
-    }
 
     /** Commits the current date and time as text, e.g. "2026. 12. 23.(월) 13:59". */
     private void insertCurrentDate() {
@@ -1318,16 +1361,23 @@ public class ReteKeyImeService extends InputMethodService {
         if (settingsIsCapturingAShortcut()) {
             return super.onKeyDown(keyCode, event);
         }
-        heldHardware.onKey(event.getDeviceId(), keyCode, true);
-        heldHardware.reconcile(event.getDeviceId(), keyCode, event.getMetaState());
-        if (event.getRepeatCount() == 0 && handleHardwareFunctionKey(keyCode, event)) {
-            return true;
+        if (!event.isCanceled()) {
+            heldHardware.onKey(event.getDeviceId(), keyCode, true);
+            heldHardware.reconcile(event.getDeviceId(), keyCode, event.getMetaState());
         }
-        if (isBoundFunctionKey(keyCode, event)) {
-            // A held/repeating bound key: swallow the extra downs so the app sees nothing.
-            return true;
+        if (!isPersianShiftSpaceOverride(keyCode, event)) {
+            if (event.getRepeatCount() == 0 && handleHardwareFunctionKey(keyCode, event)) {
+                consumedServiceKeys.add(keyCode);
+                return true;
+            }
+            if (isBoundFunctionKey(keyCode, event)) {
+                // A held/repeating bound key: swallow the extra downs so the app sees nothing.
+                consumedServiceKeys.add(keyCode);
+                return true;
+            }
         }
         if (unicodeEntry != null && handleUnicodeKey(keyCode, event)) {
+            consumedServiceKeys.add(keyCode);
             return true;
         }
         if (ipaPanel != null) {
@@ -1343,6 +1393,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
         }
         if (hanjaCandidatesShown && handleHanjaSelectionKey(keyCode)) {
+            consumedServiceKeys.add(keyCode);
             return true;
         }
         if (ipaPanel != null) {
@@ -1353,6 +1404,10 @@ public class ReteKeyImeService extends InputMethodService {
             // A physical key ends any 12-key run on screen, the same way an on-screen key that is
             // not part of the run does; otherwise the next tap would continue a run the user left.
             keyboardView.resetPhoneInterpreters();
+        }
+        if (notepad != null && notepad.isWriting() && handleNotepadHardwareKey(keyCode, event)) {
+            consumedServiceKeys.add(keyCode);
+            return true;
         }
         if (passThroughChord(event)) {
             endSyllableBeforeDelegating(event);
@@ -1397,10 +1452,11 @@ public class ReteKeyImeService extends InputMethodService {
             return super.onKeyUp(keyCode, event);
         }
         heldHardware.onKey(event.getDeviceId(), keyCode, false);
-        if (keysOwnedByIpaPanel.remove(keyCode)) {
+        heldHardware.reconcile(event.getDeviceId(), keyCode, event.getMetaState());
+        if (keysOwnedByIpaPanel.remove(keyCode) || consumedServiceKeys.remove(keyCode)) {
             return true;
         }
-        if (isBoundFunctionKey(keyCode, event)) {
+        if (!isPersianShiftSpaceOverride(keyCode, event) && isBoundFunctionKey(keyCode, event)) {
             return true;
         }
         if (passThroughChord(event)) {
@@ -1434,7 +1490,17 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public boolean onKeyMultiple(int keyCode, int count, KeyEvent event) {
-        if (isBoundFunctionKey(keyCode, event)) {
+        if (settingsIsCapturingAShortcut()) {
+            return super.onKeyMultiple(keyCode, count, event);
+        }
+        if (!isPersianShiftSpaceOverride(keyCode, event) && isBoundFunctionKey(keyCode, event)) {
+            return true;
+        }
+        if (notepad != null && notepad.isWriting()) {
+            if (event != null && event.getCharacters() != null) {
+                flushNotepadComposition();
+                notepad.type(Scalars.sanitizeWellFormed(event.getCharacters()));
+            }
             return true;
         }
         if (passThroughChord(event)) {
@@ -1470,14 +1536,16 @@ public class ReteKeyImeService extends InputMethodService {
     public void onStartInput(EditorInfo attribute, boolean restarting) {
         editorPackage = attribute == null ? null : attribute.packageName;
         super.onStartInput(attribute, restarting);
+        numericField = attribute != null && NumericFieldPolicy.wantsKeypad(attribute.inputType);
         if (keyboardView != null) {
             // A field that takes a phone number or an amount opens on the keypad, the way other
             // keyboards answer one; the layout key walks the user's own list from there.
-            keyboardView.setNumericField(
-                attribute != null && NumericFieldPolicy.wantsKeypad(attribute.inputType));
+            keyboardView.setNumericField(numericField);
         }
         mainHandler.removeCallbacks(settleIdleSyllable);
         dispatcher.reset();
+        keysOwnedByIpaPanel.clear();
+        consumedServiceKeys.clear();
         inputProcessor.reset();
         materializedCursor.reset();
         editorProfile = AndroidEditorProfileClassifier.classify(
@@ -1515,6 +1583,9 @@ public class ReteKeyImeService extends InputMethodService {
         if (ipaPanel != null) {
             // A search typed for one field must not swallow the next field's text (review R20).
             endIpaPanel();
+        }
+        if (unicodeEntry != null) {
+            endUnicodeEntry();
         }
         hideHanjaCandidatesIfShown();
         updateHardwareMapper(currentSubtype());
@@ -1709,6 +1780,10 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public void onUnbindInput() {
+        if (inputProcessor.isComposing()) {
+            finishComposingInEditor();
+        }
+        inputProcessor.reset();
         dispatcher.reset();
         hardwareMapper = HardwareSemanticMapper.none();
         finishSession();
@@ -1717,7 +1792,17 @@ public class ReteKeyImeService extends InputMethodService {
 
     @Override
     public void onDestroy() {
+        if (inputProcessor.isComposing()) {
+            finishComposingInEditor();
+        }
+        inputProcessor.reset();
         dispatcher.reset();
+        putNotepadAway();
+        mainHandler.removeCallbacksAndMessages(null);
+        if (functionToast != null) {
+            functionToast.cancel();
+            functionToast = null;
+        }
         finishSession();
         stopWatchingForUnlock();
         stopWatchingForKeyboardsGoingAway();
@@ -1775,11 +1860,32 @@ public class ReteKeyImeService extends InputMethodService {
      * be pushed rather than waited for.
      */
     private void rebuildInputView() {
+        if (keyboardView == null) {
+            return;
+        }
         try {
-            setInputView(onCreateInputView());
+            setInputView(createBandFrame());
+            commitBuiltSnapshot();
             updateInputViewShown();
         } catch (RuntimeException ignored) {
             // Rebuilding while the window is going away must not take the keyboard with it.
+        }
+    }
+
+    /**
+     * Replaces an already-created input view without crashing when the IME window has never been
+     * shown yet (e.g. hardware keyboard connected in hidden mode where {@code mInputFrame} is null).
+     * {@code updateInputViewShown()} then lets the framework create the view if needed.
+     */
+    private void replaceInputViewIfCreated() {
+        if (keyboardView == null) {
+            return;
+        }
+        try {
+            setInputView(createBandFrame());
+            commitBuiltSnapshot();
+        } catch (RuntimeException ignored) {
+            // Input frame not initialized yet; updateInputViewShown() will trigger creation.
         }
     }
 
@@ -1794,11 +1900,12 @@ public class ReteKeyImeService extends InputMethodService {
             bandFrame.refreshBand();
         }
         // A safety net for the same problem: if the bar was switched on or moved while this view
-        // was off screen, the listener may have fired when there was nothing to rebuild.
+        // was off screen, or a panel closed quietly on hide, rebuild cleanly when visible again.
         boolean wanted = viewPrefs().getBoolean(
             ActionBarSlots.KEY_ENABLED, ActionBarSlots.DEFAULT_ENABLED);
         ActionBarPosition wantedPosition = actionBarPosition(OrientedPrefs.current(this));
-        if (wanted != builtWithBar || (wanted && wantedPosition != builtBarPosition)) {
+        if (pendingViewRebuild || wanted != builtWithBar
+                || (wanted && wantedPosition != builtBarPosition)) {
             rebuildInputView();
         }
     }
@@ -1811,12 +1918,7 @@ public class ReteKeyImeService extends InputMethodService {
             finishComposingInEditor();
         } finally {
             inputProcessor.reset();
-            // A phonetic search belongs to the view it was typed in (review R20).
-            if (ipaPanel != null) {
-                endIpaPanel();
-            }
-            hideHanjaCandidatesIfShown();
-            closePanelsWithTheKeyboard();
+            closePanelsQuietly();
         }
     }
 
@@ -1829,7 +1931,7 @@ public class ReteKeyImeService extends InputMethodService {
     @Override
     public void onWindowHidden() {
         super.onWindowHidden();
-        closePanelsWithTheKeyboard();
+        closePanelsQuietly();
     }
 
     /**
@@ -1870,12 +1972,62 @@ public class ReteKeyImeService extends InputMethodService {
      * in an editor that cannot give the keyboard the whole screen, that was a panel trying to open
      * and failing on every keystroke (issue #8). Closing them here saves the note as usual.
      */
-    private void closePanelsWithTheKeyboard() {
-        if (notepad != null) {
-            closeNotepad();
+    /**
+     * Closes open panels cleanly on hide/finish without reallocating the whole input view while the
+     * window is disappearing; the next {@link #onStartInputView} rebuilds if the window frame was a
+     * dedicated panel.
+     */
+    private void closePanelsQuietly() {
+        boolean rebuiltWindow = notepad != null || clipboardPanel != null || ipaPanel != null
+            || hanjaDocked || hanjaFloating || unicodeFloating;
+        putNotepadAway();
+        clipboardPanel = null;
+        ipaPanel = null;
+        keysOwnedByIpaPanel.clear();
+        hanjaDocked = false;
+        hanjaFloating = false;
+        hanjaCandidatesShown = false;
+        hanjaView = null;
+        pendingSource = null;
+        pendingReading = null;
+        pendingCandidates = null;
+        unicodeEntry = null;
+        unicodeFloating = false;
+        if (keyboardView != null) {
+            keyboardView.setUnicodeEntry(false);
         }
-        if (clipboardPanel != null) {
-            closeClipboardPanel();
+        if (rebuiltWindow) {
+            pendingViewRebuild = true;
+        }
+    }
+
+    /** Clears every other panel so only one modal/panel state is live at once (M-15). */
+    private void clearOtherPanels(ActivePanel opening) {
+        if (opening != ActivePanel.NOTEPAD) {
+            putNotepadAway();
+        }
+        if (opening != ActivePanel.CLIPBOARD) {
+            clipboardPanel = null;
+        }
+        if (opening != ActivePanel.IPA) {
+            ipaPanel = null;
+            keysOwnedByIpaPanel.clear();
+        }
+        if (opening != ActivePanel.HANJA && opening != ActivePanel.IPA) {
+            pendingSource = null;
+            pendingReading = null;
+            pendingCandidates = null;
+            hanjaCandidatesShown = false;
+            hanjaDocked = false;
+            hanjaFloating = false;
+            hanjaView = null;
+        }
+        if (opening != ActivePanel.UNICODE) {
+            unicodeEntry = null;
+            unicodeFloating = false;
+            if (keyboardView != null) {
+                keyboardView.setUnicodeEntry(false);
+            }
         }
     }
 
@@ -1907,6 +2059,19 @@ public class ReteKeyImeService extends InputMethodService {
                 );
                 return;
             }
+            int composingStart = candidatesStart >= 0
+                && candidatesEnd >= candidatesStart ? candidatesStart : -1;
+            int composingEnd = composingStart >= 0 ? candidatesEnd : -1;
+            EditorBounds reported = EditorBounds.of(
+                newSelStart,
+                newSelEnd,
+                composingStart,
+                composingEnd
+            );
+            if (sessionController.isExecuting()) {
+                sessionController.updateSelection(sessionController.generation(), reported);
+                return;
+            }
             // An editor that materialises composition — a remote-desktop window — has no
             // composing region to judge by, and its dummy buffer's own reports once made the
             // verdict noise that reset the composer mid-syllable (일 became 이ㄹ). Its reports are
@@ -1914,18 +2079,22 @@ public class ReteKeyImeService extends InputMethodService {
             // Microsoft client, 2026-09-13): every echo matches an expectation, and a click on the
             // remote screen matches none.
             boolean remoteDesktop = editorProfile != null
-                && editorProfile.capabilities().deleteByKeyEvents();
+                && editorProfile.capabilities().isRemoteDesktop();
+            boolean composesOffScreen = editorProfile != null
+                && editorProfile.capabilities().composesOffScreen();
             boolean movedOnTheFarSide = remoteDesktop
                 && materializedCursor.isForeignMove(newSelStart, newSelEnd)
                 && inputProcessor.isComposing();
-            boolean abandon = movedOnTheFarSide || !remoteDesktop && CursorMovePolicy.shouldAbandonComposition(
-                inputProcessor.isComposing(),
-                newSelStart,
-                newSelEnd,
-                candidatesStart,
-                candidatesEnd
-            );
-            if (!abandon && !remoteDesktop && candidatesStart < 0 && inputProcessor.isComposing()) {
+            boolean abandon = movedOnTheFarSide
+                || (!remoteDesktop && !composesOffScreen && CursorMovePolicy.shouldAbandonComposition(
+                    inputProcessor.isComposing(),
+                    newSelStart,
+                    newSelEnd,
+                    candidatesStart,
+                    candidatesEnd
+                ));
+            if (!abandon && !remoteDesktop && !composesOffScreen
+                    && candidatesStart < 0 && inputProcessor.isComposing()) {
                 // Editors that never report a composing region (Compose text fields — Google
                 // Keep) get the text-based verdict: composing leaves the cursor right after the
                 // preedit, so anything else there means the user moved it.
@@ -1951,18 +2120,7 @@ public class ReteKeyImeService extends InputMethodService {
                     keyboardView.resetPhoneInterpreters();
                 }
             }
-            int composingStart = candidatesStart >= 0
-                && candidatesEnd >= candidatesStart ? candidatesStart : -1;
-            int composingEnd = composingStart >= 0 ? candidatesEnd : -1;
-            sessionController.updateSelection(
-                sessionController.generation(),
-                EditorBounds.of(
-                    newSelStart,
-                    newSelEnd,
-                    composingStart,
-                    composingEnd
-                )
-            );
+            sessionController.updateSelection(sessionController.generation(), reported);
         } catch (RuntimeException ignored) {
             // A selection update must never crash the IME and make the keyboard disappear.
             inputProcessor.reset();
@@ -1994,6 +2152,9 @@ public class ReteKeyImeService extends InputMethodService {
             // feedback, so it comes up regardless of what is typing into it.
             return true;
         }
+        if (ipaPanel != null || notepad != null || clipboardPanel != null) {
+            return true;
+        }
         // Hide the on-screen keyboard when a hardware keyboard is usable; input still passes
         // through the service. The mode will be user-configurable once settings land (RFC-0007).
         return SoftKeyboardVisibilityPolicy.shouldShow(
@@ -2006,6 +2167,14 @@ public class ReteKeyImeService extends InputMethodService {
         Configuration config = getResources().getConfiguration();
         return config.keyboard != Configuration.KEYBOARD_NOKEYS
             && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
+    }
+
+    private void dispatchSafeText(String keyId, String text) {
+        String safe = Scalars.sanitizeWellFormed(text);
+        if (safe == null || safe.isEmpty()) {
+            return;
+        }
+        dispatchSoftwareInput(ProjectKeyEvent.softwareDown(keyId, SemanticInput.text(safe)));
     }
 
     /**
@@ -2072,15 +2241,11 @@ public class ReteKeyImeService extends InputMethodService {
      * composition. A write whose outcome the editor decides — a raw key, Enter — predicts nothing,
      * and that drops the expectations rather than inventing one (MaterializedCursorMoves).
      */
-    private void noteWhereThisWriteLeavesTheCursor(
-        ExecutionResult executed,
+    private void expectWrittenCursorPositions(
         DispatchResult dispatched,
         EditorBounds before
     ) {
-        if (editorProfile == null || !editorProfile.capabilities().deleteByKeyEvents()) {
-            return;
-        }
-        if (executed == null || executed.outcome() != ExecutionResult.Outcome.DISPATCHED) {
+        if (editorProfile == null || !editorProfile.capabilities().isRemoteDesktop()) {
             return;
         }
         // Every action, not only the end of the plan: rewriting a syllable is a delete and then a
@@ -2259,8 +2424,11 @@ public class ReteKeyImeService extends InputMethodService {
      * something the script decides.
      */
     private KeyboardLayoutId physicalLayoutFor(KeyboardLayoutId screenLayout) {
-        if (screenLayout == null || !HardwareLayoutChoice.isChoosable(screenLayout)) {
-            return screenLayout;
+        if (screenLayout == null) {
+            return null;
+        }
+        if (!HardwareLayoutChoice.isChoosable(screenLayout)) {
+            return HardwareLayoutChoice.defaultFor(screenLayout);
         }
         return HardwareLayoutChoice.resolve(
             OrientedPrefs.getString(
@@ -2295,12 +2463,7 @@ public class ReteKeyImeService extends InputMethodService {
      * being registered, and the screen would see only the modifier let up afterwards.
      */
     private boolean settingsIsCapturingAShortcut() {
-        try {
-            return getSharedPreferences("retekey_view", MODE_PRIVATE)
-                .getBoolean(HardwareKeyBindings.KEY_CAPTURING, false);
-        } catch (RuntimeException ignored) {
-            return false;
-        }
+        return HardwareKeyBindings.isCapturing();
     }
 
     private static int pressedMods(KeyEvent event) {
@@ -2310,6 +2473,14 @@ public class ReteKeyImeService extends InputMethodService {
             (meta & KeyEvent.META_CTRL_ON) != 0,
             (meta & KeyEvent.META_ALT_ON) != 0,
             (meta & KeyEvent.META_META_ON) != 0);
+    }
+
+    private boolean isPersianShiftSpaceOverride(int keyCode, KeyEvent event) {
+        return !hardwareKoreanMode
+            && hardwareMapper == PersianHardwareMapper.INSTANCE
+            && keyCode == KeyEvent.KEYCODE_SPACE
+            && event != null
+            && pressedMods(event) == HardwareKeyBindings.MOD_SHIFT;
     }
 
     private boolean isBoundFunctionKey(int keyCode, KeyEvent event) {
@@ -2365,6 +2536,7 @@ public class ReteKeyImeService extends InputMethodService {
     private void startUnicodeEntry() {
         finishComposingInEditor();
         inputProcessor.reset();
+        clearOtherPanels(ActivePanel.UNICODE);
         unicodeEntry = UnicodeEntry.empty();
         if (panelPlacement() == PanelPlacement.DOCKED && keyboardView != null) {
             // Following a docked keyboard: the pad takes the keys' place and nothing moves.
@@ -2375,7 +2547,7 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         unicodeFloating = true;
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
         showUnicodeEntry();
     }
@@ -2439,6 +2611,7 @@ public class ReteKeyImeService extends InputMethodService {
     private void openIpaPanel(IpaPanel panel) {
         finishComposingInEditor();
         inputProcessor.reset();
+        clearOtherPanels(ActivePanel.IPA);
         ipaPanel = panel;
         showIpaPanel();
         if (panel.mode() == IpaPanel.Mode.FIND && keyboardView != null) {
@@ -2467,15 +2640,16 @@ public class ReteKeyImeService extends InputMethodService {
             hanjaView.show(pendingReading, pendingCandidates);
             return;
         }
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
     private void endIpaPanel() {
         ipaPanel = null;
+        keysOwnedByIpaPanel.clear();
         hanjaCandidatesShown = false;
         pendingCandidates = java.util.Collections.emptyList();
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -2644,7 +2818,7 @@ public class ReteKeyImeService extends InputMethodService {
         // Rebuilding puts back whatever was there before: the docked keyboard, or the user's own
         // floating one, on the layout it was left on.
         unicodeFloating = false;
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -2654,17 +2828,16 @@ public class ReteKeyImeService extends InputMethodService {
             closeNotepad();
             return;
         }
-        // One panel at a time. With the clipboard left set, the rebuild showed the clipboard
-        // again and the notepad sat invisible behind it (issue #12).
-        clipboardPanel = null;
+        // One panel at a time: clear any other panel so the notepad never sits invisible behind it.
+        clearOtherPanels(ActivePanel.NOTEPAD);
         notepad = new NotepadView(this, NoteStore.load(this));
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
     private void closeNotepad() {
         putNotepadAway();
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -2704,8 +2877,7 @@ public class ReteKeyImeService extends InputMethodService {
             // The notepad takes every key while it is up, so it comes down first; then the note
             // goes out the road a key takes, which a terminal and a remote desktop understand.
             closeNotepad();
-            dispatchSoftwareInput(ProjectKeyEvent.softwareDown(
-                "touch.note.send", SemanticInput.text(text)));
+            dispatchSafeText("touch.note.send", text);
         });
         return panel;
     }
@@ -2777,6 +2949,70 @@ public class ReteKeyImeService extends InputMethodService {
         }
     }
 
+    private boolean handleNotepadHardwareKey(int keyCode, KeyEvent event) {
+        if (KeyEvent.isModifierKey(keyCode)) {
+            return false;
+        }
+        if (keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            closeNotepad();
+            return true;
+        }
+        RawKey raw = notepadRawKeyFor(keyCode, event.isCtrlPressed());
+        if (raw != null) {
+            java.util.EnumSet<KeyModifier> mods = java.util.EnumSet.noneOf(KeyModifier.class);
+            if (event.isShiftPressed()) mods.add(KeyModifier.SHIFT);
+            if (event.isCtrlPressed()) mods.add(KeyModifier.CTRL);
+            if (event.isAltPressed()) mods.add(KeyModifier.ALT);
+            if (event.isMetaPressed()) mods.add(KeyModifier.META);
+            consumeRawKeyForNotepad(SemanticInput.rawKey(raw, mods));
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            flushNotepadComposition();
+            notepad.newLine();
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DEL) {
+            consumeForNotepad(ProjectKeyEvent.softwareDown("hw.note.del",
+                SemanticInput.deleteBackward()));
+            return true;
+        }
+        ProjectKeyEvent projectEvent = KeyEventNormalizer.fromAndroid(
+            keyCode, event, hardwareMapper);
+        if (projectEvent.hasSemanticInput()) {
+            consumeForNotepad(projectEvent);
+        }
+        return true;
+    }
+
+    private static RawKey notepadRawKeyFor(int keyCode, boolean ctrl) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_LEFT: return RawKey.LEFT;
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return RawKey.RIGHT;
+            case KeyEvent.KEYCODE_DPAD_UP: return RawKey.UP;
+            case KeyEvent.KEYCODE_DPAD_DOWN: return RawKey.DOWN;
+            case KeyEvent.KEYCODE_MOVE_HOME: return RawKey.HOME;
+            case KeyEvent.KEYCODE_MOVE_END: return RawKey.END;
+            case KeyEvent.KEYCODE_PAGE_UP: return RawKey.PAGE_UP;
+            case KeyEvent.KEYCODE_PAGE_DOWN: return RawKey.PAGE_DOWN;
+            case KeyEvent.KEYCODE_TAB: return RawKey.TAB;
+            case KeyEvent.KEYCODE_FORWARD_DEL: return RawKey.FORWARD_DELETE;
+            default: break;
+        }
+        if (!ctrl) {
+            return null;
+        }
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_A: return RawKey.A;
+            case KeyEvent.KEYCODE_C: return RawKey.C;
+            case KeyEvent.KEYCODE_V: return RawKey.V;
+            case KeyEvent.KEYCODE_X: return RawKey.X;
+            case KeyEvent.KEYCODE_Z: return RawKey.Z;
+            case KeyEvent.KEYCODE_Y: return RawKey.Y;
+            default: return null;
+        }
+    }
+
     /**
      * A raw key while a note is open — a Ctrl chord from the keys, an arrow or Home from the
      * action bar, a held Tab. Every one is the note's: before, they fell past it to the app behind,
@@ -2843,7 +3079,12 @@ public class ReteKeyImeService extends InputMethodService {
         // committed text we can read back and replace.
         finishComposingInEditor();
         inputProcessor.reset();
-        CharSequence before = ic.getTextBeforeCursor(HANJA_LOOKBEHIND, 0);
+        CharSequence before = null;
+        try {
+            before = ic.getTextBeforeCursor(HANJA_LOOKBEHIND, 0);
+        } catch (RuntimeException ignored) {
+            // Some editors refuse surrounding-text reads; treat as empty instead of crashing.
+        }
         if (before == null || before.length() == 0) {
             hideHanjaCandidatesIfShown();
             return;
@@ -2985,6 +3226,7 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void showHanjaCandidates(String reading, List<HanjaCandidatesView.Item> candidates) {
+        clearOtherPanels(ActivePanel.HANJA);
         pendingGeneration = sessionController.generation();
         pendingReading = reading;
         pendingCandidates = candidates;
@@ -3002,7 +3244,7 @@ public class ReteKeyImeService extends InputMethodService {
             // document rather than in a popup pinned to a keyboard that may not even be on screen.
             hanjaFloating = true;
         }
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -3047,7 +3289,7 @@ public class ReteKeyImeService extends InputMethodService {
         hanjaCandidatesShown = false;
         if (hanjaDocked) {
             hanjaDocked = false;
-            setInputView(onCreateInputView());
+            replaceInputViewIfCreated();
             updateInputViewShown();
             return;
         }
@@ -3057,7 +3299,7 @@ public class ReteKeyImeService extends InputMethodService {
         hanjaFloating = false;
         hanjaView = null;
         // Back to whatever was there before, on the layout it was left on.
-        setInputView(onCreateInputView());
+        replaceInputViewIfCreated();
         updateInputViewShown();
     }
 
@@ -3150,9 +3392,16 @@ public class ReteKeyImeService extends InputMethodService {
                 predicted
             );
             EditorBounds before = sessionController.workingBounds();
+            expectWrittenCursorPositions(result, before);
             ExecutionResult executed = sessionController.execute(plan, this::currentEndpoint);
+            if (executed == null
+                    || (executed.outcome() != ExecutionResult.Outcome.DISPATCHED
+                        && executed.outcome() != ExecutionResult.Outcome.NO_EDITOR_ACTIONS)) {
+                if (editorProfile != null && editorProfile.capabilities().isRemoteDesktop()) {
+                    materializedCursor.reset();
+                }
+            }
             forgetWhatWasNotWritten(executed);
-            noteWhereThisWriteLeavesTheCursor(executed, result, before);
             armIdleSyllableSettle();
             updateComposingStrip();
             tellTheKeysWhatComesNext();
@@ -3277,6 +3526,8 @@ public class ReteKeyImeService extends InputMethodService {
         // A key held when the field goes is a key this keyboard will never hear the up for
         // (review R17): it must not arm the arrows of the next field.
         heldHardware.clear();
+        keysOwnedByIpaPanel.clear();
+        consumedServiceKeys.clear();
         clipGuard.onField(false, android.os.SystemClock.uptimeMillis());
         if (editorFailureToast != null) {
             editorFailureToast.cancel();
@@ -3332,6 +3583,80 @@ public class ReteKeyImeService extends InputMethodService {
 
     protected final int observedPendingExpectationCount() {
         return sessionController.pendingExpectationCount();
+    }
+
+    boolean isComposingForTest() {
+        return inputProcessor.isComposing();
+    }
+
+    ReteKeyboardView keyboardViewForTest() {
+        return keyboardView;
+    }
+
+    NotepadView notepadForTest() {
+        return notepad;
+    }
+
+    ClipboardPanelView clipboardPanelForTest() {
+        return clipboardPanel;
+    }
+
+    IpaPanel ipaPanelForTest() {
+        return ipaPanel;
+    }
+
+    void setIpaPanelForTest(IpaPanel panel) {
+        ipaPanel = panel;
+        showIpaPanel();
+    }
+
+    boolean pickFromIpaPanelForTest(String value) {
+        return pickFromIpaPanel(value);
+    }
+
+    ClipHistory clipsForTest() {
+        return clips;
+    }
+
+    StashHistory stashForTest() {
+        return stash;
+    }
+
+    void setEditorPackageForTest(String pkg) {
+        editorPackage = pkg;
+    }
+
+    void performBarActionForTest(BarAction action) {
+        performBarAction(action);
+    }
+
+    void detachSystemClipWatcherForTest() {
+        android.content.ClipboardManager manager = Compat.systemService(
+            this, Context.CLIPBOARD_SERVICE, android.content.ClipboardManager.class);
+        if (manager != null) {
+            manager.removePrimaryClipChangedListener(systemClipChanged);
+        }
+    }
+
+    boolean invokeServiceActionForTest(String name) {
+        switch (name) {
+            case "toggleNotepad": toggleNotepad(); return true;
+            case "closeNotepad": closeNotepad(); return true;
+            case "toggleClipboardPanel": toggleClipboardPanel(); return true;
+            case "closeClipboardPanel": closeClipboardPanel(); return true;
+            case "startIpaFind": startIpaFind(); return true;
+            case "startIpaChart": startIpaChart(); return true;
+            case "endIpaPanel": endIpaPanel(); return true;
+            case "startUnicodeEntry": startUnicodeEntry(); return true;
+            case "endUnicodeEntry": endUnicodeEntry(); return true;
+            case "handleHanja": handleHanja(); return true;
+            case "hideHanjaCandidates": hideHanjaCandidates(); return true;
+            case "toggleFloatingMode": toggleFloatingMode(); return true;
+            case "leaveFloatingMode": leaveFloatingMode(); return true;
+            case "cycleTheme": cycleTheme(); return true;
+            case "toggleHardwareKorean": toggleHardwareKorean(); return true;
+            default: return false;
+        }
     }
 
     private enum ScaffoldSessionState {

@@ -3,9 +3,16 @@ package com.retekey;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.retekey.CheonjiinInterpreter.Key;
+import com.retekey.core.CheonjiinInterpreter.Key;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 /**
  * The 천지인 automaton, read as the edits it hands the composer. A press either adds a jamo or
@@ -96,6 +103,31 @@ public final class CheonjiinInterpreterTest {
         interpreter.reset();
 
         assertEquals(consonant(0), interpreter.press(Key.GIYEOK));          // ㄱ again, not ㅋ
+    }
+
+    @Test
+    public void bareCompoundVowelReplacementEmitsNoEditorDeleteBackward() {
+        EditorProfile profile = EditorProfile.richText(false, false, true, false, false, 0, -1);
+        HangulInputProcessor processor = new HangulInputProcessor(() -> profile);
+        Key[] sequence = { Key.DOT, Key.EU, Key.I, Key.DOT }; // ㆍ ㅡ ㅣ ㆍ -> ㅚ -> ㅘ
+        for (Key key : sequence) {
+            for (SemanticInput input : interpreter.press(key)) {
+                DispatchResult result = processor.process(input);
+                for (KeyAction action : result.actions()) {
+                    assertTrue("must not delete previously committed editor text",
+                        action.kind() != KeyAction.Kind.DELETE_BACKWARD);
+                }
+            }
+        }
+        assertEquals("ㅘ", processor.composingText());
+    }
+
+    @Test
+    public void thirdLoneDotCyclesBackToSingleDot() {
+        assertTrue(interpreter.press(Key.DOT).isEmpty());
+        assertTrue(interpreter.press(Key.DOT).isEmpty());
+        assertTrue(interpreter.press(Key.DOT).isEmpty());
+        assertEquals(vowel(4), interpreter.press(Key.I)); // ㆍㅣ = ㅓ
     }
 
     private static List<SemanticInput> consonant(int index) {

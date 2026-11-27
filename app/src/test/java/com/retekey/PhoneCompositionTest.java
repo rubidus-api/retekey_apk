@@ -2,11 +2,17 @@ package com.retekey;
 
 import static org.junit.Assert.assertEquals;
 
-import com.retekey.CheonjiinInterpreter.Flick;
-import com.retekey.CheonjiinInterpreter.Key;
+import com.retekey.core.CheonjiinInterpreter.Flick;
+import com.retekey.core.CheonjiinInterpreter.Key;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.NaratgeulInterpreter;
+import com.retekey.core.SemanticInput;
 
 /**
  * The two 12-key automata read end to end: key presses through their interpreter, through the

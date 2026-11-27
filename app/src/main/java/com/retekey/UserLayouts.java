@@ -16,12 +16,17 @@ import android.content.SharedPreferences;
  * which are the only moments it changes.
  */
 final class UserLayouts {
-    private static final String PREFS = "retekey_layout";
     private static final String KEY_TEXT = "user_layout";
 
     private static volatile UserLayout current;
+    private static volatile int revision;
 
     private UserLayouts() {
+    }
+
+    /** Monotonic revision bumped whenever the active user layout changes or reloads. */
+    static int revision() {
+        return revision;
     }
 
     /** The installed layout, or null when there is none. */
@@ -38,8 +43,9 @@ final class UserLayouts {
         if (context == null) {
             return current;
         }
-        String text = prefs(context).getString(KEY_TEXT, "");
+        String text = AppPrefs.layout(context).getString(KEY_TEXT, "");
         current = text.isEmpty() ? null : UserLayout.parse(text);
+        revision++;
         return current;
     }
 
@@ -49,19 +55,17 @@ final class UserLayouts {
         if (parsed == null || context == null) {
             return null;
         }
-        prefs(context).edit().putString(KEY_TEXT, text).apply();
+        AppPrefs.layout(context).edit().putString(KEY_TEXT, text).apply();
         current = parsed;
+        revision++;
         return parsed;
     }
 
     static void remove(Context context) {
         if (context != null) {
-            prefs(context).edit().remove(KEY_TEXT).apply();
+            AppPrefs.layout(context).edit().remove(KEY_TEXT).apply();
         }
         current = null;
-    }
-
-    private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        revision++;
     }
 }

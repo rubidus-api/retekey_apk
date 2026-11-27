@@ -5,6 +5,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.retekey.core.DubeolsikHardwareMapper;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.PersianHardwareMapper;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 /**
  * Which physical layout the remote-desktop page wears, and what each of its caps says.
@@ -64,26 +69,6 @@ public final class RemoteDesktopLayouts {
         "ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ",
         "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"
     };
-
-    /** Letters the Latin tables leave on their US caps but the layouts move: position → caps. */
-    private static final Map<KeyboardLayoutId, Map<String, String[]>> MOVES = new HashMap<>();
-
-    static {
-        Map<String, String[]> qwertz = new HashMap<>();
-        qwertz.put("hardware.key.y", new String[] {"z", "Z"});
-        qwertz.put("hardware.key.z", new String[] {"y", "Y"});
-        qwertz.put(PERIOD_POSITION, new String[] {".", ":"});
-        MOVES.put(KeyboardLayoutId.DE_QWERTZ, qwertz);
-
-        Map<String, String[]> azerty = new HashMap<>();
-        azerty.put("hardware.key.q", new String[] {"a", "A"});
-        azerty.put("hardware.key.w", new String[] {"z", "Z"});
-        azerty.put("hardware.key.a", new String[] {"q", "Q"});
-        azerty.put("hardware.key.z", new String[] {"w", "W"});
-        azerty.put("hardware.key.m", new String[] {",", "?"});
-        azerty.put(PERIOD_POSITION, new String[] {":", "/"});
-        MOVES.put(KeyboardLayoutId.FR_AZERTY, azerty);
-    }
 
     private static final List<KeyboardLayoutId> CANDIDATES;
 
@@ -177,11 +162,17 @@ public final class RemoteDesktopLayouts {
 
     /** The layout to wear: the stored one if this screen's list has it, else the list's first. */
     public static KeyboardLayoutId current(List<KeyboardLayoutId> list, KeyboardLayoutId stored) {
+        if (list == null || list.isEmpty()) {
+            return stored != null && CANDIDATES.contains(stored) ? stored : DEFAULT;
+        }
         return list.contains(stored) ? stored : list.get(0);
     }
 
     /** The layout after {@code from} in {@code list}, round to the first after the last. */
     public static KeyboardLayoutId next(List<KeyboardLayoutId> list, KeyboardLayoutId from) {
+        if (list == null || list.isEmpty()) {
+            return DEFAULT;
+        }
         int at = list.indexOf(from);
         return list.get((at + 1) % list.size());
     }
@@ -211,10 +202,6 @@ public final class RemoteDesktopLayouts {
     }
 
     private static String cap(KeyboardLayoutId id, String position, boolean shifted, String us) {
-        Map<String, String[]> moves = MOVES.get(id);
-        if (moves != null && moves.containsKey(position)) {
-            return moves.get(position)[shifted ? 1 : 0];
-        }
         HardwareSemanticMapper mapper = mapperFor(id);
         SemanticInput mapped = mapper == null ? null : mapper.map(position, shifted);
         String text = mapped == null ? null : glyph(mapped);

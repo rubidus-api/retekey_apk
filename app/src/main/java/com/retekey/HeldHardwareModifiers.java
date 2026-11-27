@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import com.retekey.core.KeyModifier;
 
 /**
  * The modifiers held down on a physical keyboard right now. The action bar is pressed with a
@@ -58,7 +59,16 @@ final class HeldHardwareModifiers {
         }
         for (int i = down.size() - 1; i >= 0; i--) {
             Held held = down.get(i);
-            if (held.deviceId == deviceId && (metaState & metaMaskOf(held.keyCode)) == 0) {
+            if (held.deviceId != deviceId) {
+                continue;
+            }
+            int familySides = familySideMaskOf(held.keyCode);
+            // If side bits are present for this modifier family, verify our exact side bit;
+            // otherwise fall back to the generic modifier bit (e.g. synthetic events).
+            int mask = (metaState & familySides) != 0
+                ? metaMaskOf(held.keyCode)
+                : genericMetaMaskOf(held.keyCode);
+            if ((metaState & mask) == 0) {
                 down.remove(i);
             }
         }
@@ -117,6 +127,44 @@ final class HeldHardwareModifiers {
                 return KeyEvent.META_META_LEFT_ON;
             case KeyEvent.KEYCODE_META_RIGHT:
                 return KeyEvent.META_META_RIGHT_ON;
+            default:
+                return 0;
+        }
+    }
+
+    private static int genericMetaMaskOf(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_CTRL_LEFT:
+            case KeyEvent.KEYCODE_CTRL_RIGHT:
+                return KeyEvent.META_CTRL_ON;
+            case KeyEvent.KEYCODE_SHIFT_LEFT:
+            case KeyEvent.KEYCODE_SHIFT_RIGHT:
+                return KeyEvent.META_SHIFT_ON;
+            case KeyEvent.KEYCODE_ALT_LEFT:
+            case KeyEvent.KEYCODE_ALT_RIGHT:
+                return KeyEvent.META_ALT_ON;
+            case KeyEvent.KEYCODE_META_LEFT:
+            case KeyEvent.KEYCODE_META_RIGHT:
+                return KeyEvent.META_META_ON;
+            default:
+                return 0;
+        }
+    }
+
+    private static int familySideMaskOf(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_CTRL_LEFT:
+            case KeyEvent.KEYCODE_CTRL_RIGHT:
+                return KeyEvent.META_CTRL_LEFT_ON | KeyEvent.META_CTRL_RIGHT_ON;
+            case KeyEvent.KEYCODE_SHIFT_LEFT:
+            case KeyEvent.KEYCODE_SHIFT_RIGHT:
+                return KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_RIGHT_ON;
+            case KeyEvent.KEYCODE_ALT_LEFT:
+            case KeyEvent.KEYCODE_ALT_RIGHT:
+                return KeyEvent.META_ALT_LEFT_ON | KeyEvent.META_ALT_RIGHT_ON;
+            case KeyEvent.KEYCODE_META_LEFT:
+            case KeyEvent.KEYCODE_META_RIGHT:
+                return KeyEvent.META_META_LEFT_ON | KeyEvent.META_META_RIGHT_ON;
             default:
                 return 0;
         }

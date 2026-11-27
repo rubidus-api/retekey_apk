@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.ControlKey;
+import com.retekey.core.RawKey;
 
 public final class MenuPageTest {
     private static final KeyboardLayout menu = KeyboardLayouts.menu();

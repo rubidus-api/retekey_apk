@@ -1,6 +1,7 @@
 package com.retekey;
 
 import java.util.List;
+import com.retekey.core.SemanticInput;
 
 /**
  * Which key a touch belongs to, or none: the gap between two key faces is not a key, and a touch
@@ -204,7 +205,8 @@ final class TouchTargets {
 
     /** A key whose accidental press costs more than a wrong letter. */
     static boolean isCostly(SoftwareKeySpec key) {
-        if ("touch.edit.backspace".equals(key.stableKeyId()) || isEnter(key)) {
+        String id = key.stableKeyId();
+        if ("touch.edit.backspace".equals(id) || "touch.rd.backspace".equals(id) || isEnter(key)) {
             return true;
         }
         if (!key.isControl()) {
@@ -241,12 +243,13 @@ final class TouchTargets {
      */
     static boolean isStructural(SoftwareKeySpec key) {
         String id = key.stableKeyId();
-        return "touch.text.space".equals(id) || "touch.edit.enter".equals(id);
+        return "touch.text.space".equals(id) || "touch.rd.space".equals(id) || isEnter(key);
     }
 
     /** The Enter key, which is where a near miss costs most: it sends, or it runs. */
     static boolean isEnter(SoftwareKeySpec key) {
-        return "touch.edit.enter".equals(key.stableKeyId());
+        String id = key.stableKeyId();
+        return "touch.edit.enter".equals(id) || "touch.rd.enter".equals(id);
     }
 
     /**

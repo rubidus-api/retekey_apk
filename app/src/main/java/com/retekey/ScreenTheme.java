@@ -15,15 +15,13 @@ import android.content.SharedPreferences;
  * app supports, and it is the same set of DeviceDefault parents the system would have chosen.
  */
 final class ScreenTheme {
-    private static final String PREFS = "retekey_view";
-
     private ScreenTheme() {
     }
 
     /** The mode stored in preferences, or {@link ThemeMode#SYSTEM} if none is readable. */
     static ThemeMode mode(Context context) {
         try {
-            SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            SharedPreferences prefs = AppPrefs.view(context);
             return ThemeMode.parse(prefs.getString(ThemeMode.PREF_KEY, null));
         } catch (RuntimeException noPreferences) {
             // Direct-boot or a context without storage: the device's own setting is the safe answer.
@@ -61,7 +59,7 @@ final class ScreenTheme {
     }
 
     static void setFlag(Context context, String key, boolean value) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+        AppPrefs.view(context).edit()
             .putBoolean(key, value).apply();
     }
 
@@ -71,7 +69,7 @@ final class ScreenTheme {
 
     private static boolean flag(Context context, String key, boolean unset) {
         try {
-            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(key, unset);
+            return AppPrefs.view(context).getBoolean(key, unset);
         } catch (RuntimeException noPreferences) {
             return unset;
         }
@@ -79,7 +77,7 @@ final class ScreenTheme {
 
     /** Stores the mode. The keyboard picks it up through its preference-change listener. */
     static void setMode(Context context, ThemeMode mode) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        AppPrefs.view(context)
             .edit()
             .putString(ThemeMode.PREF_KEY, mode.stored())
             .apply();

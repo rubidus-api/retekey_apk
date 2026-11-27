@@ -4,6 +4,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.MaterializedCompositionPolicy;
 
 /**
  * What a terminal or remote-desktop composer may keep believing after a plan (issue #7).

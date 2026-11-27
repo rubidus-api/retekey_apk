@@ -23,6 +23,10 @@ public final class ClipRetentionGuardTest {
         ClipRetentionGuard guard = new ClipRetentionGuard();
         guard.onField(false, 1_000);
         Assert.assertFalse(guard.mayKeep("hunter2", true, 1_100));
+        // Still withheld later if polled again without the sensitive flag while on clipboard.
+        Assert.assertFalse(guard.mayKeep("hunter2", false, 5_000));
+        // Cleared once the clipboard changes to a different clip.
+        Assert.assertTrue(guard.mayKeep("public", false, 6_000));
     }
 
     @Test

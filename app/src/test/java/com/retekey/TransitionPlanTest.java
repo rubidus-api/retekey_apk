@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Objects;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.KeyAction;
+import com.retekey.core.TransitionPlan;
 
 public final class TransitionPlanTest {
     @Test

@@ -22,6 +22,7 @@ final class KeyFeedback {
     static final float DEFAULT_SOUND = 0.10f;
     static final float DEFAULT_VISUAL = 0.30f;
 
+    private final Context appContext;
     private final Vibrator vibrator;
     private final AudioManager audio;
     /**
@@ -30,18 +31,29 @@ final class KeyFeedback {
      * level — which is why the setting appeared to do nothing. A sample we play ourselves obeys
      * the number the user set.
      */
-    private final android.media.SoundPool pool;
+    private android.media.SoundPool pool;
     private int clickId;
-    private boolean clickReady;
+    private volatile boolean clickReady;
     private float haptic = DEFAULT_HAPTIC;
     private float sound = DEFAULT_SOUND;
     private float visual = DEFAULT_VISUAL;
 
     KeyFeedback(Context context) {
+        this.appContext = context.getApplicationContext() != null
+            ? context.getApplicationContext() : context;
         this.vibrator = resolveVibrator(context);
         this.audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        this.pool = createPool();
+        prepare();
+    }
+
+    /** Loads the click sample if the SoundPool has not been built or was released on detach. */
+    void prepare() {
         if (pool != null) {
+            return;
+        }
+        pool = createPool();
+        if (pool != null) {
+            clickReady = false;
             pool.setOnLoadCompleteListener(new android.media.SoundPool.OnLoadCompleteListener() {
                 @Override
                 public void onLoadComplete(android.media.SoundPool p, int id, int status) {
@@ -49,7 +61,7 @@ final class KeyFeedback {
                 }
             });
             try {
-                clickId = pool.load(context, R.raw.key_click, 1);
+                clickId = pool.load(appContext, R.raw.key_click, 1);
             } catch (RuntimeException ignored) {
                 clickId = 0;
             }
@@ -76,9 +88,13 @@ final class KeyFeedback {
 
     /** Frees the sample; the keyboard view calls this when it goes away. */
     void release() {
-        if (pool != null) {
+        clickReady = false;
+        clickId = 0;
+        android.media.SoundPool current = pool;
+        pool = null;
+        if (current != null) {
             try {
-                pool.release();
+                current.release();
             } catch (RuntimeException ignored) {
                 // Nothing to do if the pool is already gone.
             }

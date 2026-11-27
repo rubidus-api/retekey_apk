@@ -5,6 +5,17 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.EditorTextResult;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.KeyAction;
+import com.retekey.core.TransitionPlan;
 
 public final class UnicodeDeletionTest {
     private static final CheckedEditorExecutor EXECUTOR = new CheckedEditorExecutor();
@@ -119,6 +130,8 @@ public final class UnicodeDeletionTest {
     public void legacyUnimplementedMethodFallsBackOnceForBmpOrSurrogatePair() {
         assertLegacyFallback("A", 1);
         assertLegacyFallback("\ud83d\ude00", 2);
+        // Leading low surrogate from an emoji immediately before a BMP character ("😀a").
+        assertLegacyFallback("\ude00a", 1);
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.retekey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.retekey.core.Scalars;
 
 /**
  * The clips the keyboard remembers, newest first.

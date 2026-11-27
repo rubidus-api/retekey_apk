@@ -1,5 +1,5 @@
 <resources>
-    <style name="ReteImeTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+    <style name="ReteImeTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:fontFamily">sans</item>
     </style>

@@ -1,6 +1,12 @@
 package com.retekey;
 
 import android.view.KeyEvent;
+import com.retekey.core.HardwareEventNormalizer;
+import com.retekey.core.HardwareSemanticMapper;
+import com.retekey.core.InputAction;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.RawHardwareKeyEvent;
+import com.retekey.core.SemanticInput;
 
 public final class KeyEventNormalizer {
     private KeyEventNormalizer() {
@@ -24,7 +30,7 @@ public final class KeyEventNormalizer {
         String stableKeyId = stableKeyId(keyCode);
         SemanticInput mappedInput = keyCode == KeyEvent.KEYCODE_DEL
             ? SemanticInput.deleteBackward()
-            : mapper.map(stableKeyId, event.isShiftPressed());
+            : mapper.map(stableKeyId, event.isShiftPressed(), event.isCapsLockOn());
 
         RawHardwareKeyEvent raw = RawHardwareKeyEvent.builder(action, keyCode)
             .stableKeyId(stableKeyId)

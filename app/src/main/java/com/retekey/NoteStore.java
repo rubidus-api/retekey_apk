@@ -11,35 +11,65 @@ import android.content.SharedPreferences;
  * be torn down between two keystrokes, and a note that only existed in memory would go with it.
  */
 final class NoteStore {
-    private static final String PREFS = "retekey_notes";
     private static final String KEY_NOTES = "notes";
+    private static final String KEY_SORT = "notes_sort";
+    private static final String KEY_ASCENDING = "notes_ascending";
+    private static final VersionedStore.Codec<java.util.List<Note>> CODEC =
+        new VersionedStore.Codec<java.util.List<Note>>() {
+            @Override
+            public java.util.List<Note> decode(String stored) {
+                // Ids are given to notes from the first form by their place in the stored order,
+                // so this happens before any sorting (review R05, R06).
+                return NoteCodec.decode(stored);
+            }
+
+            @Override
+            public String encode(java.util.List<Note> value) {
+                return NoteCodec.encode(value);
+            }
+
+            @Override
+            public boolean sameData(java.util.List<Note> first, java.util.List<Note> second) {
+                return first.equals(second);
+            }
+        };
 
     private NoteStore() {
-    }
-
-    private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
     static NoteList load(Context context) {
         if (context == null) {
             return NoteList.empty();
         }
-        SharedPreferences prefs = prefs(context);
-        String stored = prefs.getString(KEY_NOTES, "");
-        // Ids are given to notes from the first form by their place in the stored order, so this
-        // happens before any sorting (review R05, R06).
-        java.util.List<Note> notes = NoteCodec.decode(stored);
-        String rewritten = NoteCodec.encode(notes);
-        StoreMigration.rewrite(
-            prefs, KEY_NOTES, stored, rewritten, notes.equals(NoteCodec.decode(rewritten)));
-        return NoteList.of(notes).sortedBy(NoteList.Sort.STAMP);
+        SharedPreferences prefs = AppPrefs.notes(context);
+        java.util.List<Note> notes = VersionedStore.load(prefs, KEY_NOTES, CODEC);
+        boolean hasSort = prefs.contains(KEY_SORT);
+        NoteList.Sort sort = parseSort(prefs.getString(KEY_SORT, null));
+        boolean ascending = hasSort
+            ? prefs.getBoolean(KEY_ASCENDING, sort != NoteList.Sort.STAMP)
+            : false;
+        return NoteList.of(notes, sort, ascending);
     }
 
     static void save(Context context, NoteList notes) {
         if (context == null) {
             return;
         }
-        prefs(context).edit().putString(KEY_NOTES, NoteCodec.encode(notes.notes())).apply();
+        AppPrefs.notes(context).edit()
+            .putString(KEY_NOTES, NoteCodec.encode(notes.notes()))
+            .putString(KEY_SORT, notes.sort().name())
+            .putBoolean(KEY_ASCENDING, notes.ascending())
+            .apply();
+    }
+
+    private static NoteList.Sort parseSort(String stored) {
+        if (stored == null || stored.isEmpty()) {
+            return NoteList.Sort.STAMP;
+        }
+        try {
+            return NoteList.Sort.valueOf(stored);
+        } catch (IllegalArgumentException ignored) {
+            return NoteList.Sort.STAMP;
+        }
     }
 }

@@ -5,6 +5,21 @@ import java.util.Collections;
 import java.util.EnumSet;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.KeyAction;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.RawKeyPhase;
+import com.retekey.core.ScaffoldInputProcessor;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.StatelessInputProcessor;
+import com.retekey.core.TransitionPlan;
 
 /**
  * The raw-key path: a RAW_KEY action reaches the editor as a down/up key event, in both rich and

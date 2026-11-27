@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
+import com.retekey.core.SemanticInput;
 
 /**
  * The page a layout file becomes. Everything asserted here is something {@code docs/user-layouts.md}

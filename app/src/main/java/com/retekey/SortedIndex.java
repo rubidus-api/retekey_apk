@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
  */
 public final class SortedIndex {
     private static final byte NEWLINE = '\n';
+    private static final byte CARRIAGE_RETURN = '\r';
     private static final byte TAB = '\t';
     private static final byte HASH = '#';
 
@@ -40,13 +41,14 @@ public final class SortedIndex {
         if (buffer == null) {
             throw new IllegalArgumentException("buffer must not be null");
         }
-        ByteBuffer bytes = buffer.duplicate();
+        ByteBuffer bytes = buffer.slice();
         int limit = bytes.limit();
         int cursor = 0;
         int maxKey = 1;
         while (cursor < limit && bytes.get(cursor) == HASH) {
-            int lineEnd = lineEnd(bytes, cursor, limit);
-            String line = text(bytes, cursor, lineEnd);
+            int rawEnd = lineEnd(bytes, cursor, limit);
+            int trimmedEnd = trimCr(bytes, cursor, rawEnd);
+            String line = text(bytes, cursor, trimmedEnd);
             if (line.startsWith("#!maxkey ")) {
                 try {
                     maxKey = Math.max(1, Integer.parseInt(line.substring(9).trim()));
@@ -54,7 +56,7 @@ public final class SortedIndex {
                     // A damaged directive must not stop the table from working.
                 }
             }
-            cursor = lineEnd + 1;
+            cursor = rawEnd + 1;
         }
         return new SortedIndex(bytes, cursor, limit, maxKey);
     }
@@ -83,12 +85,13 @@ public final class SortedIndex {
         if (lineStart >= end) {
             return null;
         }
-        int lineEnd = lineEnd(bytes, lineStart, end);
-        int separator = separator(lineStart, lineEnd);
+        int rawEnd = lineEnd(bytes, lineStart, end);
+        int trimmedEnd = trimCr(bytes, lineStart, rawEnd);
+        int separator = separator(lineStart, trimmedEnd);
         if (separator < 0 || !keyEquals(lineStart, separator, wanted)) {
             return null;
         }
-        return text(bytes, separator + 1, lineEnd);
+        return text(bytes, separator + 1, trimmedEnd);
     }
 
     /** The start of the first line whose key is not less than {@code wanted}. */
@@ -98,10 +101,11 @@ public final class SortedIndex {
         while (low < high) {
             int probe = (low + high) >>> 1;
             int lineStart = lineStart(probe, low);
-            int lineEnd = lineEnd(bytes, lineStart, end);
-            if (compareKey(lineStart, lineEnd, wanted) < 0) {
+            int rawEnd = lineEnd(bytes, lineStart, end);
+            int trimmedEnd = trimCr(bytes, lineStart, rawEnd);
+            if (compareKey(lineStart, trimmedEnd, wanted) < 0) {
                 // Everything up to and including this line is too small.
-                low = lineEnd + 1;
+                low = rawEnd + 1;
             } else {
                 high = lineStart;
             }
@@ -124,6 +128,10 @@ public final class SortedIndex {
             cursor++;
         }
         return cursor;
+    }
+
+    private static int trimCr(ByteBuffer bytes, int from, int lineEnd) {
+        return lineEnd > from && bytes.get(lineEnd - 1) == CARRIAGE_RETURN ? lineEnd - 1 : lineEnd;
     }
 
     private int separator(int lineStart, int lineEnd) {

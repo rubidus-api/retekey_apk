@@ -3,6 +3,12 @@ package com.retekey;
 import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.InputAction;
+import com.retekey.core.InputDispatcher;
+import com.retekey.core.InputSource;
+import com.retekey.core.ProjectKeyEvent;
+import com.retekey.core.SemanticInput;
 
 public final class InputDispatcherSafetyTest {
     @Test

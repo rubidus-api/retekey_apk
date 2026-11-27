@@ -20,6 +20,18 @@ import android.widget.Toast;
 public final class ShareTargetActivity extends Activity {
     /** The alias a layout arrives through; the plain entry keeps text and installs nothing. */
     private static final String LAYOUT_DOOR = "com.retekey.InstallLayoutActivity";
+    private android.app.AlertDialog activeDialog;
+
+    @Override
+    protected void onDestroy() {
+        if (activeDialog != null) {
+            if (activeDialog.isShowing()) {
+                activeDialog.dismiss();
+            }
+            activeDialog = null;
+        }
+        super.onDestroy();
+    }
 
     @Override
     protected void onCreate(Bundle state) {
@@ -58,54 +70,88 @@ public final class ShareTargetActivity extends Activity {
             ask(UserLayout.check(shared), shared);
             return;
         }
-        final android.os.Handler handler = new android.os.Handler();
+        final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final String text = fileText(intent);
+                final LayoutStreamReader.Result result = readLayout(intent);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        if (isFinishing()) {
+                        if (isFinishing() || (android.os.Build.VERSION.SDK_INT
+                                >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1
+                                && isDestroyed())) {
                             return;
                         }
-                        ask(UserLayout.check(text), text);
+                        if (result.status == LayoutStreamReader.Status.TOO_BIG) {
+                            showProblem(R.string.layout_problem_too_big);
+                            return;
+                        }
+                        if (result.status != LayoutStreamReader.Status.OK) {
+                            showProblem(R.string.layout_not_read);
+                            return;
+                        }
+                        ask(UserLayout.check(result.text), result.text);
                     }
                 });
             }
         }, "layout-read").start();
     }
 
+    private android.content.Context dialogContext() {
+        switch (ScreenTheme.mode(this)) {
+            case LIGHT:
+                return new android.view.ContextThemeWrapper(this, R.style.ReteScreenThemeLight);
+            case DARK:
+                return new android.view.ContextThemeWrapper(this, R.style.ReteScreenThemeDark);
+            default:
+                return new android.view.ContextThemeWrapper(this, R.style.ReteScreenTheme);
+        }
+    }
+
+    private void showActiveDialog(android.app.AlertDialog dialog) {
+        if (activeDialog != null && activeDialog.isShowing()) {
+            activeDialog.dismiss();
+        }
+        activeDialog = dialog;
+        dialog.show();
+    }
+
+    private void showProblem(int messageRes) {
+        showActiveDialog(new android.app.AlertDialog.Builder(dialogContext())
+            .setTitle(R.string.layout_problem_title)
+            .setMessage(messageRes)
+            .setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(android.content.DialogInterface dialog) {
+                    finish();
+                }
+            })
+            .setPositiveButton(android.R.string.ok,
+                new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface dialog, int which) {
+                        finish();
+                    }
+                })
+            .create());
+    }
+
     /** The one question this door asks: install this, or leave what is installed alone. */
     private void ask(UserLayout.Checked checked, final String text) {
         UserLayout layout = checked.layout();
         if (layout == null) {
-            new android.app.AlertDialog.Builder(this)
-                .setTitle(R.string.layout_problem_title)
-                .setMessage(reasonFor(checked.problem()))
-                .setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(android.content.DialogInterface dialog) {
-                        finish();
-                    }
-                })
-                .setPositiveButton(android.R.string.ok,
-                    new android.content.DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(android.content.DialogInterface dialog, int which) {
-                            finish();
-                        }
-                    })
-                .show();
+            showProblem(reasonFor(checked.problem()));
             return;
         }
+        UserLayouts.load(this);
         UserLayout installed = UserLayouts.current();
         String details = getString(R.string.layout_install_details,
             layout.name(), layout.cap(), firstKeys(layout));
         String replaces = installed == null
             ? getString(R.string.layout_install_first)
             : getString(R.string.layout_install_replaces, installed.name());
-        new android.app.AlertDialog.Builder(this)
+        showActiveDialog(new android.app.AlertDialog.Builder(dialogContext())
             .setTitle(R.string.layout_install_title)
             .setMessage(details + "\n\n" + replaces)
             .setNegativeButton(android.R.string.cancel,
@@ -134,7 +180,7 @@ public final class ShareTargetActivity extends Activity {
                         finish();
                     }
                 })
-            .show();
+            .create());
     }
 
     /** The first row's keys, as a line: what this layout would put under the fingers. */
@@ -164,6 +210,7 @@ public final class ShareTargetActivity extends Activity {
                 return R.string.layout_problem_no_name;
             case NOT_THREE_ROWS:
                 return R.string.layout_problem_rows;
+            case INVALID_TEXT:
             default:
                 return R.string.layout_problem_not_a_layout;
         }
@@ -181,34 +228,22 @@ public final class ShareTargetActivity extends Activity {
             && LAYOUT_DOOR.equals(intent.getComponent().getClassName());
     }
 
-    /** The text of an opened file, or null when it cannot be read. */
-    private String fileText(Intent intent) {
-        android.net.Uri uri = intent == null ? null : intent.getData();
+    private LayoutStreamReader.Result readLayout(Intent intent) {
+        android.net.Uri uri = layoutUri(intent);
         if (uri == null) {
-            return null;
+            return LayoutStreamReader.Result.unreadable();
+        }
+        android.content.pm.ApplicationInfo appInfo = getApplicationInfo();
+        String dataDir = appInfo == null ? null : appInfo.dataDir;
+        if (LayoutStreamReader.isOwnPrivateFile(uri.getScheme(), uri.getPath(), dataDir)) {
+            return LayoutStreamReader.Result.unreadable();
         }
         java.io.InputStream in = null;
         try {
             in = getContentResolver().openInputStream(uri);
-            if (in == null) {
-                return null;
-            }
-            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-            byte[] buffer = new byte[4096];
-            int read;
-            // A layout is a few hundred bytes; anything past a sensible ceiling is not one, and
-            // reading it whole into memory would be somebody else's file doing it. One byte past
-            // the ceiling is read on purpose: a file over it is refused, never taken for the
-            // layout its first part looks like (review finding R09).
-            while ((read = in.read(buffer)) > 0 && out.size() <= MOST_A_LAYOUT_CAN_BE) {
-                out.write(buffer, 0, read);
-            }
-            if (out.size() > MOST_A_LAYOUT_CAN_BE) {
-                return null;
-            }
-            return new String(out.toByteArray(), "UTF-8");
+            return LayoutStreamReader.read(in, MOST_A_LAYOUT_CAN_BE);
         } catch (java.io.IOException | RuntimeException e) {
-            return null;
+            return LayoutStreamReader.Result.unreadable();
         } finally {
             if (in != null) {
                 try {
@@ -218,6 +253,16 @@ public final class ShareTargetActivity extends Activity {
                 }
             }
         }
+    }
+
+    private static android.net.Uri layoutUri(Intent intent) {
+        if (intent == null) {
+            return null;
+        }
+        android.net.Uri data = intent.getData();
+        return data != null
+            ? data
+            : Compat.parcelableExtra(intent, Intent.EXTRA_STREAM, android.net.Uri.class);
     }
 
     /** The most of an opened file that is read: a layout is small, and this is not a file viewer. */

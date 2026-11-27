@@ -36,4 +36,12 @@ public class PanelHeightTest {
         assertEquals(CAP, PanelHeight.forPanel(1920, 4000, 0));
         assertEquals(0, PanelHeight.forPanel(1920, 72, 5000));
     }
+
+    @Test
+    public void finiteSpecBoundsClampMeasuredPanelHeight() {
+        assertEquals(700, PanelHeight.clampToSpec(1000, 700));
+        assertEquals(500, PanelHeight.clampToSpec(500, 700));
+        assertEquals(500, PanelHeight.clampToSpec(500, 0));
+        assertEquals(0, PanelHeight.clampToSpec(-20, 500));
+    }
 }

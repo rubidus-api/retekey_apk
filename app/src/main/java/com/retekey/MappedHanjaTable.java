@@ -56,15 +56,27 @@ public final class MappedHanjaTable {
     }
 
     private static HanjaTable.Match longestSuffix(SortedIndex index, String before, int maxLen) {
-        if (before == null || before.isEmpty() || index.isEmpty()) {
+        if (before == null || before.isEmpty() || maxLen <= 0 || index.isEmpty()) {
             return null;
         }
-        int cap = Math.min(maxLen, Math.min(before.length(), index.maxKeyLength()));
-        for (int length = cap; length >= 1; length--) {
-            String suffix = before.substring(before.length() - length);
+        int end = before.length();
+        int maxChars = index.maxKeyLength();
+        List<Integer> starts = new ArrayList<>();
+        int pos = end;
+        while (pos > 0 && starts.size() < maxLen) {
+            int cp = before.codePointBefore(pos);
+            int nextPos = pos - Character.charCount(cp);
+            if (end - nextPos > maxChars) {
+                break;
+            }
+            starts.add(nextPos);
+            pos = nextPos;
+        }
+        for (int i = starts.size() - 1; i >= 0; i--) {
+            String suffix = before.substring(starts.get(i));
             List<String> values = split(index.find(suffix));
             if (!values.isEmpty()) {
-                return new HanjaTable.Match(suffix, length, values);
+                return new HanjaTable.Match(suffix, suffix.length(), values);
             }
         }
         return null;

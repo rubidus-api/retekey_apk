@@ -3,6 +3,7 @@ package com.retekey;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import com.retekey.core.KeyRepeatSettings;
 
 public final class KeyRepeatSettingsTest {
     @Test

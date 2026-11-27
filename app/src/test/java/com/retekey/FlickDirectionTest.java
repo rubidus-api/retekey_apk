@@ -3,8 +3,10 @@ package com.retekey;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import com.retekey.CheonjiinInterpreter.Flick;
+import com.retekey.core.CheonjiinInterpreter.Flick;
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.FlickDirection;
 
 /** Which way a finger went, and when it has not gone anywhere yet. */
 public final class FlickDirectionTest {
@@ -44,5 +46,11 @@ public final class FlickDirectionTest {
     public void oneAxisPastTheThresholdIsEnough() {
         assertEquals(Flick.RIGHT, FlickDirection.of(40, 5, THRESHOLD));
         assertEquals(Flick.UP, FlickDirection.of(5, -40, THRESHOLD));
+    }
+
+    @Test
+    public void nanCoordinatesReturnNull() {
+        assertNull(FlickDirection.of(Float.NaN, 0f, THRESHOLD));
+        assertNull(FlickDirection.of(0f, Float.NaN, THRESHOLD));
     }
 }

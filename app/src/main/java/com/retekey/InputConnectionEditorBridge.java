@@ -5,13 +5,20 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputConnection;
 import java.util.Objects;
+import com.retekey.core.EditorBridge;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorTextResult;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawEditorKey;
+import com.retekey.core.RawKey;
 
 public final class InputConnectionEditorBridge implements EditorBridge {
     private static final int RAW_KEY_FLAGS =
         KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE;
 
     private final InputConnection inputConnection;
-    private long rawKeyDownTime;
+    private final java.util.EnumMap<RawKey, Long> rawKeyDownTimes =
+        new java.util.EnumMap<>(RawKey.class);
 
     public InputConnectionEditorBridge(InputConnection inputConnection) {
         this.inputConnection = Objects.requireNonNull(inputConnection, "inputConnection");
@@ -90,10 +97,14 @@ public final class InputConnectionEditorBridge implements EditorBridge {
     public EditorCallResult sendRawKey(RawEditorKey key) {
         try {
             long eventTime = SystemClock.uptimeMillis();
+            long downTime;
             if (key.action() == RawEditorKey.Action.DOWN) {
-                rawKeyDownTime = eventTime;
+                rawKeyDownTimes.put(key.key(), eventTime);
+                downTime = eventTime;
+            } else {
+                Long recorded = rawKeyDownTimes.remove(key.key());
+                downTime = recorded == null ? eventTime : recorded;
             }
-            long downTime = rawKeyDownTime == 0 ? eventTime : rawKeyDownTime;
             int action = key.action() == RawEditorKey.Action.DOWN
                 ? KeyEvent.ACTION_DOWN
                 : KeyEvent.ACTION_UP;
@@ -128,13 +139,10 @@ public final class InputConnectionEditorBridge implements EditorBridge {
                 );
             }
             boolean result = inputConnection.sendKeyEvent(event);
-            if (key.action() == RawEditorKey.Action.UP) {
-                rawKeyDownTime = 0;
-            }
             return result ? EditorCallResult.succeeded() : EditorCallResult.rejected();
         } catch (RuntimeException ignored) {
             if (key.action() == RawEditorKey.Action.UP) {
-                rawKeyDownTime = 0;
+                rawKeyDownTimes.remove(key.key());
             }
             return EditorCallResult.runtimeFailure();
         }
@@ -165,68 +173,7 @@ public final class InputConnectionEditorBridge implements EditorBridge {
 
     /** The Linux evdev scan code a physical keyboard reports for this key; 0 when unmapped. */
     static int scanCodeFor(RawKey key) {
-        switch (key) {
-            case A: return 30;
-            case B: return 48;
-            case C: return 46;
-            case D: return 32;
-            case E: return 18;
-            case F: return 33;
-            case G: return 34;
-            case H: return 35;
-            case I: return 23;
-            case J: return 36;
-            case K: return 37;
-            case L: return 38;
-            case M: return 50;
-            case N: return 49;
-            case O: return 24;
-            case P: return 25;
-            case Q: return 16;
-            case R: return 19;
-            case S: return 31;
-            case T: return 20;
-            case U: return 22;
-            case V: return 47;
-            case W: return 17;
-            case X: return 45;
-            case Y: return 21;
-            case Z: return 44;
-            case CTRL_LEFT: return 29;
-            case SHIFT_LEFT: return 42;
-            case ALT_LEFT: return 56;
-            case META_LEFT: return 125;
-            case ENTER: return 28;
-            case BACKSPACE: return 14;
-            case TAB: return 15;
-            case ESCAPE: return 1;
-            case SPACE: return 57;
-            case PERIOD: return 52;
-            case CTRL_RIGHT: return 97;
-            case ALT_RIGHT: return 100;
-            case GRAVE: return 41;
-            case MINUS: return 12;
-            case EQUALS: return 13;
-            case LEFT_BRACKET: return 26;
-            case RIGHT_BRACKET: return 27;
-            case BACKSLASH: return 43;
-            case SEMICOLON: return 39;
-            case APOSTROPHE: return 40;
-            case COMMA: return 51;
-            case SLASH: return 53;
-            case DIGIT_0: return 11;
-            case LEFT: return 105;
-            case RIGHT: return 106;
-            case UP: return 103;
-            case DOWN: return 108;
-            default:
-                if (key.ordinal() > RawKey.DIGIT_0.ordinal()
-                    && key.ordinal() <= RawKey.DIGIT_9.ordinal()) {
-                    // 1..9 are evdev 2..10, in order; 0 comes after 9, as on the keyboard.
-                    return 1 + (key.ordinal() - RawKey.DIGIT_0.ordinal());
-                }
-                return 0;
-        }
+        return key.scanCode();
     }
 
     static int keyCodeFor(RawKey key) {

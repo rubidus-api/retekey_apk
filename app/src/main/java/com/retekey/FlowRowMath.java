@@ -39,4 +39,29 @@ public final class FlowRowMath {
         int[] lines = lines(widths, available);
         return lines.length == 0 ? 1 : lines[lines.length - 1] + 1;
     }
+
+    /**
+     * Populates {@code outLines[0..count-1]} without allocating and returns how many wrapped lines
+     * are needed ({@code 0} when {@code count == 0}).
+     */
+    public static int linesInto(int[] widths, int count, int available, int[] outLines) {
+        if (widths == null || outLines == null) {
+            throw new IllegalArgumentException("widths and outLines must not be null");
+        }
+        if (count <= 0) {
+            return 0;
+        }
+        int line = 0;
+        int used = 0;
+        for (int i = 0; i < count; i++) {
+            int width = Math.max(0, widths[i]);
+            if (used > 0 && used + width > available) {
+                line++;
+                used = 0;
+            }
+            outLines[i] = line;
+            used += width;
+        }
+        return line + 1;
+    }
 }

@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
+import com.retekey.core.ControlKey;
+import com.retekey.core.HardwareSemanticMapper;
 
 /**
  * The IPA page (issue #11): the symbols sit at the letters they sound like, each key holds its

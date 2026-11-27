@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.CursorMovePolicy;
 
 /**
  * The rule that ends a composition when the user moves the cursor away from it. The positive

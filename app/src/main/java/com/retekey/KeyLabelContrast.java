@@ -28,6 +28,27 @@ public final class KeyLabelContrast {
     }
 
     /**
+     * Whether the inverse ink (used on contrasting accent fills) must be dark: true when the
+     * ordinary text is light (so the inverse is dark), false when the ordinary text is dark.
+     */
+    public static boolean inversePrefersDarkInk(int textRed, int textGreen, int textBlue) {
+        return prefersDarkInk(textRed, textGreen, textBlue);
+    }
+
+    /**
+     * Whether a label on a fill should switch from ordinary text ink to inverse ink to stay
+     * readable. Both share the same dark/light polarity precisely when the fill needs the
+     * opposite ink from ordinary text.
+     */
+    public static boolean useInverseInk(
+        int fillRed, int fillGreen, int fillBlue,
+        int textRed, int textGreen, int textBlue
+    ) {
+        return prefersDarkInk(fillRed, fillGreen, fillBlue)
+            == prefersDarkInk(textRed, textGreen, textBlue);
+    }
+
+    /**
      * Perceived brightness, 0 (black) to 1 (white), weighted the way the eye weights the channels:
      * green carries most of it, blue almost none.
      */

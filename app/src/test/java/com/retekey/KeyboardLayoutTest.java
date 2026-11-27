@@ -13,6 +13,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
+import com.retekey.core.ControlKey;
+import com.retekey.core.RawKey;
+import com.retekey.core.RawKeyPhase;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 public final class KeyboardLayoutTest {
     private static final int WIDTH = 1080;
@@ -210,6 +215,18 @@ public final class KeyboardLayoutTest {
         assertNull("2-beolsik has no Esc beside space",
             KeyboardLayouts.of(KeyboardLayoutId.KO_DUBEOLSIK, false)
                 .findById("touch.key.escape.letters"));
+    }
+
+    @Test
+    public void menuAndPattachoteResolveLazilyAndConsistently() {
+        KeyboardLayout menu = KeyboardLayouts.of(KeyboardLayoutId.MENU, false);
+        assertEquals(KeyboardLayoutId.MENU, menu.id());
+        assertSame(menu, KeyboardLayouts.menu());
+        assertSame(menu, KeyboardLayouts.of(KeyboardLayoutId.MENU, true));
+
+        KeyboardLayout pattachote = KeyboardLayouts.of(KeyboardLayoutId.TH_PATTACHOTE, false);
+        assertNotNull(pattachote.findById("touch.key.escape.letters"));
+        assertSame(pattachote, KeyboardLayouts.of(KeyboardLayoutId.TH_PATTACHOTE, true));
     }
 
     @Test

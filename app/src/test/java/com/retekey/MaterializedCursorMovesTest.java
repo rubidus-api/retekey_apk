@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import com.retekey.core.MaterializedCursorMoves;
 
 /** Telling our own echoes from a cursor the user moved, in a materialised editor (issue #7). */
 public final class MaterializedCursorMovesTest {
@@ -112,5 +113,25 @@ public final class MaterializedCursorMovesTest {
         moves.expect(4);
         assertFalse("the buffer had not caught up yet", moves.isForeignMove(3, 3));
         assertFalse(moves.isForeignMove(4, 4));
+    }
+
+    @Test
+    public void negativeExpectationClearsStaleAnchorPosition() {
+        MaterializedCursorMoves moves = new MaterializedCursorMoves();
+        moves.expect(5);
+        assertFalse(moves.isForeignMove(5, 5));
+        moves.expect(-1); // e.g. raw key / Enter clears anchor too
+        moves.expect(8);
+        assertTrue("returning to pre-raw anchor 5 after expecting 8 is a foreign move",
+            moves.isForeignMove(5, 5));
+    }
+
+    @Test
+    public void unanchoredRangeSelectionDoesNotAnchorOnStart() {
+        MaterializedCursorMoves moves = new MaterializedCursorMoves();
+        assertFalse(moves.isForeignMove(2, 5));
+        moves.expect(6);
+        assertTrue("2 was only the start of a range, not a collapsed anchor",
+            moves.isForeignMove(2, 2));
     }
 }

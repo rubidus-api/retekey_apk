@@ -48,6 +48,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF panelRect = new RectF();
+    private final RectF barRect = new RectF();
     private final Rect moveCell = new Rect();
     private final Rect crossCell = new Rect();
     private final Rect closeCell = new Rect();
@@ -55,6 +56,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
 
     private KeyboardPalette palette;
     private FloatingKeyboardBounds bounds;
+    private boolean boundsDirty;
     /** The syllable being built for an editor that cannot show it, drawn in the bar's free middle. */
     private String composing = "";
     private OnClose onClose;
@@ -64,6 +66,9 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     private static final int DRAG_NONE = 0;
     private static final int DRAG_MOVE = 1;
     private static final int DRAG_RESIZE = 2;
+    private static final int DRAG_CLOSE = 3;
+    private static final int DRAG_CROSS = 4;
+    private int activePointerId = MotionEvent.INVALID_POINTER_ID;
     private float dragAnchorX;
     private float dragAnchorY;
 
@@ -136,6 +141,14 @@ public final class FloatingKeyboardFrame extends ViewGroup {
             height = getResources().getDisplayMetrics().heightPixels;
         }
         ensureBounds(width, height);
+        if (bounds == null) {
+            panel.measure(
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.EXACTLY)
+            );
+            setMeasuredDimension(width, height);
+            return;
+        }
         int keyboardHeight = Math.max(0, bounds.height() - barHeightPx());
         panel.measure(
             MeasureSpec.makeMeasureSpec(bounds.width(), MeasureSpec.EXACTLY),
@@ -147,9 +160,16 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         ensureBounds(r - l, b - t);
+        if (bounds == null) {
+            return;
+        }
         int top = bounds.top() + barHeightPx();
         panel.layout(bounds.left(), top, bounds.right(), bounds.bottom());
         layoutBarCells();
+        if (boundsDirty) {
+            boundsDirty = false;
+            post(this::notifyBounds);
+        }
     }
 
     /** Creates or rescales the panel when the frame's own size is first known or changes. */
@@ -160,10 +180,10 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         if (bounds == null) {
             bounds = FloatingKeyboardBounds.initial(
                 width, height, FloatingKeyboardBounds.Side.RIGHT);
-            notifyBounds();
+            boundsDirty = true;
         } else if (bounds.screenWidth() != width || bounds.screenHeight() != height) {
             bounds = bounds.onScreen(width, height);
-            notifyBounds();
+            boundsDirty = true;
         }
     }
 
@@ -190,19 +210,18 @@ public final class FloatingKeyboardFrame extends ViewGroup {
 
         // The bar is a shade brighter than the panel so the handles read as controls, not as keys.
         fill.setColor(withAlpha(palette.keyFace, panelAlpha));
-        canvas.drawRoundRect(
-            new RectF(bounds.left(), bounds.top(), bounds.right(), bounds.top() + barHeightPx()),
-            corner,
-            corner,
-            fill
-        );
+        barRect.set(bounds.left(), bounds.top(), bounds.right(), bounds.top() + barHeightPx());
+        canvas.drawRoundRect(barRect, corner, corner, fill);
 
         text.setColor(palette.keyText);
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(dp(15));
         int sdk = android.os.Build.VERSION.SDK_INT;
+        String crossGlyph = bounds.splitsHorizontally()
+            ? (bounds.isLeft() ? "›" : "‹")
+            : (bounds.isLeft() ? "▾" : "▴");
         drawGlyph(canvas, moveCell, LegacyGlyphs.label("☰", sdk));
-        drawGlyph(canvas, crossCell, LegacyGlyphs.label(bounds.isLeft() ? "›" : "‹", sdk));
+        drawGlyph(canvas, crossCell, LegacyGlyphs.label(crossGlyph, sdk));
         drawGlyph(canvas, closeCell, LegacyGlyphs.label("✕", sdk));
         drawGlyph(canvas, resizeCell, LegacyGlyphs.label("⇲", sdk));
         if (!composing.isEmpty() && closeCell.left > crossCell.right) {
@@ -244,22 +263,20 @@ public final class FloatingKeyboardFrame extends ViewGroup {
         if (bounds == null) {
             return false;
         }
-        float x = event.getX();
-        float y = event.getY();
         switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_DOWN: {
+                float x = event.getX();
+                float y = event.getY();
                 if (!isInBar(x, y)) {
                     return false;
                 }
+                activePointerId = event.getPointerId(0);
                 if (contains(closeCell, x, y)) {
-                    if (onClose != null) {
-                        onClose.close();
-                    }
+                    dragMode = DRAG_CLOSE;
                     return true;
                 }
                 if (contains(crossCell, x, y)) {
-                    setBounds(bounds.mirrored());
-                    notifyBounds();
+                    dragMode = DRAG_CROSS;
                     return true;
                 }
                 // The handle is where a move is shown to start, but the whole bar is where a
@@ -267,26 +284,88 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                 dragMode = contains(resizeCell, x, y) ? DRAG_RESIZE : DRAG_MOVE;
                 dragAnchorX = x;
                 dragAnchorY = y;
+                return true;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                if (dragMode == DRAG_NONE) {
+                    return false;
+                }
+                int idx = event.findPointerIndex(activePointerId);
+                if (idx < 0) {
+                    return true;
+                }
+                if (dragMode == DRAG_MOVE || dragMode == DRAG_RESIZE) {
+                    float px = event.getX(idx);
+                    float py = event.getY(idx);
+                    int dx = Math.round(px - dragAnchorX);
+                    int dy = Math.round(py - dragAnchorY);
+                    if (dx != 0 || dy != 0) {
+                        applyDrag(dx, dy);
+                        dragAnchorX += dx;
+                        dragAnchorY += dy;
+                    }
+                }
+                return true;
+            }
+            case MotionEvent.ACTION_POINTER_UP: {
+                int lifted = event.getPointerId(event.getActionIndex());
+                if (lifted == activePointerId && dragMode != DRAG_NONE) {
+                    if (dragMode == DRAG_MOVE || dragMode == DRAG_RESIZE) {
+                        notifyBounds();
+                    }
+                    dragMode = DRAG_NONE;
+                    activePointerId = MotionEvent.INVALID_POINTER_ID;
+                }
                 return dragMode != DRAG_NONE;
-            case MotionEvent.ACTION_MOVE:
-                if (dragMode == DRAG_NONE) {
-                    return false;
-                }
-                applyDrag(Math.round(x - dragAnchorX), Math.round(y - dragAnchorY));
-                dragAnchorX = x;
-                dragAnchorY = y;
-                return true;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                if (dragMode == DRAG_NONE) {
-                    return false;
-                }
+            }
+            case MotionEvent.ACTION_UP: {
+                int mode = dragMode;
+                int pid = activePointerId;
                 dragMode = DRAG_NONE;
-                notifyBounds();
+                activePointerId = MotionEvent.INVALID_POINTER_ID;
+                if (mode == DRAG_NONE) {
+                    return false;
+                }
+                int idx = event.findPointerIndex(pid);
+                if (idx >= 0) {
+                    float px = event.getX(idx);
+                    float py = event.getY(idx);
+                    if (mode == DRAG_CLOSE && contains(closeCell, px, py)) {
+                        performClick();
+                        if (onClose != null) {
+                            onClose.close();
+                        }
+                        return true;
+                    }
+                    if (mode == DRAG_CROSS && contains(crossCell, px, py)) {
+                        performClick();
+                        setBounds(bounds.mirrored());
+                        notifyBounds();
+                        return true;
+                    }
+                }
+                if (mode == DRAG_MOVE || mode == DRAG_RESIZE) {
+                    notifyBounds();
+                }
                 return true;
+            }
+            case MotionEvent.ACTION_CANCEL:
+                if (dragMode == DRAG_MOVE || dragMode == DRAG_RESIZE) {
+                    notifyBounds();
+                }
+                boolean hadDrag = dragMode != DRAG_NONE;
+                dragMode = DRAG_NONE;
+                activePointerId = MotionEvent.INVALID_POINTER_ID;
+                return hadDrag;
             default:
                 return false;
         }
+    }
+
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        return true;
     }
 
     private void applyDrag(int dx, int dy) {

@@ -29,7 +29,8 @@ public final class Compat {
     public static void clipOut(Canvas canvas, float left, float top, float right, float bottom) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             canvas.clipOutRect(left, top, right, bottom);
-        } else {
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
+                || !canvas.isHardwareAccelerated()) {
             canvas.clipRect(left, top, right, bottom, Region.Op.DIFFERENCE);
         }
     }
@@ -61,8 +62,22 @@ public final class Compat {
     /** A rounded rectangle. The all-float overload is API 21; the RectF one has always existed. */
     public static void drawRoundRect(Canvas canvas, float left, float top, float right,
             float bottom, float radius, Paint paint) {
-        RectF rect = new RectF(left, top, right, bottom);
-        canvas.drawRoundRect(rect, radius, radius, paint);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            canvas.drawRoundRect(left, top, right, bottom, radius, radius, paint);
+        } else {
+            canvas.drawRoundRect(new RectF(left, top, right, bottom), radius, radius, paint);
+        }
+    }
+
+    /** Zero-allocation rounded rectangle reusing {@code scratch} on pre-API 21 devices. */
+    public static void drawRoundRect(Canvas canvas, RectF scratch, float left, float top,
+            float right, float bottom, float radius, Paint paint) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            canvas.drawRoundRect(left, top, right, bottom, radius, radius, paint);
+        } else {
+            scratch.set(left, top, right, bottom);
+            canvas.drawRoundRect(scratch, radius, radius, paint);
+        }
     }
 
     /** A drop shadow under a popup. {@code setElevation} is API 21; below it there is none. */
@@ -140,5 +155,19 @@ public final class Compat {
         }
         Object service = context.getSystemService(name);
         return type.isInstance(service) ? (T) service : null;
+    }
+
+    /** {@code Intent.getParcelableExtra(String, Class)} arrived in API 33. */
+    @SuppressWarnings("deprecation")
+    public static <T extends android.os.Parcelable> T parcelableExtra(
+            android.content.Intent intent, String name, Class<T> type) {
+        if (intent == null || name == null || type == null) {
+            return null;
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            return intent.getParcelableExtra(name, type);
+        }
+        android.os.Parcelable extra = intent.getParcelableExtra(name);
+        return type.isInstance(extra) ? type.cast(extra) : null;
     }
 }

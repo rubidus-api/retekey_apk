@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
+import com.retekey.core.RawKey;
+import com.retekey.core.SemanticInput;
 
 /** Ctrl on the Korean page chords by the key's place, as a physical Korean keyboard does. */
 public final class ChordLettersTest {

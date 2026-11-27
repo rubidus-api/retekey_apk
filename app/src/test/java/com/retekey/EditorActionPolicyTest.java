@@ -3,6 +3,10 @@ package com.retekey;
 import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorActionPolicy;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.KeyAction;
 
 public final class EditorActionPolicyTest {
     @Test

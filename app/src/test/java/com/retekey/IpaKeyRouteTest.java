@@ -85,4 +85,18 @@ public final class IpaKeyRouteTest {
         Assert.assertEquals(IpaKeyRoute.Kind.CLOSE,
             IpaKeyRoute.of(false, false, ESCAPE, 0x1b, false, false).kind());
     }
+
+    @Test
+    public void shiftedDigitSymbolsAppendToSearchAndInvalidScalarsDoNotCrash() {
+        IpaKeyRoute at = IpaKeyRoute.of(true, false, 9 /* KEYCODE_2 */, '@', false, false);
+        Assert.assertEquals(IpaKeyRoute.Kind.APPEND, at.kind());
+        Assert.assertEquals("@", at.text());
+
+        IpaKeyRoute bang = IpaKeyRoute.of(true, false, 8 /* KEYCODE_1 */, '!', false, false);
+        Assert.assertEquals(IpaKeyRoute.Kind.APPEND, bang.kind());
+        Assert.assertEquals("!", bang.text());
+
+        IpaKeyRoute invalidSurrogate = IpaKeyRoute.of(true, false, A, 0xD800, false, false);
+        Assert.assertEquals(IpaKeyRoute.Kind.CLOSE_AND_CONTINUE, invalidSurrogate.kind());
+    }
 }

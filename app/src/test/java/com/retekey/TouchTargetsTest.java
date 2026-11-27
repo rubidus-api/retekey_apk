@@ -1,6 +1,7 @@
 package com.retekey;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -218,5 +219,14 @@ public final class TouchTargetsTest {
         assertEquals(null, at(cji, boundary - 3, y, 6));
         assertEquals("touch.cheonjiin.i", at(cji, boundary - cell * 0.2f, y, 6));
         assertEquals("touch.phone.overlay.digits", at(cji, boundary - cell * 0.6f, y, 6));
+    }
+
+    @Test
+    public void remoteDesktopBackspaceEnterAndSpaceHaveTheSameYieldAndProtection() {
+        KeyboardLayout rd = KeyboardLayouts.remoteDesktop(KeyboardLayoutId.KO_DUBEOLSIK, false);
+        assertTrue(TouchTargets.isCostly(rd.findById("touch.rd.backspace")));
+        assertTrue(TouchTargets.isEnter(rd.findById("touch.rd.enter")));
+        assertTrue(TouchTargets.isStructural(rd.findById("touch.rd.space")));
+        assertTrue(TouchTargets.isStructural(rd.findById("touch.rd.enter")));
     }
 }

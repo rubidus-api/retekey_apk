@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.IpaPanel;
 
 /**
  * The two doors off the IPA page: find a symbol by the name you have for it, or walk the families.

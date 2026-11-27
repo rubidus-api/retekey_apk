@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
+import com.retekey.core.CheonjiinInterpreter;
 
 /** The flick-only kana pad: taps, flicks, and the modifier's cycles. */
 public final class KanaFlickTest {
@@ -38,6 +39,8 @@ public final class KanaFlickTest {
         assertEquals("つ", KanaFlick.modified('っ'));
         assertEquals("ぁ", KanaFlick.modified('あ'));
         assertEquals("ゃ", KanaFlick.modified('や'));
+        assertEquals("ゔ", KanaFlick.modified('ぅ'));
+        assertEquals("う", KanaFlick.modified('ゔ'));
         assertNull(KanaFlick.modified('ん'));
         assertNull(KanaFlick.modified('A'));
     }

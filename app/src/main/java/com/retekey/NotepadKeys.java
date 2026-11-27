@@ -1,6 +1,8 @@
 package com.retekey;
 
 import java.util.Set;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /**
  * What a key does inside the notepad. The notepad is a panel of the keyboard's own, not the app
@@ -141,14 +143,90 @@ public final class NotepadKeys {
         }
     }
 
-    /** Where the previous word starts, from {@code cursor} in {@code text}. */
-    public static int wordLeft(CharSequence text, int cursor) {
+    /** Moves one Unicode code point backward from {@code cursor}, keeping surrogate pairs intact. */
+    public static int prevCodePoint(CharSequence text, int cursor) {
+        if (text == null) {
+            return 0;
+        }
         int i = Math.max(0, Math.min(cursor, text.length()));
-        while (i > 0 && !Character.isLetterOrDigit(text.charAt(i - 1))) {
+        if (i == 0) {
+            return 0;
+        }
+        i--;
+        if (i > 0 && Character.isLowSurrogate(text.charAt(i))
+                && Character.isHighSurrogate(text.charAt(i - 1))) {
             i--;
         }
-        while (i > 0 && Character.isLetterOrDigit(text.charAt(i - 1))) {
-            i--;
+        return i;
+    }
+
+    /** Moves one Unicode code point forward from {@code cursor}, keeping surrogate pairs intact. */
+    public static int nextCodePoint(CharSequence text, int cursor) {
+        if (text == null) {
+            return 0;
+        }
+        int n = text.length();
+        int i = Math.max(0, Math.min(cursor, n));
+        if (i >= n) {
+            return n;
+        }
+        i++;
+        if (i < n && Character.isHighSurrogate(text.charAt(i - 1))
+                && Character.isLowSurrogate(text.charAt(i))) {
+            i++;
+        }
+        return i;
+    }
+
+    /** The Unicode code point just before {@code cursor}, or {@code null} when none exists. */
+    public static String codePointBefore(CharSequence text, int cursor) {
+        if (text == null || cursor <= 0 || cursor > text.length()) {
+            return null;
+        }
+        return text.subSequence(prevCodePoint(text, cursor), cursor).toString();
+    }
+
+    /** Selects the bounds {@code [start, end]} of the word around {@code cursor}. */
+    public static int[] wordBounds(CharSequence text, int cursor) {
+        if (text == null) {
+            return new int[] {0, 0};
+        }
+        int len = text.length();
+        int pos = snapCodePointBoundary(text, Math.max(0, Math.min(cursor, len)));
+        int start = wordLeft(text, pos);
+        if (pos < len && Character.isLetterOrDigit(Character.codePointAt(text, pos))) {
+            start = pos == 0 || !Character.isLetterOrDigit(Character.codePointBefore(text, pos))
+                ? pos : start;
+        }
+        int end = wordRight(text, start);
+        return new int[] {start, end};
+    }
+
+    private static int snapCodePointBoundary(CharSequence text, int pos) {
+        if (pos > 0 && pos < text.length()
+                && Character.isLowSurrogate(text.charAt(pos))
+                && Character.isHighSurrogate(text.charAt(pos - 1))) {
+            return pos - 1;
+        }
+        return pos;
+    }
+
+    /** Where the previous word starts, from {@code cursor} in {@code text}. */
+    public static int wordLeft(CharSequence text, int cursor) {
+        int i = snapCodePointBoundary(text, Math.max(0, Math.min(cursor, text.length())));
+        while (i > 0) {
+            int cp = Character.codePointBefore(text, i);
+            if (Character.isLetterOrDigit(cp)) {
+                break;
+            }
+            i -= Character.charCount(cp);
+        }
+        while (i > 0) {
+            int cp = Character.codePointBefore(text, i);
+            if (!Character.isLetterOrDigit(cp)) {
+                break;
+            }
+            i -= Character.charCount(cp);
         }
         return i;
     }
@@ -156,12 +234,20 @@ public final class NotepadKeys {
     /** Where the next word ends, from {@code cursor} in {@code text}. */
     public static int wordRight(CharSequence text, int cursor) {
         int n = text.length();
-        int i = Math.max(0, Math.min(cursor, n));
-        while (i < n && !Character.isLetterOrDigit(text.charAt(i))) {
-            i++;
+        int i = snapCodePointBoundary(text, Math.max(0, Math.min(cursor, n)));
+        while (i < n) {
+            int cp = Character.codePointAt(text, i);
+            if (Character.isLetterOrDigit(cp)) {
+                break;
+            }
+            i += Character.charCount(cp);
         }
-        while (i < n && Character.isLetterOrDigit(text.charAt(i))) {
-            i++;
+        while (i < n) {
+            int cp = Character.codePointAt(text, i);
+            if (!Character.isLetterOrDigit(cp)) {
+                break;
+            }
+            i += Character.charCount(cp);
         }
         return i;
     }

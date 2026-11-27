@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /**
  * The Android-side mapping from a platform-neutral {@link RawKey}/{@link KeyModifier} to concrete
@@ -40,12 +42,19 @@ public final class RawKeyMappingTest {
 
     @Test
     public void everyRawKeyHasAMapping() {
+        java.util.Set<Integer> scanCodes = new java.util.HashSet<>();
         for (RawKey key : RawKey.values()) {
             Assert.assertNotEquals(
                 key + " must map to a real key code",
                 KeyEvent.KEYCODE_UNKNOWN,
                 InputConnectionEditorBridge.keyCodeFor(key)
             );
+            Assert.assertTrue(key + " must carry a positive evdev scan code",
+                key.scanCode() > 0);
+            Assert.assertTrue("duplicate scanCode " + key.scanCode() + " on " + key,
+                scanCodes.add(key.scanCode()));
+            Assert.assertEquals(key.scanCode(),
+                InputConnectionEditorBridge.scanCodeFor(key));
         }
     }
 

@@ -8,6 +8,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import org.junit.Test;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
+import com.retekey.core.TelexComposer;
 
 /**
  * The composer-to-editor-action lowering. The FSM itself is covered by {@link HangulComposerTest};

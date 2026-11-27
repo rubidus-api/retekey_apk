@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNull;
 import android.view.KeyEvent;
 import java.util.EnumSet;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /** Action-bar keys chord with whatever modifiers are down, wherever they are held. */
 public final class BarKeyChordTest {
@@ -16,6 +18,11 @@ public final class BarKeyChordTest {
         assertEquals(RawKey.C, BarKeyChord.chordKey("c", CTRL));
         assertEquals(RawKey.V, BarKeyChord.chordKey("V", EnumSet.of(KeyModifier.META)));
         assertEquals(RawKey.DIGIT_5, BarKeyChord.chordKey("5", EnumSet.of(KeyModifier.ALT)));
+        assertEquals(RawKey.LEFT_BRACKET, BarKeyChord.chordKey("[", CTRL));
+        assertEquals(RawKey.RIGHT_BRACKET, BarKeyChord.chordKey("]", CTRL));
+        assertEquals(RawKey.SLASH, BarKeyChord.chordKey("/", CTRL));
+        assertEquals(RawKey.MINUS, BarKeyChord.chordKey("-", CTRL));
+        assertEquals(RawKey.EQUALS, BarKeyChord.chordKey("=", CTRL));
     }
 
     @Test

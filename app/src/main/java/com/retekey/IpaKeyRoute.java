@@ -1,6 +1,7 @@
 package com.retekey;
 
 import android.view.KeyEvent;
+import com.retekey.core.UnicodeScalar;
 
 /**
  * Where a physical key goes while the phonetic panel is open. The same answers an on-screen key
@@ -56,23 +57,25 @@ final class IpaKeyRoute {
         if (keyCode == KeyEvent.KEYCODE_ESCAPE) {
             return new IpaKeyRoute(Kind.CLOSE, null);
         }
-        if (!chorded && ownedByTheCandidates(keyCode)) {
+        if (!chorded && ownedByTheCandidates(keyCode, unicodeChar)) {
             return new IpaKeyRoute(Kind.PASS, null);
         }
         if (searching && !chorded) {
             if (keyCode == KeyEvent.KEYCODE_DEL) {
                 return new IpaKeyRoute(queryEmpty ? Kind.CLOSE : Kind.BACKSPACE, null);
             }
-            if (unicodeChar > ' ' && !Character.isISOControl(unicodeChar)) {
+            if (UnicodeScalar.isValid(unicodeChar) && unicodeChar > ' '
+                    && !Character.isISOControl(unicodeChar)) {
                 return new IpaKeyRoute(Kind.APPEND, new String(Character.toChars(unicodeChar)));
             }
         }
         return new IpaKeyRoute(Kind.CLOSE_AND_CONTINUE, null);
     }
 
-    private static boolean ownedByTheCandidates(int keyCode) {
+    private static boolean ownedByTheCandidates(int keyCode, int unicodeChar) {
         if (keyCode >= KeyEvent.KEYCODE_1 && keyCode <= KeyEvent.KEYCODE_9) {
-            return true;
+            // Only unshifted digits pick candidates; Shift+digit produces punctuation (e.g. !, @, %).
+            return unicodeChar == 0 || (unicodeChar >= '1' && unicodeChar <= '9');
         }
         if (keyCode >= KeyEvent.KEYCODE_NUMPAD_1 && keyCode <= KeyEvent.KEYCODE_NUMPAD_9) {
             return true;

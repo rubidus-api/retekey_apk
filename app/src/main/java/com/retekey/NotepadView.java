@@ -56,6 +56,8 @@ public final class NotepadView extends LinearLayout {
     private final NoteHistory bodyHistory = new NoteHistory();
     /** Set while undo/redo writes into a field, so restoring a state is not recorded as an edit. */
     private boolean restoring;
+    /** Set while NotepadView itself mutates an EditText, so its TextWatcher ignores it. */
+    private boolean internalEdit;
 
     /** Text views that follow the pinch, with the size each was designed at. */
     private final java.util.List<TextView> scaledViews = new java.util.ArrayList<>();
@@ -72,7 +74,10 @@ public final class NotepadView extends LinearLayout {
      * editor to hold a preedit for it, so it keeps the composing text in the note itself and
      * rewrites those characters as the syllable grows.
      */
+    private float pinchScale = 1f;
     private int preeditLength;
+    private EditText composingField;
+    private int composingEnd = -1;
 
     public NotepadView(Context context, NoteList initial) {
         super(context);
@@ -89,13 +94,15 @@ public final class NotepadView extends LinearLayout {
                 @Override
                 public boolean onScaleBegin(android.view.ScaleGestureDetector detector) {
                     pinchStartPercent = textPercent;
+                    pinchScale = 1f;
                     return true;
                 }
 
                 @Override
                 public boolean onScale(android.view.ScaleGestureDetector detector) {
+                    pinchScale *= detector.getScaleFactor();
                     setTextPercent(
-                        NotepadTextScale.scaled(pinchStartPercent, detector.getScaleFactor()));
+                        NotepadTextScale.scaled(pinchStartPercent, pinchScale));
                     return true;
                 }
 
@@ -306,14 +313,30 @@ public final class NotepadView extends LinearLayout {
 
     // ---- what the keyboard sends while a note is open ----
 
+    private static int selStart(EditText target) {
+        return Math.max(0, Math.min(target.getSelectionStart(), target.getSelectionEnd()));
+    }
+
+    private static int selEnd(EditText target) {
+        return Math.max(0, Math.max(target.getSelectionStart(), target.getSelectionEnd()));
+    }
+
     /** Types text into whichever field the cursor is in. */
     public void type(String text) {
         EditText target = focusedField();
-        int start = Math.max(0, target.getSelectionStart());
-        int end = Math.max(start, target.getSelectionEnd());
-        target.getText().replace(start, end, text);
-        preeditLength = 0;
-        recordState();
+        String insert = target == titleField
+            ? text.replace('\r', ' ').replace('\n', ' ')
+            : text;
+        int start = selStart(target);
+        int end = selEnd(target);
+        internalEdit = true;
+        try {
+            target.getText().replace(start, end, insert);
+        } finally {
+            internalEdit = false;
+        }
+        clearComposition();
+        recordStateOf(target);
         storeOpenNote();
     }
 
@@ -325,10 +348,30 @@ public final class NotepadView extends LinearLayout {
     public void typeComposed(String commit, String preedit) {
         EditText target = focusedField();
         Editable editable = target.getText();
-        int end = Math.max(0, target.getSelectionEnd());
-        int start = Math.max(0, end - preeditLength);
-        editable.replace(start, end, commit + preedit);
+        int selS = selStart(target);
+        int selE = selEnd(target);
+        boolean sameComposing = preeditLength > 0 && target == composingField
+            && selS == selE && selE == composingEnd && selE >= preeditLength;
+        int start = sameComposing ? selE - preeditLength : selS;
+        int end = selE;
+        String composed = commit + preedit;
+        internalEdit = true;
+        try {
+            editable.replace(start, end, composed);
+        } finally {
+            internalEdit = false;
+        }
         preeditLength = preedit.length();
+        if (preeditLength > 0) {
+            composingField = target;
+            composingEnd = start + composed.length();
+        } else {
+            composingField = null;
+            composingEnd = -1;
+        }
+        if (!commit.isEmpty() || preeditLength == 0) {
+            recordStateOf(target);
+        }
         storeOpenNote();
     }
 
@@ -337,7 +380,12 @@ public final class NotepadView extends LinearLayout {
         return preeditLength > 0;
     }
 
-    /** Deletes backwards, or the selection when there is one. */
+    private void clearComposition() {
+        preeditLength = 0;
+        composingField = null;
+        composingEnd = -1;
+    }
+
     /** The character just before the cursor in the focused field, or null when there is none. */
     public String lastCharacter() {
         EditText target = focusedField();
@@ -345,21 +393,29 @@ public final class NotepadView extends LinearLayout {
         if (start <= 0 || target.getSelectionEnd() != start) {
             return null;
         }
-        return String.valueOf(target.getText().charAt(start - 1));
+        return NotepadKeys.codePointBefore(target.getText(), start);
     }
 
+    /** Deletes backwards, or the selection when there is one. */
     public void deleteBackward() {
         EditText target = focusedField();
         Editable editable = target.getText();
-        int start = Math.max(0, target.getSelectionStart());
-        int end = Math.max(start, target.getSelectionEnd());
-        if (start != end) {
-            editable.delete(start, end);
-        } else if (start > 0) {
-            editable.delete(start - 1, start);
+        int start = selStart(target);
+        int end = selEnd(target);
+        if (start != end || start > 0) {
+            internalEdit = true;
+            try {
+                if (start != end) {
+                    editable.delete(start, end);
+                } else {
+                    editable.delete(NotepadKeys.prevCodePoint(editable, start), start);
+                }
+            } finally {
+                internalEdit = false;
+            }
         }
-        preeditLength = 0;
-        recordState();
+        clearComposition();
+        recordStateOf(target);
         storeOpenNote();
     }
 
@@ -418,7 +474,7 @@ public final class NotepadView extends LinearLayout {
         if (!NotepadKeys.isMovement(command)) {
             return;
         }
-        preeditLength = 0;
+        clearComposition();
         int anchor = Math.max(0, target.getSelectionStart());
         int cursor = Math.max(0, target.getSelectionEnd());
         int length = editable.length();
@@ -426,10 +482,12 @@ public final class NotepadView extends LinearLayout {
         int moved;
         switch (command) {
             case LEFT:
-                moved = !extend && anchor != cursor ? Math.min(anchor, cursor) : cursor - 1;
+                moved = !extend && anchor != cursor ? Math.min(anchor, cursor)
+                    : NotepadKeys.prevCodePoint(editable, cursor);
                 break;
             case RIGHT:
-                moved = !extend && anchor != cursor ? Math.max(anchor, cursor) : cursor + 1;
+                moved = !extend && anchor != cursor ? Math.max(anchor, cursor)
+                    : NotepadKeys.nextCodePoint(editable, cursor);
                 break;
             case WORD_LEFT:
                 moved = NotepadKeys.wordLeft(editable, cursor);
@@ -493,14 +551,9 @@ public final class NotepadView extends LinearLayout {
         EditText target = focusedField();
         Editable editable = target.getText();
         int cursor = Math.max(0, target.getSelectionEnd());
-        int start = NotepadKeys.wordLeft(editable, cursor);
-        if (cursor < editable.length() && Character.isLetterOrDigit(editable.charAt(cursor))) {
-            start = cursor == 0 || !Character.isLetterOrDigit(editable.charAt(cursor - 1))
-                ? cursor : start;
-        }
-        int end = NotepadKeys.wordRight(editable, start);
-        if (end > start) {
-            target.setSelection(start, end);
+        int[] range = NotepadKeys.wordBounds(editable, cursor);
+        if (range[1] > range[0]) {
+            target.setSelection(range[0], range[1]);
         }
     }
 
@@ -515,17 +568,27 @@ public final class NotepadView extends LinearLayout {
     private void deleteForward() {
         EditText target = focusedField();
         Editable editable = target.getText();
-        int start = Math.max(0, target.getSelectionStart());
-        int end = Math.max(start, target.getSelectionEnd());
+        int start = selStart(target);
+        int end = selEnd(target);
         if (start != end) {
-            editable.delete(start, end);
+            internalEdit = true;
+            try {
+                editable.delete(start, end);
+            } finally {
+                internalEdit = false;
+            }
         } else if (end < editable.length()) {
-            editable.delete(start, start + 1);
+            internalEdit = true;
+            try {
+                editable.delete(start, NotepadKeys.nextCodePoint(editable, start));
+            } finally {
+                internalEdit = false;
+            }
         } else {
             return;
         }
-        preeditLength = 0;
-        recordState();
+        clearComposition();
+        recordStateOf(target);
         storeOpenNote();
     }
 
@@ -596,10 +659,13 @@ public final class NotepadView extends LinearLayout {
 
     /** Remembers what the focused field says now, so undo has somewhere to go back to. */
     private void recordState() {
-        if (restoring) {
+        recordStateOf(focusedField());
+    }
+
+    private void recordStateOf(EditText target) {
+        if (restoring || target == null) {
             return;
         }
-        EditText target = focusedField();
         historyFor(target).record(
             target.getText().toString(), Math.max(0, target.getSelectionStart()));
     }
@@ -608,8 +674,8 @@ public final class NotepadView extends LinearLayout {
     private void resetHistories() {
         titleHistory.reset();
         bodyHistory.reset();
-        titleHistory.record(titleField.getText().toString(), 0);
-        bodyHistory.record(bodyField.getText().toString(), 0);
+        titleHistory.record(titleField.getText().toString(), titleField.getText().length());
+        bodyHistory.record(bodyField.getText().toString(), bodyField.getText().length());
     }
 
     /**
@@ -627,8 +693,8 @@ public final class NotepadView extends LinearLayout {
         }
         EditText target = focusedField();
         Editable editable = target.getText();
-        int start = Math.max(0, target.getSelectionStart());
-        int end = Math.max(start, target.getSelectionEnd());
+        int start = selStart(target);
+        int end = selEnd(target);
         if (start == end) {
             start = 0;
             end = editable.length();
@@ -642,8 +708,8 @@ public final class NotepadView extends LinearLayout {
     private void copySelection(boolean cut) {
         EditText target = focusedField();
         Editable editable = target.getText();
-        int start = Math.max(0, target.getSelectionStart());
-        int end = Math.max(start, target.getSelectionEnd());
+        int start = selStart(target);
+        int end = selEnd(target);
         if (start == end) {
             start = 0;
             end = editable.length();
@@ -657,9 +723,14 @@ public final class NotepadView extends LinearLayout {
             clipboard.setPrimaryClip(android.content.ClipData.newPlainText("note", taken));
         }
         if (cut) {
-            editable.delete(start, end);
-            preeditLength = 0;
-            recordState();
+            internalEdit = true;
+            try {
+                editable.delete(start, end);
+            } finally {
+                internalEdit = false;
+            }
+            clearComposition();
+            recordStateOf(target);
             storeOpenNote();
         }
     }
@@ -707,7 +778,7 @@ public final class NotepadView extends LinearLayout {
         } finally {
             restoring = false;
         }
-        preeditLength = 0;
+        clearComposition();
         storeOpenNote();
     }
 
@@ -745,7 +816,13 @@ public final class NotepadView extends LinearLayout {
 
     /** Forgets any half-written syllable, e.g. when the panel changes screens. */
     public void endComposition() {
-        preeditLength = 0;
+        if (preeditLength > 0) {
+            EditText settled = composingField != null ? composingField : focusedField();
+            clearComposition();
+            recordStateOf(settled);
+        } else {
+            clearComposition();
+        }
     }
 
     private void open(String id) {
@@ -756,11 +833,16 @@ public final class NotepadView extends LinearLayout {
         openStamp = id;
         screen = Screen.NOTE;
         stampLabel.setText(note.stamp());
-        titleField.setText(note.title());
-        bodyField.setText(note.body());
+        internalEdit = true;
+        try {
+            titleField.setText(note.title());
+            bodyField.setText(note.body());
+        } finally {
+            internalEdit = false;
+        }
         bodyField.requestFocus();
         bodyField.setSelection(bodyField.getText().length());
-        preeditLength = 0;
+        clearComposition();
         // A different note is a different history: undo must not walk back into another note.
         resetHistories();
         refresh();
@@ -836,6 +918,7 @@ public final class NotepadView extends LinearLayout {
             @Override
             public void onClick(View v) {
                 notes = notes.sortedBy(column);
+                changed();
                 refresh();
             }
         });
@@ -958,17 +1041,49 @@ public final class NotepadView extends LinearLayout {
     }
 
     private EditText field(Context context, String hint) {
-        EditText edit = new EditText(context);
+        final EditText edit = new EditText(context);
         edit.setHint(hint);
         edit.setTextColor(palette.keyText);
         edit.setHintTextColor(palette.keyTextMuted);
         edit.setBackgroundColor(Color.TRANSPARENT);
         edit.setFocusableInTouchMode(true);
+        edit.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         // The keyboard types into this itself; no system keyboard is wanted on top of it, and on
         // an IME window there is no system focus to raise one anyway.
         if (android.os.Build.VERSION.SDK_INT >= 21) {
             edit.setShowSoftInputOnFocus(false);
         }
+        edit.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (restoring || internalEdit) {
+                    return;
+                }
+                if (edit == titleField) {
+                    String raw = s.toString();
+                    if (raw.indexOf('\n') >= 0 || raw.indexOf('\r') >= 0) {
+                        String clean = raw.replace('\r', ' ').replace('\n', ' ');
+                        internalEdit = true;
+                        try {
+                            s.replace(0, s.length(), clean);
+                        } finally {
+                            internalEdit = false;
+                        }
+                    }
+                }
+                clearComposition();
+                recordStateOf(edit);
+                storeOpenNote();
+            }
+        });
         return edit;
     }
 
@@ -1015,7 +1130,31 @@ public final class NotepadView extends LinearLayout {
     @Override
     public boolean onTouchEvent(android.view.MotionEvent event) {
         pinch.onTouchEvent(event);
+        if (event.getActionMasked() == android.view.MotionEvent.ACTION_UP) {
+            performClick();
+        }
         return true;
+    }
+
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        return true;
+    }
+
+    /** Package-private test seam for instrumentation harnesses. */
+    void sendToAppForTest() {
+        sendToApp();
+    }
+
+    /** Package-private test seam for instrumentation harnesses. */
+    void newNoteForTest() {
+        newNote();
+    }
+
+    /** Package-private test seam for instrumentation harnesses. */
+    EditText bodyFieldForTest() {
+        return bodyField;
     }
 
     private View spacer(Context context) {

@@ -98,4 +98,13 @@ public final class HardwareKeyBindingsTest {
         assertEquals(HardwareKeyBindings.MOD_SHIFT | HardwareKeyBindings.MOD_ALT,
             HardwareKeyBindings.modsOf(true, false, true, false));
     }
+
+    @Test
+    public void captureGuardIsInProcessAndResettable() {
+        assertFalse(HardwareKeyBindings.isCapturing());
+        HardwareKeyBindings.setCapturing(true);
+        assertTrue(HardwareKeyBindings.isCapturing());
+        HardwareKeyBindings.setCapturing(false);
+        assertFalse(HardwareKeyBindings.isCapturing());
+    }
 }

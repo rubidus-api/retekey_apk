@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.IpaLookup;
+import com.retekey.core.IpaPanel;
 
 /**
  * Finding a symbol by name (issue #11). The reporter typed "palm" into another keyboard's saved
@@ -78,5 +80,30 @@ public final class IpaLookupTest {
             assertFalse(entry.symbol.isEmpty());
             assertFalse("every symbol says what it is: " + entry.symbol, entry.words.isEmpty());
         }
+    }
+
+    @Test
+    public void pipeSymbolsAndFamilyMembersAreIndexedWithoutCorruption() {
+        assertEquals(".", first("."));
+        assertEquals("|", first("|"));
+        assertEquals("ǀ", first("\\|"));
+        assertEquals("ǁ", first("\\|\\|"));
+        assertEquals("ʏ", first("Y"));
+        assertEquals("ɞ", first("3\\"));
+        assertEquals("ʜ", first("H\\"));
+        assertTrue(IpaLookup.search("dental").contains("ǀ"));
+        assertTrue(IpaLookup.search("lateral").contains("ǁ"));
+        assertTrue(IpaLookup.search("syllable").contains("."));
+        assertTrue(IpaLookup.search("minor").contains("|"));
+        for (IpaPanel.Family family : IpaPanel.FAMILIES) {
+            for (String symbol : family.symbols) {
+                assertFalse("missing gloss for " + symbol, IpaPanel.glossOf(symbol).isEmpty());
+            }
+        }
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void entriesListIsUnmodifiable() {
+        IpaLookup.entries().clear();
     }
 }

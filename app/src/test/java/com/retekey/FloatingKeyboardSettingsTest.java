@@ -52,4 +52,36 @@ public final class FloatingKeyboardSettingsTest {
             !FloatingKeyboardSettings.KEY_OPACITY.startsWith(
                 FloatingKeyboardSettings.UNICODE_PREFIX));
     }
+
+    @Test
+    public void portraitAndLandscapeBoundsAreStoredSeparately() {
+        LockedPreferences prefs = new LockedPreferences();
+        FloatingKeyboardBounds portrait = FloatingKeyboardBounds.of(
+            1080, 2400, FloatingKeyboardBounds.Side.RIGHT, 40, 1400, 1000, 700);
+        FloatingKeyboardBounds landscape = FloatingKeyboardBounds.of(
+            2400, 1080, FloatingKeyboardBounds.Side.LEFT, 20, 400, 900, 500);
+
+        FloatingKeyboardSettings.store(prefs, ScreenOrientation.PORTRAIT, portrait);
+        FloatingKeyboardSettings.store(prefs, ScreenOrientation.LANDSCAPE, landscape);
+
+        FloatingKeyboardBounds loadedPortrait =
+            FloatingKeyboardSettings.load(prefs, ScreenOrientation.PORTRAIT);
+        FloatingKeyboardBounds loadedLandscape =
+            FloatingKeyboardSettings.load(prefs, ScreenOrientation.LANDSCAPE);
+        assertEquals(1000, loadedPortrait.width());
+        assertEquals(1080, loadedPortrait.screenWidth());
+        assertEquals(900, loadedLandscape.width());
+        assertEquals(2400, loadedLandscape.screenWidth());
+
+        // Per-prefix oriented storage works too, and falls back to legacy before first oriented write.
+        FloatingKeyboardSettings.store(prefs, FloatingKeyboardSettings.HANJA_PREFIX, portrait);
+        assertEquals(1000, FloatingKeyboardSettings.load(
+            prefs, FloatingKeyboardSettings.HANJA_PREFIX, ScreenOrientation.LANDSCAPE).width());
+        FloatingKeyboardSettings.store(
+            prefs, FloatingKeyboardSettings.HANJA_PREFIX, ScreenOrientation.LANDSCAPE, landscape);
+        assertEquals(900, FloatingKeyboardSettings.load(
+            prefs, FloatingKeyboardSettings.HANJA_PREFIX, ScreenOrientation.LANDSCAPE).width());
+        assertEquals(1000, FloatingKeyboardSettings.load(
+            prefs, FloatingKeyboardSettings.HANJA_PREFIX, ScreenOrientation.PORTRAIT).width());
+    }
 }

@@ -2,6 +2,7 @@ package com.retekey;
 
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.Scalars;
 
 /**
  * Cutting text by a number of UTF-16 units splits a character made of two of them: 4000 units of
@@ -61,5 +62,16 @@ public final class ScalarsTest {
         Assert.assertEquals("ab", Scalars.withoutLastScalar("abc"));
         Assert.assertEquals("", Scalars.withoutLastScalar(""));
         Assert.assertEquals("", Scalars.withoutLastScalar("\uD83D"));
+    }
+
+    @Test
+    public void sanitizeWellFormedReplacesUnpairedSurrogatesAndKeepsValidPairs() {
+        Assert.assertNull(Scalars.sanitizeWellFormed(null));
+        Assert.assertEquals("", Scalars.sanitizeWellFormed(""));
+        Assert.assertEquals("hello " + EMOJI + "!", Scalars.sanitizeWellFormed("hello " + EMOJI + "!"));
+        Assert.assertEquals("a\uFFFDb", Scalars.sanitizeWellFormed("a\uD83Db"));
+        Assert.assertEquals("a\uFFFDb", Scalars.sanitizeWellFormed("a\uDE00b"));
+        Assert.assertEquals("\uFFFD\uFFFD", Scalars.sanitizeWellFormed("\uDE00\uD83D"));
+        Assert.assertEquals(EMOJI + "\uFFFD", Scalars.sanitizeWellFormed(EMOJI + "\uD83D"));
     }
 }

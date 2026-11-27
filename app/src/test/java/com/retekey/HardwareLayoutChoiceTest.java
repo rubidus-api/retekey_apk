@@ -150,4 +150,11 @@ public final class HardwareLayoutChoiceTest {
         assertTrue(LetterLayouts.screenName(KeyboardLayoutId.KO_DUBEOLSIK).startsWith("2BS-"));
         assertTrue(LetterLayouts.hardwareName(KeyboardLayoutId.KO_DUBEOLSIK).startsWith("2bs-"));
     }
+
+    @Test
+    public void nonLetterPagesHaveNoHardwareCandidates() {
+        assertTrue(HardwareLayoutChoice.candidates(KeyboardLayoutId.MENU).isEmpty());
+        assertTrue(HardwareLayoutChoice.candidates(KeyboardLayoutId.SPECIAL_CHARS).isEmpty());
+        assertTrue(HardwareLayoutChoice.candidates(KeyboardLayoutId.SPECIAL_KEYS).isEmpty());
+    }
 }

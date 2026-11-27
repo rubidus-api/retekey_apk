@@ -124,18 +124,7 @@ public final class HanjaTable {
      * converts on its own. Returns {@code null} when no suffix matches.
      */
     public Match longestSuffixMatch(String before, int maxLen) {
-        if (before == null || before.isEmpty()) {
-            return null;
-        }
-        int cap = Math.min(maxLen, Math.min(before.length(), maxKeyLength));
-        for (int length = cap; length >= 1; length--) {
-            String suffix = before.substring(before.length() - length);
-            List<String> candidates = byReading.get(suffix);
-            if (candidates != null && !candidates.isEmpty()) {
-                return new Match(suffix, length, candidates);
-            }
-        }
-        return null;
+        return longestMatchIn(byReading, before, maxLen, maxKeyLength);
     }
 
     /** Readings for a Hanja character or word (한자 → 한글); empty when unknown. */
@@ -149,15 +138,34 @@ public final class HanjaTable {
      * 한자 → 한글 reverse conversion (學校 wins over 校 alone). Returns {@code null} when none match.
      */
     public Match longestSuffixReverseMatch(String before, int maxLen) {
-        if (before == null || before.isEmpty()) {
+        return longestMatchIn(byHanja, before, maxLen, maxHanjaLength);
+    }
+
+    private static Match longestMatchIn(
+            Map<String, List<String>> table,
+            String before,
+            int maxLen,
+            int maxChars) {
+        if (before == null || before.isEmpty() || maxLen <= 0) {
             return null;
         }
-        int cap = Math.min(maxLen, Math.min(before.length(), maxHanjaLength));
-        for (int length = cap; length >= 1; length--) {
-            String suffix = before.substring(before.length() - length);
-            List<String> readings = byHanja.get(suffix);
-            if (readings != null && !readings.isEmpty()) {
-                return new Match(suffix, length, readings);
+        int end = before.length();
+        List<Integer> starts = new ArrayList<>();
+        int pos = end;
+        while (pos > 0 && starts.size() < maxLen) {
+            int cp = before.codePointBefore(pos);
+            int nextPos = pos - Character.charCount(cp);
+            if (end - nextPos > maxChars) {
+                break;
+            }
+            starts.add(nextPos);
+            pos = nextPos;
+        }
+        for (int i = starts.size() - 1; i >= 0; i--) {
+            String suffix = before.substring(starts.get(i));
+            List<String> values = table.get(suffix);
+            if (values != null && !values.isEmpty()) {
+                return new Match(suffix, suffix.length(), values);
             }
         }
         return null;

@@ -3,6 +3,13 @@ package com.retekey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.retekey.core.CheonjiinInterpreter;
+import com.retekey.core.ControlKey;
+import com.retekey.core.LatinAccents;
+import com.retekey.core.NaratgeulInterpreter;
+import com.retekey.core.RawKey;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 /**
  * The four touch pages on one orthogonal ten-column grid:
@@ -69,98 +76,21 @@ public final class KeyboardLayouts {
      */
     private static final String[] HOLDS_10_10_6 = {HOLD_DIGITS, HOLD_SYMBOLS + "'", HOLD_MARKS};
 
-    private static final KeyboardLayout EN_BASE = english(false);
-    private static final KeyboardLayout EN_SHIFTED = english(true);
-    private static final KeyboardLayout KO_BASE = korean(false);
-    private static final KeyboardLayout KO_SHIFTED = korean(true);
-    private static final KeyboardLayout DVORAK_BASE = dvorak(false);
-    private static final KeyboardLayout DVORAK_SHIFTED = dvorak(true);
-    private static final KeyboardLayout COLEMAK_BASE = colemak(false);
-    private static final KeyboardLayout COLEMAK_SHIFTED = colemak(true);
-    private static final KeyboardLayout ES_BASE = spanish(false);
-    private static final KeyboardLayout ES_SHIFTED = spanish(true);
-    private static final KeyboardLayout PT_BASE = latinQwertyShape(KeyboardLayoutId.PT_QWERTY, false,
-        "qwertyuiop", "asdfghjkl", "zxcvbnm", "çãõáéíóúâê", LatinAccents.PORTUGUESE, java.util.Locale.ROOT);
-    private static final KeyboardLayout PT_SHIFTED = latinQwertyShape(KeyboardLayoutId.PT_QWERTY, true,
-        "qwertyuiop", "asdfghjkl", "zxcvbnm", "çãõáéíóúâê", LatinAccents.PORTUGUESE, java.util.Locale.ROOT);
-    private static final KeyboardLayout IT_BASE = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, false, LatinAccents.ITALIAN);
-    private static final KeyboardLayout IT_SHIFTED = qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, true, LatinAccents.ITALIAN);
-    private static final KeyboardLayout PL_BASE = latinQwertyShape(KeyboardLayoutId.PL_QWERTY, false,
-        "qwertyuiop", "asdfghjkl", "zxcvbnm", "ąćęłńóśźż„", LatinAccents.POLISH, java.util.Locale.ROOT);
-    private static final KeyboardLayout PL_SHIFTED = latinQwertyShape(KeyboardLayoutId.PL_QWERTY, true,
-        "qwertyuiop", "asdfghjkl", "zxcvbnm", "ąćęłńóśźż„", LatinAccents.POLISH, java.util.Locale.ROOT);
-    private static final KeyboardLayout VI_BASE = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, false, LatinAccents.VIETNAMESE);
-    private static final KeyboardLayout VI_SHIFTED = qwertyWithAccents(KeyboardLayoutId.VI_TELEX, true, LatinAccents.VIETNAMESE);
-    private static final KeyboardLayout DE_BASE = german(false);
-    private static final KeyboardLayout DE_SHIFTED = german(true);
-    private static final KeyboardLayout TR_BASE = turkish(false);
-    private static final KeyboardLayout TR_SHIFTED = turkish(true);
-    private static final KeyboardLayout FR_BASE = french(false);
-    private static final KeyboardLayout FR_SHIFTED = french(true);
-    private static final KeyboardLayout EL_BASE = greek(false);
-    private static final KeyboardLayout EL_SHIFTED = greek(true);
-    private static final KeyboardLayout HEBREW = hebrew();
-    private static final KeyboardLayout PERSIAN = persian();
-    private static final KeyboardLayout THAI = thai();
-    private static final KeyboardLayout HINDI = hindi();
-    private static final KeyboardLayout RU_BASE = russian(false);
-    private static final KeyboardLayout RU_SHIFTED = russian(true);
-    private static final KeyboardLayout UK_BASE = ukrainian(false);
-    private static final KeyboardLayout UK_SHIFTED = ukrainian(true);
-    private static final KeyboardLayout PATTACHOTE = thaiPattachote();
-    private static final KeyboardLayout RUP_BASE = russianPhonetic(false);
-    private static final KeyboardLayout RUP_SHIFTED = russianPhonetic(true);
-    private static final KeyboardLayout BG_BASE = bulgarian(false);
-    private static final KeyboardLayout BDS_BASE = bulgarianBds(false);
-    private static final KeyboardLayout BDS_SHIFTED = bulgarianBds(true);
-    private static final KeyboardLayout TRF_BASE = turkishF(false);
-    private static final KeyboardLayout TRF_SHIFTED = turkishF(true);
-    private static final KeyboardLayout BG_SHIFTED = bulgarian(true);
-    private static final KeyboardLayout MK_BASE = macedonian(false);
-    private static final KeyboardLayout MK_SHIFTED = macedonian(true);
-    private static final KeyboardLayout SR_BASE = serbian(false);
-    private static final KeyboardLayout SR_SHIFTED = serbian(true);
-    private static final KeyboardLayout ARABIC = arabic();
-    private static final KeyboardLayout URDU = urdu();
-    private static final KeyboardLayout GEORGIAN = georgian();
-    private static final KeyboardLayout HY_BASE = armenian(false);
-    private static final KeyboardLayout HY_SHIFTED = armenian(true);
-    private static final KeyboardLayout JA_BASE = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, false, java.util.Collections.emptyMap());
-    private static final KeyboardLayout JA_SHIFTED = qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, true, java.util.Collections.emptyMap());
-    private static final KeyboardLayout JA_FLICK_LAYOUT = kanaFlick(PhoneOverlay.NONE, false);
-    private static final KeyboardLayout JA_FLICK_DIGITS = kanaFlick(PhoneOverlay.DIGITS, false);
-    private static final KeyboardLayout JA_FLICK_NAV = kanaFlick(PhoneOverlay.NAV, false);
-    private static final KeyboardLayout JA_FLICK_DIGITS_SHIFTED = kanaFlick(PhoneOverlay.DIGITS, true);
-    private static final KeyboardLayout JA_FLICK_NAV_SHIFTED = kanaFlick(PhoneOverlay.NAV, true);
-    private static final KeyboardLayout CHEONJIIN = cheonjiin();
-    private static final KeyboardLayout NARATGEUL = naratgeul();
-    // Both Hangul pads carry Shift now, so their own page has a held-Shift face as well.
-    private static final KeyboardLayout CHEONJIIN_SHIFTED = cheonjiin(PhoneOverlay.NONE, true);
-    private static final KeyboardLayout NARATGEUL_SHIFTED = naratgeul(PhoneOverlay.NONE, true);
-    private static final KeyboardLayout PAD_ARROWS_LAYOUT =
-        padLayout(KeyboardLayoutId.PAD_ARROWS, false, false);
-    private static final KeyboardLayout PAD_ARROWS_SHIFTED =
-        padLayout(KeyboardLayoutId.PAD_ARROWS, false, true);
-    private static final KeyboardLayout PAD_KEYPAD_LAYOUT =
-        padLayout(KeyboardLayoutId.PAD_KEYPAD, true, false);
-    private static final KeyboardLayout IPA_SYMBOLS = ipa(false);
-    private static final KeyboardLayout IPA_LETTERS = ipa(true);
-    private static final KeyboardLayout PAD_KEYPAD_SHIFTED =
-        padLayout(KeyboardLayoutId.PAD_KEYPAD, true, true);
-    private static final KeyboardLayout CHARS = buildSpecialChars();
-    private static final KeyboardLayout KEYS_NUMBERS = buildSpecialKeys(NumpadMode.NUMBERS);
-    private static final KeyboardLayout KEYS_ARROWS = buildSpecialKeys(NumpadMode.ARROWS);
-    private static final KeyboardLayout KEYS_FUNCTIONS = buildSpecialKeys(NumpadMode.FUNCTIONS);
-    private static final KeyboardLayout MENU = buildMenu();
-    private static final KeyboardLayout UNICODE_ENTRY = buildUnicodeEntry();
-    private static final KeyboardLayout CHEONJIIN_DIGITS = cheonjiin(PhoneOverlay.DIGITS, false);
-    private static final KeyboardLayout CHEONJIIN_NAV = cheonjiin(PhoneOverlay.NAV, false);
-    private static final KeyboardLayout NARATGEUL_DIGITS = naratgeul(PhoneOverlay.DIGITS, false);
-    private static final KeyboardLayout NARATGEUL_NAV = naratgeul(PhoneOverlay.NAV, false);
-    private static final KeyboardLayout CHEONJIIN_DIGITS_SHIFTED = cheonjiin(PhoneOverlay.DIGITS, true);
-    private static final KeyboardLayout CHEONJIIN_NAV_SHIFTED = cheonjiin(PhoneOverlay.NAV, true);
-    private static final KeyboardLayout NARATGEUL_DIGITS_SHIFTED = naratgeul(PhoneOverlay.DIGITS, true);
-    private static final KeyboardLayout NARATGEUL_NAV_SHIFTED = naratgeul(PhoneOverlay.NAV, true);
+    private static final java.util.Map<KeyboardLayoutId, KeyboardLayout> BASE_CACHE =
+        new java.util.EnumMap<>(KeyboardLayoutId.class);
+    private static final java.util.Map<KeyboardLayoutId, KeyboardLayout> SHIFTED_CACHE =
+        new java.util.EnumMap<>(KeyboardLayoutId.class);
+    private static final java.util.Map<NumpadMode, KeyboardLayout> SPECIAL_KEYS_CACHE =
+        new java.util.EnumMap<>(NumpadMode.class);
+    private static final java.util.Map<PhoneOverlay, KeyboardLayout[]> CHEONJIIN_CACHE =
+        new java.util.EnumMap<>(PhoneOverlay.class);
+    private static final java.util.Map<PhoneOverlay, KeyboardLayout[]> NARATGEUL_CACHE =
+        new java.util.EnumMap<>(PhoneOverlay.class);
+    private static final java.util.Map<PhoneOverlay, KeyboardLayout[]> KANA_FLICK_CACHE =
+        new java.util.EnumMap<>(PhoneOverlay.class);
+    private static volatile KeyboardLayout charsCache;
+    private static volatile KeyboardLayout menuCache;
+    private static volatile KeyboardLayout unicodeEntryCache;
 
     private KeyboardLayouts() {
     }
@@ -170,96 +100,133 @@ public final class KeyboardLayouts {
             throw new IllegalArgumentException("layout id must not be null");
         }
         switch (id) {
-            case EN_QWERTY:
-                return shifted ? EN_SHIFTED : EN_BASE;
-            case EN_DVORAK:
-                return shifted ? DVORAK_SHIFTED : DVORAK_BASE;
-            case EN_COLEMAK:
-                return shifted ? COLEMAK_SHIFTED : COLEMAK_BASE;
-            case ES_QWERTY:
-                return shifted ? ES_SHIFTED : ES_BASE;
-            case PT_QWERTY:
-                return shifted ? PT_SHIFTED : PT_BASE;
-            case IT_QWERTY:
-                return shifted ? IT_SHIFTED : IT_BASE;
-            case PL_QWERTY:
-                return shifted ? PL_SHIFTED : PL_BASE;
-            case VI_TELEX:
-                return shifted ? VI_SHIFTED : VI_BASE;
-            case DE_QWERTZ:
-                return shifted ? DE_SHIFTED : DE_BASE;
-            case TR_F:
-                return shifted ? TRF_SHIFTED : TRF_BASE;
-            case TR_QWERTY:
-                return shifted ? TR_SHIFTED : TR_BASE;
-            case FR_AZERTY:
-                return shifted ? FR_SHIFTED : FR_BASE;
-            case EL_QWERTY:
-                return shifted ? EL_SHIFTED : EL_BASE;
-            case HE_STANDARD:
-                // Hebrew has no capitals: one page, whatever Shift says.
-                return HEBREW;
-            case FA_ISIRI:
-                // Neither has Persian: one page.
-                return PERSIAN;
-            case TH_PATTACHOTE:
-                return PATTACHOTE;
-            case TH_KEDMANEE:
-                // Nor Thai.
-                return THAI;
-            case HI_INSCRIPT:
-                // Nor Devanagari.
-                return HINDI;
-            case RU_JCUKEN:
-                return shifted ? RU_SHIFTED : RU_BASE;
-            case RU_PHONETIC:
-                return shifted ? RUP_SHIFTED : RUP_BASE;
-            case UK_JCUKEN:
-                return shifted ? UK_SHIFTED : UK_BASE;
-            case BG_PHONETIC:
-                return shifted ? BG_SHIFTED : BG_BASE;
-            case BG_BDS:
-                return shifted ? BDS_SHIFTED : BDS_BASE;
-            case MK_STANDARD:
-                return shifted ? MK_SHIFTED : MK_BASE;
-            case SR_CYRILLIC:
-                return shifted ? SR_SHIFTED : SR_BASE;
-            case AR_101:
-                // Arabic, Urdu and Georgian have no capitals: one page each.
-                return ARABIC;
-            case UR_PHONETIC:
-                return URDU;
-            case KA_QWERTY:
-                return GEORGIAN;
-            case HY_EASTERN:
-                return shifted ? HY_SHIFTED : HY_BASE;
-            case JA_ROMAJI:
-                return shifted ? JA_SHIFTED : JA_BASE;
-            case JA_FLICK:
-                return JA_FLICK_LAYOUT;
-            case KO_DUBEOLSIK:
-                return shifted ? KO_SHIFTED : KO_BASE;
-            case KO_CHEONJIIN:
-                return shifted ? CHEONJIIN_SHIFTED : CHEONJIIN;
-            case KO_NARATGEUL:
-                return shifted ? NARATGEUL_SHIFTED : NARATGEUL;
-            case PAD_ARROWS:
-                return shifted ? PAD_ARROWS_SHIFTED : PAD_ARROWS_LAYOUT;
-            case PAD_KEYPAD:
-                return shifted ? PAD_KEYPAD_SHIFTED : PAD_KEYPAD_LAYOUT;
-            case ETC_IPA:
-                return shifted ? IPA_LETTERS : IPA_SYMBOLS;
-            case ETC_USER: {
-                UserLayout installed = UserLayouts.current();
-                // Nothing installed: the globe has to have somewhere to go, so the page falls back
-                // to QWERTY rather than to an empty grid.
-                return installed == null
-                    ? of(KeyboardLayoutId.EN_QWERTY, shifted) : user(installed, shifted);
-            }
+            case ETC_USER:
+                return userPage(shifted);
             case SPECIAL_CHARS:
-                return CHARS;
+                return specialChars();
+            case MENU:
+                return menu();
+            case SPECIAL_KEYS:
+                return specialKeys(NumpadMode.NUMBERS);
+            case KO_CHEONJIIN:
+                return phone(KeyboardLayoutId.KO_CHEONJIIN, PhoneOverlay.NONE, shifted);
+            case KO_NARATGEUL:
+                return phone(KeyboardLayoutId.KO_NARATGEUL, PhoneOverlay.NONE, shifted);
+            case JA_FLICK:
+                return phone(KeyboardLayoutId.JA_FLICK, PhoneOverlay.NONE, false);
             default:
-                return KEYS_NUMBERS;
+                return cached(id, shifted);
+        }
+    }
+
+    private static KeyboardLayout cached(KeyboardLayoutId id, boolean shifted) {
+        boolean effectiveShift = shifted && hasShiftedVariant(id);
+        java.util.Map<KeyboardLayoutId, KeyboardLayout> cache =
+            effectiveShift ? SHIFTED_CACHE : BASE_CACHE;
+        synchronized (BASE_CACHE) {
+            KeyboardLayout existing = cache.get(id);
+            if (existing == null) {
+                existing = build(id, effectiveShift);
+                cache.put(id, existing);
+            }
+            return existing;
+        }
+    }
+
+    private static boolean hasShiftedVariant(KeyboardLayoutId id) {
+        switch (id) {
+            case HE_STANDARD:
+            case FA_ISIRI:
+            case TH_PATTACHOTE:
+            case TH_KEDMANEE:
+            case HI_INSCRIPT:
+            case AR_101:
+            case UR_PHONETIC:
+            case KA_QWERTY:
+            case JA_FLICK:
+                return false;
+            default:
+                return true;
+        }
+    }
+
+    private static KeyboardLayout build(KeyboardLayoutId id, boolean shifted) {
+        switch (id) {
+            case EN_QWERTY:
+                return english(shifted);
+            case EN_DVORAK:
+                return dvorak(shifted);
+            case EN_COLEMAK:
+                return colemak(shifted);
+            case ES_QWERTY:
+                return spanish(shifted);
+            case PT_QWERTY:
+                return latinQwertyShape(KeyboardLayoutId.PT_QWERTY, shifted,
+                    "qwertyuiop", "asdfghjkl", "zxcvbnm", "çãõáéíóúâê",
+                    LatinAccents.PORTUGUESE, java.util.Locale.ROOT);
+            case IT_QWERTY:
+                return qwertyWithAccents(KeyboardLayoutId.IT_QWERTY, shifted, LatinAccents.ITALIAN);
+            case PL_QWERTY:
+                return latinQwertyShape(KeyboardLayoutId.PL_QWERTY, shifted,
+                    "qwertyuiop", "asdfghjkl", "zxcvbnm", "ąćęłńóśźż„",
+                    LatinAccents.POLISH, java.util.Locale.ROOT);
+            case VI_TELEX:
+                return qwertyWithAccents(KeyboardLayoutId.VI_TELEX, shifted, LatinAccents.VIETNAMESE);
+            case DE_QWERTZ:
+                return german(shifted);
+            case TR_F:
+                return turkishF(shifted);
+            case TR_QWERTY:
+                return turkish(shifted);
+            case FR_AZERTY:
+                return french(shifted);
+            case EL_QWERTY:
+                return greek(shifted);
+            case HE_STANDARD:
+                return hebrew();
+            case FA_ISIRI:
+                return persian();
+            case TH_PATTACHOTE:
+                return thaiPattachote();
+            case TH_KEDMANEE:
+                return thai();
+            case HI_INSCRIPT:
+                return hindi();
+            case RU_JCUKEN:
+                return russian(shifted);
+            case RU_PHONETIC:
+                return russianPhonetic(shifted);
+            case UK_JCUKEN:
+                return ukrainian(shifted);
+            case BG_PHONETIC:
+                return bulgarian(shifted);
+            case BG_BDS:
+                return bulgarianBds(shifted);
+            case MK_STANDARD:
+                return macedonian(shifted);
+            case SR_CYRILLIC:
+                return serbian(shifted);
+            case AR_101:
+                return arabic();
+            case UR_PHONETIC:
+                return urdu();
+            case KA_QWERTY:
+                return georgian();
+            case HY_EASTERN:
+                return armenian(shifted);
+            case JA_ROMAJI:
+                return qwertyWithAccents(KeyboardLayoutId.JA_ROMAJI, shifted,
+                    java.util.Collections.<String, String[]>emptyMap());
+            case KO_DUBEOLSIK:
+                return korean(shifted);
+            case PAD_ARROWS:
+                return padLayout(KeyboardLayoutId.PAD_ARROWS, false, shifted);
+            case PAD_KEYPAD:
+                return padLayout(KeyboardLayoutId.PAD_KEYPAD, true, shifted);
+            case ETC_IPA:
+                return ipa(shifted);
+            default:
+                return specialKeys(NumpadMode.NUMBERS);
         }
     }
 
@@ -330,24 +297,38 @@ public final class KeyboardLayouts {
             throw new IllegalArgumentException("overlay must not be null");
         }
         if (id == KeyboardLayoutId.KO_CHEONJIIN) {
-            switch (overlay) {
-                case DIGITS: return shifted ? CHEONJIIN_DIGITS_SHIFTED : CHEONJIIN_DIGITS;
-                case NAV: return shifted ? CHEONJIIN_NAV_SHIFTED : CHEONJIIN_NAV;
-                default: return shifted ? CHEONJIIN_SHIFTED : CHEONJIIN;
+            synchronized (CHEONJIIN_CACHE) {
+                KeyboardLayout[] pair = CHEONJIIN_CACHE.get(overlay);
+                if (pair == null) {
+                    pair = new KeyboardLayout[] {
+                        cheonjiin(overlay, false), cheonjiin(overlay, true)};
+                    CHEONJIIN_CACHE.put(overlay, pair);
+                }
+                return pair[shifted ? 1 : 0];
             }
         }
         if (id == KeyboardLayoutId.KO_NARATGEUL) {
-            switch (overlay) {
-                case DIGITS: return shifted ? NARATGEUL_DIGITS_SHIFTED : NARATGEUL_DIGITS;
-                case NAV: return shifted ? NARATGEUL_NAV_SHIFTED : NARATGEUL_NAV;
-                default: return shifted ? NARATGEUL_SHIFTED : NARATGEUL;
+            synchronized (NARATGEUL_CACHE) {
+                KeyboardLayout[] pair = NARATGEUL_CACHE.get(overlay);
+                if (pair == null) {
+                    pair = new KeyboardLayout[] {
+                        naratgeul(overlay, false), naratgeul(overlay, true)};
+                    NARATGEUL_CACHE.put(overlay, pair);
+                }
+                return pair[shifted ? 1 : 0];
             }
         }
         if (id == KeyboardLayoutId.JA_FLICK) {
-            switch (overlay) {
-                case DIGITS: return shifted ? JA_FLICK_DIGITS_SHIFTED : JA_FLICK_DIGITS;
-                case NAV: return shifted ? JA_FLICK_NAV_SHIFTED : JA_FLICK_NAV;
-                default: return JA_FLICK_LAYOUT;
+            boolean effectiveShift = overlay != PhoneOverlay.NONE && shifted;
+            synchronized (KANA_FLICK_CACHE) {
+                KeyboardLayout[] pair = KANA_FLICK_CACHE.get(overlay);
+                if (pair == null) {
+                    KeyboardLayout base = kanaFlick(overlay, false);
+                    pair = new KeyboardLayout[] {
+                        base, overlay == PhoneOverlay.NONE ? base : kanaFlick(overlay, true)};
+                    KANA_FLICK_CACHE.put(overlay, pair);
+                }
+                return pair[effectiveShift ? 1 : 0];
             }
         }
         throw new IllegalArgumentException("not a 12-key layout: " + id);
@@ -360,7 +341,17 @@ public final class KeyboardLayouts {
      * keypad page has no letters at all.
      */
     public static KeyboardLayout unicodeEntry() {
-        return UNICODE_ENTRY;
+        KeyboardLayout cached = unicodeEntryCache;
+        if (cached == null) {
+            synchronized (BASE_CACHE) {
+                cached = unicodeEntryCache;
+                if (cached == null) {
+                    cached = buildUnicodeEntry();
+                    unicodeEntryCache = cached;
+                }
+            }
+        }
+        return cached;
     }
 
     /** The id of the strip that shows the code being typed; the view fills in its text. */
@@ -395,12 +386,32 @@ public final class KeyboardLayouts {
     }
 
     public static KeyboardLayout specialChars() {
-        return CHARS;
+        KeyboardLayout cached = charsCache;
+        if (cached == null) {
+            synchronized (BASE_CACHE) {
+                cached = charsCache;
+                if (cached == null) {
+                    cached = buildSpecialChars();
+                    charsCache = cached;
+                }
+            }
+        }
+        return cached;
     }
 
     /** The menu-and-functions page (reached by the ☰ menu key). */
     public static KeyboardLayout menu() {
-        return MENU;
+        KeyboardLayout cached = menuCache;
+        if (cached == null) {
+            synchronized (BASE_CACHE) {
+                cached = menuCache;
+                if (cached == null) {
+                    cached = buildMenu();
+                    menuCache = cached;
+                }
+            }
+        }
+        return cached;
     }
 
     /** Built on first use and kept: the view asks for its layout on every draw and touch. */
@@ -495,13 +506,13 @@ public final class KeyboardLayouts {
         if (mode == null) {
             throw new IllegalArgumentException("numpad mode must not be null");
         }
-        switch (mode) {
-            case ARROWS:
-                return KEYS_ARROWS;
-            case FUNCTIONS:
-                return KEYS_FUNCTIONS;
-            default:
-                return KEYS_NUMBERS;
+        synchronized (SPECIAL_KEYS_CACHE) {
+            KeyboardLayout existing = SPECIAL_KEYS_CACHE.get(mode);
+            if (existing == null) {
+                existing = buildSpecialKeys(mode);
+                SPECIAL_KEYS_CACHE.put(mode, existing);
+            }
+            return existing;
         }
     }
 
@@ -585,7 +596,7 @@ public final class KeyboardLayouts {
      * more: it is one cell up on both pages now, in the same place whatever the overlay, so
      * Shift+arrow selects from the cursor cluster without the key moving under the finger.
      */
-    private static SoftwareKeySpec phoneHanjaKey(PhoneOverlay overlay, boolean shifted) {
+    private static SoftwareKeySpec phoneHanjaKey(PhoneOverlay overlay) {
         if (overlay != PhoneOverlay.NONE) {
             return phoneGap("hanja", 1);
         }
@@ -723,10 +734,6 @@ public final class KeyboardLayouts {
      * 천지인: the vowel elements across the top, the grouped consonants below, and ㅇㅁ on the
      * bottom letter row. Ten Hangul keys leave the second column empty throughout.
      */
-    private static KeyboardLayout cheonjiin() {
-        return cheonjiin(PhoneOverlay.NONE, false);
-    }
-
     private static KeyboardLayout cheonjiin(PhoneOverlay overlay, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
@@ -748,7 +755,7 @@ public final class KeyboardLayouts {
         // ㅇㅁ sits under ㅅㅎ, Next on its left and ! ? on its right, with 漢 beside Tab. The
         // full stop and comma are on the key beside Enter, so this cell carries Next instead:
         // Shift took Next's old place above (the user's arrangement, 2026-09-16).
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay, shifted),
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay),
             padCell(overlay, 9, commitKey().withColumnSpan(2)),
             padCell(overlay, 10, cheonjiinKey(CheonjiinInterpreter.Key.IEUNG, "ㅇㅁ", PadHolds.digit(10))),
             padCell(overlay, 11, phoneCycleKey("exclaim", "!?")));
@@ -761,10 +768,6 @@ public final class KeyboardLayouts {
      * 나랏글: the consonant block and the vowels beside it, with ㅡ and the two transformation keys
      * on the bottom letter row. Twelve Hangul keys need the second column, so ㅡ takes it there.
      */
-    private static KeyboardLayout naratgeul() {
-        return naratgeul(PhoneOverlay.NONE, false);
-    }
-
     private static KeyboardLayout naratgeul(PhoneOverlay overlay, boolean shifted) {
         List<List<SoftwareKeySpec>> rows = new ArrayList<>(4);
         rows.add(phoneRow(0, phoneDigitsToggleKey(),
@@ -786,7 +789,7 @@ public final class KeyboardLayouts {
             padCell(overlay, 8, naratgeulKey(NaratgeulInterpreter.Key.I, "ㅣ", 2, PadHolds.digit(8))),
             letterPeriodKey(),
             enterKey()));
-        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay, shifted),
+        List<SoftwareKeySpec> bottom = phoneRow(3, phoneHanjaKey(overlay),
             padCell(overlay, 9, naratgeulKey(NaratgeulInterpreter.Key.STROKE, "획", 2, PadHolds.digit(9))),
             padCell(overlay, 10, naratgeulKey(NaratgeulInterpreter.Key.EU, "ㅡ", 2, PadHolds.digit(10))),
             padCell(overlay, 11, naratgeulKey(NaratgeulInterpreter.Key.TWIN, "쌍", 2, PadHolds.digit(11))));
@@ -1167,6 +1170,28 @@ public final class KeyboardLayouts {
         rows.add(ipaRow(cells[1], null, backspaceKey()));
         rows.add(ipaRow(cells[2], shiftKey(letters), enterKey()));
         return letterPage(KeyboardLayoutId.ETC_IPA, letters, rows, null);
+    }
+
+    private static UserLayout cachedUserSource;
+    private static int cachedUserRevision = -1;
+    private static KeyboardLayout cachedUserBase;
+    private static KeyboardLayout cachedUserShifted;
+
+    private static synchronized KeyboardLayout userPage(boolean shifted) {
+        UserLayout installed = UserLayouts.current();
+        // Nothing installed: the globe has to have somewhere to go, so the page falls back
+        // to QWERTY rather than to an empty grid.
+        if (installed == null) {
+            return of(KeyboardLayoutId.EN_QWERTY, shifted);
+        }
+        int rev = UserLayouts.revision();
+        if (cachedUserSource != installed || cachedUserRevision != rev) {
+            cachedUserBase = user(installed, false);
+            cachedUserShifted = user(installed, true);
+            cachedUserSource = installed;
+            cachedUserRevision = rev;
+        }
+        return shifted ? cachedUserShifted : cachedUserBase;
     }
 
     /**
@@ -1758,6 +1783,7 @@ public final class KeyboardLayouts {
                 return armenianPeriodKey();
             case TH_KEDMANEE:
                 return thaiMaiyamokKey();
+            case TH_PATTACHOTE:
             case HI_INSCRIPT:
                 return rawKey("escape.letters", "Esc", RawKey.ESCAPE);
             default:

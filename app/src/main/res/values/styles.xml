@@ -3,7 +3,7 @@
       The IME window's theme. Material is API 21, so the base picks DeviceDefault and a -v21
       variant takes Material where it exists; android:fontFamily is API 16 and lives in -v16.
     -->
-    <style name="ReteImeTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+    <style name="ReteImeTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
         <item name="android:windowNoTitle">true</item>
     </style>
 

@@ -4,6 +4,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.CheckedEditorExecutor;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorBounds;
+import com.retekey.core.EditorCallResult;
+import com.retekey.core.EditorCapabilities;
+import com.retekey.core.EditorEndpoint;
+import com.retekey.core.EditorTextResult;
+import com.retekey.core.ExecutionContext;
+import com.retekey.core.ExecutionResult;
+import com.retekey.core.KeyAction;
+import com.retekey.core.TransitionPlan;
 
 public final class EditorActionExecutionTest {
     private static final CheckedEditorExecutor EXECUTOR = new CheckedEditorExecutor();

@@ -3,6 +3,12 @@ package com.retekey;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.EditorProfile;
+import com.retekey.core.HangulInputProcessor;
+import com.retekey.core.KeyAction;
+import com.retekey.core.RomajiKanaComposer;
+import com.retekey.core.SemanticInput;
 
 /** Romaji to hiragana, on the words every Japanese IME is judged by. */
 public final class RomajiKanaComposerTest {
@@ -88,5 +94,48 @@ public final class RomajiKanaComposerTest {
     @Test
     public void lettersItCannotUseStayAsTyped() {
         assertEquals("qあ", type("qa"));
+    }
+
+    @Test
+    public void extendedRomajiSpellingsAndSokuonAndNyAreHandled() {
+        assertEquals("じゃじゅじょ", type("jyajyujyo"));
+        assertEquals("ちゃちゅちょ", type("cyacyucyo"));
+        assertEquals("しぇちぇじぇ", type("shecheje"));
+        assertEquals("っちゃ", type("tcha"));
+        assertEquals("ゔぁゔぃゔゔぇゔぉ", type("vavivuvevo"));
+        assertEquals("うぃうぇ", type("wiwe"));
+        assertEquals("てぃでぃ", type("thidhi"));
+        assertEquals("ゎ", type("lwa"));
+        // Only valid consonants trigger sokuon; q/x/l do not.
+        assertEquals("qqxxll", type("qqxxll"));
+        // n before y+non-(a,u,o) resolves to ん rather than literal 'n'.
+        assertEquals("んyk", type("nyk"));
+        assertEquals("しんy", flush("shiny"));
+    }
+
+    @Test
+    public void longRomajiStreamsFinalizedPrefixThroughProcessorCommit() {
+        HangulInputProcessor processor = new HangulInputProcessor(
+            () -> EditorProfile.richText(false, false, false, false, false, 0, -1));
+        processor.setLatinComposer(new RomajiKanaComposer());
+        StringBuilder committed = new StringBuilder();
+        String composing = "";
+        for (int i = 0; i < 40; i++) { // 80 keys ("ka" * 40), exceeding MAX_RAW_BUFFER
+            for (String ch : new String[] {"k", "a"}) {
+                DispatchResult res = processor.process(SemanticInput.text(ch));
+                for (KeyAction action : res.actions()) {
+                    if (action.kind() == KeyAction.Kind.COMMIT_TEXT) {
+                        committed.append(action.text());
+                    } else if (action.kind() == KeyAction.Kind.SET_COMPOSING_TEXT) {
+                        composing = action.text();
+                    }
+                }
+            }
+        }
+        StringBuilder expected = new StringBuilder();
+        for (int i = 0; i < 40; i++) {
+            expected.append("か");
+        }
+        assertEquals(expected.toString(), committed.toString() + composing);
     }
 }

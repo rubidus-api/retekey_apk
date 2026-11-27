@@ -27,6 +27,8 @@ final class WindowInsetsWatcher {
     private WindowInsetsWatcher() {
     }
 
+    private static int actionBarContainerId = -1;
+
     /** Starts watching {@code view}. Call only when the platform has insets at all. */
     static void attach(View view, BandListener listener) {
         view.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -136,19 +138,48 @@ final class WindowInsetsWatcher {
             content.getPaddingLeft(), content.getPaddingTop(),
             content.getPaddingRight(), content.getPaddingBottom()
         };
+        final WindowInsets[] lastInsets = new WindowInsets[1];
+        final int[] scratch = new int[2];
         frame.setOnApplyWindowInsetsListener((v, insets) -> {
-            refit(frame, content, base, insets);
+            lastInsets[0] = insets;
+            refit(frame, content, base, insets, scratch);
             return v.onApplyWindowInsets(insets);
         });
-        frame.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+        final android.view.ViewTreeObserver.OnGlobalLayoutListener layoutListener = () -> {
             WindowInsets insets = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 ? frame.getRootWindowInsets() : null;
-            refit(frame, content, base, insets);
+            if (insets == null) {
+                insets = lastInsets[0];
+            } else {
+                lastInsets[0] = insets;
+            }
+            refit(frame, content, base, insets, scratch);
+        };
+        frame.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
+        frame.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View v) {
+                android.view.ViewTreeObserver observer = v.getViewTreeObserver();
+                if (observer.isAlive()) {
+                    observer.removeOnGlobalLayoutListener(layoutListener);
+                    observer.addOnGlobalLayoutListener(layoutListener);
+                }
+                v.requestApplyInsets();
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View v) {
+                android.view.ViewTreeObserver observer = v.getViewTreeObserver();
+                if (observer.isAlive()) {
+                    observer.removeOnGlobalLayoutListener(layoutListener);
+                }
+            }
         });
         frame.requestApplyInsets();
     }
 
-    private static void refit(View frame, View content, int[] base, WindowInsets insets) {
+    private static void refit(
+            View frame, View content, int[] base, WindowInsets insets, int[] location) {
         if (frame.getWindowToken() == null || frame.getHeight() <= 0 || frame.getWidth() <= 0) {
             return; // Not on screen yet; the layout listener will be back.
         }
@@ -156,7 +187,6 @@ final class WindowInsetsWatcher {
         if (screen[1] <= 0) {
             return;
         }
-        int[] location = new int[2];
         frame.getLocationOnScreen(location);
         int frameLeft = location[0];
         int frameTop = location[1];
@@ -183,7 +213,8 @@ final class WindowInsetsWatcher {
                 rightFurniture = insets.getSystemWindowInsetRight();
             }
         }
-        int topFurnitureBottom = Math.max(statusBottom, actionBarBottomOnScreen(frame, statusBottom));
+        int topFurnitureBottom = Math.max(
+            statusBottom, actionBarBottomOnScreen(frame, statusBottom, location));
 
         int left = base[0] + ScreenFit.leftOverlap(leftFurniture, frameLeft);
         int top = base[1] + ScreenFit.topOverlap(topFurnitureBottom, frameTop);
@@ -200,10 +231,9 @@ final class WindowInsetsWatcher {
      * Measured from the bar's container view when the decor exposes one (it does on every ROM seen,
      * Samsung's included); otherwise taken as the bar's height under the status bar.
      */
-    private static int actionBarBottomOnScreen(View frame, int statusBottom) {
+    private static int actionBarBottomOnScreen(View frame, int statusBottom, int[] location) {
         View bar = actionBarContainer(frame);
         if (bar != null && bar.getVisibility() == View.VISIBLE && bar.getHeight() > 0) {
-            int[] location = new int[2];
             bar.getLocationOnScreen(location);
             return location[1] + bar.getHeight();
         }
@@ -218,8 +248,11 @@ final class WindowInsetsWatcher {
     }
 
     private static View actionBarContainer(View frame) {
-        int id = frame.getResources().getIdentifier("action_bar_container", "id", "android");
-        return id == 0 ? null : frame.getRootView().findViewById(id);
+        if (actionBarContainerId == -1) {
+            actionBarContainerId = frame.getResources().getIdentifier(
+                "action_bar_container", "id", "android");
+        }
+        return actionBarContainerId == 0 ? null : frame.getRootView().findViewById(actionBarContainerId);
     }
 
     /** The display's real width and height, system furniture included — not the app area's. */

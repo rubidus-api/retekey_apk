@@ -9,6 +9,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
+import com.retekey.core.UnicodeScalar;
 
 /** The bar's slot list: stored as records, repaired rather than trusted. */
 public final class ActionBarSlotsTest {
@@ -58,11 +61,25 @@ public final class ActionBarSlotsTest {
     }
 
     @Test
-    public void aSlotCarryingASeparatorIsDroppedRatherThanCorruptingTheNext() {
+    public void textWithSeparatorsRoundTripsWithoutLossInV2AndLegacyV1Decodes() {
         List<BarSlot> bar = Arrays.asList(
-            BarSlot.text("bad\u001Etext", null), BarSlot.of(BarAction.COPY));
-        assertEquals(Arrays.asList(BarSlot.of(BarAction.COPY)),
-            ActionBarSlots.parse(ActionBarSlots.format(bar)));
+            BarSlot.text("a\u001Eb\u001Fc", "lbl\u001E"), BarSlot.of(BarAction.COPY));
+        List<BarSlot> decoded = ActionBarSlots.parse(ActionBarSlots.format(bar));
+        assertEquals(bar, decoded);
+
+        // Legacy v1 format written before RecordCodec still decodes cleanly.
+        List<BarSlot> v1 = ActionBarSlots.parse("a\u001Fcopy\u001Et\u001Fhi\u001Flbl");
+        assertEquals(Arrays.asList(BarSlot.of(BarAction.COPY), BarSlot.text("hi", "lbl")), v1);
+    }
+
+    @Test
+    public void anExplicitlyEmptiedV2BarStaysEmptyAndNullTextDoesNotCrash() {
+        String emptyV2 = ActionBarSlots.format(Collections.<BarSlot>emptyList());
+        assertTrue(ActionBarSlots.parse(emptyV2).isEmpty());
+
+        String withNullText = ActionBarSlots.format(
+            Arrays.asList(BarSlot.text(null, "bad"), BarSlot.of(BarAction.PASTE)));
+        assertEquals(Arrays.asList(BarSlot.of(BarAction.PASTE)), ActionBarSlots.parse(withNullText));
     }
 
     @Test
@@ -94,6 +111,10 @@ public final class ActionBarSlotsTest {
         assertEquals("rk", BarSlot.text("ReteKey", "rk").label());
         assertEquals("ReteKey", BarSlot.text("ReteKey", null).label());
         assertEquals("a very long…", BarSlot.text("a very long piece of text", null).label());
+        String emojiEdge = "12345678901😀end";
+        String emojiLabel = BarSlot.text(emojiEdge, null).label();
+        assertTrue(UnicodeScalar.isWellFormed(emojiLabel));
+        assertEquals("12345678901…", emojiLabel);
         assertEquals("Ctrl+B",
             BarSlot.chord(RawKey.B, Collections.singleton(KeyModifier.CTRL), null).label());
         assertEquals("Esc", BarSlot.chord(RawKey.ESCAPE,

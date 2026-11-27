@@ -1,6 +1,9 @@
 package com.retekey;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.TypedValue;
@@ -10,9 +13,12 @@ import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import com.retekey.core.KeyRepeatSettings;
 
 /**
  * The strip above or below the keys: the actions that are not letters, visible while you type.
@@ -52,18 +58,22 @@ final class ActionBarView extends HorizontalScrollView {
     /** The height the bar's labels were sized for. */
     private static final int USUAL_HEIGHT_DP = 40;
     private static final int LABEL_SP = 15;
+    private static final int EDGE_EXCLUSION_DP = 24;
 
     private final LinearLayout row;
     private final KeyboardPalette palette;
     /** No press shade when the keys are to stay still (issue #15). */
     private final boolean still;
-    /** The bar's height while its setting is untouched, and as set for this orientation. */
-    private final int usualHeightPx;
+    /** The bar's height as set for this orientation. */
     private final int heightPx;
     private final Handler handler = new Handler(Looper.getMainLooper());
     /** The chords held down right now. They stay down until pressed again. */
     private final Set<BarSlot> latched = new HashSet<>();
+    private final Rect leftExclusion = new Rect();
+    private final Rect rightExclusion = new Rect();
+    private final List<Rect> exclusionRects = Arrays.asList(leftExclusion, rightExclusion);
     private Listener listener;
+    private SlotTouch activeTouch;
     private int repeatDelayMs = KeyRepeatSettings.DEFAULT_DELAY_MS;
     private int repeatIntervalMs = KeyRepeatSettings.DEFAULT_INTERVAL_MS;
 
@@ -75,7 +85,7 @@ final class ActionBarView extends HorizontalScrollView {
             context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE);
         ScreenOrientation orientation = OrientedPrefs.current(context);
         android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
-        usualHeightPx = ActionBarHeightSettings.usualPx(
+        int usualHeightPx = ActionBarHeightSettings.usualPx(
             OrientedPrefs.getInt(prefs, ActionBarHeightSettings.LEGACY_KEY_PERCENT, orientation,
                 ActionBarHeightSettings.LEGACY_DEFAULT_PERCENT),
             metrics.density);
@@ -105,10 +115,27 @@ final class ActionBarView extends HorizontalScrollView {
 
     /** Fills the bar. Called again whenever the slot list changes. */
     void setSlots(List<BarSlot> slots) {
+        releaseAllLatchedAndActive();
         row.removeAllViews();
-        latched.clear();
         for (BarSlot slot : slots) {
             row.addView(button(slot), slotParams());
+        }
+    }
+
+    private void releaseAllLatchedAndActive() {
+        if (activeTouch != null) {
+            activeTouch.cancelActive();
+            activeTouch = null;
+        }
+        handler.removeCallbacksAndMessages(null);
+        if (!latched.isEmpty()) {
+            List<BarSlot> snapshot = new ArrayList<>(latched);
+            latched.clear();
+            if (listener != null) {
+                for (BarSlot slot : snapshot) {
+                    listener.onChordLatch(slot, false);
+                }
+            }
         }
     }
 
@@ -156,6 +183,7 @@ final class ActionBarView extends HorizontalScrollView {
             @Override
             public void run() {
                 repeated = true;
+                ensurePressStarted();
                 if (listener != null) {
                     if (slot.kind() == BarSlot.Kind.TEXT) {
                         listener.onText(slot.text());
@@ -174,6 +202,10 @@ final class ActionBarView extends HorizontalScrollView {
             }
         };
         private boolean held;
+        private boolean inside;
+        private boolean pressStarted;
+        /** Set once a hold has repeated: the lift then types nothing more, as with a real key. */
+        private boolean repeated;
 
         SlotTouch(BarSlot slot, TextView view) {
             this.slot = slot;
@@ -186,13 +218,37 @@ final class ActionBarView extends HorizontalScrollView {
                 case MotionEvent.ACTION_DOWN:
                     press();
                     return true;
+                case MotionEvent.ACTION_MOVE: {
+                    boolean nowInside = isInside(v, event);
+                    if (nowInside != inside) {
+                        inside = nowInside;
+                        paint(inside);
+                        if (!inside) {
+                            handler.removeCallbacks(repeat);
+                            handler.removeCallbacks(latch);
+                        }
+                    }
+                    return true;
+                }
                 case MotionEvent.ACTION_UP:
+                    boolean commit = inside && isInside(v, event);
+                    release(commit);
+                    if (commit) {
+                        v.performClick();
+                    }
+                    return true;
                 case MotionEvent.ACTION_CANCEL:
-                    release(event.getActionMasked() == MotionEvent.ACTION_UP);
+                    release(false);
                     return true;
                 default:
                     return true;
             }
+        }
+
+        private static boolean isInside(View v, MotionEvent event) {
+            float x = event.getX();
+            float y = event.getY();
+            return x >= 0.0f && x <= v.getWidth() && y >= 0.0f && y <= v.getHeight();
         }
 
         /** Whether this slot types something a hold should repeat. */
@@ -202,18 +258,24 @@ final class ActionBarView extends HorizontalScrollView {
                     && slot.action().rawKey() != null);
         }
 
-        private boolean pressing;
-        /** Set once a hold has repeated: the lift then types nothing more, as with a real key. */
-        private boolean repeated;
-
-        private void press() {
-            held = false;
-            repeated = false;
-            paint(true);
-            if (repeats() && listener != null) {
-                pressing = true;
+        private void ensurePressStarted() {
+            if (repeats() && !pressStarted && listener != null) {
+                pressStarted = true;
+                activeTouch = this;
                 listener.onPress(true);
             }
+        }
+
+        private void press() {
+            if (activeTouch != null && activeTouch != this) {
+                activeTouch.cancelActive();
+            }
+            activeTouch = this;
+            held = false;
+            repeated = false;
+            pressStarted = false;
+            inside = true;
+            paint(true);
             if (repeats()) {
                 handler.postDelayed(repeat, Math.max(50, repeatDelayMs));
             } else if (slot.canLatch() && !latched.contains(slot)) {
@@ -224,14 +286,29 @@ final class ActionBarView extends HorizontalScrollView {
         private void release(boolean insideThePress) {
             handler.removeCallbacks(repeat);
             handler.removeCallbacks(latch);
+            inside = false;
             paint(false);
             try {
                 deliver(insideThePress);
             } finally {
-                if (pressing && listener != null) {
-                    pressing = false;
+                if (pressStarted && listener != null) {
+                    pressStarted = false;
                     listener.onPress(false);
                 }
+                if (activeTouch == this) {
+                    activeTouch = null;
+                }
+            }
+        }
+
+        void cancelActive() {
+            handler.removeCallbacks(repeat);
+            handler.removeCallbacks(latch);
+            inside = false;
+            paint(false);
+            if (pressStarted && listener != null) {
+                pressStarted = false;
+                listener.onPress(false);
             }
         }
 
@@ -252,9 +329,11 @@ final class ActionBarView extends HorizontalScrollView {
                         setLatched(false);
                         break;
                     }
+                    ensurePressStarted();
                     listener.onAction(slot.action());
                     break;
                 case TEXT:
+                    ensurePressStarted();
                     listener.onText(slot.text());
                     break;
                 default:
@@ -294,8 +373,29 @@ final class ActionBarView extends HorizontalScrollView {
     }
 
     @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            updateGestureExclusion();
+        }
+    }
+
+    @TargetApi(29)
+    private void updateGestureExclusion() {
+        int width = getWidth();
+        int height = getHeight();
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        int edge = Math.min(dp(EDGE_EXCLUSION_DP), width / 4);
+        leftExclusion.set(0, 0, edge, height);
+        rightExclusion.set(width - edge, 0, width, height);
+        setSystemGestureExclusionRects(exclusionRects);
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
-        handler.removeCallbacksAndMessages(null);
+        releaseAllLatchedAndActive();
         super.onDetachedFromWindow();
     }
 

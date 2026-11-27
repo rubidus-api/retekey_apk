@@ -59,6 +59,7 @@ final class ClipRetentionGuard {
         }
         withheld = null;
         if (markedSensitive) {
+            withheld = digest;
             return false;
         }
         boolean justLeftPrivate = leftPrivateAt != Long.MIN_VALUE

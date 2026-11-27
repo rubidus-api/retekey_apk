@@ -4,6 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
+import com.retekey.core.DispatchResult;
+import com.retekey.core.KeyAction;
+import com.retekey.core.ScaffoldInputProcessor;
+import com.retekey.core.SemanticInput;
+import com.retekey.core.SemanticJamo;
 
 public final class SemanticContractTest {
     @Test

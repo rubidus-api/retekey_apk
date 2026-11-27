@@ -1,6 +1,7 @@
 package com.retekey;
 
 import android.content.SharedPreferences;
+import com.retekey.core.RecordCodec;
 
 /**
  * Moves one stored list from the first form to the one {@link RecordCodec} writes, once, keeping
@@ -49,9 +50,13 @@ final class StoreMigration {
             return;
         }
         String backup = key + (current ? "_damaged" : "_v1");
+        boolean writeBackup = !prefs.contains(backup);
+        if (!writeBackup && !faithful) {
+            return;
+        }
         try {
             SharedPreferences.Editor editor = prefs.edit();
-            if (!prefs.contains(backup)) {
+            if (writeBackup) {
                 editor.putString(backup, stored);
             }
             if (faithful) {

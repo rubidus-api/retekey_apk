@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import org.junit.Test;
+import com.retekey.core.MultiTapCycle;
 
 /**
  * The punctuation keys on 천지인's bottom row work the way the Hangul keys around them do: the

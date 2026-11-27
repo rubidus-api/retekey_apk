@@ -2880,6 +2880,22 @@ requires each of them to have a scan code.
 the shape: log the receiving side's view of the event (source, scan code, meta), not only the
 text it produced.
 
+### 15.73 One flag carrying two different editors
+
+**What happened.** Terminals and remote-desktop clients both got classified through the same boolean (`deleteByKeyEvents`). Any change aimed at one could leak into the other: empty deletion plans or syllable take-back quirks in terminals, and unframed remote chords on remote-desktop clients outside a hardcoded package list (`ReteKeyImeService` / `CheckedEditorExecutor`).
+
+**The fix.** Separate `EditorCapabilities.EditorKind` (`RICH_TEXT`, `REMOTE_DESKTOP`, `TERMINAL`, `UNSUPPORTED`) from transport deletion mode (`DeletionMode`). And when an action is explicitly flagged as physical (`KeyAction.isPhysical()`), frame it with real hardware modifier DOWN/UP events regardless of package allowlists.
+
+**Rule.** When two editor classes share one wire workaround, name them with distinct `EditorKind` values before adding a second heuristic.
+
+### 15.74 An audit that found the edges the happy path never crossed
+
+**What happened.** A full-tree audit (`rfc-0013`) turned up edge-case bugs that standard typing tests missed: UTF-16 surrogate pairs split by length caps in `BarSlot.oneLine()`, `ClipboardPanelView`, and `NotepadView` navigation; `BarSlotCodec` field-delimiter fragility and repeated `commit()` writes on backed-up damaged v2 stores; inconsistent `"retekey_view"` prefs keys on orientation reset and missed live UI propagation; eager `<clinit>` allocation of all keyboard layouts and draw-pass allocations in `FlowRow`/`ReteKeyboardView`; missing virtual key nodes for TalkBack; and test reflection hiding signature drift in `InstrumentedReteKeyImeService`.
+
+**The fix.** Enforce surrogate-safe slicing (`Scalars.truncate` and `NotepadKeys` code-point bounds), move `BarSlotCodec` to length-prefixed `RecordCodec` with one-shot `StoreMigration` backup handling, centralize preferences in `AppPrefs` with explicit live-rebuild classifiers, make `KeyboardLayouts` lazy and `FlowRowMath.linesInto` reusable, add the API 16+ virtual accessibility tree in `KeyboardAccessibilityProvider`, replace instrumentation reflection with `*ForTest` package seams, and separate the Android-free core into `com.retekey.core` enforced by `ops/scripts/project-check.sh`.
+
+**Rule.** Boundaries that only live in comments erode. Enforce core purity, surrogate safety, length-prefixed storage, and typed test seams mechanically.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

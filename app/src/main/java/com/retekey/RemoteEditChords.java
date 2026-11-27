@@ -2,6 +2,8 @@ package com.retekey;
 
 import java.util.EnumSet;
 import java.util.Set;
+import com.retekey.core.KeyModifier;
+import com.retekey.core.RawKey;
 
 /**
  * Which chord an edit command becomes on a remote-desktop editor.

@@ -10,33 +10,39 @@ import android.content.SharedPreferences;
  * about clips is mixed into settings that get read on every keystroke.
  */
 final class ClipStore {
-    private static final String PREFS = "retekey_clips";
     private static final String KEY_CLIPS = "clips";
+    private static final VersionedStore.Codec<ClipHistory> CODEC =
+        new VersionedStore.Codec<ClipHistory>() {
+            @Override
+            public ClipHistory decode(String stored) {
+                return ClipCodec.decode(stored);
+            }
+
+            @Override
+            public String encode(ClipHistory value) {
+                return ClipCodec.encode(value.clips());
+            }
+
+            @Override
+            public boolean sameData(ClipHistory first, ClipHistory second) {
+                return first.clips().equals(second.clips());
+            }
+        };
 
     private ClipStore() {
-    }
-
-    private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
     static ClipHistory load(Context context) {
         if (context == null) {
             return ClipHistory.empty();
         }
-        SharedPreferences prefs = prefs(context);
-        String stored = prefs.getString(KEY_CLIPS, "");
-        ClipHistory history = ClipCodec.decode(stored);
-        String rewritten = ClipCodec.encode(history.clips());
-        StoreMigration.rewrite(prefs, KEY_CLIPS, stored, rewritten,
-            history.clips().equals(ClipCodec.decode(rewritten).clips()));
-        return history;
+        return VersionedStore.load(AppPrefs.clips(context), KEY_CLIPS, CODEC);
     }
 
     static void save(Context context, ClipHistory history) {
         if (context == null) {
             return;
         }
-        prefs(context).edit().putString(KEY_CLIPS, ClipCodec.encode(history.clips())).apply();
+        VersionedStore.save(AppPrefs.clips(context), KEY_CLIPS, history, CODEC);
     }
 }
