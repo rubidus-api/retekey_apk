@@ -91,14 +91,80 @@ public final class FloatingKeyboardBoundsTest {
         FloatingKeyboardBounds panel =
             FloatingKeyboardBounds.of(W, H, Side.LEFT, 0, 200, 600, 400);
 
-        FloatingKeyboardBounds huge = panel.resizedBy(5000, 5000);
+        FloatingKeyboardBounds huge = panel.resizedBy(5000, -5000);
         assertEquals(W / 2, huge.width());
         assertEquals(Math.round(H * FloatingKeyboardBounds.MAX_HEIGHT_FRACTION), huge.height());
 
-        FloatingKeyboardBounds tiny = panel.resizedBy(-5000, -5000);
+        FloatingKeyboardBounds tiny = panel.resizedBy(-5000, 5000);
         assertEquals(
             Math.round((W / 2) * FloatingKeyboardBounds.MIN_WIDTH_FRACTION), tiny.width());
         assertEquals(Math.round(H * FloatingKeyboardBounds.MIN_HEIGHT_FRACTION), tiny.height());
+    }
+
+    @Test
+    public void draggingResizeHandleUpLiftsTitleBarAndGrowsUpward() {
+        FloatingKeyboardBounds panel =
+            FloatingKeyboardBounds.of(W, H, Side.RIGHT, W / 2, 600, 600, 400);
+
+        FloatingKeyboardBounds grown = panel.resizedBy(0, -120);
+
+        assertEquals(480, grown.top());
+        assertEquals(520, grown.height());
+        assertEquals(1000, grown.bottom());
+        assertEquals(W / 2, grown.left());
+        assertEquals(600, grown.width());
+    }
+
+    @Test
+    public void draggingResizeHandleDownLowersTitleBarAndShrinksFromTop() {
+        FloatingKeyboardBounds panel =
+            FloatingKeyboardBounds.of(W, H, Side.RIGHT, W / 2, 600, 600, 400);
+
+        FloatingKeyboardBounds shrunk = panel.resizedBy(0, 120);
+
+        assertEquals(720, shrunk.top());
+        assertEquals(280, shrunk.height());
+        assertEquals(1000, shrunk.bottom());
+    }
+
+    @Test
+    public void shrinkingDownPastMinimumKeepsBottomAnchoredMidScreen() {
+        FloatingKeyboardBounds panel =
+            FloatingKeyboardBounds.of(W, H, Side.LEFT, 0, 200, 600, 400);
+
+        FloatingKeyboardBounds tiny = panel.resizedBy(0, 5000);
+        int expectedHeight = Math.round(H * FloatingKeyboardBounds.MIN_HEIGHT_FRACTION);
+
+        assertEquals(expectedHeight, tiny.height());
+        assertEquals(600, tiny.bottom());
+        assertEquals(600 - expectedHeight, tiny.top());
+    }
+
+    @Test
+    public void topRightResizeWorksOnTallScreenBottomHalf() {
+        FloatingKeyboardBounds panel =
+            FloatingKeyboardBounds.of(1080, 2400, Side.RIGHT, 40, 1500, 1000, 700);
+
+        FloatingKeyboardBounds grown = panel.resizedBy(0, -150);
+        assertEquals(1350, grown.top());
+        assertEquals(850, grown.height());
+        assertEquals(2200, grown.bottom());
+
+        FloatingKeyboardBounds shrunk = panel.resizedBy(0, 150);
+        assertEquals(1650, shrunk.top());
+        assertEquals(550, shrunk.height());
+        assertEquals(2200, shrunk.bottom());
+
+        int minHeight = Math.round(1200 * FloatingKeyboardBounds.MIN_WIDTH_FRACTION);
+        FloatingKeyboardBounds minBound = panel.resizedBy(0, 5000);
+        assertEquals(minHeight, minBound.height());
+        assertEquals(2200, minBound.bottom());
+        assertEquals(2200 - minHeight, minBound.top());
+
+        FloatingKeyboardBounds maxBound = panel.resizedBy(0, -5000);
+        assertEquals(1200, maxBound.height());
+        assertEquals(1200, maxBound.top());
+        assertEquals(2400, maxBound.bottom());
     }
 
     @Test

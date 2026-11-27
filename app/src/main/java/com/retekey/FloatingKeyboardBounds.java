@@ -167,9 +167,24 @@ public final class FloatingKeyboardBounds {
         return of(screenWidth, screenHeight, side, left + dx, top + dy, width, height);
     }
 
-    /** The same panel resized by a drag on the resize handle, anchored at its top-left corner. */
+    /**
+     * The same panel resized by a drag on the top-right resize handle, anchored at its bottom-left
+     * corner: dragging up ({@code dy < 0}) lifts the title bar and grows the panel upward; dragging
+     * down ({@code dy > 0}) lowers the title bar and shrinks the panel downward while keeping the
+     * bottom edge fixed until bounded.
+     */
     public FloatingKeyboardBounds resizedBy(int dx, int dy) {
-        return of(screenWidth, screenHeight, side, left, top, width + dx, height + dy);
+        boolean horizontal = splitsHorizontally(screenWidth, screenHeight);
+        int halfAlong = (horizontal ? screenWidth : screenHeight) / 2;
+        int minHeight = horizontal
+            ? Math.max(1, Math.round(screenHeight * MIN_HEIGHT_FRACTION))
+            : Math.max(1, Math.round(halfAlong * MIN_WIDTH_FRACTION));
+        int maxHeight = horizontal
+            ? Math.max(1, Math.round(screenHeight * MAX_HEIGHT_FRACTION))
+            : halfAlong;
+        int nextHeight = clamp(height - dy, minHeight, maxHeight);
+        int nextTop = bottom() - nextHeight;
+        return of(screenWidth, screenHeight, side, left, nextTop, width + dx, nextHeight);
     }
 
     /**

@@ -1038,7 +1038,8 @@ arithmetic, so it belongs in a class a unit test can call rather than in a layou
   otherwise answer touches that far above the keys.
 - **The whole title bar is the move handle.** A small handle at one end of a bar that is mostly
   empty is a target people miss. Every part of the bar that is not a key (cross over, close, resize)
-  starts a move (0.1.171).
+  starts a move (0.1.171). The top-right resize handle anchors the bottom-left corner so dragging up
+  lifts the title bar to grow upward and dragging down lowers the title bar to shrink downward.
 - **Action bar placement (`ActionBarFrame`, `ActionBarPosition`).** The action bar is part of the
   keyboard's height both docked and inside `FloatingKeyboardFrame`, and a per-orientation setting
   places it either above the keys (default) or below them. Placing it below puts the bar at the

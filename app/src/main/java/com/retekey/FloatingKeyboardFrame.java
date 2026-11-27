@@ -69,6 +69,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     private static final int DRAG_CLOSE = 3;
     private static final int DRAG_CROSS = 4;
     private int activePointerId = MotionEvent.INVALID_POINTER_ID;
+    private FloatingKeyboardBounds dragStartBounds;
     private float dragAnchorX;
     private float dragAnchorY;
 
@@ -282,6 +283,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                 // The handle is where a move is shown to start, but the whole bar is where a
                 // thumb looks for one: anything in it that is not a key moves the panel.
                 dragMode = contains(resizeCell, x, y) ? DRAG_RESIZE : DRAG_MOVE;
+                dragStartBounds = bounds;
                 dragAnchorX = x;
                 dragAnchorY = y;
                 return true;
@@ -294,16 +296,12 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                 if (idx < 0) {
                     return true;
                 }
-                if (dragMode == DRAG_MOVE || dragMode == DRAG_RESIZE) {
+                if ((dragMode == DRAG_MOVE || dragMode == DRAG_RESIZE) && dragStartBounds != null) {
                     float px = event.getX(idx);
                     float py = event.getY(idx);
                     int dx = Math.round(px - dragAnchorX);
                     int dy = Math.round(py - dragAnchorY);
-                    if (dx != 0 || dy != 0) {
-                        applyDrag(dx, dy);
-                        dragAnchorX += dx;
-                        dragAnchorY += dy;
-                    }
+                    applyDrag(dx, dy);
                 }
                 return true;
             }
@@ -314,6 +312,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                         notifyBounds();
                     }
                     dragMode = DRAG_NONE;
+                    dragStartBounds = null;
                     activePointerId = MotionEvent.INVALID_POINTER_ID;
                 }
                 return dragMode != DRAG_NONE;
@@ -322,6 +321,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                 int mode = dragMode;
                 int pid = activePointerId;
                 dragMode = DRAG_NONE;
+                dragStartBounds = null;
                 activePointerId = MotionEvent.INVALID_POINTER_ID;
                 if (mode == DRAG_NONE) {
                     return false;
@@ -355,6 +355,7 @@ public final class FloatingKeyboardFrame extends ViewGroup {
                 }
                 boolean hadDrag = dragMode != DRAG_NONE;
                 dragMode = DRAG_NONE;
+                dragStartBounds = null;
                 activePointerId = MotionEvent.INVALID_POINTER_ID;
                 return hadDrag;
             default:
@@ -369,9 +370,10 @@ public final class FloatingKeyboardFrame extends ViewGroup {
     }
 
     private void applyDrag(int dx, int dy) {
+        FloatingKeyboardBounds base = dragStartBounds != null ? dragStartBounds : bounds;
         FloatingKeyboardBounds updated = dragMode == DRAG_RESIZE
-            ? bounds.resizedBy(dx, dy)
-            : bounds.movedBy(dx, dy);
+            ? base.resizedBy(dx, dy)
+            : base.movedBy(dx, dy);
         if (updated.left() == bounds.left() && updated.top() == bounds.top()
             && updated.width() == bounds.width() && updated.height() == bounds.height()) {
             return;

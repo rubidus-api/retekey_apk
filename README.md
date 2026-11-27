@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.9** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.9/retekey-0.2.9.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.9/retekey-0.2.9-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.10** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -49,13 +49,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.9/retekey-0.2.9.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.9/retekey-0.2.9-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.9** —
-[retekey-0.2.9.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.9/retekey-0.2.9.apk) (746 KB; the Android 4.0 build is 586 KB)
+Current release: **v0.2.10** —
+[retekey-0.2.10.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10.apk) (746 KB; the Android 4.0 build is 586 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
