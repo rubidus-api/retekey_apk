@@ -20,6 +20,7 @@ was paid for in this project.
   - [1.2 How the system finds, enables, and selects an IME](#12-how-the-system-finds-enables-and-selects-an-ime)
   - [1.3 The data flow](#13-the-data-flow)
   - [1.4 A worked component map](#14-a-worked-component-map)
+  - [1.5 Build order: implementing an IME from scratch](#15-build-order-implementing-an-ime-from-scratch)
 - [2. A minimal working IME](#2-a-minimal-working-ime)
 - [3. Reference implementations and where to get them](#3-reference-implementations-and-where-to-get-them)
 - [4. The service lifecycle](#4-the-service-lifecycle)
@@ -32,9 +33,11 @@ was paid for in this project.
 - [11. Drawing a custom keyboard](#11-drawing-a-custom-keyboard)
   - [11.1 Caching the static image](#111-caching-the-static-image)
   - [11.2 Touch: from finger to keystroke](#112-touch-from-finger-to-keystroke)
+  - [11.3 Accessibility: TalkBack and Explore-by-Touch](#113-accessibility-talkback-and-explore-by-touch)
 - [12. Theming](#12-theming)
 - [12a. The window the keyboard lives in](#12a-the-window-the-keyboard-lives-in)
 - [13. Settings and persistence](#13-settings-and-persistence)
+  - [13.1 Versioned storage, Direct Boot, and sensitive data](#131-versioned-storage-direct-boot-and-sensitive-data)
 - [14. Testing and verification](#14-testing-and-verification)
 - [15. Anti-patterns, with the failures that taught them](#15-anti-patterns-with-the-failures-that-taught-them)
 - [15a. Remote-desktop editors: a wire with no editor behind it](#15a-remote-desktop-editors-a-wire-with-no-editor-behind-it)
@@ -85,11 +88,12 @@ What you *can* do is send the user to the right screen:
 
 ```java
 // "Manage installed keyboards": the enable step.
+// FLAG_ACTIVITY_NEW_TASK is required when launching from the IME service rather than an Activity.
 startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS)
     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
 
-// "Choose keyboard": the select step.
-InputMethodManager imm = getSystemService(InputMethodManager.class);
+// "Choose keyboard": the select step (works from API 14 onward without API 23 getSystemService(Class)).
+InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 if (imm != null) {
     imm.showInputMethodPicker();
 }
@@ -143,25 +147,44 @@ Keeping those stages separate is what makes an IME testable, because everything 
 
 ### 1.4 A worked component map
 
-ReteKey's structure, as a concrete example of the split above. Names are illustrative; the shape is
-the point.
+ReteKey's structure, as a concrete example of the split above (`com.retekey.core` holds the
+pure-Java input engine with zero `android.*` imports; `com.retekey` holds Android adapters, views,
+and stores alongside layout/codec helpers). Names are illustrative; the boundary is the point.
 
 | Layer | Responsibility | Android-free? |
 |---|---|---|
-| `ReteKeyImeService` | lifecycle, `InputConnection` calls, hardware keys, candidates | no |
-| `ReteKeyboardView` | draw the keyboard, hit-test touches, emit semantic events | no |
-| `KeyboardPalette` | resolve colours from the system/Material You theme | no |
-| `KeyboardLayouts` / `SoftwareKeySpec` | which key sits where, what it means | **yes** |
-| `HangulComposer` / `HangulInputProcessor` | the 2-beolsik automaton and its editor actions | **yes** |
-| `InputDispatcher` / `TransitionPlan` / `KeyAction` | turn events into an ordered list of edits | **yes** |
-| `CheckedEditorExecutor` | run the edits, report what happened | **yes** |
-| `InputConnectionEditorBridge` | the only place that touches `InputConnection` | no |
-| `InputSessionController` | the passive cursor cache ([§6](#6-the-editor-is-authoritative)) | **yes** |
-| `HanjaTable` / `HunumTable` / `HanjaDictionary` | conversion data and lookup | table logic **yes** |
-| `SettingsActivity` / `PreviewActivity` | settings and the enable/select helper screen | no |
+| `ReteKeyImeService` | lifecycle, `InputConnection` calls, hardware keys, panel orchestration | no |
+| `ReteKeyboardView` | `RGB_565` bitmap cache, hit-testing, touch roll/flick, TalkBack bridge | no |
+| `KeyboardPalette` | resolve colours from `ScreenTheme` (monochrome, light/dark, Material You) | no |
+| `PanelFrame` / `FloatingKeyboardFrame` / `SystemBarInsets` | docked host, anchored corner-resize floating frame, overlap inset measurement | no |
+| `KeyboardLayouts` / `SoftwareKeySpec` / `LetterLayouts` | immutable key specs, lazy layout caches, enabled-layout walk | **yes** |
+| `core.HangulComposer` / `core.CheonjiinInterpreter` / `core.NaratgeulInterpreter` / `core.RomajiKanaComposer` / `core.TelexComposer` | compositing state machines and syllable/word rules | **yes** |
+| `core.InputDispatcher` / `core.TransitionPlan` / `core.KeyAction` | event normalisation and immutable ordered edit lists | **yes** |
+| `core.CheckedEditorExecutor` / `core.EditorCapabilities` | field classification (`EditorKind`) and checked execution | **yes** |
+| `InputConnectionEditorBridge` | the only class that touches `InputConnection` | no |
+| `core.InputSessionController` | the passive cursor cache ([§6](#6-the-editor-is-authoritative)) | **yes** |
+| `MappedHanjaTable` / `SortedIndex` / `HanjaDictionary` | binary asset lookup (`hanja_fwd.idx`, `hanja_rev.idx`, `hanja_hunum.idx`) | table/bisect **yes** |
+| `AppPrefs` / `core.RecordCodec` / `VersionedStore` | centralized prefs, versioned file stores, Direct Boot unlock watch | storage codecs **yes** |
+| `SettingsActivity` / `PreviewActivity` / `ShareTargetActivity` | settings, enable/select helper, kept-text & `.rkl` installer doors | no |
 
-The "Android-free?" column is the useful one: **roughly 70% of an IME can be pure Java**, and that
-is the part where the logic bugs live.
+The "Android-free?" column is the useful one: **about 74% of ReteKey's Java files (137 of 185,
+including all 74 files in `com.retekey.core`) have no Android dependency**, and that is the part
+where the input-logic bugs live.
+
+### 1.5 Build order: implementing an IME from scratch
+
+If you are building a production IME from zero (or generating one stage by stage with AI), implement
+and verify the layers in this dependency order rather than wiring views, composers, and
+`InputConnection` calls together on day one:
+
+1. **Bootstrap the service and harness ([§2](#2-a-minimal-working-ime), [§4](#4-the-service-lifecycle))** — `AndroidManifest.xml` (`BIND_INPUT_METHOD`), `res/xml/method.xml`, minimal `InputMethodService` returning one clickable button, and a launcher `Activity` with Enable/Choose buttons plus an editor box. Verify in an emulator before adding logic.
+2. **Stand up the Android-free input core ([§5](#5-the-inputconnection-contract), [§6](#6-the-editor-is-authoritative), [§8](#8-composing-text), [§14](#14-testing-and-verification))** — define `EditorEndpoint` / `EditorBridge`, semantic input events, your composer state machines, passive cursor cache (`InputSessionController`), and ordered edit executor (`TransitionPlan`). Cover every state transition with fast JVM unit tests before writing custom drawing code.
+3. **Classify editors and wire the live bridge ([§4](#4-the-service-lifecycle), [§7](#7-editor-kinds-and-unknown-selections))** — derive `EditorKind` (`RICH_TEXT`, `TERMINAL`, `REMOTE_DESKTOP`, `UNSUPPORTED`), guard `finishComposingInEditor()` across teardown callbacks, implement API 24+ code-point deletion with UTF-16 fallback, and implement the Enter action-vs-newline order.
+4. **Build the cached-bitmap canvas view & touch state machine ([§11](#11-drawing-a-custom-keyboard))** — immutable layout/key specs, lazy layout loading, `RGB_565` background bitmap cache, `(x, y)` `endTouch`, separate `touchSlop` vs retarget threshold, hold/flick discrimination, and `onDetachedFromWindow()` bitmap/timer cleanup.
+5. **Add hardware keyboard handling & modifier chords ([§9](#9-hardware-keyboards), [§15a](#15a-remote-desktop-editors-a-wire-with-no-editor-behind-it))** — physical scan-code check, held modifier reconciliation across `InputDeviceWatcher`, `dispatchKeyEvent` shortcut capture in Settings, and optional US-key positional mode for remote desktops.
+6. **Add insets, docked panels, and floating mode ([§10](#10-the-candidates-view), [§12a](#12a-the-window-the-keyboard-lives-in))** — measure bottom bar overlap (`SystemBarInsets`), host docked overlays in one frame (`PanelFrame`), support anchored corner-resize floating panels, and exclude API 29+ system back gestures on horizontal strips.
+7. **Wire theming and TalkBack accessibility ([§11.3](#113-accessibility-talkback-and-explore-by-touch), [§12](#12-theming))** — `ScreenTheme` monochrome-first palette + Material You dynamic roles, plus `AccessibilityNodeProvider` virtual nodes so every drawn key works under Explore-by-Touch.
+8. **Harden preferences, Direct Boot, and release checks ([§13](#13-settings-and-persistence), [§16](#16-pre-release-checklist))** — centralize preference names and live-rebuild classifiers, version structured file stores (`RecordCodec` + migrations), suppress password/sensitive clipboard recording, and gate changes with pure-Java boundary checks and emulator runs.
 
 ## 2. A minimal working IME
 
@@ -319,7 +342,9 @@ The callbacks you will actually implement:
 Also useful:
 
 - `onEvaluateInputViewShown()` — return `false` to hide the on-screen keyboard (for example when a
-  hardware keyboard is attached). Call `super` and combine, do not ignore it.
+  hardware keyboard is attached). Call `super` first; return `true` unconditionally while any of
+  your own panels (Hanja, Unicode entry, IPA search, Notepad, Clipboard) is open so they can show
+  without soft keys, and otherwise evaluate your hardware-visibility policy.
 - `onEvaluateFullscreenMode()` — return `false` unless you really want the landscape full-screen
   extract mode.
 - `onCurrentInputMethodSubtypeChanged(subtype)` — the language switched; finish composing
@@ -335,7 +360,15 @@ onUnbindInput → (onDestroy begins) → onFinishInputView → onFinishInput →
 That is: **`onUnbindInput` arrives before `onFinishInput`**, and the finish callbacks are *nested
 inside* `onDestroy`. Code that clears the session marker in `onUnbindInput` will then fail to
 attribute its own teardown callbacks. Treat teardown as idempotent: any of these may run first, more
-than once, or with the input connection already gone.
+than once, or with the input connection already gone. In practice:
+
+- `onUnbindInput()` and `onDestroy()` guard `finishComposingInEditor()` with
+  `if (inputProcessor.isComposing())` before clearing session state; `onDestroy()` also cancels
+  pending handlers/toasts and unregisters unlock, input-device, clipboard, and preference listeners.
+- `onFinishInputView()` wraps `finishComposingInEditor()` in `try / finally` so processor reset and
+  panel cleanup still run even if the editor throws.
+- `onFinishInput()` runs `finishComposingInEditor()` in `try / finally`, guards `super.onFinishInput()`
+  with `try / catch (RuntimeException)`, and calls `finishSession()` in an inner `finally`.
 
 Rules:
 
@@ -355,7 +388,7 @@ Everything you do to the editor goes through `getCurrentInputConnection()`.
 | `setComposingText(text, 1)` | show an underlined preedit | replaces the previous composing region |
 | `finishComposingText()` | make the preedit permanent | no-op when nothing is composing |
 | `deleteSurroundingText(before, after)` | delete relative to the cursor | **does not need to know the cursor position** |
-| `deleteSurroundingTextInCodePoints(b, a)` | same, Unicode-safe | prefer this when deleting user-visible characters |
+| `deleteSurroundingTextInCodePoints(b, a)` | same, Unicode-safe (API 24+) | prefer on API 24+, with measured UTF-16 `deleteSurroundingText` fallback below API 24 or on rejecting editors |
 | `sendKeyEvent(event)` | deliver a real `KeyEvent` | the only way to send chords and raw keys |
 | `performEditorAction(id)` | run Go/Search/Send | from `EditorInfo.imeOptions` |
 | `performContextMenuAction(id)` | run select-all/copy/paste/undo | works in rich editors, not terminals |
@@ -371,15 +404,16 @@ Two properties matter more than the rest:
 2. **Every call can fail or be ignored.** They return `boolean` and may throw. Treat a `false` as
    "this editor did not do it", not as "my state is corrupt".
 
-Replacing a reading with a conversion is a batch:
+Replacing a reading with a conversion is a batch, and must check whether the delete succeeded before
+committing so a silent rejection never leaves both the reading and the conversion ([§15.54](#1554-a-replacement-that-committed-after-its-delete-failed)):
 
 ```java
 ic.beginBatchEdit();
 try {
-    if (deleteLength > 0) {
-        ic.deleteSurroundingText(deleteLength, 0);
+    boolean deleted = deleteLength == 0 || ic.deleteSurroundingText(deleteLength, 0);
+    if (deleted) {
+        ic.commitText(replacement, 1);   // with a live selection this replaces it
     }
-    ic.commitText(replacement, 1);   // with a live selection this replaces it
 } finally {
     ic.endBatchEdit();
 }
@@ -393,16 +427,23 @@ private void sendRawKey(int keyCode, int metaState) {
     if (ic == null) {
         return;
     }
-    long now = SystemClock.uptimeMillis();
-    ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, metaState,
-        KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_SOFT_KEYBOARD));
-    ic.sendKeyEvent(new KeyEvent(now, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0,
-        metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_SOFT_KEYBOARD));
+    long downTime = SystemClock.uptimeMillis();
+    int flags = KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE;
+    try {
+        ic.sendKeyEvent(new KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, keyCode, 0,
+            metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags));
+        ic.sendKeyEvent(new KeyEvent(downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP,
+            keyCode, 0, metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags));
+    } catch (RuntimeException ignored) {
+        // An editor dying mid-teardown must not crash the IME process.
+    }
 }
 ```
 
 Always send both `ACTION_DOWN` and `ACTION_UP`, and reuse one `downTime` across the pair, or
-repeat-detection in the target app misbehaves.
+repeat-detection in the target app misbehaves. For remote-desktop positional keys that must look
+like hardware presses, use `InputDevice.SOURCE_KEYBOARD` with the Linux/Android scan code and omit
+`FLAG_SOFT_KEYBOARD`.
 
 ## 6. The editor is authoritative
 
@@ -447,24 +488,32 @@ opposite.
 
 ## 7. Editor kinds and unknown selections
 
-Classify the editor once, in `onStartInput`, from `EditorInfo`:
+Classify the editor once, in `onStartInput`, from `EditorInfo` and your active keyboard mode:
 
 ```java
 @Override
 public void onStartInput(EditorInfo info, boolean restarting) {
     super.onStartInput(info, restarting);
-    boolean rawKeyEditor = info != null
-        && (info.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_NULL;
-    profile = rawKeyEditor ? EditorProfile.rawKeys() : EditorProfile.richText();
+    EditorKind kind = classifyEditor(info, remoteDesktopEnabled);
+    // EditorKind: RICH_TEXT | TERMINAL | REMOTE_DESKTOP | UNSUPPORTED
+    profile = profileFor(info, kind);
     cursor = (info != null && info.initialSelStart >= 0)
         ? EditorBounds.of(info.initialSelStart, info.initialSelEnd, -1, -1)
         : EditorBounds.unknown();     // terminals land here
 }
 ```
 
-- `TYPE_NULL` — the editor wants **raw key events**, not text edits. Terminal emulators and some
-  game/console views do this. Send keys with `sendKeyEvent`.
-- Otherwise it is a rich text editor: `commitText` / `setComposingText` are appropriate.
+Separating `EditorKind` from deletion/composition capability avoids mixing unrelated edge cases:
+
+- **`TERMINAL` (`TYPE_NULL`)** — the editor wants **raw key events**, not text edits, and gives
+  a dummy buffer that swallows `deleteSurroundingText`. Compose syllables on an off-screen strip
+  (`composesOffScreen`) and send completed text + backspace key events (`deleteByKeyEvents`,
+  `noSurroundingText`).
+- **`REMOTE_DESKTOP`** — US physical key codes by key position; delete using backspace key events
+  rather than `deleteSurroundingText` so the far-side desktop receives real backspaces
+  ([§15a](#15a-remote-desktop-editors-a-wire-with-no-editor-behind-it)).
+- **`RICH_TEXT`** — `commitText`, `setComposingText`, and code-point surrounding-text deletion apply.
+- **`UNSUPPORTED` (`info == null`)** — do not claim events; delegate to the framework.
 
 Terminals additionally tend to report `initialSelStart == -1` and never send meaningful
 `onUpdateSelection`. **A keyboard that needs to know the selection cannot type in a terminal.**
@@ -476,14 +525,19 @@ Rules:
 - Do not assume the editor has an action; if it has none and is single-line, a real `KEYCODE_ENTER`
   is the correct fallback ([§15.3](#153-refusing-a-raw-enter)).
 
-Also read `EditorInfo.imeOptions` for the Enter key's meaning:
+Also read `EditorInfo` for the Enter key's meaning in exact priority order:
 
 ```java
+boolean customAction = info.actionLabel != null;
 int action = info.imeOptions & EditorInfo.IME_MASK_ACTION;
 boolean noEnterAction = (info.imeOptions & EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0;
-boolean multiLine = (info.inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
+boolean multiLine = (info.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT
+    && (info.inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
 
-if (!noEnterAction && action != EditorInfo.IME_ACTION_NONE) {
+if (customAction) {
+    ic.performEditorAction(info.actionId);   // editor supplied an explicit actionLabel + actionId
+} else if (!noEnterAction && action != EditorInfo.IME_ACTION_NONE
+        && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
     ic.performEditorAction(action);          // Go / Search / Send / Done
 } else if (multiLine) {
     ic.commitText("\n", 1);
@@ -501,13 +555,13 @@ A composer step therefore produces an *ordered list* of edits, not one call — 
 modelling explicitly, because it is exactly the part that is unit-testable:
 
 ```java
-// "ㄱ" then "ㅏ" then "ㄴ" then "ㄷ":  가 → 간 → commit("가") + compose("ㄴㄷ"→ 낟) …
+// "ㄱ" then "ㅏ" then "ㄴ" then "ㅏ":  ㄱ → 가 → 간 → commit("가") + compose("나") (도깨비불)
 List<KeyAction> actions = composer.accept(jamo);
 for (KeyAction action : actions) {
     switch (action.kind()) {
         case COMMIT_TEXT:        ic.commitText(action.text(), 1);        break;
         case SET_COMPOSING_TEXT: ic.setComposingText(action.text(), 1);  break;
-        case DELETE_BACKWARD:    ic.deleteSurroundingTextInCodePoints(1, 0); break;
+        case DELETE_BACKWARD:    deleteCodePointsWithFallback(ic, 1);    break;
         case RAW_KEY:            sendRawKey(action.keyCode(), action.meta()); break;
     }
 }
@@ -515,20 +569,28 @@ for (KeyAction action : actions) {
 
 **Finish composing at every session boundary.** If the user leaves the field mid-syllable, an
 unfinished preedit is stranded — visually underlined text that belongs to no session, which can
-later reappear or be deleted unexpectedly.
+later reappear or be deleted unexpectedly. Guard teardown with `try / catch` and `try / finally` so a
+failing editor can never skip resetting your processor state:
 
 ```java
-@Override public void onFinishInput()      { finishComposingInEditor(); /* … */ }
-@Override public void onFinishInputView(boolean finishing) { finishComposingInEditor(); reset(); }
+@Override public void onFinishInputView(boolean finishing) {
+    try { finishComposingInEditor(); } finally { inputProcessor.reset(); closePanelsQuietly(); }
+}
+
 @Override public void onCurrentInputMethodSubtypeChanged(InputMethodSubtype s) {
     finishComposingInEditor();   // a language switch must not carry a half-formed jamo across
-    reset();
+    inputProcessor.reset();
 }
 
 private void finishComposingInEditor() {
+    flushOffScreenComposingStripIfAny();     // terminals with strip composing
     InputConnection ic = getCurrentInputConnection();
     if (ic != null) {
-        ic.finishComposingText();
+        try {
+            ic.finishComposingText();
+        } catch (RuntimeException ignored) {
+            // Editor is already dying; do not break teardown.
+        }
     }
 }
 ```
@@ -577,23 +639,32 @@ sendRawKey(KeyEvent.KEYCODE_B, KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_O
 
 **A modifier held on a physical keyboard applies to on-screen keys too.** One hand can hold Ctrl on
 a keyboard while the other taps an arrow on the action bar; that arrow must go out as Ctrl+arrow,
-exactly as the keyboard's own arrow would. The IME sees every modifier key's down and up, so keep a
-record of them — per key code, so that letting go of left Shift while right Shift is down still
-leaves Shift held — and update it on the first line of `onKeyDown` and `onKeyUp`, before any early
-return, or a pass-through path will miss the release:
+exactly as the keyboard's own arrow would. The IME sees every modifier key's down and up, so record
+them **by `(deviceId, keyCode)`** — so letting go of left Shift while right Shift is down keeps
+Shift held, and two plugged-in keyboards do not cancel each other's modifiers — on the first line
+of `onKeyDown` and `onKeyUp` (ignoring `FLAG_CANCELED`), before any early return:
 
 ```java
 @Override
 public boolean onKeyDown(int keyCode, KeyEvent event) {
-    heldHardware.onKey(keyCode, true);          // before anything can return
+    if ((event.getFlags() & KeyEvent.FLAG_CANCELED) == 0) {
+        heldHardware.onKey(event.getDeviceId(), keyCode, true);   // before anything returns
+        heldHardware.reconcile(event.getDeviceId(), keyCode, event.getMetaState());
+    }
     ...
 }
+
+// Clear stale modifiers when a Bluetooth/USB keyboard disconnects or reconfigures (@TargetApi(16)):
+InputDeviceWatcher.start(this, mainHandler, heldHardware::forgetDevice);
 
 // An on-screen key's modifiers: the soft latches, the bar's, and the physical keyboard's.
 Set<KeyModifier> mods = union(keyboardView.rawKeyModifiers(), heldHardware.held());
 ```
 
-Read that set **once, when the finger comes down**, and keep it for the whole press. A key that
+Calling `reconcile(deviceId, keyCode, metaState)` on subsequent non-modifier keys clears any
+modifier whose `ACTION_UP` was lost across a focus switch, and `InputDeviceWatcher` (`onInputDeviceRemoved`
+/ `onInputDeviceChanged`) calls `forgetDevice(deviceId)` when a hardware keyboard unplugs mid-chord.
+Read that modifier set **once, when the finger comes down**, and keep it for the whole press. A key that
 repeats while held otherwise loses a one-shot Ctrl on its first repeat — the latch is spent by the
 first key event — and the rest of the hold goes out bare (§15.32).
 
@@ -607,62 +678,79 @@ Left and right modifiers are distinct key codes (`KEYCODE_CTRL_LEFT` = 113,
 `KEYCODE_CTRL_RIGHT` = 114), which is what makes "Right Ctrl toggles the language, Left Ctrl still
 does Ctrl+C" possible.
 
-For a lone-modifier binding, capture it on **key up**: on key down you cannot yet tell whether the
-user is pressing Ctrl alone or starting Ctrl+Space.
+For shortcut capture in Settings, override **`dispatchKeyEvent`**, not `onKeyDown` — `Activity.onKeyDown`
+only runs after child views decline the key (so `Space` scrolls or activates the focused button
+before reaching `onKeyDown`, stranding a `Shift+Space` attempt as lone `Shift`), and guard capture
+with an in-process `AtomicBoolean` (`HardwareKeyBindings.setCapturing`) cleared in `onPause` rather
+than a persisted pref. Capture a lone modifier on **`ACTION_UP`** using `pendingModifierKey` and
+`modifierChordUsed` so pressing a second key marks a chord cleanly:
 
 ```java
 // Capturing a user-assigned shortcut in a settings Activity.
-@Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!capturing) return super.onKeyDown(keyCode, event);
-    if (KeyEvent.isModifierKey(keyCode)) return true;         // wait: chord, or lone modifier?
-    save(new Binding(modifiersOf(event), keyCode));           // e.g. Shift+Space
-    capturing = false;
-    return true;
-}
-@Override public boolean onKeyUp(int keyCode, KeyEvent event) {
-    if (capturing && KeyEvent.isModifierKey(keyCode)) {
-        save(new Binding(0, keyCode));                        // e.g. Right Ctrl alone
-        capturing = false;
+@Override public boolean dispatchKeyEvent(KeyEvent event) {
+    if (!capturing) return super.dispatchKeyEvent(event);
+    int keyCode = event.getKeyCode();
+    if (belongsToThePhone(keyCode)) { stopCapture(); return super.dispatchKeyEvent(event); }
+    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+        if (KeyEvent.isModifierKey(keyCode)) {
+            if (pendingModifierKey == 0) pendingModifierKey = keyCode;
+            else if (pendingModifierKey != keyCode) modifierChordUsed = true;
+            return true;
+        }
+        modifierChordUsed = true;
+        saveAndStop(new Binding(modsOf(event), keyCode));   // e.g. Shift+Space
         return true;
     }
-    return super.onKeyUp(keyCode, event);
+    if (event.getAction() == KeyEvent.ACTION_UP && KeyEvent.isModifierKey(keyCode)) {
+        if (!modifierChordUsed && keyCode == pendingModifierKey) {
+            saveAndStop(new Binding(0, keyCode));           // e.g. Right Ctrl alone
+        } else if (modsOf(event) == 0) {
+            pendingModifierKey = 0; modifierChordUsed = false;
+        }
+        return true;
+    }
+    return true;
 }
 ```
 
-Finally, decide whether the on-screen keyboard should hide while a hardware keyboard is attached:
-
-```java
-@Override
-public boolean onEvaluateInputViewShown() {
-    super.onEvaluateInputViewShown();
-    Configuration config = getResources().getConfiguration();
-    boolean hardware = config.keyboard != Configuration.KEYBOARD_NOKEYS
-        && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
-    return !hardware;
-}
-```
+Finally, decide whether the on-screen keyboard should hide while a hardware keyboard is attached
+(`onEvaluateInputViewShown()`, [§4](#4-the-service-lifecycle)): return `true` when any IME panel is
+open, and otherwise follow `SoftKeyboardVisibilityPolicy.shouldShow(hasActiveHardwareKeyboard(), softKeyboardMode)`.
 
 ## 10. The candidates view
 
-`onCreateCandidatesView()` plus `setCandidatesViewShown(true/false)` gives you a strip that is
-independent of the keyboard view. This matters because **the candidates view still shows when the
-input view is hidden** — which is exactly the case when a hardware keyboard is attached. Conversion
-UI belongs here, not in the keyboard view.
+Android gives an IME two very different places to display extra UI:
 
-The view is created lazily, so populate it in the right order:
+1. **`onCreateCandidatesView()` + `setCandidatesViewShown(true/false)`** — a slim framework strip
+   above the input area that can appear even when `onEvaluateInputViewShown()` hides the soft keys.
+   Its layout is tightly constrained by `InputMethodService` (fixed non-floating band; cannot hold
+   scrollable/draggable full overlays or float reliably beside a floating keyboard).
+2. **Panels inside `onCreateInputView()` or a floating frame (`PanelFrame` / `FloatingKeyboardFrame`)**
+   — the approach ReteKey now uses for Hanja candidates, Unicode `U+` entry, IPA search, Clipboard,
+   and Notepad, returning `true` from `onEvaluateInputViewShown()` while any panel is active so they
+   still open when a hardware keyboard is attached ([§12a](#12a-the-window-the-keyboard-lives-in)).
+
+In ReteKey, `onCreateCandidatesView()` is kept solely for **`ComposingStripView`**: the docked
+preedit strip when typing Hangul into a terminal (`EditorKind.TERMINAL`, where `InputConnection`
+ignores `setComposingText`), while floating mode renders that composing text inside the floating
+title bar (`FloatingKeyboardFrame`).
+
+If you *do* use `onCreateCandidatesView()` for clickable candidates, populate it lazily and guard
+against null callbacks or empty lists:
 
 ```java
 @Override
 public View onCreateCandidatesView() {
     candidatesView = new CandidatesView(this);
     candidatesView.setOnPick(this::commitCandidate);
-    if (pendingItems != null) {                 // shown before the view existed
+    if (pendingItems != null && !pendingItems.isEmpty()) { // shown before the view existed
         candidatesView.show(pendingReading, pendingItems);
     }
     return candidatesView;
 }
 
 private void showCandidates(String reading, List<Item> items) {
+    if (items == null) return;
     pendingReading = reading;
     pendingItems = items;
     setCandidatesViewShown(true);               // may call onCreateCandidatesView now
@@ -677,7 +765,8 @@ Hide the strip when the user types anything else, and on `onStartInput` / `onFin
 stale strip will outlive the text it referred to. If you support number-key selection, intercept
 those keys *before* the "any other key hides the strip" rule.
 
-Four rules this project paid for with a strip nobody could see (issue #7, 0.1.170):
+Four rules for `onCreateCandidatesView()` that this project paid for with a strip nobody could see
+(and which explain why rich pickers moved to `PanelFrame` / `FloatingKeyboardFrame` in §12a):
 
 - **Showing the strip is not enough to make it visible.** `InputMethodService` lays its candidates
   frame inside a *full-screen area* whose visibility it sets from the candidates' visibility at the
@@ -745,7 +834,8 @@ private void ensureBaseBitmap(int width, int height) {
     if (baseBitmap != null) {
         baseBitmap.recycle();
     }
-    baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    // An opaque keyboard needs no alpha channel: RGB_565 halves cache memory on tablets.
+    baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
     Canvas cache = new Canvas(baseBitmap);
     cache.drawColor(palette.background);
     for (Key key : layout.keys()) {
@@ -761,21 +851,27 @@ private String layoutSignature() {
 }
 ```
 
-The raised look itself is two rounded rects, which is cheap enough to bake into the cache:
+The raised look itself is two rounded rects, which is cheap enough to bake into the cache (using a
+compatibility helper since the 6-argument float overload arrived in API 21):
 
 ```java
 paint.setColor(palette.keyShadow);                                    // a lip below the face
-canvas.drawRoundRect(l, t + shadowPx, r, b + shadowPx, radius, radius, paint);
+Compat.drawRoundRect(cache, scratchRect, l, t + shadowPx, r, b + shadowPx, radius, paint);
 paint.setColor(keyFillColor(key));                                    // the face on top
-canvas.drawRoundRect(l, t, r, b, radius, radius, paint);
+Compat.drawRoundRect(cache, scratchRect, l, t, r, b, radius, paint);
 ```
 
 Other rules:
 
-- Allocate nothing in `onDraw` — no `Paint`, no `Shader`, no boxing. Reuse fields.
+- Allocate nothing in `onDraw` — no `Paint`, no `Shader`, no `RectF`, no boxing. Reuse fields.
+  (Similarly, lay out wrapped candidate/bar strips with primitive array helpers like
+  `FlowRowMath.linesInto` rather than allocating per-line lists.)
+- Lazily build and cache static layout objects (`KeyboardLayouts`) and make key specs immutable
+  (`SoftwareKeySpec`) so drawing can never mutate shared tables.
 - Prefer a 1–2 px offset rounded rect for a raised look over `setShadowLayer`, which blurs and is
   expensive.
-- Recycle the cached bitmap in `onDetachedFromWindow`.
+- In `onDetachedFromWindow`, cancel pending timers (`removeCallbacks(...)`), release audio/haptic
+  resources, and recycle and null `baseBitmap`.
 
 ### 11.2 Touch: from finger to keystroke
 
@@ -821,7 +917,7 @@ public boolean onTouchEvent(MotionEvent event) {
             return true;
         case MotionEvent.ACTION_UP:
         case MotionEvent.ACTION_POINTER_UP:
-            endTouch(event.getPointerId(index));
+            endTouch(event.getPointerId(index), event.getX(index), event.getY(index));
             return true;
         case MotionEvent.ACTION_CANCEL:
             cancelAllTouches();
@@ -879,9 +975,17 @@ touch.key = keyIndex;
 armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
 ```
 
-**When it fires: on release, for whatever key the finger is on.** Do not hit-test the release —
-moves already decided the key, and a second test is only a second chance to disagree. Skip the tap
-when a hold or a repeat already acted for that finger:
+Keep distinct thresholds for **canceling timers (`touchSlopPx`)** versus **retargeting to a
+neighbouring key (`retargetPx`)**, and settle pending rolling taps (`settlePendingTaps()`) when
+opening a hold strip/layer switch so earlier fingers still commit in down-order. When a retarget
+moves off an armed modifier key, unwind it through `ModifierCoordinator` (`modifiers.signature()`,
+`unwind`) only if no other finger holds the same modifier.
+
+**When it fires: on release, for whatever key the finger is on — plus final picker/flick coords.**
+Notice `endTouch(pointerId, x, y)` still accepts the release `(x, y)`: not to second-guess ordinary
+taps, but so held long-press alternate pickers (`touch.picker`) and open flick guides
+(`touch.guideOpen`) read the exact cell under the lifted finger. Skip the tap when a hold or a repeat
+already acted for that finger:
 
 ```java
 if (touch.holdConsumed || touch.repeatFired) {
@@ -917,6 +1021,32 @@ that caused the bug — `adb shell input` injects one pointer at a time, so genu
 cannot be reproduced from a shell. Keep the per-pointer state small enough to be obviously right by
 reading, and check the overlap by hand on a device.
 
+### 11.3 Accessibility: TalkBack and Explore-by-Touch
+
+A custom `View` drawn with `onDraw(Canvas)` is a single unlabeled rectangle to TalkBack unless you
+expose every key as a virtual node via `AccessibilityNodeProvider`:
+
+- **Keep an Android-free node model alongside the view.** `KeyboardAccessibilityModel` projects the
+  live `KeyboardLayout`, view width/height, API level, and active `ModifierCoordinator` state into
+  immutable `KeyNode` rectangles with virtual IDs, descriptions, enabled/clickable/checkable flags,
+  and `(x, y)` hit-testing. Because it has zero Android dependencies, every layout's node bounds
+  and descriptions are tested on the JVM.
+- **Isolate `AccessibilityNodeProvider` for legacy compatibility.** `KeyboardAccessibilityProvider`
+  is `@TargetApi(Build.VERSION_CODES.JELLY_BEAN)` (API 16), installed via
+  `View.AccessibilityDelegate.getAccessibilityNodeProvider(View)`, so API 14–15 Dalvik verification
+  never resolves API 16 classes directly on the view.
+- **Bridge hover and virtual actions:**
+  - `dispatchHoverEvent(MotionEvent)` delegates when `AccessibilityManager.isTouchExplorationEnabled()`,
+    emitting `TYPE_VIEW_HOVER_ENTER` / `TYPE_VIEW_HOVER_EXIT` as the finger explores across keys.
+  - `createAccessibilityNodeInfo(virtualViewId)` populates `setParent(host)`,
+    `setBoundsInParent(...)`, screen-offset `setBoundsInScreen(...)` (`host.getLocationOnScreen`),
+    spoken `contentDescription`, focus state, and `ACTION_CLICK` / `ACTION_LONG_CLICK`.
+  - `performAction(...)` routes `ACTION_CLICK` / `ACTION_LONG_CLICK` to tap/long-press handlers on
+    `(rowIndex, keyIndex)` and dispatches `TYPE_VIEW_CLICKED` / `TYPE_VIEW_LONG_CLICKED`.
+- **Invalidate focus cleanly on layout changes.** Any layout switch, Shift/Ctrl state flip, or size
+  change must update node bounds and descriptions consistently so TalkBack never reads stale labels
+  or focus coordinates.
+
 
 ## 12. Theming
 
@@ -924,27 +1054,28 @@ Resolve colours from the device theme; do not hardcode them.
 
 ```java
 static KeyboardPalette resolve(Context context) {
-    boolean night = (context.getResources().getConfiguration().uiMode
-        & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-
+    boolean night = isNight(context);
+    if (ScreenTheme.monochrome(context)) {
+        return monochrome(night);                  // E-Ink black-and-white outlined keys first
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         try {                                    // Material You: match the user's own palette
             return night
                 ? new KeyboardPalette(
-                    color(context, android.R.color.system_neutral1_900),   // background
-                    color(context, android.R.color.system_neutral1_700),   // key face
-                    color(context, android.R.color.system_accent1_300),    // active key
-                    color(context, android.R.color.system_neutral1_50))    // label
+                    Compat.getColor(context, android.R.color.system_neutral1_900), // background
+                    Compat.getColor(context, android.R.color.system_neutral1_700), // key face
+                    Compat.getColor(context, android.R.color.system_accent1_300),  // active key
+                    Compat.getColor(context, android.R.color.system_neutral1_50))  // label
                 : new KeyboardPalette(
-                    color(context, android.R.color.system_neutral1_100),
-                    color(context, android.R.color.system_neutral1_50),
-                    color(context, android.R.color.system_accent1_600),
-                    color(context, android.R.color.system_neutral1_900));
+                    Compat.getColor(context, android.R.color.system_neutral1_200), // background
+                    Compat.getColor(context, android.R.color.system_neutral1_100), // key face (avoid flat white)
+                    Compat.getColor(context, android.R.color.system_accent1_700),  // active key
+                    Compat.getColor(context, android.R.color.system_neutral1_900));// label
         } catch (RuntimeException useStatic) {
             // fall through
         }
     }
-    return night ? DARK : LIGHT;                 // tuned fallback for older versions
+    return night ? dark() : light();             // tuned fallback for older versions
 }
 ```
 
@@ -1001,18 +1132,24 @@ at all. ReteKey shipped that way until a user reported it: the `!#` and layout k
 on One UI.
 
 ```java
-// Reserve the band the system takes taps in, as padding under the keys.
-int band = Build.VERSION.SDK_INT >= 29
-    ? insets.getTappableElementInsets().bottom     // 0 under gesture navigation
-    : insets.getSystemWindowInsetBottom();         // API 20-28
+// Measure bottom furniture once per frame in pure Java (SystemBarInsets):
+// furniture = max(tappableBottom, navigationBottom);
+// band = max(0, furniture - liftAboveScreenBottom), clamped to at most 1/4 of view height.
+int furniture = SystemBarInsets.furniturePx(tappableBottom, navigationBottom);
+int band = mode == Mode.ALWAYS ? furniture
+    : (mode == Mode.NEVER ? 0 : SystemBarInsets.bandToReserve(furniture, liftPx));
 setPadding(0, 0, 0, band);
 ```
 
 Rules:
 
-- Reserve the **tappable-element** inset, not the navigation bar's. Under gesture navigation the bar
-  reports a height for its handle while nothing there takes a tap; padding by the bar would throw
-  away a strip of keyboard for nothing.
+- **Combine both insets and subtract measured window lift (`SystemBarInsets` + `SystemBandFrame`).**
+  In gesture navigation with three-button/OEM keyboard-button bars underneath, some devices report
+  the gesture bar in `tappableElementInsets` (42 px) and the hide/switch buttons in
+  `navigationBarInsets` (135 px), while another device places the IME window already lifted above
+  the bar (`liftAboveScreenBottom > 0`). Reserve `max(tappable, navigation) - lift`, offer
+  `AUTOMATIC` / `ALWAYS` / `NEVER` overrides (`Mode`), and trigger a post-layout remeasure once
+  window screen coordinates settle.
 - Add the band **below** the keys rather than taking it out of them, or a user who turns the buttons
   on finds their keyboard has silently shrunk.
 - Ask once on attach as well as listening for changes: the insets may have settled before the input
@@ -1022,29 +1159,33 @@ Rules:
 - Keep every `WindowInsets` reference in one class if the app still runs on API 14–19, where the
   type does not exist.
 
-**A panel the keyboard owns is not entitled to the whole screen.** An IME window is anchored to the
-bottom, so a window measured at the full display height reaches up behind the status bar — and an
-app whose own area is squeezed to nothing by it can decide the keyboard is in the way and put it
-down, which is a panel that opens and closes in the same breath (§15.52). Measure a panel against
-what is actually there: the screen, less the band at the top the system draws in, less whatever the
-keyboard already reserves at the bottom, and never more than four fifths of the screen. That is
-arithmetic, so it belongs in a class a unit test can call rather than in a layout pass.
+**Host docked panels in one frame (`PanelFrame`).** Rather than each overlay racing to replace the
+keyboard or reinvent max-height arithmetic, wrap docked panels (`Hanja`, `Clipboard`, `IPA`,
+`Notepad`) and the keyboard inside a shared `PanelFrame`: use `compact` mode when a bar needs only
+a compact band and full `PanelHeight.forPanel` + `PanelHeight.clampToSpec` (at most 4/5 of
+available height after subtracting top status inset and bottom reserved band) when it takes the area.
+An IME window is anchored to the bottom, so an unclamped full-height panel reaches up behind the
+status bar — and an app whose own area is squeezed to nothing can dismiss the keyboard as fast as
+it opens (§15.52). Keep `PanelHeight` pure Java so unit tests verify every screen height.
 
-**A floating panel lives in a window the size of the screen.** Two consequences:
+**A floating panel lives in a window the size of the screen (`FloatingKeyboardFrame`).** Four consequences:
 
-- The touchable region you hand the framework in `onComputeInsets` is in **window** coordinates. A
-  panel's bounds are its own; offset them by `getLocationInWindow`, because anything the framework
-  adds above the input view — a candidates strip — moves the panel down, and the region would
-  otherwise answer touches that far above the keys.
-- **The whole title bar is the move handle.** A small handle at one end of a bar that is mostly
-  empty is a target people miss. Every part of the bar that is not a key (cross over, close, resize)
-  starts a move (0.1.171). The top-right resize handle anchors the bottom-left corner so dragging up
-  lifts the title bar to grow upward and dragging down lowers the title bar to shrink downward.
+- In `onComputeInsets`, set `contentTopInsets` and `visibleTopInsets` to the bottom of the screen
+  (so the app behind the floating panel is never resized to make room for it) and fill
+  `touchableRegion` in **window** coordinates (`getLocationInWindow`), clamping any negative
+  coordinates caused by an above-view candidates strip.
+- **Whole-bar drag, `dragStartBounds`, and anchored resize.** Every non-button pixel of the title
+  bar starts a window move. When dragging the top-right `⇲` handle, anchor the bottom-left corner
+  to `dragStartBounds` (`FloatingKeyboardBounds.resizedBy`), so pulling upward raises the title bar
+  under the finger while pulling downward shrinks it toward the bottom-left rather than dragging
+  away from the touch; on portrait screens taller than wide, split top/bottom halves with `▴`/`▾`.
 - **Action bar placement (`ActionBarFrame`, `ActionBarPosition`).** The action bar is part of the
   keyboard's height both docked and inside `FloatingKeyboardFrame`, and a per-orientation setting
-  places it either above the keys (default) or below them. Placing it below puts the bar at the
-  bottom edge of the panel instead of the bottom key row — helpful in floating mode where the
-  bottom row otherwise sits directly against the panel's lower edge.
+  places it either above the keys (default) or below them.
+- **Gesture exclusion on scrollable strips (API 29+).** A horizontally scrollable `ActionBarView`
+  or picker strip near the screen edge loses swipes to Android's system Back gesture unless you
+  declare 24 dp exclusion rects on left and right edges via `View.setSystemGestureExclusionRects`
+  on API 29+.
 
 ## 13. Settings and persistence
 
@@ -1070,7 +1211,10 @@ private final SharedPreferences.OnSharedPreferenceChangeListener prefsListener =
 ```
 
 Without the listener, a setting changed while the keyboard is alive only takes effect the next time
-the view is created — which users read as "the slider does nothing".
+the view is created — which users read as "the slider does nothing". **Keep that listener in a
+strong instance field**, never an anonymous local lambda: Android stores
+`SharedPreferences.OnSharedPreferenceChangeListener` in a `WeakHashMap`, so an unreferenced
+listener gets garbage-collected mid-session and updates silently stop arriving.
 
 Keep the clamping of stored values in plain Java so it is unit-testable, and clamp on **read** as
 well as write; preference files outlive your validation rules.
@@ -1087,19 +1231,52 @@ rather than by the screen that writes them:
   later version read an old file better than the version that stored it. The format, and what it
   deliberately does not say, is a document of its own: `docs/user-layouts.md` (§15.47).
 
+### 13.1 Versioned storage, Direct Boot, and sensitive data
+
+Production IMEs persist more than boolean switches — custom toolbar slots, kept text, clipboard
+history, notepad entries, per-orientation geometry, and imported layouts. Four architectural rules
+keep those stores safe across upgrades, lock-screen reboots, and hostile inputs:
+
+- **Centralize preference files and live-rebuild rules (`AppPrefs`).** Name every file (`view`,
+  `clips`, `notes`, `stash`, `layout`), provide shared helpers for orientation-split resets
+  (`resetOriented`), and classify which keys trigger live layout/cache rebuilds in one class so the
+  settings UI and background IME service can never read or clear different key names.
+- **Version length-prefixed record stores (`RecordCodec`, `VersionedStore`, `StoreMigration`).**
+  Delimiters like `U+001E` break the moment a user shares or pastes text containing that control
+  character ([§15.62](#1562-a-separator-inside-the-thing-being-separated)). Encode structured lists
+  with a version header (`retekey-store 2 <fields>\n`) plus explicit UTF-16 lengths (`len:text`),
+  wrap reads/writes in `VersionedStore` with one-shot migration from legacy delimiters, and leave
+  truncated or mismatched stores intact rather than overwriting them with an empty list.
+- **Isolate Direct Boot without leaking user data (`LockedPreferences`, `UserUnlockWatcher`).**
+  An IME marked Direct-Boot-aware runs on the lock screen before credential-encrypted storage is
+  unlocked (where `Context.getSharedPreferences` fails or throws). Serve an in-memory
+  `LockedPreferences` shim (returning safe defaults; keeping temporary edits off disk) rather than
+  copying private preferences/histories into device-protected storage, and register an API 24
+  `Intent.ACTION_USER_UNLOCKED` broadcast receiver (`UserUnlockWatcher`, `@TargetApi(24)`) to reload
+  real preferences and user layouts as soon as the user unlocks the phone.
+- **Drop sensitive data and bound untrusted files.** Never record clipboard history or suggestions
+  from password/sensitive input types or from `ClipData` flagged with `EXTRA_IS_SENSITIVE`
+  (`ClipSensitivityCompat`, `@TargetApi(24)`). On imported `.rkl` layout streams
+  (`LayoutStreamReader`), enforce strict byte/char limits (`<= 64 KiB` / `<= 8192 chars`) and reject
+  URIs inside the app's own private `dataDir`.
+
 ## 14. Testing and verification
 
-**Keep the input core Android-free.** Event normalisation, layout geometry, the composer automaton,
-dictionaries, and settings clamping can all be plain Java, and then they are unit-testable on the
-JVM with no device. This is where nearly all real logic bugs are caught.
+**Keep the input core Android-free (`com.retekey.core`).** Event normalisation, layout geometry,
+composer automata, dictionary lookup tables, record codecs, and settings clamping belong in plain
+Java with zero `android.*` imports, unit-tested on the JVM with no device. Enforce this package
+boundary automatically in your project checks — once an `android.*` import slips into the core,
+fast JVM verification collapses. Most real logic bugs are caught here.
 
-Also test the **shipped data**, not just fixtures: parse the real dictionary file in a unit test and
-assert a few known conversions, so a bad regeneration fails the build.
+Also test the **shipped assets**, not just fixtures: ReteKey ships sorted memory-mapped binary
+indexes (`src/main/assets/hanja_fwd.idx`, `hanja_rev.idx`, `hanja_hunum.idx` with
+`noCompress += ["idx"]`), verified against the source dictionary tables (`HanjaIndexBuildTest`,
+`MappedHanjaTableTest`) so a bad regeneration fails the build immediately.
 
 ```java
-@Test public void shippedDataConvertsCommonReadingsAndWords() {
-    HanjaTable table = HanjaTable.parse(Files.readAllLines(
-        Paths.get("src/main/assets/hanja.txt"), StandardCharsets.UTF_8));
+@Test public void shippedIndexesConvertCommonReadingsAndWords() {
+    MappedHanjaTable table = new MappedHanjaTable(
+        index("hanja_fwd.idx"), index("hanja_rev.idx"), index("hanja_hunum.idx"));
     assertTrue(table.candidates("가").contains("家"));
     assertTrue(table.candidates("학교").contains("學校"));   // word entry, longest match
 }
@@ -1136,7 +1313,10 @@ below was added to settle a question this manual now answers:
 - **Type through the real soft path.** Hand `dispatchSoftwareInput` the event a touch would have
   produced (`keys=cho0,jung0,RAW:C:CTRL`), with a gap between keys so editor reports interleave as
   they do under a thumb. Read the result back from the editor — a file the shell wrote in Termux
-  (`run-as com.termux cat`), or a field's text and selection by reflection.
+  (`run-as com.termux cat`), or a field's text and selection. For testing IME panels and views
+  from instrumentation without brittle private-field reflection, expose clean package-private
+  `*ForTest()` helper seams on the views and service (`isComposingForTest`, `keyboardViewForTest`,
+  `performBarActionForTest`, etc.) rather than reflecting on framework internals.
 - **Photograph the IME window without a surface.** `decor.draw(new Canvas(bitmap))` renders the
   window's views into a bitmap you can pull and look at; a dump of the view tree (class, visibility,
   size, position) explains what the picture shows. This is how the invisible strip and the floating
@@ -2300,7 +2480,7 @@ read.
 
 **What happened.** Typing fast on the 12-key pads, ⌫ typed a space and the space bar sent Enter
 (owner's report, 2026-09-16). Two separate causes met in the same column. First, ⌫ is a costly key
-and gave the bottom 35 % of its cell to the key below (§15.38) — which on those pages is the space
+and gave the bottom 35 % of its cell to the key below (§15.35) — which on those pages is the space
 bar, not a letter, so the protection meant backspace could not be hit at all in a hurry. Second, a
 press became the neighbour's as soon as the finger left the cell by the system's **touch slop**,
 and a fast tap rolls that far as it lands and lifts.
@@ -2361,9 +2541,10 @@ Shift+Space became a default binding, the keyboard itself took it: a bound key r
 which is exactly what the screen asking for it must prevent.
 
 **The fix.** Capture happens in `dispatchKeyEvent`, before any view; and while the screen is
-waiting, it sets `hw_capture_in_progress` in the shared preferences, which the service reads on
-every physical key and answers by passing everything through. The flag is cleared when the capture
-ends and again in `onPause`, so leaving mid-capture cannot leave the keyboard deaf.
+waiting, it sets an in-process `AtomicBoolean` (`HardwareKeyBindings.setCapturing(true)`), which the
+service reads on every physical key and answers by passing everything through. Using memory rather
+than shared preferences ensures a force-kill mid-capture never leaves shortcuts disabled; the flag is
+cleared when the capture ends and again in `onPause`.
 
 **And the defaults.** 한/영 now comes bound to Shift+Space, `KEYCODE_KANA` (218) and
 `KEYCODE_LANGUAGE_SWITCH` (204); 한자 to `KEYCODE_EISU` (212); Unicode entry to Ctrl+Shift+U. The
@@ -2403,12 +2584,15 @@ channel and let the user pick.
 into the app (issue #11). The reporter offered JSON or something custom, and worried about
 copyright in copying another keyboard's arrangement.
 
-**What was built.** A line format with a header, a name, a three-letter cap and three `row:` lines
-whose cells are "what the key types" and, after a bar, what it holds. Nothing else: Shift,
-backspace, Enter, the bottom row and the layout key are the keyboard's own. One installed layout at
-a time, kept as its text in a preferences file of its own, parsed into `UserLayout` — Android-free,
-so the format is a unit test. It arrives through the share door the stash already opened: text that
-begins with the header is a layout, anything else is text to keep.
+**What was built.** A line format with a header, a name, a three-letter cap and **exactly three**
+`row:` lines (fewer or more are refused) whose cells are "what the key types" and, after a bar,
+what it holds. Nothing else: Shift, backspace, Enter, the bottom row and the layout key are the
+keyboard's own. One installed layout at a time, kept as its text in a preferences file of its own,
+parsed into `UserLayout` — Android-free, so the format is a unit test. Sharing to ReteKey exposes two
+separate doors so keeping text and changing the keyboard never collide: `Keep in ReteKey`
+(`ShareTargetActivity`, which always stashes text even if it starts with the layout header) and
+`Install a ReteKey layout` (`InstallLayoutActivity` alias + `.rkl` `ACTION_VIEW` handler, which asks
+confirmation first).
 
 **The rule that makes it survivable.** *Unknown lines are ignored, not refused.* A file written for
 a later ReteKey still works in this one, minus what this one cannot do. That single rule is what
@@ -2693,11 +2877,13 @@ Text does not only come from a keyboard. Pasted or entered by code point, one U+
 into two and cut its body; a clip or a shared item containing one was silently dropped on save,
 after the keyboard had shown it and said it was kept (review R06, R07).
 
-**The fix.** One form for all three lists: a header naming the number of fields, then every field
-written as its length, a colon and its text. Nothing inside a field can end it. The old form is
-still read, once; the text it came from is kept under `<key>_v1`, and the new text is written only
-when reading it back gives exactly what the old text gave. Text in the new form that does not read
-back as itself is kept under `<key>_damaged` and what could be read is used.
+**The fix.** One form (`RecordCodec` + `VersionedStore` + one-shot `StoreMigration`) for notes,
+clips, kept stash, and custom action-bar slots (`BarSlotCodec`): a header naming the field count
+(`retekey-store 2 <fields>\n`), then every field written as its UTF-16 length, a colon and its
+text. Nothing inside a field can end it. The old form is still read, once; the text it came from is
+kept under `<key>_v1`, and the new text is written only when reading it back gives exactly what the old
+text gave. Text in the new form that does not read back as itself is preserved under
+`<key>_damaged` (written once, never repeatedly overwritten) and what could be read is used.
 
 **Rule.** "No one can type that character" is not a property of stored text. Say how long a field
 is instead of hoping nothing in it looks like the end.
@@ -2742,7 +2928,8 @@ syllable committed one by one instead of composed (owner's report, 2026-09-23).
 **Why.** In a window onto another machine there is no composing region, so a syllable is rewritten:
 delete what was materialised, commit the new form (§15a.1). That is two operations on the wire, and
 the client's own buffer reports where its cursor went after each of them. This keyboard remembered
-only where the *plan* would leave the cursor (§15a.5), so the report from the delete — a position
+only where the *plan* would leave the cursor ([§6](#6-the-editor-is-authoritative), §15a.1), so the
+report from the delete — a position
 one back — matched no expectation, was read as the user moving the cursor, and settled the syllable
 where it stood. The next jamo then had nothing to take back and was committed on its own. It was
 intermittent because the two operations usually sit in one batch and the client usually reports once,
@@ -2883,19 +3070,72 @@ text it produced.
 
 ### 15.73 One flag carrying two different editors
 
-**What happened.** Terminals and remote-desktop clients both got classified through the same boolean (`deleteByKeyEvents`). Any change aimed at one could leak into the other: empty deletion plans or syllable take-back quirks in terminals, and unframed remote chords on remote-desktop clients outside a hardcoded package list (`ReteKeyImeService` / `CheckedEditorExecutor`).
+**What happened.** Terminals and remote-desktop clients both got routed through a single boolean
+(`deleteByKeyEvents`). Any heuristic added for one leaked into the other — causing deletion or
+take-back glitches in terminals and missing physical modifier DOWN/UP framing on remote-desktop
+clients outside a hardcoded package list (`ReteKeyImeService` / `CheckedEditorExecutor`).
 
-**The fix.** Separate `EditorCapabilities.EditorKind` (`RICH_TEXT`, `REMOTE_DESKTOP`, `TERMINAL`, `UNSUPPORTED`) from transport deletion mode (`DeletionMode`). And when an action is explicitly flagged as physical (`KeyAction.isPhysical()`), frame it with real hardware modifier DOWN/UP events regardless of package allowlists.
+**The fix.** Separate `EditorCapabilities.EditorKind` (`RICH_TEXT`, `REMOTE_DESKTOP`, `TERMINAL`,
+`UNSUPPORTED`) from transport deletion mode (`DeletionMode`), and apply real hardware modifier
+framing to any explicitly physical key action (`KeyAction.isPhysical()`) regardless of package
+allowlists.
 
-**Rule.** When two editor classes share one wire workaround, name them with distinct `EditorKind` values before adding a second heuristic.
+**Rule.** When two editor classes share one wire workaround, name them with distinct `EditorKind`
+values before adding a second heuristic.
 
-### 15.74 An audit that found the edges the happy path never crossed
+### 15.74 Keeping the input core Android-free
 
-**What happened.** A full-tree audit (`rfc-0013`) turned up edge-case bugs that standard typing tests missed: UTF-16 surrogate pairs split by length caps in `BarSlot.oneLine()`, `ClipboardPanelView`, and `NotepadView` navigation; `BarSlotCodec` field-delimiter fragility and repeated `commit()` writes on backed-up damaged v2 stores; inconsistent `"retekey_view"` prefs keys on orientation reset and missed live UI propagation; eager `<clinit>` allocation of all keyboard layouts and draw-pass allocations in `FlowRow`/`ReteKeyboardView`; missing virtual key nodes for TalkBack; and test reflection hiding signature drift in `InstrumentedReteKeyImeService`.
+**What happened.** Over time, helper utilities and view constants tempted new code in the input engine
+to reference `android.*` types directly. Once a core class touches an Android type, JVM unit tests
+cannot load it without stubs or an emulator.
 
-**The fix.** Enforce surrogate-safe slicing (`Scalars.truncate` and `NotepadKeys` code-point bounds), move `BarSlotCodec` to length-prefixed `RecordCodec` with one-shot `StoreMigration` backup handling, centralize preferences in `AppPrefs` with explicit live-rebuild classifiers, make `KeyboardLayouts` lazy and `FlowRowMath.linesInto` reusable, add the API 16+ virtual accessibility tree in `KeyboardAccessibilityProvider`, replace instrumentation reflection with `*ForTest` package seams, and separate the Android-free core into `com.retekey.core` enforced by `ops/scripts/project-check.sh`.
+**The fix.** Isolate every composer, normalizer, hardware mapper, dispatch/transition policy, cursor
+tracker, capability classifier, and length-prefixed codec in `com.retekey.core`, enforce zero
+`android.*` imports across that package mechanically in project checks, and keep layout/UI arithmetic
+(`KeyboardLayouts`, `FlowRowMath`, `KeyboardAccessibilityModel`, `PanelHeight`, `SystemBarInsets`)
+Android-free too.
 
-**Rule.** Boundaries that only live in comments erode. Enforce core purity, surrogate safety, length-prefixed storage, and typed test seams mechanically.
+**Rule.** Architectural boundaries enforced only by comments erode; gate the pure-Java package in
+build and lint checks so an `android.*` import fails immediately.
+
+### 15.75 Anchoring the stationary corner when resizing a floating panel
+
+**What happened.** Dragging the top-right `⇲` handle of `FloatingKeyboardFrame` originally changed
+width/height while keeping the top edge anchored or shifting inconsistently — so dragging up shrank
+or slid away from the finger instead of pulling the title bar upward.
+
+**The fix.** Record `dragStartBounds` at pointer-down and anchor the **bottom-left** corner during a
+top-right resize (`FloatingKeyboardBounds.resizedBy`), clamping against screen bounds and splitting
+top/bottom halves (`▴`/`▾`) on tall portrait displays.
+
+**Rule.** When resizing from a corner handle, keep the opposite corner fixed so the handle and its
+edge move 1:1 under the user's finger.
+
+### 15.76 Surrogate-safe truncation and code-point navigation
+
+**What happened.** Length limits and cursor edits across `BarSlot.oneLine()`, `ClipboardPanelView`,
+and `NotepadView` sliced Java `String`s by `char` length, risking orphan UTF-16 surrogates on emoji
+and CJK supplementary characters.
+
+**The fix.** Centralize truncation in `Scalars.truncate` / `Scalars.sanitizeWellFormed` and code-point
+editing helpers in `NotepadKeys`, matching the code-point `UserLayout` limits (`MAX_NAME`, `cap:`).
+
+**Rule.** Never cut arbitrary user text on a raw UTF-16 `.length()` index; always advance across whole
+Unicode scalar values.
+
+### 15.77 Guarding teardown callbacks and typed test seams
+
+**What happened.** Editors dying mid-teardown could throw from `finishComposingText()`, skipping
+processor/panel resets in `onFinishInput` / `onFinishInputView`; meanwhile, instrumentation tests
+relied on private-field reflection that broke silently on field renames.
+
+**The fix.** Guard `finishComposingInEditor()` behind `isComposing()` on `onUnbindInput`/`onDestroy`
+with `try / catch (RuntimeException)`, run session and panel resets in `try / finally`, centralize
+settings keys/resets in `AppPrefs`, and expose explicit package-private `*ForTest()` helper seams
+checked at compile time.
+
+**Rule.** Put teardown state resets inside `finally`, and test complex views through compiler-checked
+package seams instead of reflection strings.
 
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
@@ -3048,4 +3288,11 @@ allow` first.
   after every operation, not only at the end of a batch (§15.65).
 - [ ] A finger that slides off Shift, or a page rebuilt under it, leaves Shift as it was, and a
   keyboard unplugged mid-chord stops arming the action bar's arrows (§15.66).
+- [ ] TalkBack / Explore-by-Touch walks and activates every key node with current layout labels
+  and screen bounds (§11.3).
+- [ ] Floating mode resizes upward/downward from the `⇲` corner with the bottom-left corner
+  anchored, and horizontal action bars register API 29+ edge gesture exclusions (§12a, §15.75).
+- [ ] `com.retekey.core` has zero `android.*` imports, teardown resets run inside `try / finally`,
+  and UTF-16 supplementary characters survive truncation and notepad navigation (§14, §15.74–§15.77).
+- [ ] Release size script stamps both READMEs and fastlane descriptions cleanly and idempotently.
 - [ ] This manual, both languages, and the two READMEs were updated for whatever changed.

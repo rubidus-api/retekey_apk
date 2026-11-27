@@ -22,6 +22,7 @@ IME 구현에 관한 내용만 담았고, 실제로 배포된 코드를 기준�
   - [1.2 시스템이 IME를 찾고, 활성화하고, 선택하는 과정](#12-시스템이-ime를-찾고-활성화하고-선택하는-과정)
   - [1.3 데이터 흐름](#13-데이터-흐름)
   - [1.4 실제 구성 요소 지도](#14-실제-구성-요소-지도)
+  - [1.5 구현 순서: 바닥부터 IME 완성까지](#15-구현-순서-바닥부터-ime-완성까지)
 - [2. 최소 동작 IME](#2-최소-동작-ime)
 - [3. 레퍼런스 구현과 받는 곳](#3-레퍼런스-구현과-받는-곳)
 - [4. 서비스 생명주기](#4-서비스-생명주기)
@@ -34,9 +35,11 @@ IME 구현에 관한 내용만 담았고, 실제로 배포된 코드를 기준�
 - [11. 커스텀 키보드 그리기](#11-커스텀-키보드-그리기)
   - [11.1 정적인 이미지를 캐시하기](#111-정적인-이미지를-캐시하기)
   - [11.2 터치: 손가락에서 키 입력까지](#112-터치-손가락에서-키-입력까지)
+  - [11.3 접근성: TalkBack과 터치 탐색](#113-접근성-talkback과-터치-탐색)
 - [12. 테마](#12-테마)
 - [12a. 키보드가 사는 창](#12a-키보드가-사는-창)
 - [13. 설정과 영속화](#13-설정과-영속화)
+  - [13.1 버전 관리 저장소, 직접 부팅, 민감 정보 차단](#131-버전-관리-저장소-직접-부팅-민감-정보-차단)
 - [14. 테스트와 검증](#14-테스트와-검증)
 - [15. 안티패턴과 그것을 가르쳐 준 실패들](#15-안티패턴과-그것을-가르쳐-준-실패들)
 - [15a. 원격 데스크톱 편집기: 뒤에 편집기가 없는 전선](#15a-원격-데스크톱-편집기-뒤에-편집기가-없는-전선)
@@ -86,11 +89,12 @@ IME는 사용자가 입력하는 모든 것을 볼 수 있으므로, 안드로�
 
 ```java
 // "설치된 키보드 관리": 활성화 단계.
+// Activity가 아니라 IME 서비스에서 호출할 때는 FLAG_ACTIVITY_NEW_TASK가 반드시 필요하다.
 startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS)
     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
 
-// "키보드 선택": 선택 단계.
-InputMethodManager imm = getSystemService(InputMethodManager.class);
+// "키보드 선택": 선택 단계 (API 23 getSystemService(Class) 없이 API 14부터 그대로 동작).
+InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 if (imm != null) {
     imm.showInputMethodPicker();
 }
@@ -143,24 +147,43 @@ adb shell ime set     com.example.ime/.MyImeService
 
 ### 1.4 실제 구성 요소 지도
 
-위 분리의 구체적 사례로서 ReteKey의 구조다. 이름은 예시일 뿐이고, 형태가 요점이다.
+위 분리의 구체적 사례로서 ReteKey의 구조다(`com.retekey.core`는 `android.*` 임포트가 전혀 없는 순수
+자바 입력 엔진이고, `com.retekey`가 안드로이드 어댑터·뷰·저장소와 자판·코덱 보조 클래스를 담는다).
+이름은 예시일 뿐이고, 경계가 요점이다.
 
 | 계층 | 책임 | 안드로이드 비의존? |
 |---|---|---|
-| `ReteKeyImeService` | 생명주기, `InputConnection` 호출, 물리 키, 후보 | 아니오 |
-| `ReteKeyboardView` | 키보드 그리기, 터치 히트테스트, 의미 이벤트 방출 | 아니오 |
-| `KeyboardPalette` | 시스템·Material You 테마에서 색 해석 | 아니오 |
-| `KeyboardLayouts` / `SoftwareKeySpec` | 어떤 키가 어디에 있고 무슨 뜻인지 | **예** |
-| `HangulComposer` / `HangulInputProcessor` | 2벌식 오토마타와 그 에디터 동작 | **예** |
-| `InputDispatcher` / `TransitionPlan` / `KeyAction` | 이벤트를 순서 있는 편집 목록으로 | **예** |
-| `CheckedEditorExecutor` | 편집을 실행하고 결과를 보고 | **예** |
+| `ReteKeyImeService` | 생명주기, `InputConnection` 호출, 물리 키, 패널 조율 | 아니오 |
+| `ReteKeyboardView` | `RGB_565` 비트맵 캐시, 히트테스트, 드래그·플릭, TalkBack 브리지 | 아니오 |
+| `KeyboardPalette` | `ScreenTheme`(흑백·라이트/다크·Material You)에서 색 해석 | 아니오 |
+| `PanelFrame` / `FloatingKeyboardFrame` / `SystemBarInsets` | 도킹 패널 호스트, 고정 모서리 기준 플로팅 창, 바 겹침 인셋 측정 | 아니오 |
+| `KeyboardLayouts` / `SoftwareKeySpec` / `LetterLayouts` | 불변 키 명세, 지연 자판 캐시, 활성 자판 순회 | **예** |
+| `core.HangulComposer` / `core.CheonjiinInterpreter` / `core.NaratgeulInterpreter` / `core.RomajiKanaComposer` / `core.TelexComposer` | 조합 상태 기계와 음절·단어 규칙 | **예** |
+| `core.InputDispatcher` / `core.TransitionPlan` / `core.KeyAction` | 이벤트 정규화와 불변·순서 있는 편집 목록 | **예** |
+| `core.CheckedEditorExecutor` / `core.EditorCapabilities` | 필드 분류(`EditorKind`)와 검사된 편집 실행 | **예** |
 | `InputConnectionEditorBridge` | `InputConnection`을 만지는 유일한 곳 | 아니오 |
-| `InputSessionController` | 수동적 커서 캐시([§6](#6-에디터가-권위자다)) | **예** |
-| `HanjaTable` / `HunumTable` / `HanjaDictionary` | 변환 데이터와 조회 | 테이블 로직은 **예** |
-| `SettingsActivity` / `PreviewActivity` | 설정과 활성화·선택 도우미 화면 | 아니오 |
+| `core.InputSessionController` | 수동적 커서 캐시([§6](#6-에디터가-권위자다)) | **예** |
+| `MappedHanjaTable` / `SortedIndex` / `HanjaDictionary` | 바이너리 애셋 조회(`hanja_fwd.idx`, `hanja_rev.idx`, `hanja_hunum.idx`) | 테이블/이분 탐색 **예** |
+| `AppPrefs` / `core.RecordCodec` / `VersionedStore` | 중앙 설정 관리, 버전 관리 파일 저장소, 직접 부팅 잠금 해제 감시 | 저장 코덱 **예** |
+| `SettingsActivity` / `PreviewActivity` / `ShareTargetActivity` | 설정, 활성화·선택 도우미, 텍스트 보관·`.rkl` 설치 진입점 | 아니오 |
 
-유용한 것은 "안드로이드 비의존?" 열이다. **IME의 대략 70%는 순수 자바로 만들 수 있고**, 로직 버그는 바로
-거기에 산다.
+유용한 것은 "안드로이드 비의존?" 열이다. **ReteKey의 자바 파일 약 74%(185개 중 137개, 그중
+`com.retekey.core` 전부 74개)는 안드로이드에 전혀 의존하지 않으며**, 입력 로직 버그는 바로 거기에
+산다.
+
+### 1.5 구현 순서: 바닥부터 IME 완성까지
+
+백지에서 상용 수준의 IME를 새로 만들거나 AI와 단계별로 구현한다면, 첫날부터 뷰·조합기·`InputConnection`
+을 한꺼번에 얽지 말고 다음 의존 순서대로 쌓아 올리며 검증하는 편이 안전하다.
+
+1. **서비스 뼈대와 실행 환경 구축([§2](#2-최소-동작-ime), [§4](#4-서비스-생명주기))** — `AndroidManifest.xml`(`BIND_INPUT_METHOD`), `res/xml/method.xml`, 버튼 하나를 돌려주는 최소 `InputMethodService`, 그리고 활성화·선택 버튼과 테스트 입력창을 가진 `PreviewActivity`를 먼저 에뮬레이터에서 띄워 확인한다.
+2. **안드로이드 비의존 입력 코어(`*.core`) 분리 구축([§5](#5-inputconnection-계약), [§6](#6-에디터가-권위자다), [§8](#8-조합-중인-글자), [§14](#14-테스트와-검증))** — `EditorEndpoint`/`EditorBridge` 인터페이스를 두고 의미 이벤트, 조합기 상태 기계, 수동 커서 캐시(`InputSessionController`), 순서 있는 편집 실행기(`TransitionPlan`)를 순수 자바로 작성해 밀리초 단위 JVM 테스트로 전이 규칙을 먼저 검증한다.
+3. **에디터 분류와 실전 `InputConnection` 브리지 연결([§4](#4-서비스-생명주기), [§7](#7-에디터-종류와-미상-선택영역))** — `EditorKind`(`RICH_TEXT`, `TERMINAL`, `REMOTE_DESKTOP`, `UNSUPPORTED`)를 판별하고, 종료 콜백들 사이에서 `finishComposingInEditor()`를 안전하게 가드하며, API 24 이상 코드포인트 삭제/UTF-16 폴백과 Enter 액션-줄바꿈 순서를 구현한다.
+4. **비트맵 캐시 기반 커스텀 뷰와 터치 파이프라인 구현([§11](#11-커스텀-키보드-그리기))** — 불변 키/자판 명세, 지연 자판 생성, `RGB_565` 배경 비트맵 캐시, `(x, y)` `endTouch`, `touchSlop`과 재조준 임계치 분리, 길게 누르기·플릭 판별, `onDetachedFromWindow()`에서의 비트맵·타이머 정리를 구현한다.
+5. **물리 키보드와 수정자 조합 처리 추가([§9](#9-물리-키보드), [§15a](#15a-원격-데스크톱-편집기-뒤에-편집기가-없는-전선))** — 물리 스캔코드 판별, `InputDeviceWatcher` 분리 시 눌린 수정자 정리, 설정 화면의 `dispatchKeyEvent` 단축키 녹화, 그리고 원격 데스크톱용 US 물리 키 위치 모드를 붙인다.
+6. **인셋 측정, 도킹 패널, 플로팅 창 구현([§10](#10-후보-뷰), [§12a](#12a-키보드가-사는-창))** — 하단 시스템 바 겹침 실측(`SystemBarInsets`), 도킹 오버레이 단일 호스트(`PanelFrame`), 기준 모서리를 고정한 플로팅 창 크기 조절(`FloatingKeyboardFrame`), 가로 스크롤 띠의 API 29+ 시스템 뒤로가기 제스처 제외를 구현한다.
+7. **테마와 TalkBack 접근성 연결([§11.3](#113-접근성-talkback과-터치-탐색), [§12](#12-테마))** — 흑백 우선 `ScreenTheme`과 Material You 동적 팔레트, 그리고 커스텀 캔버스 위 모든 키가 Explore-by-Touch에서 초점을 얻고 활성화되도록 `AccessibilityNodeProvider` 가상 노드를 붙인다.
+8. **설정 영속화, 직접 부팅, 릴리즈 게이트 마감([§13](#13-설정과-영속화), [§16](#16-릴리즈-전-점검표))** — `AppPrefs` 중앙 관리 및 live-rebuild 분류, 버전 헤더 기반 파일 저장소(`RecordCodec`+마이그레이션), `LockedPreferences`+`UserUnlockWatcher`, 비밀번호/민감 클립보드 차단, 순수 자바 게이트와 에뮬레이터 검증을 걸어 마무리한다.
 
 ## 2. 최소 동작 IME
 
@@ -316,7 +339,8 @@ git clone https://android.googlesource.com/platform/development
 그 밖에 쓸모 있는 것:
 
 - `onEvaluateInputViewShown()` — `false`를 반환하면 화면 키보드를 숨긴다(예: 물리 키보드가 붙었을 때).
-  무시하지 말고 `super`를 호출해 결합할 것.
+  `super`를 먼저 호출하고, 자체 패널(한자·유니코드·IPA 검색·메모장·클립보드)이 열려 있는 동안에는 소프트 키
+  유무와 무관하게 무조건 `true`를 돌려주며, 그 외에만 물리 키보드 표시 정책을 평가한다.
 - `onEvaluateFullscreenMode()` — 가로 전체화면 추출 모드를 정말 원하는 게 아니라면 `false`.
 - `onCurrentInputMethodSubtypeChanged(subtype)` — 언어가 바뀌었다. 조합을 마무리할
   것([§8](#8-조합-중인-글자)).
@@ -329,7 +353,15 @@ onUnbindInput → (onDestroy 시작) → onFinishInputView → onFinishInput →
 
 즉 **`onUnbindInput`이 `onFinishInput`보다 먼저** 오고, finish 계열 콜백은 `onDestroy` **안에 중첩**된다.
 `onUnbindInput`에서 세션 표식을 지우는 코드는 자기 teardown 콜백을 귀속시키지 못하게 된다. teardown은
-멱등하게 짤 것: 어느 것이 먼저 올 수도, 두 번 올 수도, 이미 입력 연결이 사라진 뒤일 수도 있다.
+멱등하게 짤 것: 어느 것이 먼저 올 수도, 두 번 올 수도, 이미 입력 연결이 사라진 뒤일 수도 있다. 실제로는:
+
+- `onUnbindInput()`과 `onDestroy()`는 세션 상태를 비우기 전에 `if (inputProcessor.isComposing())`로
+  감싸 `finishComposingInEditor()`를 부르고, `onDestroy()`는 보류 중인 핸들러·토스트 취소와 잠금 해제·
+  입력 장치·클립보드·설정 리스너 해제를 수행한다.
+- `onFinishInputView()`는 에디터가 예외를 던져도 프로세서 초기화와 패널 정리가 빠지지 않도록
+  `try / finally`로 `finishComposingInEditor()`를 감싼다.
+- `onFinishInput()`은 `finishComposingInEditor()`를 `try / finally`로 부른 뒤, `super.onFinishInput()`을
+  `try / catch (RuntimeException)`로 감싸고 안쪽 `finally`에서 `finishSession()`을 호출한다.
 
 규칙:
 
@@ -349,7 +381,7 @@ onUnbindInput → (onDestroy 시작) → onFinishInputView → onFinishInput →
 | `setComposingText(text, 1)` | 밑줄 조합(preedit) 표시 | 이전 조합영역을 대체 |
 | `finishComposingText()` | 조합을 확정 | 조합 중이 아니면 무동작 |
 | `deleteSurroundingText(before, after)` | 커서 기준 상대 삭제 | **커서 위치를 몰라도 된다** |
-| `deleteSurroundingTextInCodePoints(b, a)` | 위와 같고 유니코드 안전 | 사용자 기준 글자 삭제엔 이쪽 |
+| `deleteSurroundingTextInCodePoints(b, a)` | 위와 같고 유니코드 안전 (API 24+) | API 24 이상에서는 이쪽을 우선하고, API 24 미만·거부 에디터에서는 측정한 UTF-16 `deleteSurroundingText`로 폴백 |
 | `sendKeyEvent(event)` | 실제 `KeyEvent` 전달 | 조합키·원시키를 보내는 유일한 수단 |
 | `performEditorAction(id)` | Go/Search/Send 실행 | `EditorInfo.imeOptions` 기반 |
 | `performContextMenuAction(id)` | 전체선택/복사/붙여넣기/실행취소 | 리치 에디터에서만, 터미널은 무시 |
@@ -364,15 +396,16 @@ onUnbindInput → (onDestroy 시작) → onFinishInputView → onFinishInput →
 2. **모든 호출은 실패하거나 무시될 수 있다.** `boolean`을 돌려주고 예외도 던진다. `false`는 "내 상태가
    깨졌다"가 아니라 "이 에디터는 그 동작을 하지 않았다"로 해석할 것.
 
-읽기를 변환 결과로 바꾸는 것은 하나의 배치다:
+읽기를 변환 결과로 바꾸는 것은 하나의 배치이며, 삭제가 실제로 성공했는지 확인한 뒤에 커밋해야 삭제 실패 시
+원래 읽기와 변환 결과가 나란히 남지 않는다([§15.54](#1554-지우기가-실패한-뒤에도-커밋하던-교체)):
 
 ```java
 ic.beginBatchEdit();
 try {
-    if (deleteLength > 0) {
-        ic.deleteSurroundingText(deleteLength, 0);
+    boolean deleted = deleteLength == 0 || ic.deleteSurroundingText(deleteLength, 0);
+    if (deleted) {
+        ic.commitText(replacement, 1);   // 선택영역이 살아 있으면 이것이 대체가 된다
     }
-    ic.commitText(replacement, 1);   // 선택영역이 살아 있으면 이것이 대체가 된다
 } finally {
     ic.endBatchEdit();
 }
@@ -386,16 +419,22 @@ private void sendRawKey(int keyCode, int metaState) {
     if (ic == null) {
         return;
     }
-    long now = SystemClock.uptimeMillis();
-    ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, metaState,
-        KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_SOFT_KEYBOARD));
-    ic.sendKeyEvent(new KeyEvent(now, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0,
-        metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_SOFT_KEYBOARD));
+    long downTime = SystemClock.uptimeMillis();
+    int flags = KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE;
+    try {
+        ic.sendKeyEvent(new KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, keyCode, 0,
+            metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags));
+        ic.sendKeyEvent(new KeyEvent(downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP,
+            keyCode, 0, metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags));
+    } catch (RuntimeException ignored) {
+        // teardown 도중 죽은 에디터가 IME 프로세스를 함께 떨어뜨리게 두지 않는다.
+    }
 }
 ```
 
 `ACTION_DOWN`과 `ACTION_UP`을 항상 쌍으로 보내고, 둘이 같은 `downTime`을 쓰게 할 것. 그러지 않으면 대상
-앱의 반복 감지가 이상해진다.
+앱의 반복 감지가 이상해진다. 원격 데스크톱처럼 물리 키 이벤트로 보여야 하는 위치 키 전송에는
+`FLAG_SOFT_KEYBOARD`를 빼고 `InputDevice.SOURCE_KEYBOARD`와 실제 스캔코드를 채워 보낸다.
 
 ## 6. 에디터가 권위자다
 
@@ -440,24 +479,30 @@ private void afterOwnEdit(EditorBounds predicted) {
 
 ## 7. 에디터 종류와 미상 선택영역
 
-에디터는 `onStartInput`에서 `EditorInfo`로 한 번 분류한다.
+에디터는 `onStartInput`에서 `EditorInfo`와 현재 키보드 모드를 함께 보고 분류한다:
 
 ```java
 @Override
 public void onStartInput(EditorInfo info, boolean restarting) {
     super.onStartInput(info, restarting);
-    boolean rawKeyEditor = info != null
-        && (info.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_NULL;
-    profile = rawKeyEditor ? EditorProfile.rawKeys() : EditorProfile.richText();
+    EditorKind kind = classifyEditor(info, remoteDesktopEnabled);
+    // EditorKind: RICH_TEXT | TERMINAL | REMOTE_DESKTOP | UNSUPPORTED
+    profile = profileFor(info, kind);
     cursor = (info != null && info.initialSelStart >= 0)
         ? EditorBounds.of(info.initialSelStart, info.initialSelEnd, -1, -1)
         : EditorBounds.unknown();     // 터미널이 여기로 온다
 }
 ```
 
-- `TYPE_NULL` — 이 에디터는 텍스트 편집이 아니라 **원시 키 이벤트**를 원한다. 터미널 에뮬레이터, 일부
-  게임/콘솔 뷰가 그렇다. `sendKeyEvent`로 키를 보낸다.
-- 그 외는 리치 텍스트 에디터다. `commitText` / `setComposingText`가 적절하다.
+`EditorKind`를 삭제·조합 능력과 분리하면 서로 다른 에지 케이스가 뒤엉키지 않는다:
+
+- **`TERMINAL` (`TYPE_NULL`)** — 텍스트 편집이 아니라 **원시 키 이벤트**를 원하며, 더미 버퍼가
+  `deleteSurroundingText`를 삼킨다. 음절은 키보드 자체 띠에서 조합하고(`composesOffScreen`), 완성된
+  글자와 백스페이스 키 이벤트(`deleteByKeyEvents`, `noSurroundingText`)로 보낸다.
+- **`REMOTE_DESKTOP`** — 키 자리 기준 미국식 물리 키코드로 보내고, `deleteSurroundingText` 대신
+  백스페이스 키 이벤트를 보내 원격 머신에서 지워지게 한다([§15a](#15a-원격-데스크톱-편집기-뒤에-편집기가-없는-전선)).
+- **`RICH_TEXT`** — `commitText`, `setComposingText`, 코드포인트 주변 텍스트 삭제가 동작한다.
+- **`UNSUPPORTED` (`info == null`)** — 이벤트를 점유하지 않고 프레임워크에 위임한다.
 
 터미널은 추가로 `initialSelStart == -1`을 보고하고 의미 있는 `onUpdateSelection`을 보내지 않는 경우가
 많다. **선택영역을 알아야만 하는 키보드는 터미널에서 타이핑할 수 없다.**
@@ -469,14 +514,19 @@ public void onStartInput(EditorInfo info, boolean restarting) {
 - 에디터에 액션이 있다고 가정하지 말 것. 액션이 없고 한 줄짜리라면 실제 `KEYCODE_ENTER`가 올바른
   폴백이다([§15.3](#153-원시-엔터를-거부한-것)).
 
-엔터 키의 의미는 `EditorInfo.imeOptions`에서 읽는다.
+엔터 키의 의미는 다음 우선순위 순서대로 읽는다:
 
 ```java
+boolean customAction = info.actionLabel != null;
 int action = info.imeOptions & EditorInfo.IME_MASK_ACTION;
 boolean noEnterAction = (info.imeOptions & EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0;
-boolean multiLine = (info.inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
+boolean multiLine = (info.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT
+    && (info.inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
 
-if (!noEnterAction && action != EditorInfo.IME_ACTION_NONE) {
+if (customAction) {
+    ic.performEditorAction(info.actionId);   // 에디터가 명시적 actionLabel + actionId를 준 경우
+} else if (!noEnterAction && action != EditorInfo.IME_ACTION_NONE
+        && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
     ic.performEditorAction(action);          // Go / Search / Send / Done
 } else if (multiLine) {
     ic.commitText("\n", 1);
@@ -494,13 +544,13 @@ if (!noEnterAction && action != EditorInfo.IME_ACTION_NONE) {
 가치가 있다. 정확히 여기가 단위 테스트 가능한 부분이기 때문이다.
 
 ```java
-// "ㄱ" 다음 "ㅏ" 다음 "ㄴ" 다음 "ㄷ": 가 → 간 → commit("가") + compose("ㄴㄷ"→ 낟) …
+// "ㄱ" 다음 "ㅏ" 다음 "ㄴ" 다음 "ㅏ": ㄱ → 가 → 간 → commit("가") + compose("나") (도깨비불)
 List<KeyAction> actions = composer.accept(jamo);
 for (KeyAction action : actions) {
     switch (action.kind()) {
         case COMMIT_TEXT:        ic.commitText(action.text(), 1);        break;
         case SET_COMPOSING_TEXT: ic.setComposingText(action.text(), 1);  break;
-        case DELETE_BACKWARD:    ic.deleteSurroundingTextInCodePoints(1, 0); break;
+        case DELETE_BACKWARD:    deleteCodePointsWithFallback(ic, 1);    break;
         case RAW_KEY:            sendRawKey(action.keyCode(), action.meta()); break;
     }
 }
@@ -508,19 +558,27 @@ for (KeyAction action : actions) {
 
 **세션 경계마다 조합을 마무리할 것.** 사용자가 음절 도중에 필드를 떠나면 미완성 preedit이 남는다 —
 어느 세션에도 속하지 않는 밑줄 텍스트가 남아 나중에 다시 나타나거나 예상치 못하게 지워진다.
+teardown은 `try / catch`와 `try / finally`로 감싸 실패한 에디터가 프로세서 초기화를 건너뛰게 두지 마라:
 
 ```java
-@Override public void onFinishInput()      { finishComposingInEditor(); /* … */ }
-@Override public void onFinishInputView(boolean finishing) { finishComposingInEditor(); reset(); }
+@Override public void onFinishInputView(boolean finishing) {
+    try { finishComposingInEditor(); } finally { inputProcessor.reset(); closePanelsQuietly(); }
+}
+
 @Override public void onCurrentInputMethodSubtypeChanged(InputMethodSubtype s) {
     finishComposingInEditor();   // 언어 전환이 반쯤 만들어진 자모를 넘겨선 안 된다
-    reset();
+    inputProcessor.reset();
 }
 
 private void finishComposingInEditor() {
+    flushOffScreenComposingStripIfAny();     // 띠 조합을 쓰는 터미널용 플러시
     InputConnection ic = getCurrentInputConnection();
     if (ic != null) {
-        ic.finishComposingText();
+        try {
+            ic.finishComposingText();
+        } catch (RuntimeException ignored) {
+            // 이미 떨어져 나가는 에디터 때문에 teardown이 멈추면 안 된다.
+        }
     }
 }
 ```
@@ -568,25 +626,33 @@ sendRawKey(KeyEvent.KEYCODE_B, KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_O
 
 **물리 키보드에서 누르고 있는 수정자는 화면 키에도 걸린다.** 한 손으로 키보드의 Ctrl 을 누른 채 다른
 손으로 액션바의 방향키를 누를 수 있다. 그 방향키는 키보드 자신의 방향키가 그렇듯 Ctrl+방향키로
-나가야 한다. IME 는 수정자 키의 누름과 뗌을 모두 보므로 그것을 기록해 두면 된다 — 키코드마다 따로,
-그래야 오른쪽 Shift 를 누른 채 왼쪽 Shift 를 떼도 Shift 가 눌린 것으로 남는다. 기록은
-`onKeyDown`·`onKeyUp` 의 **첫 줄에서**, 어떤 조기 반환보다 먼저 해야 한다. 그러지 않으면 그대로
-넘기는 경로가 뗌을 놓친다.
+나가야 한다. IME 는 수정자 키의 누름과 뗌을 모두 보므로 **`(deviceId, keyCode)` 쌍별로** 기록한다 —
+그래야 오른쪽 Shift 를 누른 채 왼쪽 Shift 를 떼도 Shift 가 남고, 키보드 두 대를 꽂았을 때도 서로의
+수정자를 지우지 않는다. 기록은 `onKeyDown`·`onKeyUp` 의 **첫 줄에서**(`FLAG_CANCELED` 제외), 어떤 조기
+반환보다 먼저 해야 한다:
 
 ```java
 @Override
 public boolean onKeyDown(int keyCode, KeyEvent event) {
-    heldHardware.onKey(keyCode, true);          // 무엇이 반환하기 전에
+    if ((event.getFlags() & KeyEvent.FLAG_CANCELED) == 0) {
+        heldHardware.onKey(event.getDeviceId(), keyCode, true);   // 무엇이 반환하기 전에
+        heldHardware.reconcile(event.getDeviceId(), keyCode, event.getMetaState());
+    }
     ...
 }
+
+// 블루투스·USB 키보드가 빠지거나 바뀌면 남은 수정자 정리(@TargetApi(16)):
+InputDeviceWatcher.start(this, mainHandler, heldHardware::forgetDevice);
 
 // 화면 키의 수정자: 소프트 래치, 액션바의 것, 물리 키보드의 것.
 Set<KeyModifier> mods = union(keyboardView.rawKeyModifiers(), heldHardware.held());
 ```
 
-그 집합은 **손가락이 닿는 순간 한 번** 읽어서 누르고 있는 동안 내내 쓸 것. 누르고 있으면 반복되는
-키가 그러지 않으면 첫 반복에서 한 번짜리 Ctrl 을 잃는다 — 래치는 첫 키 이벤트에서 소진되고 — 나머지
-반복은 수정자 없이 나간다(§15.32).
+이어지는 일반 키에서 `reconcile(deviceId, keyCode, metaState)` 를 부르면 포커스 전환 중에 `ACTION_UP` 을
+놓친 수정자를 정리할 수 있고, `InputDeviceWatcher`(`onInputDeviceRemoved` / `onInputDeviceChanged`)가
+장치 분리 시 `forgetDevice(deviceId)` 로 정리한다. 그 집합은 **손가락이 닿는 순간 한 번** 읽어서
+누르고 있는 동안 내내 쓸 것. 누르고 있으면 반복되는 키가 그러지 않으면 첫 반복에서 한 번짜리 Ctrl 을
+잃는다 — 래치는 첫 키 이벤트에서 소진되고 — 나머지 반복은 수정자 없이 나간다(§15.32).
 
 **소프트 수정자는 키가 치는 글자가 아니라 키의 자리로 조합한다.** 물리 한글 키보드에서 Ctrl+C 는 ㅊ
 을 치는 키이고, 사람들은 그 키를 누른다. 자모를 치는 화면 페이지는 조합을 만들기 전에 키를 같은
@@ -597,61 +663,76 @@ Set<KeyModifier> mods = union(keyboardView.rawKeyModifiers(), heldHardware.held(
 좌우 수정자는 서로 다른 키코드(`KEYCODE_CTRL_LEFT`=113, `KEYCODE_CTRL_RIGHT`=114)이며, 이 점이
 "오른쪽 Ctrl은 한/영, 왼쪽 Ctrl은 그대로 Ctrl+C"를 가능하게 한다.
 
-수정자 단독 바인딩은 **키를 뗄 때** 캡처할 것. 누르는 시점에는 Ctrl 단독인지 Ctrl+Space의 시작인지
-구분할 수 없다.
+설정 화면에서 단축키를 녹화할 때는 `onKeyDown` 이 아니라 **`dispatchKeyEvent`** 를 오버라이드할 것.
+`Activity.onKeyDown` 은 자식 뷰들이 키를 안 받을 때만 호출되므로(`Space` 가 초점 버튼 클릭이나 스크롤로
+소비되어 `Shift+Space` 가 단독 `Shift` 로 저장된다), 뷰 계층보다 앞에서 잡아야 한다. 캡처 중 표시는
+디스크 설정이 아니라 `onPause` 에서 지워지는 프로세스 내 `AtomicBoolean`(`HardwareKeyBindings.setCapturing`)으로
+둔다. 수정자 단독 바인딩은 `pendingModifierKey` 와 `modifierChordUsed` 로 추적해 **`ACTION_UP`** 에서
+저장한다:
 
 ```java
 // 설정 액티비티에서 사용자 지정 단축키 캡처하기.
-@Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!capturing) return super.onKeyDown(keyCode, event);
-    if (KeyEvent.isModifierKey(keyCode)) return true;         // 대기: 조합인가, 단독 수정자인가?
-    save(new Binding(modifiersOf(event), keyCode));           // 예: Shift+Space
-    capturing = false;
-    return true;
-}
-@Override public boolean onKeyUp(int keyCode, KeyEvent event) {
-    if (capturing && KeyEvent.isModifierKey(keyCode)) {
-        save(new Binding(0, keyCode));                        // 예: 오른쪽 Ctrl 단독
-        capturing = false;
+@Override public boolean dispatchKeyEvent(KeyEvent event) {
+    if (!capturing) return super.dispatchKeyEvent(event);
+    int keyCode = event.getKeyCode();
+    if (belongsToThePhone(keyCode)) { stopCapture(); return super.dispatchKeyEvent(event); }
+    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+        if (KeyEvent.isModifierKey(keyCode)) {
+            if (pendingModifierKey == 0) pendingModifierKey = keyCode;
+            else if (pendingModifierKey != keyCode) modifierChordUsed = true;
+            return true;
+        }
+        modifierChordUsed = true;
+        saveAndStop(new Binding(modsOf(event), keyCode));   // 예: Shift+Space
         return true;
     }
-    return super.onKeyUp(keyCode, event);
+    if (event.getAction() == KeyEvent.ACTION_UP && KeyEvent.isModifierKey(keyCode)) {
+        if (!modifierChordUsed && keyCode == pendingModifierKey) {
+            saveAndStop(new Binding(0, keyCode));           // 예: 오른쪽 Ctrl 단독
+        } else if (modsOf(event) == 0) {
+            pendingModifierKey = 0; modifierChordUsed = false;
+        }
+        return true;
+    }
+    return true;
 }
 ```
 
-끝으로, 물리 키보드가 붙어 있을 때 화면 키보드를 숨길지 정한다.
-
-```java
-@Override
-public boolean onEvaluateInputViewShown() {
-    super.onEvaluateInputViewShown();
-    Configuration config = getResources().getConfiguration();
-    boolean hardware = config.keyboard != Configuration.KEYBOARD_NOKEYS
-        && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
-    return !hardware;
-}
-```
+끝으로, 물리 키보드가 붙어 있을 때 화면 키보드를 숨길지는 `onEvaluateInputViewShown()`([§4](#4-서비스-생명주기))에서
+자체 패널이 열려 있으면 `true`, 아니면 `SoftKeyboardVisibilityPolicy.shouldShow(hasActiveHardwareKeyboard(), softKeyboardMode)`
+로 정한다.
 
 ## 10. 후보 뷰
 
-`onCreateCandidatesView()`와 `setCandidatesViewShown(true/false)`는 키보드 뷰와 독립적인 막대를
-제공한다. 이것이 중요한 이유는 **입력 뷰가 숨겨져 있어도 후보 뷰는 표시되기 때문**이다 — 물리 키보드가
-붙어 있을 때가 정확히 그 상황이다. 변환 UI는 키보드 뷰가 아니라 여기에 두어야 한다.
+안드로이드가 IME에 주는 추가 UI 자리는 성격이 다른 둘이다:
 
-뷰는 지연 생성되므로 순서를 지킬 것:
+1. **`onCreateCandidatesView()` + `setCandidatesViewShown(true/false)`** — `onEvaluateInputViewShown()`이
+   소프트 키보드를 숨겨도 뜰 수 있는 얇은 프레임워크 띠다. 다만 레이아웃 제약이 커서(크기·플로팅 배치
+   제약으로, 스크롤·드래그 가능한 큰 패널이나 플로팅 키보드 곁의 오버레이를 감당하기 어렵다).
+2. **`onCreateInputView()` 안의 도킹 패널 또는 플로팅 프레임(`PanelFrame` / `FloatingKeyboardFrame`)** —
+   ReteKey가 한자 후보·유니코드 `U+`·IPA 검색·클립보드·메모장을 올리는 방식이다. 어느 패널이라도 열려
+   있는 동안 `onEvaluateInputViewShown()`이 `true`를 반환하므로 물리 키보드 사용 중에도 그대로 열린다([§12a](#12a-키보드가-사는-창)).
+
+ReteKey에서 `onCreateCandidatesView()`는 오직 **`ComposingStripView`**(터미널처럼 `InputConnection`이
+`setComposingText`를 무시할 때 도킹 키보드 위 띠에 조합 음절을 띄우는 용도)만 호스팅하고, 플로팅 모드에서는
+플로팅 창 제목 줄(`FloatingKeyboardFrame`)에 그 조합 음절을 그린다.
+
+클릭 가능한 후보 UI에 `onCreateCandidatesView()`를 직접 쓴다면 지연 생성 순서를 지키고 null·빈 목록을
+방어할 것:
 
 ```java
 @Override
 public View onCreateCandidatesView() {
     candidatesView = new CandidatesView(this);
     candidatesView.setOnPick(this::commitCandidate);
-    if (pendingItems != null) {                 // 뷰가 생기기 전에 표시 요청이 온 경우
+    if (pendingItems != null && !pendingItems.isEmpty()) { // 뷰가 생기기 전에 표시 요청이 온 경우
         candidatesView.show(pendingReading, pendingItems);
     }
     return candidatesView;
 }
 
 private void showCandidates(String reading, List<Item> items) {
+    if (items == null) return;
     pendingReading = reading;
     pendingItems = items;
     setCandidatesViewShown(true);               // 여기서 onCreateCandidatesView가 불릴 수 있다
@@ -666,7 +747,8 @@ private void showCandidates(String reading, List<Item> items) {
 않으면 참조하던 텍스트보다 오래 살아남는다. 숫자키 선택을 지원한다면, "다른 키를 누르면 막대를 숨긴다"
 규칙보다 *먼저* 그 키들을 가로챌 것.
 
-아무도 볼 수 없던 띠로 이 프로젝트가 치른 규칙 넷(이슈 #7, 0.1.170):
+`onCreateCandidatesView()`를 직접 쓸 때 아무도 볼 수 없던 띠로 이 프로젝트가 치른 규칙 넷(그리고
+리치 피커들이 §12a의 `PanelFrame` / `FloatingKeyboardFrame`으로 옮겨 간 이유):
 
 - **띠를 켜는 것만으로는 보이지 않는다.** `InputMethodService` 는 candidates 틀을 *전체 화면 영역*
   안에 두고, 그 영역의 가시성을 창이 배치되는 순간의 candidates 가시성으로 맞춘다. 나중의
@@ -731,7 +813,8 @@ private void ensureBaseBitmap(int width, int height) {
     if (baseBitmap != null) {
         baseBitmap.recycle();
     }
-    baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    // 불투명 키보드에는 알파 채널이 필요 없다: RGB_565로 태블릿 캐시 메모리를 절반으로 줄인다.
+    baseBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
     Canvas cache = new Canvas(baseBitmap);
     cache.drawColor(palette.background);
     for (Key key : layout.keys()) {
@@ -747,20 +830,26 @@ private String layoutSignature() {
 }
 ```
 
-입체감 자체는 둥근 사각형 두 개면 되고, 캐시에 구워 넣을 만큼 싸다.
+입체감 자체는 둥근 사각형 두 개면 되고, 캐시에 구워 넣을 만큼 싸다(6인자 float 오버로드는 API 21부터이므로
+호환 헬퍼를 통해 그린다):
 
 ```java
 paint.setColor(palette.keyShadow);                                    // 면 아래의 립
-canvas.drawRoundRect(l, t + shadowPx, r, b + shadowPx, radius, radius, paint);
+Compat.drawRoundRect(cache, scratchRect, l, t + shadowPx, r, b + shadowPx, radius, paint);
 paint.setColor(keyFillColor(key));                                    // 그 위에 면
-canvas.drawRoundRect(l, t, r, b, radius, radius, paint);
+Compat.drawRoundRect(cache, scratchRect, l, t, r, b, radius, paint);
 ```
 
 그 밖의 규칙:
 
-- `onDraw`에서 아무것도 할당하지 말 것 — `Paint`도, `Shader`도, 박싱도. 필드를 재사용한다.
+- `onDraw`에서 아무것도 할당하지 말 것 — `Paint`도, `Shader`도, `RectF`도, 박싱도. 필드를 재사용한다.
+  (줄바꿈이 있는 띠·도구 막대도 매 줄 리스트를 할당하지 말고 `FlowRowMath.linesInto` 같은 원시 배열
+  헬퍼로 배치한다.)
+- 정적 자판 객체(`KeyboardLayouts`)는 지연 생성·캐시하고, 키 명세(`SoftwareKeySpec`)는 불변으로 두어
+  그리기가 공유 표를 건드릴 수 없게 한다.
 - 입체감은 흐림 처리로 비싼 `setShadowLayer`보다 1–2px 어긋난 둥근 사각형으로 낼 것.
-- `onDetachedFromWindow`에서 캐시 비트맵을 recycle할 것.
+- `onDetachedFromWindow`에서 보류 타이머(`removeCallbacks(...)`) 취소, 오디오/진동 자원 해제, 캐시 비트맵
+  `recycle()`과 null 대입을 함께 수행할 것.
 
 ### 11.2 터치: 손가락에서 키 입력까지
 
@@ -806,7 +895,7 @@ public boolean onTouchEvent(MotionEvent event) {
             return true;
         case MotionEvent.ACTION_UP:
         case MotionEvent.ACTION_POINTER_UP:
-            endTouch(event.getPointerId(index));
+            endTouch(event.getPointerId(index), event.getX(index), event.getY(index));
             return true;
         case MotionEvent.ACTION_CANCEL:
             cancelAllTouches();
@@ -863,9 +952,15 @@ touch.key = keyIndex;
 armTimers(touch, layout.rows().get(rowIndex).get(keyIndex));
 ```
 
-**언제 발사되는가: 뗄 때, 그 손가락이 올라가 있는 키로.** 뗄 때 다시 판정하지 말 것 — 키는 이미 이동이
-정했고, 두 번째 판정은 반대할 두 번째 기회일 뿐이다. 그 손가락에 대해 홀드나 반복이 이미 처리했다면
-탭은 건너뛴다.
+**타이머 취소 기준(`touchSlopPx`)** 과 **이웃 키 재조준 기준(`retargetPx`)** 을 분리하고, 길게 누르기 띠나
+레이어 전환을 열 때는 앞서 눌린 손가락들을 누른 순서대로 확정(`settlePendingTaps()`)한다. 재조준으로
+수정자 키를 벗어나면 다른 손가락이 같은 수정자를 잡고 있지 않을 때만 `ModifierCoordinator`
+(`modifiers.signature()`, `unwind`)로 수정자를 풀어 준다.
+
+**언제 발사되는가: 뗄 때, 그 손가락이 올라가 있는 키로(대안 띠·플릭 안내는 최종 좌표 사용).**
+`endTouch(pointerId, x, y)`가 뗀 위치 `(x, y)`를 받는 이유는 일반 탭을 다시 판정하기 위함이 아니라,
+길게 누른 대안 띠(`touch.picker`)와 플릭 안내(`touch.guideOpen`)가 떼는 순간 손가락 아래 칸을 정확히
+읽기 위함이다. 그 손가락에 대해 홀드나 반복이 이미 처리했다면 탭은 건너뛴다.
 
 ```java
 if (touch.holdConsumed || touch.repeatFired) {
@@ -899,6 +994,30 @@ float centreX = Math.min(Math.max((cellLeft + cellRight) * 0.5f, step + box * 0.
 하나씩만 주입하므로 진짜 두 손가락 겹침은 셸에서 재현할 수 없다. 포인터별 상태는 읽어서 옳음이 드러날
 만큼 작게 유지하고, 겹침은 기기에서 손으로 확인할 것.
 
+### 11.3 접근성: TalkBack과 터치 탐색
+
+`onDraw(Canvas)`로 직접 그리는 커스텀 `View`는 `AccessibilityNodeProvider`로 각 키를 가상 노드로
+노출하지 않으면 TalkBack에 이름 없는 사각형 하나로만 보인다:
+
+- **뷰와 나란히 안드로이드 비의존 노드 모델을 둘 것.** `KeyboardAccessibilityModel`은 현재 `KeyboardLayout`,
+  뷰 크기, API 레벨, `ModifierCoordinator` 상태를 받아 불변 `KeyNode` 사각형(가상 ID·설명·활성/클릭/체크
+  여부·`(x, y)` 히트테스트)으로 투영한다. 안드로이드 의존성이 없어 모든 자판의 노드 경계와 읽힘 문자열을
+  JVM에서 검증할 수 있다.
+- **구형 호환을 위해 `AccessibilityNodeProvider`를 격리할 것.** `KeyboardAccessibilityProvider`는
+  `@TargetApi(Build.VERSION_CODES.JELLY_BEAN)`(API 16)으로 두고
+  `View.AccessibilityDelegate.getAccessibilityNodeProvider(View)`로만 붙인다. 그래야 API 14–15 Dalvik
+  검증이 뷰 클래스에서 API 16 심볼을 직접 해결하려 들지 않는다.
+- **호버 탐색과 가상 액션을 연결할 것:**
+  - `dispatchHoverEvent(MotionEvent)`에서 `AccessibilityManager.isTouchExplorationEnabled()`일 때 위임해
+    손가락이 키 위를 훑을 때 `TYPE_VIEW_HOVER_ENTER` / `TYPE_VIEW_HOVER_EXIT` 이벤트를 보낸다.
+  - `createAccessibilityNodeInfo(virtualViewId)`에서 `setParent(host)`, `setBoundsInParent(...)`, 화면
+    좌표(`host.getLocationOnScreen`)를 반영한 `setBoundsInScreen(...)`, 음성 설명 `contentDescription`,
+    포커스 상태, `ACTION_CLICK` / `ACTION_LONG_CLICK`을 채운다.
+  - `performAction(...)`은 `ACTION_CLICK` / `ACTION_LONG_CLICK`을 `(rowIndex, keyIndex)`의 탭·길게 누르기
+    처리에 연결하고 `TYPE_VIEW_CLICKED` / `TYPE_VIEW_LONG_CLICKED` 이벤트를 보낸다.
+- **자판이 바뀌면 포커스를 깨끗이 무효화할 것.** 자판 전환·Shift/Ctrl 토글·크기 변경 시 노드 경계와
+  설명이 함께 갱신되어 TalkBack이 지난 라벨이나 어긋난 좌표를 읽지 않도록 한다.
+
 
 ## 12. 테마
 
@@ -906,27 +1025,28 @@ float centreX = Math.min(Math.max((cellLeft + cellRight) * 0.5f, step + box * 0.
 
 ```java
 static KeyboardPalette resolve(Context context) {
-    boolean night = (context.getResources().getConfiguration().uiMode
-        & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-
+    boolean night = isNight(context);
+    if (ScreenTheme.monochrome(context)) {
+        return monochrome(night);                  // E-Ink 흑백 테두리 키 우선
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         try {                                    // Material You: 사용자 팔레트에 맞춘다
             return night
                 ? new KeyboardPalette(
-                    color(context, android.R.color.system_neutral1_900),   // 배경
-                    color(context, android.R.color.system_neutral1_700),   // 키 면
-                    color(context, android.R.color.system_accent1_300),    // 활성 키
-                    color(context, android.R.color.system_neutral1_50))    // 라벨
+                    Compat.getColor(context, android.R.color.system_neutral1_900), // 배경
+                    Compat.getColor(context, android.R.color.system_neutral1_700), // 키 면
+                    Compat.getColor(context, android.R.color.system_accent1_300),  // 활성 키
+                    Compat.getColor(context, android.R.color.system_neutral1_50))  // 라벨
                 : new KeyboardPalette(
-                    color(context, android.R.color.system_neutral1_100),
-                    color(context, android.R.color.system_neutral1_50),
-                    color(context, android.R.color.system_accent1_600),
-                    color(context, android.R.color.system_neutral1_900));
+                    Compat.getColor(context, android.R.color.system_neutral1_200), // 배경
+                    Compat.getColor(context, android.R.color.system_neutral1_100), // 키 면(흰 바탕 방지)
+                    Compat.getColor(context, android.R.color.system_accent1_700),  // 활성 키
+                    Compat.getColor(context, android.R.color.system_neutral1_900));// 라벨
         } catch (RuntimeException useStatic) {
             // 폴백으로 넘어간다
         }
     }
-    return night ? DARK : LIGHT;                 // 구버전용으로 다듬어 둔 폴백
+    return night ? dark() : light();             // 구버전용으로 다듬어 둔 폴백
 }
 ```
 
@@ -981,18 +1101,22 @@ IME 창은 `Dialog`(`SoftInputWindow`)이며, 액티비티와 달리 시스템 �
 않는다. ReteKey도 사용자 신고 전까지 그렇게 나갔다. One UI에서 `!#`와 자판 키를 누를 수 없었다.
 
 ```java
-// 시스템이 탭을 가져가는 띠만큼 키 아래에 여백을 남긴다.
-int band = Build.VERSION.SDK_INT >= 29
-    ? insets.getTappableElementInsets().bottom     // 제스처 내비게이션에서는 0
-    : insets.getSystemWindowInsetBottom();         // API 20-28
+// 순수 자바로 매 프레임 하단 여백을 계산한다(SystemBarInsets):
+// furniture = max(tappableBottom, navigationBottom);
+// band = max(0, furniture - liftAboveScreenBottom), 최대 뷰 높이의 1/4로 상한.
+int furniture = SystemBarInsets.furniturePx(tappableBottom, navigationBottom);
+int band = mode == Mode.ALWAYS ? furniture
+    : (mode == Mode.NEVER ? 0 : SystemBarInsets.bandToReserve(furniture, liftPx));
 setPadding(0, 0, 0, band);
 ```
 
 규칙:
 
-- 내비게이션 바가 아니라 **tappable-element** 인셋을 남길 것. 제스처 내비게이션에서는 바가 손잡이
-  높이를 보고하지만 그 자리에서 탭을 가져가는 것은 없다. 바 기준으로 여백을 주면 아무 이유 없이
-  키보드 한 줄을 버리는 셈이다.
+- **두 인셋을 함께 보고 실측된 창 들림(`SystemBarInsets` + `SystemBandFrame`)을 뺀다.** 제스처
+  내비게이션 아래에 키보드 숨김·전환 버튼 바를 두는 기기에서는 제스처 바가 `tappableElementInsets`(42 px)에,
+  버튼 바가 `navigationBarInsets`(135 px)에 보고되기도 하며, 다른 기기는 IME 창을 이미 그 위로
+  올려 두기도 한다(`liftAboveScreenBottom > 0`). `max(tappable, navigation) - lift` 를 계산하고
+  `AUTOMATIC` / `ALWAYS` / `NEVER` 전환(`Mode`)을 제공하며, 창 좌표가 잡힌 뒤 layout 이후 재측정을 건다.
 - 띠는 키에서 **덜어내지 말고 아래에 더할 것.** 아니면 버튼을 켠 사용자의 키보드가 말없이 작아진다.
 - 변경을 듣는 것과 별개로 붙을 때 한 번 물어볼 것. 인셋은 입력 뷰가 생기기 전에 정해졌을 수 있고,
   리스너는 바뀔 때만 울린다.
@@ -1001,31 +1125,34 @@ setPadding(0, 0, 0, band);
 - API 14~19까지 도는 앱이라면 `WindowInsets` 참조를 한 클래스에만 둘 것. 그 아래에서는 타입 자체가
   없다.
 
-**키보드가 가진 패널에게 화면 전체를 쓸 권리는 없다.** IME 창은 화면 아래에 붙어 있으므로 화면 높이
-그대로 잰 창은 위쪽 상태 표시줄 뒤까지 올라간다. 그리고 자기 영역이 그 창에 눌려 없어진 앱은 입력기가
-방해가 된다고 판단해 내려 달라고 할 수 있다. 그것이 열리자마자 닫히는 패널이다(§15.52). 패널은 입력기가
-실제로 가진 공간에 대고 재라. 화면에서 위쪽 띠를 빼고, 키보드가 아래에 이미 비워 둔 만큼을 빼고, 계산이
-무엇이라 하든 화면의 5분의 4 를 넘지 않게. 이것은 산수이므로 레이아웃 과정이 아니라 단위 시험이 부를 수
-있는 클래스에 있어야 한다.
+**도킹 패널은 단일 호스트 프레임(`PanelFrame`)에 올린다.** 오버레이마다 키보드를 덮거나 최대 높이를
+따로 계산하는 대신 한자·클립보드·IPA·메모장 같은 도킹 패널과 키보드를 `PanelFrame` 하나로 감싼다.
+짧은 띠면 `compact` 모드를, 전체 영역을 쓰면 `PanelHeight.forPanel` + `PanelHeight.clampToSpec`
+(위 상태 바 인셋과 아래 예약 띠를 뺀 가용 높이의 최대 4/5)을 적용한다. IME 창은 화면 아래에 붙어
+있어 상한 없이 화면 높이를 다 쓰면 상태 표시줄 뒤까지 올라가고, 영역을 잃은 앱이 입력기를 내려 버려
+열리자마자 닫히는 패널이 된다(§15.52). `PanelHeight`는 순수 자바에 두어 단위 시험으로 검증할 것.
 
-**떠 있는 패널은 화면 크기의 창 안에 산다.** 그 결과가 둘이다.
+**떠 있는 패널은 화면 크기의 창(`FloatingKeyboardFrame`) 안에 산다.** 네 가지 결과:
 
-- `onComputeInsets` 에서 프레임워크에 넘기는 터치 영역은 **창** 좌표다. 패널의 경계는 패널 자신의
-  좌표이므로 `getLocationInWindow` 만큼 옮길 것. 프레임워크가 입력 뷰 위에 무엇을 더하면 —
-  candidates 띠 — 패널이 그만큼 내려가고, 그러지 않으면 영역이 키보다 그만큼 위의 터치에 답한다.
-- **제목 줄 전체가 이동 손잡이다.** 거의 비어 있는 막대의 한쪽 끝에 있는 작은 손잡이는 놓치기 쉬운
-  표적이다. 막대에서 키(건너가기·닫기·크기 조절)가 아닌 곳은 어디를 끌어도 이동한다(0.1.171). 우측 상단
-  크기 조절 손잡이는 좌측 하단을 고정한 채, 위로 끌면 제목 줄이 손가락을 따라 올라가며 창이 위로 커지고
-  아래로 내리면 제목 줄과 버튼이 손가락을 따라 내려가며 아래로 작아진다.
+- `onComputeInsets`에서 `contentTopInsets`와 `visibleTopInsets`는 화면 맨 아래로 두어 뒤의 앱 크기가
+  줄지 않게 하고, `touchableRegion`은 `getLocationInWindow`를 더한 **창** 좌표로 채우되 candidates 띠
+  등으로 생긴 음수 오프셋은 0 이상으로 보정한다.
+- **제목 줄 전체가 이동 손잡이고, 크기 조절은 `dragStartBounds` 기준 모서리를 고정한다.** 버튼(건너가기·
+  닫기·크기 조절)이 아닌 제목 줄은 어디를 끌어도 창이 움직인다(0.1.171). 우측 상단 `⇲` 크기 조절은
+  `dragStartBounds`의 좌측 하단을 고정한 채(`FloatingKeyboardBounds.resizedBy`) 위로 끌면 제목 줄이
+  손가락을 따라 올라가며 위로 커지고 아래로 내리면 아래로 작아진다. 세로로 긴 화면에서는 좌우 대신
+  위아래 절반(`▴`/`▾`)으로 나눈다.
 - **동작 바 위치(`ActionBarFrame`, `ActionBarPosition`).** 동작 바는 붙인 키보드와
   `FloatingKeyboardFrame` 안쪽 모두에서 키보드 높이의 일부를 나누어 가지며, 화면 방향별 설정으로
-  키 위(기본값)나 키 아래에 놓을 수 있다. 아래에 두면 키보드의 맨 아랫줄 대신 동작 바가 판의
-  아래쪽 가장자리에 닿으므로, 특히 플로팅 모드에서 맨 아랫줄이 한 칸 위로 올라온다.
+  키 위(기본값)나 키 아래에 놓을 수 있다.
+- **가로 스크롤 띠의 제스처 제외(API 29+).** 화면 가장자리까지 닿는 가로 스크롤 `ActionBarView`나
+  후보 띠는 API 29 이상에서 양쪽 끝 24 dp를 `View.setSystemGestureExclusionRects`로 등록하지 않으면
+  가로 스와이프가 안드로이드 뒤로가기 제스처에 빼앗긴다.
 
 ## 13. 설정과 영속화
 
 설정 화면은 `method.xml`에 이름을 적는 평범한 `Activity`다. 구조적으로 유일한 요점은 **서비스와 액티비티가
-서로 다른 시점의 상태를 공유한다**는 것이고, 키보드가 변경을 알아채야 한다는 것이다.
+두 화면의 생명주기를 가로질러 상태를 공유한다**는 것이고, 키보드가 변경을 알아채야 한다는 것이다.
 
 ```java
 // 키보드 뷰에서: attach 때 읽고, 이후 변경도 따라간다.
@@ -1045,7 +1172,9 @@ private final SharedPreferences.OnSharedPreferenceChangeListener prefsListener =
 ```
 
 리스너가 없으면 키보드가 살아 있는 동안 바꾼 설정은 뷰가 다시 만들어질 때에야 반영되고, 사용자는 그것을
-"슬라이더가 아무 일도 안 한다"로 읽는다.
+"슬라이더가 아무 일도 안 한다"로 읽는다. **리스너는 반드시 강한 참조 필드에 보관할 것.** 익명 지역
+람다로만 넘기면 안드로이드 `SharedPreferences` 내부 `WeakHashMap` 때문에 GC 수거 후 조용히 갱신이
+끊긴다.
 
 저장 값의 클램프는 순수 자바에 두어 단위 테스트할 수 있게 하고, 쓸 때만이 아니라 **읽을 때도** 클램프할
 것. 프리퍼런스 파일은 내 검증 규칙보다 오래 산다.
@@ -1061,19 +1190,46 @@ private final SharedPreferences.OnSharedPreferenceChangeListener prefsListener =
   저장하는 덕분에, 나중 판이 옛 파일을 저장 당시의 판보다 더 잘 읽을 수 있다. 형식과 "일부러 말하지 않는
   것"은 별도 문서다: `docs/user-layouts.ko.md`(§15.47).
 
+### 13.1 버전 관리 저장소, 직접 부팅, 민감 정보 차단
+
+상용 IME는 단순 스위치 외에 동작 바 슬롯, 보관 텍스트, 클립보드 이력, 메모, 방향별 기하, 사용자
+레이아웃까지 영속화한다. 업그레이드·잠금화면 부팅·외부 입력을 버티게 하는 규칙은 넷이다:
+
+- **설정 파일과 즉시 재빌드 분류를 한곳에 모을 것(`AppPrefs`).** 모든 파일 이름(`view`, `clips`,
+  `notes`, `stash`, `layout`), 방향별 초기화 헬퍼(`resetOriented`), 즉시 재빌드 키 판별을 한 클래스에
+  두어야 설정 UI와 백그라운드 IME 서비스가 서로 다른 키를 읽고 쓰는 일이 없다.
+- **길이 접두 버전 저장소를 쓸 것(`RecordCodec`, `VersionedStore`, `StoreMigration`).** `U+001E` 같은
+  제어 문자 구분자는 사용자가 그 문자가 든 글을 붙여 넣거나 공유하는 순간 레코드를 쪼개 버린다
+  ([§15.62](#1562-나누려는-것-안에-들어-있던-구분자)). 구조화된 목록은 버전 헤더(`retekey-store 2 <fields>\n`)와
+  명시적 UTF-16 길이(`len:text`)로 부호화하고, `VersionedStore`로 구형 구분자 1회 마이그레이션을 감싸며,
+  잘리거나 형식이 다른 저장소는 빈 목록으로 덮어쓰지 않고 보존한다.
+- **개인정보 유출 없는 직접 부팅 격리(`LockedPreferences`, `UserUnlockWatcher`).** Direct-Boot를
+  선언한 IME는 첫 잠금 해제 전부터 잠금 화면에서 실행되며, 이때 자격 증명 암호화 저장소 접근은 실패하거나
+  예외를 던진다. 잠금 전 설정·이력을 기기 보호 저장소(device-protected storage)로 복사하는 대신 메모리
+  전용 `LockedPreferences` 심(기본값 반환, 임시 쓰기는 디스크 미저장)으로 기본 자판을 띄우고,
+  `@TargetApi(24)` `UserUnlockWatcher`로 `Intent.ACTION_USER_UNLOCKED`를 수신하자마자 실제 설정과
+  사용자 레이아웃을 다시 읽는다.
+- **민감 데이터 기록 금지와 외부 스트림 상한.** 비밀번호/민감 입력칸이나 `EXTRA_IS_SENSITIVE` 플래그가
+  붙은 `ClipData`(`ClipSensitivityCompat`, `@TargetApi(24)`)는 클립보드 이력·추천에 절대 저장하지 마라.
+  외부 `.rkl` 레이아웃 스트림(`LayoutStreamReader`)은 엄격한 크기 상한(`<= 64 KiB` / `<= 8192자`)을
+  강제하고 앱 자체 비공개 `dataDir` 내부 URI를 차단한다.
+
 ## 14. 테스트와 검증
 
-**입력 코어를 안드로이드 비의존으로 유지할 것.** 이벤트 정규화, 레이아웃 기하, 조합 오토마타, 사전,
-설정값 클램프는 모두 순수 자바로 만들 수 있고, 그러면 기기 없이 JVM에서 단위 테스트할 수 있다. 실제
-로직 버그는 거의 다 여기서 잡힌다.
+**입력 코어(`com.retekey.core`)를 안드로이드 비의존으로 유지할 것.** 이벤트 정규화, 레이아웃 기하,
+조합 오토마타, 사전 조회 테이블, 레코드 코덱, 설정 클램프는 모두 `android.*` 임포트가 전혀 없는 순수
+자바로 두고 기기 없이 JVM에서 단위 테스트한다. 프로젝트 검증에서 이 패키지 경계를 자동으로 검사하라 —
+코어에 `android.*` 하나만 스며들어도 빠른 JVM 검증이 무너진다. 실제 로직 버그는 대부분 여기서 잡힌다.
 
-픽스처만이 아니라 **배포되는 데이터**도 테스트할 것. 실제 사전 파일을 단위 테스트에서 파싱해 알려진
-변환 몇 개를 검증하면, 잘못된 재생성이 빌드를 깨뜨린다.
+픽스처만이 아니라 **배포되는 애셋**도 테스트할 것. ReteKey는 정렬된 메모리 매핑 바이너리 인덱스
+(`src/main/assets/hanja_fwd.idx`, `hanja_rev.idx`, `hanja_hunum.idx`, `noCompress += ["idx"]`)를
+실어 보내며, `HanjaIndexBuildTest`·`MappedHanjaTableTest`가 원본 표와 일치하는지 검증해 잘못된
+재생성이 빌드를 곧장 실패시킨다.
 
 ```java
-@Test public void shippedDataConvertsCommonReadingsAndWords() {
-    HanjaTable table = HanjaTable.parse(Files.readAllLines(
-        Paths.get("src/main/assets/hanja.txt"), StandardCharsets.UTF_8));
+@Test public void shippedIndexesConvertCommonReadingsAndWords() {
+    MappedHanjaTable table = new MappedHanjaTable(
+        index("hanja_fwd.idx"), index("hanja_rev.idx"), index("hanja_hunum.idx"));
     assertTrue(table.candidates("가").contains("家"));
     assertTrue(table.candidates("학교").contains("學校"));   // 단어 항목, 최장 일치
 }
@@ -1110,7 +1266,9 @@ adb logcat -d | grep -E "FATAL|AndroidRuntime"
 - **진짜 소프트 경로로 친다.** 터치가 만들었을 이벤트를 `dispatchSoftwareInput` 에
   넘긴다(`keys=cho0,jung0,RAW:C:CTRL`). 키 사이에 간격을 두어 편집기 보고가 엄지로 칠 때처럼
   끼어들게 한다. 결과는 편집기에서 읽는다 — Termux 에서 셸이 쓴 파일(`run-as com.termux cat`), 또는
-  리플렉션으로 읽은 칸의 글자와 선택 영역.
+  칸의 글자와 선택 영역. 시험에서 비공개 필드 리플렉션에 기대지 않도록 뷰·서비스에는 깔끔한 패키지 전용
+  `*ForTest()` 접합부(`isComposingForTest`, `keyboardViewForTest`, `performBarActionForTest` 등)를
+  두어 검증한다.
 - **그릴 표면 없이 IME 창을 찍는다.** `decor.draw(new Canvas(bitmap))` 는 창의 뷰를 비트맵에 그려
   꺼내 볼 수 있게 한다. 뷰 트리 덤프(클래스·가시성·크기·위치)가 그림이 무엇인지 설명한다. 보이지
   않던 띠와 떠 있는 패널의 배치를 이렇게 봤다(§10).
@@ -2168,7 +2326,7 @@ Shift 를 누른 채 글자를 톡 치는 방식도 틀렸다.
 
 **벌어진 일.** 12키 자판에서 빠르게 치면 ⌫ 가 공백을 치고 스페이스가 엔터를 보냈다(소유자 신고,
 2026-09-16). 한 열에서 원인 둘이 만났다. 첫째, ⌫ 는 값비싼 키라서 자기 칸 아래쪽 35 % 를 아래 키에
-내주고 있었는데(§15.38), 그 페이지에서 아래 키는 글자가 아니라 스페이스였다. 보호한다는 것이 정작
+내주고 있었는데(§15.35), 그 페이지에서 아래 키는 글자가 아니라 스페이스였다. 보호한다는 것이 정작
 백스페이스를 급할 때 누를 수 없게 만들었다. 둘째, 손가락이 시스템의 **터치 슬롭**만큼만 칸을 벗어나도
 누름이 옆 키의 것이 되었는데, 빠른 탭은 닿고 떼는 사이에 그만큼 구른다.
 
@@ -2220,9 +2378,9 @@ Space 와 Enter 로 자기를 누른다. 게다가 Shift+Space 가 기본 바인
 가져갔다. 바인딩된 키는 자기 일을 하는데, 그것이야말로 그 키를 달라고 묻는 화면이 막아야 하는 일이다.
 
 **고친 방법.** 캡처는 뷰보다 먼저인 `dispatchKeyEvent` 에서 한다. 그리고 화면이 기다리는 동안
-공유 설정에 `hw_capture_in_progress` 를 세워 두고, 서비스는 물리 키마다 그것을 읽어 전부 통과시킨다.
-플래그는 캡처가 끝날 때와 `onPause` 에서 지워지므로, 캡처 중에 화면을 떠나도 키보드가 먹통이 되지
-않는다.
+공유 설정이 아니라 프로세스 내 `AtomicBoolean`(`HardwareKeyBindings.setCapturing(true)`)을 세워 두고,
+서비스는 물리 키마다 그것을 읽어 전부 통과시킨다. 디스크 대신 메모리에 두므로 캡처 중에 강제 종료돼도
+단축키가 영구 비활성화되지 않으며, 캡처가 끝날 때와 `onPause` 에서 플래그를 내린다.
 
 **그리고 기본값.** 한/영은 Shift+Space, `KEYCODE_KANA`(218), `KEYCODE_LANGUAGE_SWITCH`(204)에,
 한자는 `KEYCODE_EISU`(212)에, 유니코드 입력은 Ctrl+Shift+U 에 묶인 채로 시작한다. 이상해 보이는
@@ -2259,11 +2417,13 @@ KANA·EISU 코드에 얹어 두었고, 한국어 키보드의 그 두 키는 그
 **요청.** 릴리즈를 기다리지 않고 자판을 추가하는 길. 앱에 공유하는 파일(이슈 #11). 신고자는 JSON 이든
 자체 형식이든 좋다고 했고, 다른 키보드의 배열을 베끼는 저작권 문제를 걱정했다.
 
-**만든 것.** 머리글 한 줄, 이름, 세 글자 약칭, 그리고 `row:` 세 줄로 된 줄 형식. 각 칸은 "그 키가 치는
-글자"이고 막대 뒤는 길게 누르면 나올 글자다. 그 외에는 없다. Shift·백스페이스·엔터·아래 줄·자판 키는
-키보드 것이다. 설치는 한 번에 하나, 원문 그대로 자기 설정 파일에 두고 `UserLayout` 으로 읽는다.
-안드로이드에 기대지 않으므로 형식이 곧 유닛 시험이다. 들어오는 문은 보관함이 이미 낸 공유 문이다.
-머리글로 시작하면 자판이고, 아니면 보관할 글이다.
+**만든 것.** 머리글 한 줄, 이름, 세 글자 약칭, 그리고 **정확히** `row:` 세 줄(셋보다 적거나 많아도 거절)로
+된 줄 형식. 각 칸은 "그 키가 치는 글자"이고 막대 뒤는 길게 누르면 나올 글자다. 그 외에는 없다.
+Shift·백스페이스·엔터·아래 줄·자판 키는 키보드 것이다. 설치는 한 번에 하나, 원문 그대로 자기 설정
+파일에 두고 `UserLayout` 으로 읽는다. 안드로이드에 기대지 않으므로 형식이 곧 유닛 시험이다. ReteKey 로
+공유할 때는 글 보관과 자판 교체가 겹치지 않도록 두 진입점을 따로 둔다: `Keep in ReteKey`
+(`ShareTargetActivity` — 머리글로 시작해도 항상 텍스트만 보관)와 `Install a ReteKey layout`
+(`InstallLayoutActivity` 별칭 + `.rkl` `ACTION_VIEW` 처리 — 먼저 확인을 묻고 설치).
 
 **살아남게 만드는 규칙.** *모르는 줄은 거절하지 않고 무시한다.* 나중 버전용으로 쓴 파일이 지금 버전에서
 할 수 있는 만큼은 동작한다. 이 규칙 하나가 약속을 깨지 않고 형식을 키우게 해 주며, 자기 시험을 갖는다.
@@ -2345,7 +2505,7 @@ Material You 에서는 `system_neutral1_50`. 소유자는 그 결과를 키 묶�
 (2026-09-18).
 
 **고친 방법.** 양쪽 다 사다리에서 한 칸 내렸다. 손으로 고른 면은 238/240/244, 바탕은 198/202/209.
-동적 팔레트는 `system_neutral1_100` 위에 `system_neutral1_200`. 사다리 자체는 그대로다 — 면이 바탕
+동적 팔레트는 `system_neutral1_200` 바탕 위에 `system_neutral1_100` 면. 사다리 자체는 그대로다 — 면이 바탕
 위, 비활성이 아래 — 그래서 여기서 유도되는 다른 색들(눌림 틴트, 고르기 색, 잉크 대비)이 함께 움직였고
 두 번째 조정이 필요 없었다.
 
@@ -2511,10 +2671,12 @@ legacy flavor 가 생기며 모호해진 Gradle 작업 이름을 여전히 불�
 들어온 U+001E 하나가 노트를 둘로 쪼개고 본문을 잘랐으며, 그것을 품은 클립이나 공유 항목은 저장할 때 조용히
 사라졌다 — 키보드가 그것을 보여 주고 보관했다고 말한 뒤에(검토 R06, R07).
 
-**고친 방법.** 세 목록의 형식을 하나로 했다. 머리글이 필드 수를 말하고, 각 필드는 길이·콜론·본문으로 쓴다.
-필드 안의 무엇도 그 필드를 끝낼 수 없다. 옛 형식은 한 번 더 읽는다. 그 원본은 `<key>_v1` 로 남기고, 새 형식은
-그것을 되읽은 결과가 옛 형식에서 읽은 것과 똑같을 때만 쓴다. 새 형식인데 자기 자신으로 되읽히지 않는 글은
-`<key>_damaged` 로 남기고 읽힌 만큼만 쓴다.
+**고친 방법.** 네 목록(노트·클립·보관함·동작 바 사용자 슬롯 `BarSlotCodec`)의 형식을 하나로 통합했다
+(`RecordCodec` + `VersionedStore` + 1회성 `StoreMigration`). 머리글(`retekey-store 2 <fields>\n`)이 필드
+수를 말하고, 각 필드는 UTF-16 길이·콜론·본문으로 쓴다. 필드 안의 무엇도 그 필드를 끝낼 수 없다. 옛
+형식은 한 번 더 읽고 그 원본은 `<key>_v1` 로 남기며, 새 형식은 그것을 되읽은 결과가 옛 형식에서 읽은
+것과 똑같을 때만 쓴다. 새 형식인데 자기 자신으로 되읽히지 않는 글은 `<key>_damaged` 로 한 번만 백업하고
+(되풀이 덮어쓰지 않음) 읽힌 만큼만 쓴다.
 
 **규칙.** "아무도 그 글자를 못 친다"는 저장된 글의 성질이 아니다. 무엇이 끝처럼 보이지 않기를 바라는 대신,
 필드가 얼마나 긴지 말하라.
@@ -2554,7 +2716,7 @@ legacy flavor 가 생기며 모호해진 Gradle 작업 이름을 여전히 불�
 
 **왜.** 다른 기계를 보는 창에는 조합 구역이 없어서 음절을 다시 쓴다. 실현해 둔 것을 지우고, 새 모양을
 커밋한다(§15a.1). 그것은 전선 위의 두 조작이고, 클라이언트 자신의 버퍼는 그 각각 뒤에 커서가 어디로 갔는지
-보고한다. 그런데 이 키보드는 **계획이 끝나는 자리** 하나만 기억했다(§15a.5). 그래서 지우기의 보고 — 한 칸
+보고한다. 그런데 이 키보드는 **계획이 끝나는 자리** 하나만 기억했다([§6](#6-에디터가-권위자다), §15a.1). 그래서 지우기의 보고 — 한 칸
 뒤의 자리 — 는 어떤 기대와도 맞지 않았고, 사용자가 커서를 옮긴 것으로 읽혀 음절을 그 자리에서 굳혔다. 다음
 자모는 되가져올 것이 없어 혼자 커밋됐다. 두 조작이 보통 한 배치에 들어 클라이언트가 그 끝에서 한 번만
 보고하기 때문에 가끔씩만 일어났다. 보고가 따로 오면 음절이 깨졌다.
@@ -2675,19 +2837,69 @@ Ctrl, Meta, Alt, Tab 이 자기에게 맞춰진 글자보다 좁아진 면 밖�
 
 ### 15.73 플래그 하나가 두 가지 다른 편집기를 실어 나른 일
 
-**벌어진 일.** 터미널과 원격 데스크톱 클라이언트가 모두 같은 불리언(`deleteByKeyEvents`)으로 분류되었다. 한쪽을 위한 분기가 다른 쪽으로 새어 나가 터미널의 빈 삭제 계획·음절 되돌리기 오작동이나, 패키지 허용 목록 밖 원격 데스크톱 클라이언트에서의 수식키 프레이밍 누락(`ReteKeyImeService` / `CheckedEditorExecutor`)을 일으켰다.
+**벌어진 일.** 터미널과 원격 데스크톱 클라이언트가 모두 같은 불리언(`deleteByKeyEvents`)으로 분류되었다.
+한쪽을 위한 분기가 다른 쪽으로 새어 나가 터미널의 삭제·음절 되돌리기 오작동이나, 패키지 허용 목록 밖
+원격 데스크톱 클라이언트에서의 물리 수식키 DOWN/UP 프레이밍 누락(`ReteKeyImeService` /
+`CheckedEditorExecutor`)을 일으켰다.
 
-**고친 방법.** `EditorCapabilities.EditorKind`(`RICH_TEXT`, `REMOTE_DESKTOP`, `TERMINAL`, `UNSUPPORTED`)를 삭제 수단(`DeletionMode`)과 분리했다. 또한 동작 자체가 물리 키 입력으로 표시된 경우(`KeyAction.isPhysical()`) 패키지 허용 목록과 무관하게 하드웨어 수식키 DOWN/UP 프레이밍을 적용한다.
+**고친 방법.** `EditorCapabilities.EditorKind`(`RICH_TEXT`, `REMOTE_DESKTOP`, `TERMINAL`,
+`UNSUPPORTED`)를 전송 삭제 수단(`DeletionMode`)과 분리하고, 동작 자체가 물리 키 입력으로 표시된 경우
+(`KeyAction.isPhysical()`) 패키지 허용 목록과 무관하게 하드웨어 수식키 프레이밍을 적용한다.
 
-**규칙.** 두 종류의 편집기가 같은 우회로를 공유하더라도 목적이 다르면 `EditorKind` 로 먼저 구분하고 분기할 것.
+**규칙.** 두 종류의 편집기가 같은 우회로를 공유하더라도 목적이 다르면 `EditorKind` 로 먼저 구분하고
+분기할 것.
 
-### 15.74 정상 경로가 지나지 않던 모서리를 짚어 낸 감사
+### 15.74 입력 코어를 안드로이드 비의존으로 지킨 것
 
-**벌어진 일.** 전체 소스코드 감사(`rfc-0013`)에서 평범한 입력 테스트가 놓치던 경계 결함이 드러났다: `BarSlot.oneLine()`, `ClipboardPanelView`, `NotepadView` 의 UTF-16 서로게이트 쌍 절단; `BarSlotCodec` 의 구분자 취약성과 손상된 v2 저장소 백업 시 반복 `commit()`; 방향별 설정 초기화 시 레거시 키 잔존 및 `"retekey_view"` 실시간 반영 누락; `<clinit>` 에서의 전체 레이아웃 즉시 생성과 `FlowRow` 그리기 할당; TalkBack 가상 키보드 접근성 노드 부재; `InstrumentedReteKeyImeService` 의 리플렉션 의존성.
+**벌어진 일.** 시간이 흐르며 도우미 유틸리티와 뷰 상수가 핵심 입력 엔진 안에서 `android.*` 타입을 직접
+참조하고 싶은 유혹을 낳았다. 코어 클래스 하나가 안드로이드 타입에 기대는 순간 스텁이나 에뮬레이터 없이는
+JVM 단위 테스트가 돌지 않는다.
 
-**고친 방법.** `Scalars.truncate` 와 `NotepadKeys` 코드포인트 단위로 서로게이트 안전성을 보장하고, `BarSlotCodec` 을 길이 접두사 `RecordCodec` 및 단발성 `StoreMigration` 백업으로 통합했다. 설정 접근·실시간 갱신을 `AppPrefs` 로 모으고, `KeyboardLayouts` 지연 생성·`FlowRowMath.linesInto` 무할당 측정·API 16+ `KeyboardAccessibilityProvider` 가상 접근성 트리·`*ForTest` 테스트 심을 도입했으며, 순수 Java 코어를 `com.retekey.core` 패키지로 분리하고 `ops/scripts/project-check.sh` 로 `import android.*` 금지를 기계적으로 강제했다.
+**고친 방법.** 모든 조합기·정규화기·하드웨어 매퍼·디스패치/전이 정책·커서 추적기·능력 판별기·길이 접두
+코덱을 `com.retekey.core` 패키지로 격리해 프로젝트 검사에서 `import android.*` 를 기계적으로 차단하고,
+레이아웃·UI 산수(`KeyboardLayouts`, `FlowRowMath`, `KeyboardAccessibilityModel`, `PanelHeight`,
+`SystemBarInsets`) 역시 안드로이드 비의존으로 유지했다.
 
-**규칙.** 주석에만 적힌 경계는 무너진다. 코어 순수성, 서로게이트 안전성, 길이 접두사 저장 형식, 타입 검증된 테스트 심을 기계적으로 강제할 것.
+**규칙.** 주석에만 적힌 구조 경계는 깎여 나간다. 순수 자바 패키지 경계를 빌드·린트 검사에 걸어
+`android.*` 임포트 하나가 곧바로 실패하게 만들 것.
+
+### 15.75 플로팅 패널 크기 조절 시 고정 모서리를 붙잡은 것
+
+**벌어진 일.** `FloatingKeyboardFrame` 의 오른쪽 위 `⇲` 손잡이를 끌 때 위쪽 가장자리를 고정하거나
+좌표 기준이 흔들려, 위로 끌어 올릴 때 제목 줄이 손가락을 따라 커지는 대신 아래로 줄거나 미끄러졌다.
+
+**고친 방법.** 포인터가 닿는 순간 `dragStartBounds` 를 기록하고 오른쪽 위 크기 조절 중에는 **왼쪽 아래**
+모서리를 고정해(`FloatingKeyboardBounds.resizedBy`) 화면 경계 안으로 물렸다. 세로가 긴 화면에서는
+위아래 절반(`▴`/`▾`)으로 나눈다.
+
+**규칙.** 모서리 손잡이로 크기를 조절할 때는 반대쪽 대각 모서리를 고정해 손잡이와 가장자리가 손가락을
+1:1 로 따라오게 할 것.
+
+### 15.76 저장소·UI 전역의 서로게이트 안전 절단과 코드포인트 이동
+
+**벌어진 일.** `BarSlot.oneLine()`, `ClipboardPanelView`, `NotepadView` 의 길이 제한과 커서 이동이 자바
+`String` 의 `char` 인덱스로 문자열을 잘라, 이모지와 한자 확장 영역의 UTF-16 서로게이트 쌍이 반쪽만
+남을 위험이 있었다.
+
+**고친 방법.** 문자열 자르기를 `Scalars.truncate` / `Scalars.sanitizeWellFormed` 로 모으고 메모장의
+커서·삭제를 `NotepadKeys` 코드포인트 단위로 통일해, `UserLayout` 제한(`MAX_NAME`, `cap:`)과 같은
+유니코드 스칼라 기준을 지키게 했다.
+
+**규칙.** 임의의 사용자 텍스트를 날 `char` `.length()` 인덱스로 자르지 말 것. 항상 온전한 유니코드
+스칼라 단위로 넘길 것.
+
+### 15.77 teardown 콜백 보호와 타입 검증된 테스트 접합부
+
+**벌어진 일.** teardown 도중 죽는 에디터가 `finishComposingText()` 에서 예외를 던지면 `onFinishInput` /
+`onFinishInputView` 안의 프로세서·패널 초기화가 건너뛰어질 수 있었고, 계측 테스트는 필드 이름이 바뀌면
+조용히 깨지는 비공개 필드 리플렉션에 기대고 있었다.
+
+**고친 방법.** `onUnbindInput` / `onDestroy` 에서 `isComposing()` 조건 뒤에 `try / catch (RuntimeException)`
+로 `finishComposingInEditor()` 를 보호하고, 세션·패널 정리는 `try / finally` 에 넣었으며, 설정 키와
+초기화는 `AppPrefs` 로 모으고 컴파일 타임에 검증되는 패키지 전용 `*ForTest()` 접합부를 열었다.
+
+**규칙.** teardown 상태 초기화는 반드시 `finally` 에 넣고, 복잡한 뷰는 리플렉션 문자열이 아니라 컴파일러가
+검사하는 패키지 접합부로 시험할 것.
 
 ## 15a. 원격 데스크톱 편집기: 뒤에 편집기가 없는 전선
 
@@ -2829,4 +3041,10 @@ MANAGE_EXTERNAL_STORAGE allow` 를 해 둘 것.
   (§15.65).
 - [ ] Shift 에서 손가락이 미끄러지거나 그 밑에서 페이지가 다시 그려져도 Shift 는 있던 대로 남고, 화음 중
   뽑힌 키보드가 액션바 화살표를 더는 수식하지 않는다(§15.66).
+- [ ] TalkBack / 터치 탐색이 현재 자판 라벨과 화면 좌표로 모든 키 노드를 훑고 활성화한다(§11.3).
+- [ ] 플로팅 모드가 왼쪽 아래 모서리를 고정한 채 `⇲` 손잡이로 위아래 크기를 바꾸고, 가로 동작 바는
+  API 29 이상 가장자리 제스처 제외 영역을 등록한다(§12a, §15.75).
+- [ ] `com.retekey.core` 에 `android.*` 임포트가 전혀 없고, teardown 초기화가 `try / finally` 안에서
+  실행되며, UTF-16 보충 문자들이 절단과 메모장 이동에서 깨지지 않는다(§14, §15.74–§15.77).
+- [ ] 릴리즈 크기 반영 스크립트가 양쪽 README 와 fastlane 설명을 누락 없이 멱등하게 갱신한다.
 - [ ] 바뀐 내용에 맞춰 이 매뉴얼을 양쪽 언어로, 그리고 README 둘을 갱신했다.

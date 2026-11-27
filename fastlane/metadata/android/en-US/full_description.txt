@@ -1,6 +1,6 @@
 A Hangul keyboard for developers and power users — for anyone who needs Esc, Tab, Ctrl chords, function and arrow keys on a phone, and a keyboard that behaves itself in a terminal.
 
-It is small and asks for almost nothing. The APK is about 470 KB, most of that the Hanja tables, written in plain Java with no third-party runtime dependencies; the Hanja tables are memory-mapped straight out of the APK, so they cost storage rather than memory. It declares a single permission, VIBRATE — an ordinary permission, never requested at runtime, driving nothing but the buzz under your finger, which you can turn down to zero. No network, no account, no analytics.
+It is small and asks for almost nothing. The APK is about 746 KB, most of that the Hanja tables, written in plain Java with no third-party runtime dependencies; the Hanja tables are memory-mapped straight out of the APK, so they cost storage rather than memory. It declares a single permission, VIBRATE — an ordinary permission, never requested at runtime, driving nothing but the buzz under your finger, which you can turn down to zero. No network, no account, no analytics.
 
 And nothing is missing for it.
 
@@ -33,7 +33,7 @@ Made to suit you
 * The keyboard's height is set as a share of the screen, from 1% to 50%.
 * Height, the layout list and its order, the floating panel and its opacity are remembered separately for a screen held upright and one held sideways.
 * Keys that can be held say so: an open ring in the corner while they are not, a filled disc while they are. Shift, Ctrl, Meta and Alt each arm for one key on a tap and lock on a hold.
-* A half-width floating panel you can place where you like, as see-through as you like.
+* A floating panel you can resize, drag anywhere on screen, and make as see-through as you like.
 * Key-press feedback — highlight, vibration and sound — each adjustable to zero.
 * Follows the system light and dark theme, and Material You where the device has it.
 

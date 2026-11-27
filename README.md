@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.11** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.12** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -31,6 +31,7 @@ and the special keys most keyboards leave out.
 - [Hanja conversion](#hanja-conversion)
 - [Physical keyboards](#physical-keyboards)
 - [Settings](#settings)
+- [The action bar](#the-action-bar)
 - [Theming](#theming)
 - [Android version support](#android-version-support)
 - [For developers](#for-developers)
@@ -49,13 +50,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.11** —
-[retekey-0.2.11.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11.apk) (746 KB; the Android 4.0 build is 586 KB)
+Current release: **v0.2.12** —
+[retekey-0.2.12.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) (746 KB; the Android 4.0 build is 586 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the
@@ -73,15 +74,16 @@ Android 9+ build; the Android 4.0 one lives on the releases page.
    box to type in, so you can do the whole thing without hunting through system settings.
 
 To move between Korean, English and the 12-key layouts afterwards, tap the layout key at the bottom right. It is captioned with where it goes rather than where
-you are — `QWE`, `DVO`, `2BS`, `CJI`, `NRG`, `ARW`, `NUM`, in bold capitals — so you can see what the next press will give you.
+you are — `QWE`, `DVO`, `2BS`, `CJI`, `NRG`, `ARW`, `NUM`, `IPA`, in bold capitals — so you can see what the next press will give you.
 Hold it for the menu page. Which layouts that key walks through, and in what order, is yours to set
 in the settings.
 
 ## What it looks like
 
 The keyboards below are drawn by the keyboard's own rendering code, at the size a 480-pixel-wide
-screen gives it — the same pixels the app puts on a phone. The floating panels are drawn over a
-page of writing, because a panel you can see through has nothing to show against a blank ground.
+screen gives it — the same pixels the app puts on a phone. The floating panels are separate windows
+captured on a device over a page of writing, because a panel you can see through has nothing to show
+against a blank ground.
 
 ![2-beolsik](assets/keyboard-korean.png)
 
@@ -119,12 +121,12 @@ never open the keypad page you will never see the parts you do not need.
 
 ## Features
 
-- **Thirty-five layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
+- **Thirty-four language and script layouts** — 2beolsik(2벌식), QWERTY, Dvorak, Colemak, Spanish, Portuguese, Italian,
   Polish, Vietnamese (Telex), German, Turkish (QWERTY and F), French AZERTY, Greek, Hebrew, Persian,
   Arabic, Urdu, Thai (Kedmanee and Pattachote), Hindi, Russian (ЙЦУКЕН and phonetic), Ukrainian,
   Bulgarian (phonetic and БДС), Macedonian, Serbian, Georgian, Armenian, Japanese Romaji and the
-  12-key Japanese Flick, and the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes — with
-  Arrows, Keypad, the IPA phonetic page and [a layout of your own](#user-layouts) as extras. The
+  12-key Japanese Flick, and the 12-key Cheonjiin(천지인) and Naratgeul(나랏글) phone modes — plus
+  Arrows, Keypad, the IPA phonetic page and [a layout of your own](#user-layouts) in *etc* (38 total). The
   layout key walks the ones you enabled, in the order you set; holding it opens the menu.
 - **A layout you write yourself** — three rows of keys and what each one holds, in a text file you
   share into the keyboard or open as a `.rkl` file. No build, no account, no waiting for a release.
@@ -195,7 +197,7 @@ right, which works the way the Hangul keys around it do: tapping moves through t
 face, and dragging left or right picks the one written on that side. The full stop and comma are on
 the key beside Enter.
 
-Seven letter layouts share that grid:
+Thirty-four language and script layouts share that grid:
 
 | Layout | Shape |
 |---|---|
@@ -225,6 +227,8 @@ Seven letter layouts share that grid:
 | **Cheonjiin(천지인)** | 12-key: the elements ㅣ ㆍ ㅡ build the vowels and each consonant key cycles its group (ㄱ → ㅋ → ㄲ). A **drag** off a key (at least 18 dp) types at once what the taps would reach; a shorter slide is still a tap. Off a consonant: left the plain letter (ㄱ), right the aspirate (ㅋ), down the tense one (ㄲ), and nothing above — the digit is held for, not dragged to. A group with no tense letter (ㄴㄹ, ㅇㅁ) has no cell below it either. Off a vowel key the direction points at the letter: from ㆍ, left ㅓ · right ㅏ · up ㅗ · down ㅜ; from ㅣ, left ㅔ · right ㅐ · up ㅒ · down ㅖ; from ㅡ, left ㅝ · right ㅘ · up ㅚ · down ㅟ. A dragged vowel goes on combining (drag ㅗ, tap ㅣ, and it is ㅚ). **Holding** a key raises a guide of those cells with the key's digit in the middle, and waits: drag to one and lift to type it, or lift without moving for the digit. The ten Hangul keys sit where a phone keypad's do and hold what it holds — `1`–`9`, and `0` under ㅇㅁ. Two taps of one key in a row are one cycle, so a pause — or the **Next** key — starts the next letter |
 | **Naratgeul(나랏글)** | 12-key: a consonant block with 획 adding a stroke (ㄴ → ㄷ → ㅌ) and 쌍 doubling (ㅅ → ㅆ); a vowel key pressed twice reaches its pair (ㅏ → ㅓ, ㅗ → ㅜ) and 획 iotates it (ㅏ → ㅑ, ㅗ → ㅛ). Its twelve keys sit where a phone keypad's do, so holding one types what a phone keypad holds: `1`–`9`, `0` under ㅡ, `*` and `#` either side |
 
+| Extra page | Role |
+|---|---|
 | **Arrows** | the cursor cluster on the 12-key frame — Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del — as a layout rather than an overlay, for when you are moving around a document rather than glancing at an arrow mid-word. **Shift** sits beside Meta: tap it for one key, so Shift+arrow selects, or hold it to keep it down. Off until you turn it on in settings |
 | **Keypad** | the phone keypad on the same frame: `1`–`9`, `*` `0` `#` typed with a tap, and the calculator set on hold, with **Shift** beside Meta as on Arrows. Off until you turn it on in settings |
 | **IPA** | the International Phonetic Alphabet, for writing a pronunciation beside the word. Each symbol sits at the letter it sounds like, the way X-SAMPA reads a keyboard — `e` types **ə** (and holds ɛ ɜ ɚ ɝ), `a` types **æ** (holding ɑ ɐ ɶ), `t` **θ**, `d` **ð**, `s` **ʃ**, `z` **ʒ**, `n` **ŋ**, `j` **ʤ**, `r` **ɹ**, `v` **ʌ**, `o` **ɔ**, `u` **ʊ**, `i` **ɪ** — and every key holds the rest of its family, so the alphabet is one page and a hold deep. The last cell of the bottom row carries the stress and length marks ˈ ˌ ː ˑ. **Shift** is not a second set of symbols but the plain letters where QWERTY has them, because a transcription is full of ordinary p, t, k, s; the same key then types `/`, holding `[` and `]`. A physical keyboard types both pages the same way. The **🔎** key at the bottom is the way to everything the page does not hold: **tap** it and type what you call the symbol — `palm`, `schwa`, `fricative`, or the X-SAMPA code `T` — and the matches appear above the keys to pick from; **hold** it for the families instead (vowels, plosives, nasals, fricatives, affricates, approximants, laterals, trills and taps, clicks and implosives, stress and length, diacritics), where two taps reach any of them. Off until you turn it on in settings |
@@ -376,14 +380,15 @@ keyboard itself.
 | 1Hand | one-handed | *not built yet* |
 | RDsk | remote desktop | turn the [remote-desktop keyboard](#remote-desktop-keyboard) on or off |
 | Theme | theme | walk the colour scheme: system → light → dark |
-| ★1 / ★2 | custom | *not built yet* |
+| Uni | unicode | open the `U+` Unicode code-point entry pad |
+| Memo | notepad | raise the translucent [notepad](#notepad) |
 | Set | settings | open ReteKey's own settings |
 | ← ↑ → ↓ | arrows | move the cursor; they repeat when held |
 | Home / End | line ends | jump to the start or end |
 | PgUp / PgDn | page | jump a page |
 | Ins | insert | the Insert key |
 | Del | forward delete | delete forward |
-| 0 / F10 / Del | beside space | whatever the current mode is missing: the keypad's zero, the tenth function key, forward delete |
+| Uni | beside space | opens the Unicode code-point entry pad directly from the menu's bottom row |
 
 The muted keys are drawn but do nothing: they are the places the features will go, marked so the
 page does not shift under you when they arrive.
@@ -436,10 +441,11 @@ row: υ|ύ φ χ ψ ω|ώ
 Install it by selecting the text anywhere and choosing **Share → Install a ReteKey layout**, or by
 saving it with a `.rkl` extension and opening the file. ReteKey shows what arrived — its name, its
 key cap, its first row — and which layout it would replace, and installs nothing until you press
-**Install**. Sharing to plain **ReteKey** does something
+**Install**. Sharing to **Keep in ReteKey** does something
 else entirely — it keeps the text to type later — so a note that happens to begin with
-`retekey-layout` is a note. Then tick the layout in **Settings → Keyboard layouts**, in the *etc*
-group, and the layout key will walk to it wearing the three letters from `cap:`.
+`retekey-layout` is a note. Then tick the layout in **Settings → Keyboard layouts → Layout (portrait)**
+(or **Layout (landscape)**), in the *etc*
+group, and the layout key will walk to it wearing the three characters from `cap:`.
 
 One layout at a time; installing another replaces it. Settings shows the whole example above,
 selectable, so the format can be copied off the screen you are already on.
@@ -465,7 +471,7 @@ read, so the panel always takes the half worth having. The other half stays your
 | ☰ | drag to move the panel, anywhere within its half — dragging any free part of the bar does the same |
 | ‹ / › | send the panel to the other half, mirrored about the centre line |
 | ✕ | leave floating mode and go back to the ordinary keyboard |
-| ⇲ | drag to resize the panel |
+| ⇲ | drag the top-right corner to resize the panel with the bottom-left corner anchored — dragging up pulls the title bar upward under your finger, dragging down shrinks it back |
 
 Dragging stops at the centre line: crossing over is the arrow key's job, and it reflects the panel
 rather than dropping it somewhere new, so a panel hugging the left edge comes back hugging the
@@ -710,25 +716,9 @@ your clock — **10 minutes, 1 hour, 1 day, or until you remove it** — in sett
 and kept text*, where you can also turn **Follow the system clipboard** off entirely: then the
 keyboard never looks at the clipboard at all, and sharing is the only way text reaches it.
 
-**A layout of your own.** Share a layout file to ReteKey the same way and it is installed as a
-keyboard page — one at a time, replacing whatever was there. A file is text, small enough to write
-in a message:
-
-```
-retekey-layout 1
-name: Greek phonetic
-cap: grk
-row: α β γ|ϝ δ ε|έ ζ η|ή θ ι|ί κ
-row: λ μ ν ξ ο|ό π ρ σ|ς τ
-row: υ|ύ φ χ ψ ω|ώ
-```
-
-Each cell is the character the key types; anything after a bar is what the key **holds**. Three
-rows, up to ten keys across; everything else — Shift, backspace, Enter, the bottom row, the layout
-key — is the keyboard's own and is not in the file. That is deliberate: a format published in a
-release has to be read for ever, so this one says as little as it can. Lines it does not know are
-ignored rather than refused, so a file written for a later version still works. Turn the layout on
-like any other, in settings; *Your own layout* there shows what is installed and removes it.
+**A layout of your own.** Layout files use the separate **Install a ReteKey layout** share entry
+rather than **Keep in ReteKey** — see [User layouts](#user-layouts) and
+[the full format guide](docs/user-layouts.md).
 
 What it will not do matters as much as what it will:
 
@@ -773,7 +763,7 @@ places, and there is no reason to make a current phone take it.
 
 ### What the legacy build does differently
 
-Three things, all of them on the device's side of a version check rather than in a separate
+Six small differences, all of them on the device's side of a version check rather than in a separate
 codebase:
 
 | On older Android | What happens | From |
@@ -783,10 +773,9 @@ codebase:
 | Deletion | code-point deletion is not available, so the UTF-16 fallback already used for older editors handles it; a syllable or emoji still disappears in one press | below API 24 |
 | Shadows | the Hanja window has no drop shadow — `PopupWindow.setElevation` is API 21 | below API 21 |
 | Theme | the screens use the platform's own DeviceDefault rather than Material | below API 21 |
-
 | Panel bar | the floating panel's bar says `Menu` `<` `>` `X` `Size` in words where the modern build draws ☰ ‹ › ✕ ⇲ — the glyph font those come from arrives with API 21 | below API 21 |
 
-Everything else — the five layouts, the 2-beolsik and 12-key composers, Hanja conversion, the
+Everything else — all thirty-four language layouts and four extras, the 2-beolsik and 12-key composers, Hanja conversion, the
 floating keyboard, physical keyboards, auto-repeat, theming — is the same code on both. The app
 uses no `java.time`, no `java.util.function`, and no library desugaring, which is why the legacy
 APK is *smaller* than the modern one rather than larger.
@@ -878,10 +867,12 @@ Nothing in this part is needed to use the keyboard.
 
 ### Architecture
 
-The app uses Android's standard `InputMethodService` entry point. The input core is deliberately
-Android-free so it can be unit-tested on the JVM: event normalisation, semantic jamo, the 2-beolsik
-hardware mapping, dispatch disposition, immutable transition plans, checked editor execution,
-Unicode-safe deletion, the Hanja tables, and the key-repeat and shortcut settings.
+The app uses Android's standard `InputMethodService` entry point. The core package (`com.retekey.core`,
+74 files) is deliberately Android-free so it can be unit-tested on the JVM: composers (2-beolsik,
+Cheonjiin, Naratgeul, Romaji, Telex), event normalisation, semantic jamo, hardware mappers,
+editor capabilities, cursor & transition policies, checked editor execution, Unicode-safe
+deletion, and shortcut settings; `com.retekey` adds the IME service, cached canvas renderer,
+floating/docked panels, versioned stores, layouts, and settings activities.
 
 Cursor state follows the AOSP LatinIME model: a passive cache that the editor's own
 `onUpdateSelection` always overrides, tolerating unknown (`-1`) selections. The keyboard never
@@ -921,7 +912,8 @@ with the failure from this project that shaped it.
 It covers:
 
 - **how an IME is structured** — the service, `method.xml`, input and candidates views, how the
-  system finds/enables/selects it, and the data flow from a touch to the editor;
+  system finds/enables/selects it, the data flow from touch to editor, and a **from-scratch build order**
+  to implement a full IME end-to-end;
 - **a minimal working IME** — manifest, `method.xml`, and a service you can paste and run, plus the
   order in which to grow it;
 - **reference implementations and where to get them** — AOSP LatinIME and the `SoftKeyboard`
@@ -932,13 +924,14 @@ It covers:
   cursor position;
 - **the editor is authoritative** — the passive cursor cache that follows from it, and why a
   keyboard must never refuse input over its own bookkeeping;
-- editor kinds: terminals (`TYPE_NULL`, selection `-1`) and everything that breaks in them;
-- composing text, hardware keyboards and modifier chords, and the candidates view;
-- drawing a custom keyboard cheaply, theming it to the system and Material You palettes, and
-  keeping settings live on a running keyboard;
+- editor kinds: terminals (`TYPE_NULL`, selection `-1`), remote desktops, and everything that breaks in them;
+- composing text, hardware keyboards and modifier chords, and the candidates/panel views;
+- drawing a custom keyboard cheaply (plus **TalkBack / Explore-by-Touch accessibility**), theming it to
+  the system and Material You palettes, inset/panel geometry, and keeping versioned preferences and
+  stores consistent across a running keyboard and Direct Boot;
 - what a headless emulator can and cannot prove about an IME;
-- **a detailed anti-pattern chapter** — real failures from this project, each with what was
-  built, what went wrong, the fix, and the resulting rule, with wrong-versus-right code;
+- **a detailed anti-pattern chapter** — real failures from this project (§15.1–§15.77), each with what
+  was built, what went wrong, the fix, and the resulting rule, with wrong-versus-right code;
 - a pre-release checklist.
 
 ### Writing a layout file
@@ -946,8 +939,8 @@ It covers:
 **[English](docs/user-layouts.md)** · [한국어](docs/user-layouts.ko.md)
 
 The format a layout you write yourself is in, line by line: what each line means, what a key may
-type and hold, how many keys fit on each row, what Shift does, the two ways to install one, the four
-reasons it can be refused, and what the format deliberately cannot say. Every example in it is
+type and hold, how many keys fit on each row, what Shift does, the two ways to install one, every
+reason it can be refused, and what the format deliberately cannot say. Every example in it is
 parsed by a unit test, so the guide cannot drift away from the app that reads it.
 
 The English version is canonical and the Korean version is its translation; the two link to each

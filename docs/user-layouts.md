@@ -36,7 +36,7 @@ row: λ μ ν ξ ο|ό π ρ σ|ς τ
 row: υ|ύ φ χ ψ ω|ώ
 ```
 
-Four kinds of line, and only two of them are compulsory: the header must be there, `name:` must be
+Four kinds of line, and three of them are compulsory: the header must be there, `name:` must be
 there, and there must be exactly three `row:` lines. `cap:` is optional.
 
 Save it with the extension **`.rkl`** if you are going to open it as a file. If you are going to
@@ -48,8 +48,8 @@ share it as text, the extension does not matter — there is no file.
 | --- | --- | --- |
 | `retekey-layout 1` | yes | The first line of the file. Nothing may come before it, not even a comment. The `1` is the format's version; a later ReteKey will still read a file that says `1`. |
 | `name: …` | yes | What the layout is called in settings and in the toast the layout key shows. Longer than 40 characters and the rest is dropped, not refused. |
-| `cap: …` | no | The three letters the layout key wears. Left out, ReteKey takes the first three non-space characters of the name. Shorter than three and it is padded with `·`. |
-| `row: …` | exactly 3 | One row of keys. The fourth and later `row:` lines are ignored. Fewer than three and the file is refused. |
+| `cap: …` | no | The three Unicode characters (by code point) the layout key wears. Left out, ReteKey takes the first three non-space characters of the name. Shorter than three and it is padded with `·`. |
+| `row: …` | exactly 3 | One row of keys. Fewer or more than three `row:` lines and the file is refused. |
 | `# …` | no | A comment. Blank lines are fine too. |
 | anything else | no | Ignored, never refused — that is how a file written for a later version still works in this one. |
 
@@ -138,7 +138,7 @@ and choose **Share**, then **Install a ReteKey layout**. After you press Install
 attachment — then choose ReteKey. Nothing needs storage permission: the app that opens the file
 grants ReteKey that one file and nothing else.
 
-**Not** by sharing to plain **ReteKey**. That entry keeps text for typing later and never installs
+**Not** by sharing to **Keep in ReteKey**. That entry keeps text for typing later and never installs
 anything, even when the text begins with `retekey-layout 1`. The two entries look alike in the share
 sheet and do entirely different things; the one that installs says so by name.
 
@@ -148,28 +148,34 @@ new name so you can see that it happened. **Remove** in settings empties the slo
 ## Turning it on
 
 Installing puts the layout in the app; it does not put it on the keyboard. Go to **ReteKey settings
-→ Keyboard layouts**, find your layout in the **etc** group — it is listed under its own name — and
-tick it. It then joins the layouts the layout key walks through, wearing the three letters from
-`cap:`.
+→ Keyboard layouts** and open **Layout (portrait)** or **Layout (landscape)**, find your layout in
+the **etc** group — it is listed under its own name — and tick it. It then joins the layouts the
+layout key walks through, wearing the three characters from `cap:`.
 
 A layout that is installed but not ticked costs nothing and shows nowhere. A layout that is ticked
 but then removed leaves the slot empty, and the entry reads `Your layout(none yet)`.
 
 ## When it says it could not be read
 
-`That layout file could not be read.` means the text is not a layout this version can use. There are
-exactly four reasons:
+`That layout file could not be read.` means the installer received text or a file it could not turn
+into a valid layout (missing or unreadable URI, private internal path, wrong version, oversize input,
+or malformed text). On the confirmation sheet, the checker distinguishes these specific problems:
 
 | What is wrong | What it looks like |
 | --- | --- |
-| The header is not the first thing in the file | a comment, a blank note, or a mail quote (`>`) above `retekey-layout 1` |
-| No `name:` line, or an empty one | `name:` with nothing after it |
-| Fewer than three `row:` lines | two rows, or three lines that say `rows:` |
-| A `row:` line with no keys on it | `row:` followed by nothing, or by only `|` |
+| Does not begin with the header | a comment, a blank note, or a mail quote (`>`) above `retekey-layout 1` |
+| Unsupported version (`WRONG_VERSION`) | `retekey-layout 2` or `retekey-layout 10` |
+| Too big (`TOO_BIG` / `LINE_TOO_LONG`) | over 8192 characters, over 64 KiB opened as a file, or any single line over 1024 characters |
+| Key too long (`KEY_TOO_LONG`) | a key that types or holds more than 16 UTF-16 code units |
+| No `name:` line, or an empty one | `name:` missing, or `name:` with nothing after it |
+| Not three `row:` lines (`NOT_THREE_ROWS`) | fewer or more than three `row:` lines, or lines spelled `rows:` |
+| Empty `row:` line (`EMPTY_ROW`) | `row:` followed by nothing, or only `|` |
+| Invalid text (`INVALID_TEXT`) | unpaired UTF-16 surrogates or invalid Unicode scalars |
 
-Anything else is not an error: unknown lines are ignored, extra keys and extra holds are dropped,
-and a fourth row is skipped. If a key is missing from the page, count the keys in that row against
-the table above rather than looking for a message — there will not be one.
+Anything else is not an error: unknown lines are ignored, extra keys beyond a row's limit are
+dropped from the end, and holds after the fifth are dropped silently. If a key is missing from the
+page, count the keys in that row against the table above rather than looking for a message — there
+will not be one.
 
 ## What a layout file cannot do
 
