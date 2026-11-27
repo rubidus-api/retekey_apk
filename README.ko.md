@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.10** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.11** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -6,7 +6,7 @@
 **개발자와 전문 사용자를 위한 안드로이드 한글 키보드입니다.** 폰에서도 Esc와 Tab, Ctrl 조합, 함수키와
 방향키가 필요하고, 터미널에서 얌전히 동작하는 키보드가 필요한 분들을 위해 만들었습니다.
 
-작고, 요구하는 것이 거의 없습니다. 릴리즈 APK는 약 470 KB이고 그중 대부분이 한자 표입니다.
+작고, 요구하는 것이 거의 없습니다. 릴리즈 APK는 약 746 KB이고 그중 대부분이 한자 표입니다.
 서드파티 런타임 의존성 없는 순수 자바로 작성했으며, 한자 표는 메모리에 올리지 않고 APK에서 곧바로
 읽어 씁니다. 선언한 권한은 **`VIBRATE` 하나뿐**인데, 실행 중에 따로 요청하지 않는 일반 권한이고
 손끝에 오는 진동 말고는 아무 일도 하지 않습니다. 그 진동조차 0까지 줄이실 수 있습니다. 네트워크도,
@@ -49,13 +49,13 @@ F-Droid는 이 저장소의 소스를 자기 서버에서 직접 빌드한 뒤 �
 
 APK를 바로 받으실 수도 있습니다.
 
-**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10.apk)**
+**[⬇ 안드로이드 9 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11.apk)**
 &nbsp;·&nbsp;
-**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10-legacy.apk)**
+**[⬇ 안드로이드 4.0 이상](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11-legacy.apk)**
 &nbsp;·&nbsp; [모든 릴리즈](https://github.com/rubidus-api/retekey_apk/releases)
 
-현재 릴리즈: **v0.2.10** —
-[retekey-0.2.10.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.10/retekey-0.2.10.apk) (746 KB; 안드로이드 4.0 빌드는 586 KB)
+현재 릴리즈: **v0.2.11** —
+[retekey-0.2.11.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.11/retekey-0.2.11.apk) (746 KB; 안드로이드 4.0 빌드는 586 KB)
 
 폰이 안드로이드 9보다 오래되지 않았다면 첫 번째 링크를 받으시면 됩니다. 두 파일은 같은 앱이고 하나가
 다른 하나를 대체합니다. [두 빌드에 대한 설명](#안드로이드-버전-지원-범위)도 아래에 있습니다. F-Droid에는
