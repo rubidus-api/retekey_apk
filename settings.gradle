@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "retekey_ime"
+rootProject.name = "retekey_apk"
 include ":app"
 // The T012 instrumentation host is a local-only module; include it only when present.
 if (file("testhost/build.gradle").exists()) {

@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.12** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.12** — [Pages](https://rubidus-api.github.io/retekey_apk/) — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -37,6 +37,8 @@ and the special keys most keyboards leave out.
 - [For developers](#for-developers)
 - [The name](#the-name)
 - [License](#license)
+
+The same text, with screenshots, is on the [product homepage](https://rubidus-api.github.io/retekey_apk/) as a user manual: [on the web](https://rubidus-api.github.io/retekey_apk/en/index.html) or as a [PDF](https://rubidus-api.github.io/retekey_apk/manual/retekey-manual-en.pdf).
 
 ## Download
 

@@ -1,4 +1,4 @@
-**한국어** | [English](README.md) — **ReteKey IME v0.2.12** — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)<br>
+**한국어** | [English](README.md) — **ReteKey IME v0.2.12** — [Pages](https://rubidus-api.github.io/retekey_apk/ko.html) — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)<br>
 웹 브라우저가 오래되어 GitHub 에서 파일을 받을 수 없나요? 옛 안드로이드 폰용 파일·APK 다운로더 [ReteGet](https://github.com/rubidus-api/reteget_apk/blob/main/README.ko.md) 을 이용해 보세요!
 
 # ReteKey IME
@@ -37,6 +37,8 @@
 - [개발자를 위한 안내](#개발자를-위한-안내)
 - [이름에 대하여](#이름에-대하여)
 - [라이선스](#라이선스)
+
+같은 내용을 화면과 함께 [제품 홈페이지](https://rubidus-api.github.io/retekey_apk/ko.html)의 사용 설명서로도 보실 수 있습니다: [웹](https://rubidus-api.github.io/retekey_apk/ko/index.html), [PDF](https://rubidus-api.github.io/retekey_apk/manual/retekey-manual-ko.pdf).
 
 ## 내려받기
 
