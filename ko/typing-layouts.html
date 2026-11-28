@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6 자판 배열 — ReteKey 사용 설명서</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='retekey-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">ReteKey 사용 설명서</a></strong><span class="cur"> › 6장</span></span><span class="bar-nav"><a class="nb prev" href="start-features.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="typing-remote.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/">En</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">화면</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">데스크톱</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.2.13</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://rubidus-api.github.io/retekey_apk/manual/retekey-manual-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/retekey_apk" title="retekey 의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io - 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api - 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#메뉴-페이지"><span class="tf-no">6.1</span>메뉴 페이지</a></div></div>
+<main id="content"><div class="wrap">
+<h2>6 자판 배열</h2><p>터치 자판은 열 칸짜리 직교 격자 하나이며, 키 크기가 모두 같고 줄이 어긋나지 않습니다. 전체 크기 자판의 아랫줄은 어느 페이지에서나 같습니다: <code>Ctrl · Meta · Alt · Tab · 스페이스 · !# · 한글</code>, 스페이스는 세 칸입니다. 메뉴와 키패드 페이지는 자기 키를 따로 두지 않고 자판 키와 <code>!#</code>를 길게 눌러서 엽니다. 두 키 모서리에 작은 <code>m</code>과 <code>p</code>가 적혀 그 사실을 알려 줍니다. <code>!#</code> 옆에 한 칸이 남는데, 자판마다 그 자판을 쓰는 분이 자주 찾는 것을 넣었습니다. 두벌식에는 한자 변환용 漢, QWERTY·Dvorak·Colemak에는 <code>Esc</code>(ssh로 vi를 쓰실 때를 위한 진짜 <code>KEYCODE_ESCAPE</code>입니다), 나머지에는 아무것도 넣지 않았습니다. 12키 자판 두 가지는 같은 틀을 다른 모양으로 씁니다. 수정자 키가 맨 왼쪽 열을 차지하고, 한글 키는 모두 두 칸 너비이며, 오른쪽 열에는 백스페이스와 스페이스, 그 아래로 마침표와 엔터가 있고, 아랫줄은 <code>!#</code>와 자판 키로 끝납니다. Tab 옆 칸에는 한글을 치는 동안 두 자판 모두 漢이 있어 한 번 누르면 변환되며, 오버레이가 덮고 있을 때는 변환할 읽기가 없으므로 비워 둡니다. 그 위의 <strong>Shift</strong> 는 두 자판 모두 Meta 옆 칸에, 오버레이가 무엇이든 같은 자리에 고정되어 있습니다. 한 번 누르면 다음 키 하나에만 걸리고(Shift+방향키로 선택) 길게 누르면 계속 눌려 있습니다. 자판이 바뀔 때마다 옮겨 다니는 키는 눈으로 찾아야 하는 키이기 때문입니다. 그 위의 두 칸은 열두 개 한글 키가 무엇을 보여 줄지 바꾸는 토글입니다. <strong>123</strong>은 폰 키패드의 숫자를, <strong>Move</strong>는 커서 이동 키들(방향키, Home/End, PgUp/PgDn, Ins, Esc, Del)을 그 자리에 올리며, 같은 키를 다시 누르면 한글로 돌아옵니다. 천지인은 ㅇㅁ 왼쪽에 <strong>Next</strong>, 오른쪽에 <code>!?</code>를 둡니다. <code>!?</code>는 주변 한글 키와 같은 방식이어서, 누를 때마다 적힌 글자를 차례로 옮겨 가고 좌우로 끌면 그쪽 글자가 입력됩니다. 마침표와 쉼표는 엔터 옆 키에 있습니다.</p><p>서른네 가지 언어·문자 자판이 이 틀을 함께 씁니다:</p><figure class="tbl"><div class="tblwrap"><table><tr><th>자판</th><th>생김새</th></tr><tr><td><strong>2beolsik(2벌식)</strong></td><td>표준 한글 전체 자판입니다</td></tr><tr><td><strong>QWERTY</strong></td><td>영문 자판입니다</td></tr><tr><td><strong>Dvorak</strong></td><td>영문이며 고유의 7/10/9 모양입니다. 윗줄에서 글자에 쓰이지 않는 세 칸에는 엔터·백스페이스·마침표가 왼쪽에 들어갑니다</td></tr><tr><td><strong>Colemak</strong></td><td>영문이며 QWERTY의 격자 위에 모든 글자가 Colemak의 제자리에 있습니다 — 윗줄 아홉, 가운뎃줄 열, 아랫줄 일곱. 글자가 쓰지 않는 오른쪽 위 한 칸에 백스페이스가 들어갑니다. 길게 누르기는 줄을 따라갑니다. 윗줄은 기호, 가운뎃줄은 숫자, 아랫줄은 문장부호입니다</td></tr><tr><td><strong>스페인어</strong>(스페인·남미 공통)</td><td>QWERTY에 <strong>ñ</strong>이 가운뎃줄 끝에 들어가, 백스페이스는 아랫 글자줄로 내려가고 마침표는 스페이스 옆에서 <code>, ¿ ¡</code>를 품습니다. á é í ó ú ü는 각 모음에서 <strong>위로 끌면</strong> 나오고(ü는 아래), 가만히 길게 누르면 여전히 숫자입니다</td></tr><tr><td><strong>포르투갈어</strong>(포르투갈·브라질)</td><td>QWERTY; 악센트가 부호 모양의 방향대로 끌기에 있습니다 — 그라브 왼쪽, 곡절 위, 아쿠트 오른쪽, 물결·세디유·분음 아래(a에서 à â á ã, o에서 ô ó õ, c 아래 ç); ª º는 a·o의 그룹 홀드를 대체합니다</td></tr><tr><td><strong>이탈리아어</strong></td><td>QWERTY; 그라브 모음은 왼쪽으로 끌기(è는 é가 오른쪽에도)</td></tr><tr><td><strong>폴란드어</strong></td><td>QWERTY; 글자마다 부호가 끌기 한 방향 — 오고네크 아래(ą ę), 아쿠트·획 오른쪽(ć ń ó ś ź ł), 점 위(ż)</td></tr><tr><td><strong>그리스어</strong></td><td>각 글자가 PC 자판의 제자리에 — 윗줄이 <code>; ς ε ρ τ υ θ ι ο π</code>(<code>;</code>는 그리스어 물음표이고 <code>·</code> 아노 텔레이아를 품습니다), 톤 모음은 오른쪽 끌기(ά …), 분음은 아래(ϊ ϋ), 둘 다는 위(ΐ ΰ), 물음표에서 위로 끌면 ·. 인도네시아어·말레이어·필리핀어·스와힐리어는 QWERTY 그대로 쓰시면 됩니다</td></tr><tr><td><strong>힌디어(हिन्दी)</strong></td><td>InScript의 자리를 글자 4행+기호행으로, 같은 키보드 높이의 5줄. InScript의 체계가 위 끌기에 실립니다: 마트라를 위로 끌면 독립 모음(ा↑आ), 평자음을 위로 끌면 기식음(क↑ख). candra 가족은 한 키(ॉ에 ऑ ऍ ॅ), 치찰음은 स(위 श, 아래 ष), 비음 기호는 ं(위 ँ, 아래 ः), 단다는 위로 겹단다, ₹ ़ ऽ ॐ는 제 키가 있습니다. 글은 친 대로 들어가고 합자는 편집기가 그립니다</td></tr><tr><td><strong>태국어(ไทย)</strong></td><td>Kedmanee(TIS 820)의 자리를 <strong>글자 4행</strong>으로 — 첫 5줄 자판이고, 행 높이는 같은 키보드 높이의 1/5입니다. Kedmanee의 Shift층이 키마다 <strong>위로 끌기</strong>에 실리고(ุ↑ู, ำ↑ฎ, ื↑์ …), 10열이 밀어낸 글자는 제 짝을 탑니다 — 폐용자 ฃ ฅ는 ข ค 아래, "20단어" ใ는 ไ 아래, ง은 같은 연구개음 ก 아래, ฟ는 ฤ ฝ ๅ ฦ 네 방향 가족. 태국 숫자 ๑–๙ ๐이 홀드 숫자이고, ๆ가 스페이스 옆에서 ฯ를 품고 ฿는 아래로 끌기입니다. Shift 없는 한 페이지. 1960년대 인체공학 표준인 <strong>파타초트</strong>도 제 페이지로 함께 있습니다 — 기본 문자 33개를 열 칸씩 나누고 둘째 벌은 위로 끌기에 실었습니다</td></tr><tr><td><strong>러시아어(Русский)와 이웃들</strong></td><td>ЙЦУКЕН 세 줄에 х ъ ж э б ю ё와 인용부호의 4번째 줄 — ё는 е 위 끌기로도. <strong>우크라이나어</strong>는 і ї є에 ґ(г 위 끌기), <strong>러시아어</strong>에는 라틴 소릿값 자리에 글자를 둔 <strong>포네틱</strong> 자판도 있습니다(화면 전용 — 윈도우는 이 자판의 다섯 글자를 데드키로 치는데, 이 키보드에는 아직 그 조합기가 없습니다). <strong>불가리아어</strong>는 둘 다 — 폰들이 실제로 쓰는 <strong>포네틱</strong>과 QWERTY 와는 순서가 전혀 다른 국가 표준 <strong>БДС 5237</strong>, <strong>마케도니아어·세르비아어</strong>는 표준 자리 그대로</td></tr><tr><td><strong>아랍어(العربية)</strong></td><td>101 배열의 자리를 오른쪽부터, 아래에 함자 줄 — Shift층의 타슈킬은 101이 두는 그 키의 위 끌기. 마침표는 ،를 품고 « ؟ » ؛가 끌기에. <strong>우르두어</strong>는 포네틱 배열을 따르고 짝 글자(ج↑چ, د↑ڈ …)가 끌기를 탑니다</td></tr><tr><td><strong>조지아어(ქართული)</strong></td><td>QWERTY 음성 대응 자리, 대소문자 없는 한 페이지</td></tr><tr><td><strong>아르메니아어(Հայերեն)</strong></td><td>동부 타자기 자리; ռ는 ր 위, 일상 합자 և는 ե 위, 마침표는 아르메니아 고유의 ։(՝ ՞ ՜ ՛가 끌기에)</td></tr><tr><td><strong>페르시아어(فارسی)</strong></td><td>ISIRI 9147의 자리를 10열에, 오른쪽부터 읽는 순서로 — 페르시아 전용 ک(U+06A9)·ی(U+06CC), Shift 없음. 점 있는 짝 ث ذ ظ ژ는 ت د ط ز에서 위로 끌기(점이 위에 붙으니까), 함자 가족은 ا(آ أ إ ء)·و·ی·ه 위에. 키 아래 숫자는 페르시아 숫자 ۰–۹, 마침표는 « » ؟ ؛(홀드 ،), <strong>스페이스를 위로 끌면 ZWNJ</strong>. 백스페이스는 1행 끝, 엔터는 3행 끝 — 각자 오른쪽 가장자리입니다. <strong>US 물리 키보드</strong>로도 페르시아어를 칠 수 있습니다(Windows 페르시아 배열 그대로, Shift층과 Shift+Space ZWNJ 포함)</td></tr><tr><td><strong>일본어 플릭(フリック)</strong></td><td>일본 폰이 쓰는 12키 자판, 플릭 전용: 키를 누르면 あ단, 좌/상/우/하로 끌면 い う え お — 천지인과 같은 드래그, 같은 홀드 안내입니다. ゛゜小는 커서 앞 글자를 한 바퀴씩 돌리고(か→が, は→ば→ぱ, つ→づ→っ, 모음→작은 가나), わ의 플릭에 を ん ー가, 、。？！는 순환 키에 있습니다. 숫자는 길게 누르기. 가나→한자 변환은 아직 없습니다</td></tr><tr><td><strong>일본어 로마자(ローマ字)</strong></td><td>QWERTY 그대로 두고 치는 대로 히라가나가 됩니다 — <code>ka</code> か, <code>sha</code>/<code>sya</code> しゃ, 자음 두 번 っ(<code>gakkou</code> → がっこう), <code>nn</code> ん에 자음 앞의 홑 <code>n</code>도 ん, <code>-</code> ー, <code>x</code>/<code>l</code>로 작은 가나. 낱말은 커서 아래에서 조합되다 스페이스·문장부호에서 확정되고, 백스페이스는 키 하나를 되돌리며, 물리 키보드도 같은 방식입니다. 가나→한자 변환은 사전의 일이라 아직 없습니다</td></tr><tr><td><strong>히브리어</strong></td><td>표준 배열의 제자리에, 오른쪽부터 읽는 순서로(윗줄이 오른쪽에서 ק ר א ט ו ן ם פ). 히브리어에는 대문자가 없어 Shift 없이 한 페이지이고, 글자가 비워 준 모서리에서 백스페이스가 두 칸 폭이며, 마침표는 스페이스 옆 — 쉼표는 홀드, ׳ ״ ־는 끌기입니다. 글 방향은 편집기 몫이라 키보드는 손댈 것이 없습니다</td></tr><tr><td><strong>프랑스어(AZERTY)</strong></td><td>폰이 그리는 AZERTY 그대로 10/10/6: <code>azertyuiop</code> / <code>qsdfghjklm</code> / <code>⇧ w x c v b n ⌫ . ⏎</code>. 악센트 글자 열다섯이 부호 방향의 끌기에 있습니다 — è 왼쪽, ê 위, é 오른쪽, ë 아래, 모든 모음이 같은 규칙이고 æ œ는 오른쪽, ç ÿ는 아래. 마침표는 « , »로 끌고, 어디서든 가만히 홀드는 여전히 숫자·기호입니다</td></tr><tr><td><strong>독일어</strong></td><td>10열 QWERTZ — y와 z가 바뀌고, ü ö ä는 u o a에서 위로 끌기, ß는 s에서 아래로(Shift면 ẞ)</td></tr><tr><td><strong>터키어</strong></td><td>둘입니다. <strong>Q</strong>는 10열 자판 — ü ö ğ는 위로, ş ç ı는 아래로 끌기. <strong>F</strong>는 터키 표준협회가 1955년에 터키어 글자 빈도에 맞춰 만든 국가 표준으로, 지금도 터키 타자수들이 배우는 배열입니다. Shift는 둘 다 터키어 규칙을 따라 i → İ, ı → I</td></tr><tr><td><strong>베트남어(Telex)</strong></td><td>QWERTY 그대로이고 <strong>Telex</strong> 규칙이 치는 대로 글자를 만듭니다 — <code>aa→â ee→ê oo→ô aw→ă ow→ơ uw→ư dd→đ</code>, <code>w</code> 혼자는 <code>ư</code>, 성조 <code>s f r x j</code>(sắc huyền hỏi ngã nặng), <code>z</code>는 성조 제거, 부호·성조 키를 한 번 더 누르면 그 글자 자체가 들어갑니다. 낱말은 커서 아래에서 조합되다가 스페이스·문장부호에서 확정되고, 백스페이스는 키 입력 하나를 되돌립니다. 물리 키보드도 Telex로 칩니다. Telex를 모르는 분을 위해 â ă ê ô ơ ư đ도 각 글자의 끌기에 있습니다</td></tr><tr><td><strong>Cheonjiin(천지인)</strong></td><td>12키 자판입니다. ㅣ ㆍ ㅡ 세 요소로 모음을 만들고, 자음 키는 누를 때마다 자기 무리를 돕니다(ㄱ → ㅋ → ㄲ). 키에서 손가락을 <strong>끌면</strong>(18 dp 이상) 여러 번 눌러야 닿는 글자가 한 번에 입력되고, 그보다 짧게 미끄러진 것은 탭으로 처리됩니다. 자음에서는 왼쪽이 기본 글자(ㄱ), 오른쪽이 거센소리(ㅋ), 아래가 된소리(ㄲ)이고 위쪽은 아무것도 없습니다. 숫자는 끌어서가 아니라 길게 눌러서 넣기 때문입니다. 된소리가 없는 무리(ㄴㄹ, ㅇㅁ)는 아래쪽 칸도 비어 있습니다. 모음 키에서는 끄는 방향이 곧 글자입니다. ㆍ에서는 왼쪽 ㅓ · 오른쪽 ㅏ · 위 ㅗ · 아래 ㅜ, ㅣ에서는 왼쪽 ㅔ · 오른쪽 ㅐ · 위 ㅒ · 아래 ㅖ, ㅡ에서는 왼쪽 ㅝ · 오른쪽 ㅘ · 위 ㅚ · 아래 ㅟ입니다. 끌어서 넣은 모음도 계속 결합됩니다(ㅗ를 끌고 ㅣ를 누르면 ㅚ가 됩니다). 키를 <strong>길게 누르면</strong> 그 칸들을 보여 주는 안내가 뜨고 가운데에 그 키의 숫자가 있습니다. 원하는 쪽으로 끌었다 떼면 그 글자가, 움직이지 않고 떼면 숫자가 입력됩니다. 한글 키 열 개는 폰 키패드와 같은 자리에 있고 같은 숫자를 지닙니다(<code>1</code>–<code>9</code>, ㅇㅁ 아래가 <code>0</code>). 같은 키를 연달아 두 번 누르면 한 번의 순환이므로, 잠깐 쉬거나 <strong>Next</strong> 키를 누르면 다음 글자가 시작됩니다</td></tr><tr><td><strong>Naratgeul(나랏글)</strong></td><td>12키 자판입니다. 자음 블록에서 획 키가 획을 더하고(ㄴ → ㄷ → ㅌ) 쌍 키가 겹치게 만듭니다(ㅅ → ㅆ). 모음 키를 두 번 누르면 짝이 되는 모음에 닿고(ㅏ → ㅓ, ㅗ → ㅜ), 획 키가 그 모음을 이중모음으로 만듭니다(ㅏ → ㅑ, ㅗ → ㅛ). 열두 키가 폰 키패드와 같은 자리에 있어 길게 누르면 폰 키패드의 그 문자가 나옵니다(<code>1</code>–<code>9</code>, ㅡ 아래 <code>0</code>, 양옆에 <code>*</code>와 <code>#</code>)</td></tr></table></div></figure><figure class="tbl"><div class="tblwrap"><table><tr><th>별도 자판</th><th>역할</th></tr><tr><td><strong>Arrows</strong></td><td>12키 틀 위의 커서 이동 자판입니다(Home ↑ PgUp / ← Ins → / End ↓ PgDn / Esc Del). 글자 중간에 화살표를 한 번 보는 것이 아니라 문서 안을 계속 돌아다닐 때를 위해, 토글이 아니라 자판으로 두었습니다. Meta 옆에 <strong>Shift</strong> 가 있어, 한 번 누르면 다음 키 하나에만 걸리고(Shift+화살표로 선택) 길게 누르면 계속 눌린 상태로 있습니다. 설정에서 켜야 자판 키가 들릅니다</td></tr><tr><td><strong>Keypad</strong></td><td>같은 틀 위의 폰 키패드입니다. <code>1</code>–<code>9</code>, <code>*</code> <code>0</code> <code>#</code>을 한 번에 입력하고, 길게 누르면 계산기 기호가 나옵니다. Arrows 처럼 Meta 옆에 <strong>Shift</strong> 가 있습니다. 설정에서 켜야 자판 키가 들릅니다</td></tr><tr><td><strong>IPA</strong></td><td>낱말 옆에 발음을 적기 위한 국제음성기호 자판입니다. 기호는 소리가 비슷한 글자 자리에 있습니다(X-SAMPA 가 자판을 읽는 방식). <code>e</code> 는 <strong>ə</strong>(길게 누르면 ɛ ɜ ɚ ɝ), <code>a</code> 는 <strong>æ</strong>(ɑ ɐ ɶ), <code>t</code> 는 <strong>θ</strong>, <code>d</code> 는 <strong>ð</strong>, <code>s</code> 는 <strong>ʃ</strong>, <code>z</code> 는 <strong>ʒ</strong>, <code>n</code> 은 <strong>ŋ</strong>, <code>j</code> 는 <strong>ʤ</strong>, <code>r</code> 은 <strong>ɹ</strong>, <code>v</code> 는 <strong>ʌ</strong>, <code>o</code> 는 <strong>ɔ</strong>, <code>u</code> 는 <strong>ʊ</strong>, <code>i</code> 는 <strong>ɪ</strong> 입니다. 모든 키가 같은 계열의 나머지 기호를 길게 누르기에 담고 있어, 한 면과 길게 누르기만으로 전체 기호에 닿습니다. 아랫줄 마지막 칸은 강세·장음 기호 ˈ ˌ ː ˑ 입니다. <strong>Shift</strong> 는 또 다른 기호 묶음이 아니라 QWERTY 자리의 <strong>일반 글자</strong>입니다. 전사에는 평범한 p, t, k, s 가 가득하기 때문입니다. 그 자리의 마지막 칸은 <code>/</code> 이고 길게 누르면 <code>[</code> <code>]</code> 가 나옵니다. 물리 키보드도 두 면을 같은 자리에서 칩니다. 아래쪽 <strong>🔎</strong> 키가 이 면에 없는 나머지로 가는 길입니다. <strong>누르면</strong> 그 기호를 부르는 이름을 치면 됩니다 — <code>palm</code>, <code>schwa</code>, <code>fricative</code>, 또는 X-SAMPA 코드 <code>T</code> — 맞는 기호들이 키 위에 떠서 고르면 들어갑니다. <strong>길게 누르면</strong> 분류로 갑니다(모음·파열음·비음·마찰음·파찰음·접근음·설측음·전동음과 탄설음·흡착음과 내파음·강세와 길이·구별기호). 두 번 누르면 어느 기호에든 닿습니다. 설정에서 켜야 자판 키가 들립니다</td></tr></table></div></figure><p>자판 키는 설정에서 체크해 두신 자판들을 넣어 두신 순서대로 돌면서, 자판이 바뀔 때마다 이름을 알려 줍니다. 길게 누르면 메뉴 페이지가 열립니다. 한자 변환은 漢 키입니다. 2beolsik 글자 자판, 한글을 치는 동안의 두 12키 자판, 그리고 키패드 페이지에 있습니다.</p><p>글자 키를 길게 누르면 반복 입력 대신 다른 문자가 입력됩니다. 보조 글자는 <code>1234567890</code>, <code>!@#$%^&amp;*;</code>, <code>_-:='"?</code> 세 묶음이고 한 줄에 한 묶음씩 들어갑니다. 각 묶음의 길이가 10/9/7인데 이는 QWERTY의 줄 모양이자 Dvorak의 7/10/9를 다른 순서로 읽은 것이라, Dvorak에서는 같은 세 묶음을 돌려 배치했습니다. 1-2-3번 줄이 3-1-2번이 되며, 어느 묶음도 쪼개거나 늘리지 않았습니다. 스페이스, 엔터, 백스페이스, 방향키에는 보조 글자가 없고 길게 누르면 계속 반복 입력됩니다.</p><p>물리 키보드는 이 모든 것과 무관합니다. 자기 배열을 그대로 유지하며, 화면 자판을 무엇으로 고르시든 화면 키의 동작만 달라집니다.</p><p>각 자판의 실제 모습입니다.</p><p><strong>2beolsik(2벌식)</strong> — <code>!#</code> 옆의 漢이 방금 친 글자를 변환합니다:</p><figure class="fig"><img src="img/keyboard-korean.png" alt="두벌식 자판" loading="lazy"><p class="float-caption">그림 6.1 — 두벌식 자판</p></figure><p><strong>QWERTY</strong> — 스페이스 옆의 <code>Esc</code>, ssh로 vi를 쓰실 때를 위한 것입니다:</p><figure class="fig"><img src="img/keyboard-qwerty.png" alt="QWERTY 자판" loading="lazy"><p class="float-caption">그림 6.2 — QWERTY 자판</p></figure><p><strong>Dvorak</strong> — 아랫줄은 같고, 글자 블록은 고유의 7/10/9 모양입니다:</p><figure class="fig"><img src="img/keyboard-dvorak.png" alt="Dvorak 자판" loading="lazy"><p class="float-caption">그림 6.3 — Dvorak 자판</p></figure><p><strong>Colemak</strong> — 아랫줄은 같고, 글자는 Colemak의 자리에, 백스페이스는 오른쪽 위에 있습니다:</p><figure class="fig"><img src="img/keyboard-colemak.png" alt="Colemak 자판" loading="lazy"><p class="float-caption">그림 6.4 — Colemak 자판</p></figure><p><strong>스페인어</strong> — 가운뎃줄 끝의 ñ, 그 아래 백스페이스, 스페이스 옆 마침표(<code>, ¿ ¡</code>):</p><figure class="fig"><img src="img/keyboard-spanish.png" alt="스페인어 자판" loading="lazy"><p class="float-caption">그림 6.5 — 스페인어 자판</p></figure><p><strong>포르투갈어·이탈리아어·폴란드어·베트남어·독일어(y/z 교환)·터키어</strong>는 QWERTY 모양 그대로 자기 글자를 품고, 베트남어는 Telex로 칩니다:</p><figure class="fig"><img src="img/keyboard-portuguese.png" alt="포르투갈어 자판" loading="lazy"><p class="float-caption">그림 6.6 — 포르투갈어 자판</p></figure><p><strong>US 물리 키보드가 모든 문자 자판을 칩니다.</strong> 자판을 선택해 두면 유선·블루투스 US 키보드가 그 언어의 Windows 배열을 따릅니다: 그리스어·히브리어·태국어(Kedmanee의 숫자행 글자와 Shift의 태국 숫자까지)·힌디 InScript는 전면 재매핑, 독일어는 오른쪽 키들에 ü ö ä ß, 프랑스어는 AZERTY처럼 숫자행에 é è ç à ù, 터키어는 i 키가 ı, 스페인어 ñ·포르투갈어 ç·이탈리아어 악센트 모음이 제자리에 옵니다. 페르시아어와 한국어는 전용 매퍼, 베트남어·일본어는 조합기로 칩니다. 출력이 ASCII뿐인 키와 데드키는 아직 편집기 몫입니다.</p><p><strong>자기 글자가 끌기에 두기엔 너무 잦은 언어들은 4번째 글자 행을 받았습니다</strong> — 독일어(ü ö ä ß와 독일 인용부호·€), 터키어(ü ı ö ş ğ ç), 폴란드어(ą ć ę ł ń ó ś ź ż), 포르투갈어(ç ã õ와 악센트 모음), 프랑스어(최빈 악센트 열 자), 그리스어(톤 모음), 페르시아어(10열이 밀어냈던 글자들) — 같은 키보드 높이의 5줄이고 행 높이는 1/5입니다. 끌기는 그대로 남아 두 경로가 같은 글자를 칩니다. 스페인어·이탈리아어· 베트남어·히브리어·일본어 로마자는 끌기로 충분해 4줄 그대로입니다.</p><p><strong>언어의 글자는 목록이 아니라 끌기입니다.</strong> 부호 모양의 방향대로 키를 끌면 — 그라브 왼쪽, 곡절 위, 아쿠트 오른쪽, 세디유 아래 — 그 글자가 바로 입력됩니다. 천지인·일본어 플릭과 같은 드래그입니다. 길게 누르면 키 둘레에 네 방향 안내가 뜨고 가운데는 숫자입니다: 원하는 쪽에서 떼거나, 그 자리에서 떼면 숫자입니다. 숫자· 기호 홀드가 언어의 필수 글자를 한 키에 몰아넣는 일은 없고, 다섯 번째 글자가 필요하면 물러나는 쪽은 숫자입니다(포르투갈 ª º). 마침표 키는 언어별 인용부호를 좌우 끌기에(«» „“ “”), 통화를 아래에(€ ₺ ₫ ₪), 스페인어 ¿ ¡를 위·오른쪽에 싣습니다. (네 방향보다 후보가 많은 드문 키에는 예전 그대로 윗줄 띠가 뜹니다.)</p><figure class="fig"><img src="img/keyboard-spanish-hold.png" alt="길게 누르기 띠" loading="lazy"><p class="float-caption">그림 6.7 — 길게 누르기 띠</p></figure><p><strong>프랑스어 AZERTY</strong> — 고유의 10/10/6 모양과, 악센트 열다섯을 쓸 만하게 만드는 띠:</p><figure class="fig"><img src="img/keyboard-french.png" alt="프랑스어 자판" loading="lazy"><p class="float-caption">그림 6.8 — 프랑스어 자판</p></figure><figure class="fig"><img src="img/keyboard-french-hold.png" alt="프랑스어 길게 누르기 띠" loading="lazy"><p class="float-caption">그림 6.9 — 프랑스어 길게 누르기 띠</p></figure><p><strong>Cheonjiin(천지인)</strong> — Meta 옆에 Shift, Tab 옆에 漢, ㅇㅁ 양옆에 Next 와 <code>!?</code>가 있습니다:</p><figure class="fig"><img src="img/keyboard-cheonjiin.png" alt="천지인 자판" loading="lazy"><p class="float-caption">그림 6.10 — 천지인 자판</p></figure><p><strong>Naratgeul(나랏글)</strong> — 아랫줄에 획과 쌍, Meta 옆에 Shift, Tab 옆에 漢이 있습니다:</p><figure class="fig"><img src="img/keyboard-naratgeul.png" alt="나랏글 자판" loading="lazy"><p class="float-caption">그림 6.11 — 나랏글 자판</p></figure><p><strong>Arrows</strong> — 커서 이동 키들을 자판 하나로 두었습니다:</p><figure class="fig"><img src="img/keyboard-arrows.png" alt="화살표 자판" loading="lazy"><p class="float-caption">그림 6.12 — 화살표 자판</p></figure><p><strong>Keypad</strong> — 한 번 누르면 숫자, 길게 누르면 계산기 기호입니다:</p><figure class="fig"><img src="img/keyboard-keypad.png" alt="키패드 자판" loading="lazy"><p class="float-caption">그림 6.13 — 키패드 자판</p></figure><p>Tab 옆의 두 칸은 열두 개 한글 키를 폰 키패드의 숫자로, 또는 커서 이동 키로 바꿉니다:</p><figure class="fig"><img src="img/keyboard-cheonjiin-digits.png" alt="12키 숫자 오버레이" loading="lazy"><p class="float-caption">그림 6.14 — 12키 숫자 오버레이</p></figure><figure class="fig"><img src="img/keyboard-cheonjiin-nav.png" alt="12키 커서 오버레이" loading="lazy"><p class="float-caption">그림 6.15 — 12키 커서 오버레이</p></figure><p><code>!#</code> 키는 특수문자 페이지를 엽니다. 이 페이지에서는 모든 키가 자기 기호를 바로 입력합니다. 키를 길게 누르면 보조 문자가 즉시 입력되고, 겨냥할 팝업도 끌어야 할 것도 없습니다. 윗줄 기호들은 물리 키보드에서 같은 키를 쓰는 숫자를 품고 있어 <code>!</code>을 길게 누르면 <strong>1</strong>, <code>)</code>을 길게 누르면 <strong>0</strong>이 입력됩니다. <code>;</code>은 쉼표를, <code>:</code>은 마침표를,<span style="white-space: pre-wrap">&#x20;</span><code> ` </code>은 <code>~</code>를, <code>-</code>는 <code>+</code>를 품고 있습니다. 스페이스 옆에는 <code>Esc</code>가 있습니다:</p><figure class="fig"><img src="img/keyboard-chars.png" alt="특수문자 페이지" loading="lazy"><p class="float-caption">그림 6.16 — 특수문자 페이지</p></figure><p><strong><code>!#</code>를 길게 누르면</strong> 특수키 페이지가 열립니다. 오른쪽에 키패드가, 그 곁에 특수키가 있습니다. 열릴 때는 <code>Num</code>이 <strong>켜져</strong> 있어 숫자가 보입니다. 다른 키보드에서와 마찬가지로 num lock은 여기서 숫자를 뜻합니다. 숫자와 <code>+ - = .</code>는 문자를 입력하고, <code>Esc</code>·<code>Prt</code>·<code>Scr</code>·<code>Brk</code>·<code>Menu</code>는 키 이벤트를 보냅니다:</p><figure class="fig"><img src="img/keyboard-keys.png" alt="특수키 페이지, 숫자" loading="lazy"><p class="float-caption">그림 6.17 — 특수키 페이지, 숫자</p></figure><p><code>Num</code>을 <strong>끄면</strong> 키패드가 방향키와 이동 키로 바뀝니다. Home/End, PgUp/PgDn, Ins, 앞쪽 삭제가 있습니다:</p><figure class="fig"><img src="img/keyboard-keys-arrows.png" alt="특수키 페이지, 방향키" loading="lazy"><p class="float-caption">그림 6.18 — 특수키 페이지, 방향키</p></figure><p><code>Fn</code>은 페이지 전체를 함수키와 미디어 키로 바꿉니다. F1–F12는 키 이벤트를 보내고, 안드로이드에 키 코드가 없는 F13–F15와 미디어 키, Back은 흐리게 표시된 채 동작하지 않습니다:</p><figure class="fig"><img src="img/keyboard-keys-fn.png" alt="특수키, Fn 페이지" loading="lazy"><p class="float-caption">그림 6.19 — 특수키, Fn 페이지</p></figure><h3 id="메뉴-페이지">6.1 메뉴 페이지<a class="plink" href="#메뉴-페이지" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><p><strong>자판 키를 길게 누르면</strong> 열립니다. 오른쪽 절반은 편집하는 손을 위한 자리입니다. 가까운 가장자리를 따라 복사·잘라내기·붙여넣기가 있고, 방향키가 십자로 놓이며 그 가운데에 전체 선택이, 주위에 이동 키들이 있습니다. 설정은 엄지가 보지 않고도 닿는 모서리에 있습니다. 왼쪽 절반은 키보드 자체에 관한 것들입니다.</p><figure class="fig"><img src="img/keyboard-menu.png" alt="메뉴 페이지" loading="lazy"><p class="float-caption">그림 6.20 — 메뉴 페이지</p></figure><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th>키</th><th>하는 일</th></tr><tr><td>Undo</td><td>실행 취소</td><td>마지막 편집을 되돌립니다</td></tr><tr><td>Redo</td><td>다시 실행</td><td>되돌린 것을 다시 합니다</td></tr><tr><td>Date</td><td>날짜</td><td>현재 날짜와 시각을 글자로 넣습니다</td></tr><tr><td>Emoji</td><td>이모지</td><td><em>아직 만들지 않았습니다 — 흐리게 표시</em></td></tr><tr><td>Clip</td><td>클립보드</td><td>클립보드 목록을 엽니다. 액션바의 <strong>Clip</strong> 이 여는 것과 같은 목록입니다</td></tr><tr><td>Copy</td><td>복사</td><td>선택 영역을 복사합니다</td></tr><tr><td>Cut</td><td>잘라내기</td><td>선택 영역을 잘라냅니다</td></tr><tr><td>Paste</td><td>붙여넣기</td><td>클립보드 내용을 붙여 넣습니다</td></tr><tr><td>SelA</td><td>전체 선택</td><td>입력창 전체를 선택합니다</td></tr><tr><td>Size− / Size+</td><td>높이</td><td>누를 때마다 키보드를 2퍼센트포인트씩 줄이거나 키웁니다. 화면 방향별로 따로 기억합니다</td></tr><tr><td>Switch</td><td>키보드 전환</td><td>시스템 키보드 선택 창을 엽니다</td></tr><tr><td>Manage</td><td>키보드 관리</td><td>키보드를 켜고 끄는 시스템 화면을 엽니다</td></tr><tr><td>Flt</td><td>플로팅</td><td>플로팅 패널을 켜거나 끕니다</td></tr><tr><td>1Hand</td><td>한 손</td><td><em>아직 만들지 않았습니다</em></td></tr><tr><td>RDsk</td><td>원격 데스크톱</td><td><a href="typing-remote.html">원격 데스크톱 자판</a>을 켜고 끕니다</td></tr><tr><td>Theme</td><td>테마</td><td>색 테마를 차례로 바꿉니다: 시스템 → 라이트 → 다크</td></tr><tr><td>Uni</td><td>유니코드</td><td><code>U+</code> 유니코드 직접 입력 패드를 엽니다</td></tr><tr><td>Memo</td><td>메모장</td><td>반투명 <a href="typing-notepad.html">메모장</a>을 엽니다</td></tr><tr><td>Set</td><td>설정</td><td>ReteKey의 설정을 엽니다</td></tr><tr><td>← ↑ → ↓</td><td>방향키</td><td>커서를 옮깁니다. 누르고 있으면 반복됩니다</td></tr><tr><td>Home / End</td><td>줄 끝</td><td>줄의 처음이나 끝으로 갑니다</td></tr><tr><td>PgUp / PgDn</td><td>페이지</td><td>한 페이지씩 이동합니다</td></tr><tr><td>Ins</td><td>삽입</td><td>Insert 키입니다</td></tr><tr><td>Del</td><td>앞쪽 삭제</td><td>커서 뒤쪽 글자를 지웁니다</td></tr><tr><td>Uni</td><td>스페이스 옆</td><td>메뉴 페이지 아랫줄에서 바로 유니코드 직접 입력 패드를 엽니다</td></tr></table></div></figure><p>흐리게 표시된 키들은 그려져 있을 뿐 아무 일도 하지 않습니다. 앞으로 그 기능이 들어갈 자리를 미리 잡아 둔 것으로, 나중에 기능이 생겨도 페이지 배치가 흔들리지 않게 하려는 것입니다.</p>
+<div class="nav"><a href="start-features.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="typing-remote.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>
