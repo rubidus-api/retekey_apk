@@ -83,9 +83,18 @@ public final class SettingsActivity extends Activity {
                 openLanguages.addAll(open);
             }
         }
-        String requested = getIntent() == null ? null : getIntent().getStringExtra(EXTRA_SCREEN);
+        String requested = null;
+        boolean layouts = false;
+        try {
+            requested = getIntent() == null ? null : getIntent().getStringExtra(EXTRA_SCREEN);
+            layouts = requested != null && getIntent().hasExtra(EXTRA_LAYOUTS);
+        } catch (RuntimeException unreadable) {
+            // Exported, and in the keyboard's process: extras another app built badly open the
+            // ordinary settings rather than take the keyboard down (RFC-0014 F2).
+            requested = null;
+        }
         orientationPage = requested != null;
-        layoutPage = orientationPage && getIntent().hasExtra(EXTRA_LAYOUTS);
+        layoutPage = orientationPage && layouts;
         editing = ScreenOrientation.LANDSCAPE.name().equals(requested)
             ? ScreenOrientation.LANDSCAPE
             : ScreenOrientation.PORTRAIT.name().equals(requested)

@@ -572,6 +572,8 @@ public final class ReteKeyboardView extends View {
     private void reloadPreferences() {
         cachedLetterOrder = null;
         cachedLetterOrderSource = null;
+        // Read here, when a preference changes, not on every frame (RFC-0014 F15).
+        themeSignature = ScreenTheme.mode(getContext()) + "|" + ScreenTheme.monochrome(getContext());
         feedback.reload(prefs());
         repeatEnabled = prefs().getBoolean(
             KeyRepeatSettings.KEY_ENABLED, KeyRepeatSettings.DEFAULT_ENABLED);
@@ -989,6 +991,9 @@ public final class ReteKeyboardView extends View {
         baseSignature = signature;
     }
 
+    /** The stored theme mode and monochrome switch, refreshed by {@link #reloadPreferences}. */
+    private String themeSignature = "";
+
     /** Identifies what the cached bitmap depends on, so it is reused until one of these changes. */
     private String layoutSignature() {
         return page + "|" + letterLayoutId + "|" + nextLayoutCaption() + "|" + numpadMode
@@ -996,8 +1001,8 @@ public final class ReteKeyboardView extends View {
             + "|" + remoteDesktopMode + "|" + remoteDesktopLayout
             + "|" + UserLayouts.revision() + "|" + (previewLayout != null)
             + "|" + modifiers.signature() + "|" + tabHeld + "|" + capsLocked + "|"
-            + KeyboardPalette.isNight(getContext()) + "|" + ScreenTheme.mode(getContext())
-            + "|" + ScreenTheme.monochrome(getContext()) + "|" + keyGapPercent + "|" + usualKeyGapPx;
+            + KeyboardPalette.isNight(getContext()) + "|" + themeSignature
+            + "|" + keyGapPercent + "|" + usualKeyGapPx;
     }
 
     /**
@@ -2008,6 +2013,15 @@ public final class ReteKeyboardView extends View {
             CAPS_KEY_ID, SemanticInput.rawKey(RawKey.CAPS_LOCK)));
     }
 
+    /**
+     * Lets up what this keyboard holds — a latched Tab — while it is still the view on screen and
+     * the editor is still the one it was held in (RFC-0014 F3). A rebuilt keyboard starts with
+     * nothing held, so a latch left here would never be let up.
+     */
+    void releaseHeldKeys() {
+        releaseTabHoldIfLatched();
+    }
+
     /** Lets a latched Tab up, so a held key cannot outlive the editor it was held in. */
     private void releaseTabHoldIfLatched() {
         if (tabHeld) {
@@ -2497,6 +2511,13 @@ public final class ReteKeyboardView extends View {
             }
         }
         return new int[] {rowIndex, keys.size() - 1};
+    }
+
+    /** Opens the menu page: a rebuild from a key on it returns the user there. */
+    void showMenuPage() {
+        page = Page.MENU;
+        requestLayout();
+        invalidate();
     }
 
     void setPageForTest(String pageName) {

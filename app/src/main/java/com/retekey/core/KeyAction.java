@@ -48,6 +48,8 @@ public final class KeyAction {
     private final RawKeyPhase rawKeyPhase;
     /** Whether this raw key goes out as a physical keyboard's event (SemanticInput.physicalKey). */
     private final boolean physical;
+    /** For a recompose: how many of {@link #recentCount()} are the editor's composing text now. */
+    private final int composingCount;
 
     private KeyAction(
         Kind kind,
@@ -68,6 +70,20 @@ public final class KeyAction {
         RawKeyPhase rawKeyPhase,
         boolean physical
     ) {
+        this(kind, text, actionId, rawKey, modifiers, rawKeyPhase, physical, 0);
+    }
+
+    private KeyAction(
+        Kind kind,
+        String text,
+        int actionId,
+        RawKey rawKey,
+        Set<KeyModifier> modifiers,
+        RawKeyPhase rawKeyPhase,
+        boolean physical,
+        int composingCount
+    ) {
+        this.composingCount = composingCount;
         this.rawKeyPhase = Objects.requireNonNull(rawKeyPhase, "rawKeyPhase");
         this.kind = Objects.requireNonNull(kind, "kind");
         this.text = Objects.requireNonNull(text, "text");
@@ -97,11 +113,30 @@ public final class KeyAction {
      * composition, as {@code text}.
      */
     public static KeyAction recomposePrevious(int charactersBeforeCursor, String text) {
+        return recomposePrevious(charactersBeforeCursor, 1, text);
+    }
+
+    /**
+     * The same, saying how many of those characters are composing now: the rest are committed
+     * text. A recompose with nothing composing (a 나랏글 stroke on a finished syllable) must delete
+     * its character, where one with a composition only replaces it (RFC-0014 F7).
+     */
+    public static KeyAction recomposePrevious(
+        int charactersBeforeCursor, int composing, String text
+    ) {
         if (charactersBeforeCursor < 1) {
             throw new IllegalArgumentException("recompose needs at least one character");
         }
-        return new KeyAction(
-            Kind.RECOMPOSE_PREVIOUS, text, charactersBeforeCursor, null, Collections.emptySet());
+        if (composing < 0 || composing > charactersBeforeCursor) {
+            throw new IllegalArgumentException("composing count out of range");
+        }
+        return new KeyAction(Kind.RECOMPOSE_PREVIOUS, text, charactersBeforeCursor, null,
+            Collections.emptySet(), RawKeyPhase.TAP, false, composing);
+    }
+
+    /** For a recompose: how many of the characters it takes back are composing now. */
+    public int composingCount() {
+        return composingCount;
     }
 
     public static KeyAction commitText(String text) {
@@ -212,12 +247,14 @@ public final class KeyAction {
             && rawKey == that.rawKey
             && rawKeyPhase == that.rawKeyPhase
             && modifiers.equals(that.modifiers)
-            && physical == that.physical;
+            && physical == that.physical
+            && composingCount == that.composingCount;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(kind, text, actionId, rawKey, modifiers, rawKeyPhase, physical);
+        return Objects.hash(
+            kind, text, actionId, rawKey, modifiers, rawKeyPhase, physical, composingCount);
     }
 
     @Override

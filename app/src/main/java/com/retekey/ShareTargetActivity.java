@@ -260,9 +260,15 @@ public final class ShareTargetActivity extends Activity {
             return null;
         }
         android.net.Uri data = intent.getData();
-        return data != null
-            ? data
-            : Compat.parcelableExtra(intent, Intent.EXTRA_STREAM, android.net.Uri.class);
+        if (data != null) {
+            return data;
+        }
+        try {
+            return Compat.parcelableExtra(intent, Intent.EXTRA_STREAM, android.net.Uri.class);
+        } catch (RuntimeException unreadable) {
+            // See sharedText: extras another app built badly are no layout.
+            return null;
+        }
     }
 
     /** The most of an opened file that is read: a layout is small, and this is not a file viewer. */
@@ -273,11 +279,18 @@ public final class ShareTargetActivity extends Activity {
         if (intent == null) {
             return null;
         }
-        CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
-        if (text != null) {
-            return text;
+        try {
+            CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+            if (text != null) {
+                return text;
+            }
+            // The text-selection menu's own extra, which arrives on Android 6 and later.
+            return intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
+        } catch (RuntimeException unreadable) {
+            // Reading one extra unparcels them all (API 32 and below), and a Parcelable this app
+            // does not have throws BadParcelableException. This activity runs in the keyboard's
+            // process, so any app's share would take the keyboard down with it (RFC-0014 F2).
+            return null;
         }
-        // The text-selection menu's own extra, which arrives on Android 6 and later.
-        return intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
     }
 }

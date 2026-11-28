@@ -1,6 +1,6 @@
 A Hangul keyboard for developers and power users — for anyone who needs Esc, Tab, Ctrl chords, function and arrow keys on a phone, and a keyboard that behaves itself in a terminal.
 
-It is small and asks for almost nothing. The APK is about 746 KB, most of that the Hanja tables, written in plain Java with no third-party runtime dependencies; the Hanja tables are memory-mapped straight out of the APK, so they cost storage rather than memory. It declares a single permission, VIBRATE — an ordinary permission, never requested at runtime, driving nothing but the buzz under your finger, which you can turn down to zero. No network, no account, no analytics.
+It is small and asks for almost nothing. The APK is about 749 KB, most of that the Hanja tables, written in plain Java with no third-party runtime dependencies; the Hanja tables are memory-mapped straight out of the APK, so they cost storage rather than memory. It declares a single permission, VIBRATE — an ordinary permission, never requested at runtime, driving nothing but the buzz under your finger, which you can turn down to zero. No network, no account, no analytics.
 
 And nothing is missing for it.
 

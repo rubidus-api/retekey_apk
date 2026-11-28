@@ -7,8 +7,11 @@ import android.content.SharedPreferences;
  * Where the notes live: the keyboard's own preferences, under one key.
  *
  * <p>Notes are small and few, and the keyboard already owns a preferences file, so a database
- * would be machinery without a job. Every change is written through immediately — a keyboard can
- * be torn down between two keystrokes, and a note that only existed in memory would go with it.
+ * would be machinery without a job. A change is written once typing pauses for 300 ms, and at
+ * once when the panel closes, the keyboard hides or the service is destroyed — a keyboard can be
+ * torn down between two keystrokes, and a note that only existed in memory would go with it.
+ * Writing the whole store on every keystroke cost its full size per key (RFC-0014 F14); a process
+ * killed without warning can now lose at most the last 300 ms of typing.
  */
 final class NoteStore {
     private static final String KEY_NOTES = "notes";

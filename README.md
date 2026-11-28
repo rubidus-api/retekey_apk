@@ -1,4 +1,4 @@
-[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.12** — [Pages](https://rubidus-api.github.io/retekey_apk/) — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)<br>
+[한국어](README.ko.md) | **English** — **ReteKey IME v0.2.13** — [Pages](https://rubidus-api.github.io/retekey_apk/) — [APK(Android 9.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.13/retekey-0.2.13.apk) · [legacy APK(Android 4.0+)](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.13/retekey-0.2.13-legacy.apk)<br>
 Is your phone's web browser too old to download files from GitHub? Try [ReteGet](https://github.com/rubidus-api/reteget_apk), a file and APK downloader for old Android phones.
 
 # ReteKey IME
@@ -6,7 +6,7 @@ Is your phone's web browser too old to download files from GitHub? Try [ReteGet]
 **An Android Hangul keyboard for developers and power users** — for anyone who needs Esc, Tab, Ctrl
 chords, function and arrow keys on a phone, and a keyboard that behaves itself in a terminal.
 
-It is small and asks for almost nothing. The release APK is about 746 KB, most of that the Hanja
+It is small and asks for almost nothing. The release APK is about 749 KB, most of that the Hanja
 tables; it is plain Java with no third-party runtime dependencies, and the Hanja tables are read
 straight out of the APK rather than loaded into memory. It declares **one permission, `VIBRATE`** —
 an ordinary permission that is never requested at runtime and does nothing but the buzz under your
@@ -52,13 +52,13 @@ published here before shipping it, so what you install is what this repository b
 
 Or take an APK directly:
 
-**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk)**
+**[⬇ Android 9+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.13/retekey-0.2.13.apk)**
 &nbsp;·&nbsp;
-**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12-legacy.apk)**
+**[⬇ Android 4.0+](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.13/retekey-0.2.13-legacy.apk)**
 &nbsp;·&nbsp; [all releases](https://github.com/rubidus-api/retekey_apk/releases)
 
-Current release: **v0.2.12** —
-[retekey-0.2.12.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.12/retekey-0.2.12.apk) (746 KB; the Android 4.0 build is 586 KB)
+Current release: **v0.2.13** —
+[retekey-0.2.13.apk](https://github.com/rubidus-api/retekey_apk/releases/download/v0.2.13/retekey-0.2.13.apk) (749 KB; the Android 4.0 build is 587 KB)
 
 Take the first link unless your phone is older than Android 9; the two are the same app and one
 replaces the other. [More about the two builds](#android-version-support). F-Droid carries the

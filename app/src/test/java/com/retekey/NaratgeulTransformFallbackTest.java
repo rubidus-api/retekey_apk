@@ -146,7 +146,7 @@ public final class NaratgeulTransformFallbackTest {
             () -> EditorProfile.richText(false, false, false, false, false, 0, -1),
             () -> "가");
         DispatchResult res = rich.process(SemanticInput.transform(Transform.STROKE));
-        assertEquals(java.util.Collections.singletonList(KeyAction.recomposePrevious(1, "갸")),
+        assertEquals(java.util.Collections.singletonList(KeyAction.recomposePrevious(1, 0, "갸")),
             res.actions());
 
         rich.reset();

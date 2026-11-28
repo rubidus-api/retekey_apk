@@ -687,6 +687,45 @@ public final class CheckedEditorExecutorTest {
     }
 
     @Test
+    public void aDeleteRecentRefusedInCodePointsFallsBackToUtf16() {
+        // Below API 24 the code-point delete does not exist, and a remote-desktop editor on the
+        // legacy build refused every take-back of a syllable it had been given (RFC-0014 F6).
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.setModel("ㄱ", EditorBounds.of(1, 1, -1, -1));
+        bridge.returnAt(2, EditorCallResult.rejected()); // deleteSurroundingTextInCodePoints
+
+        ExecutionResult result = EXECUTOR.execute(
+            plan(1, 0, Collections.singletonList(KeyAction.deleteRecent(1))),
+            ExecutionContext.active(1, 0, EditorBounds.of(1, 1, -1, -1), RICH),
+            () -> EditorEndpoint.of(1, bridge)
+        );
+
+        Assert.assertEquals(ExecutionResult.Outcome.DISPATCHED, result.outcome());
+        Assert.assertTrue(bridge.trace().toString(),
+            bridge.trace().contains("deleteUtf16:before=1:after=0"));
+        Assert.assertEquals("", bridge.modelText());
+    }
+
+    @Test
+    public void aColdRecomposeFallbackReplacesTheCharacterInsteadOfAddingOne() {
+        // 나랏글's stroke on a committed 가 with nothing composing: one character before the cursor,
+        // none of it composing. The fallback took one back for the composition it assumed, deleted
+        // nothing, and typed 갸 after 가 (RFC-0014 F7).
+        FakeEditorBridge bridge = new FakeEditorBridge();
+        bridge.setModel("가", EditorBounds.of(1, 1, -1, -1));
+        bridge.returnAt(2, EditorCallResult.rejected()); // setComposingRegion
+
+        ExecutionResult result = EXECUTOR.execute(
+            plan(1, 0, Collections.singletonList(KeyAction.recomposePrevious(1, 0, "갸"))),
+            ExecutionContext.active(1, 0, EditorBounds.of(1, 1, -1, -1), RICH),
+            () -> EditorEndpoint.of(1, bridge)
+        );
+
+        Assert.assertFalse(result.isFailure());
+        Assert.assertEquals("갸", bridge.modelText());
+    }
+
+    @Test
     public void focusActionStaleSessionWithNoPriorWritesIsNotDispatched() {
         FakeEditorBridge bridge = new FakeEditorBridge();
         java.util.concurrent.atomic.AtomicInteger checks = new java.util.concurrent.atomic.AtomicInteger();

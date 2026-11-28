@@ -857,9 +857,17 @@ public final class CheckedEditorExecutor {
                     endpoint,
                     () -> bridge.deleteSurroundingTextInCodePoints(count, 0)
                 );
+                int calls = 1;
+                if (recent.isRejected()) {
+                    // Below API 24 the code-point call does not exist and is always refused (the
+                    // legacy build). What is taken back is our own Hangul, one UTF-16 unit each,
+                    // the same fallback a recompose takes.
+                    recent = guardedCall(endpoint, () -> bridge.deleteSurroundingText(count, 0));
+                    calls++;
+                }
                 return recent.isSucceeded()
-                    ? ActionExecution.dispatched(1, 1)
-                    : ActionExecution.failure(reasonForOperation(recent), 1,
+                    ? ActionExecution.dispatched(1, calls)
+                    : ActionExecution.failure(reasonForOperation(recent), calls,
                         !recent.isStaleSession());
             }
             case PERFORM_EDITOR_ACTION:
@@ -943,7 +951,8 @@ public final class CheckedEditorExecutor {
             return ActionExecution.failure(
                 reasonForOperation(cleared), ops, !cleared.isStaleSession());
         }
-        int toDelete = action.recentCount() - 1;
+        // Clearing took the composing part away; what is left to delete is committed text.
+        int toDelete = action.recentCount() - action.composingCount();
         if (toDelete > 0) {
             EditorCallResult deleted = guardedCall(
                 endpoint, () -> bridge.deleteSurroundingTextInCodePoints(toDelete, 0));

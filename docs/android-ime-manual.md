@@ -3137,6 +3137,84 @@ checked at compile time.
 **Rule.** Put teardown state resets inside `finally`, and test complex views through compiler-checked
 package seams instead of reflection strings.
 
+### 15.78 One place swaps the input view, and lets held keys up first
+
+**What happened.** A chord latched on the action bar, then the Hanja key: the rebuild detached the
+old bar, its detach let the chord up through the ordinary input path, that path closed the Hanja
+list it had just opened and asked for a second rebuild while `setInputView` was still removing the
+old children. A latched Tab was never let up at all: a rebuilt keyboard starts with nothing held,
+and the next field received the release. A theme cycled from the menu page rebuilt through the
+preference listener and dropped the user back on the letters page.
+
+**The fix.** `swapInputView()` is the only caller of `setInputView`, guarded by `ViewSwap`: a
+rebuild asked for during a swap runs after it, at most three passes. Before each pass the service
+lets up what the old view holds (`releaseHeldKeys`), and `onCreateInputView` does the same for
+the framework's own rebuilds. Those releases go straight to the editor, past the panels, whose
+state may already be the next view's. `onFinishInput` lets them up on the editor they were held in.
+Keys the service writes itself are marked (`OwnPrefWrites`) so the listener does not rebuild for
+them; the theme key rebuilds once on purpose and reopens the menu page.
+
+**Rule.** Never dispatch input from a detach callback, and never replace the view from more than
+one place. Release what a view holds while it is still the view on screen.
+
+### 15.79 Closing a panel rebuilds, even when opening the next one would not
+
+**What happened.** With panels following a docked keyboard, opening Uni over an open notepad
+cleared `notepad` but drew the pad into the existing keys, so the notepad stayed on screen and
+typing went to the app behind it. Opening the phonetic search over the docked Hanja list kept the
+list's flags, so the list came back empty after the search, and its ✕ closed the list, not the
+search.
+
+**The fix.** `clearOtherPanels` returns whether a panel that owned the window was closed, and the
+docked Uni path rebuilds when it was. Opening IPA clears the Hanja list's state like any other
+panel.
+
+**Rule.** A panel's state and the view on screen change together: clearing a flag that a view was
+built from is a rebuild.
+
+### 15.80 A fallback must keep the plan's arithmetic
+
+**What happened.** Below API 24, `DELETE_RECENT` had no fallback for the code-point delete that does
+not exist there, so every take-back failed on the legacy build in a remote-desktop editor. The
+recompose fallback deleted `count - 1`, assuming one character was composing; a 나랏글 stroke on a
+committed syllable (nothing composing) added 갸 after 가 instead of replacing it.
+
+**The fix.** `DELETE_RECENT` retries with `deleteSurroundingText`. `KeyAction.recomposePrevious`
+carries how many of its characters are composing (`(1, 0, …)` for a cold transform, `(2, 1, …)`
+for a reopened syllable), and the fallback deletes the rest.
+
+**Rule.** When a fallback re-derives what the primary path knew, carry the fact in the action
+instead of assuming it.
+
+### 15.81 The notepad settles compositions in typing order, and a crash finishes the editor's
+
+**What happened.** In the notepad, a Telex word still composing, then a switch to 2-beolsik and a
+jamo: the jamo replaced the word, and the word came back after it later. After a runtime exception
+mid-key, only the composer was reset, so the editor kept its composing region and the next jamo
+replaced the syllable on screen.
+
+**The fix.** `NotepadTyping` owns the notepad's three composers. A jamo settles any Latin word
+first, and a Latin letter settles the other Latin composer and the syllable first. The three wide
+catches call `recoverAfterCrash`, which finishes the editor's composition before resetting.
+
+**Rule.** Settle the open composition before another composer starts, and after a failure leave the
+editor without a composing region.
+
+### 15.82 Small hazards from the same review
+
+- An exported activity runs in the keyboard's process. Reading one extra unparcels them all on API
+  32 and below, so a bad Parcelable from any app took the keyboard down. Extras are read inside
+  `try`.
+- A clip taken off the list was held back for as long as the service lived. `ForgottenClip` clears
+  the mark when the clipboard moves on.
+- A visible keyboard is rebuilt by the framework on rotation before `onConfigurationChanged` sees
+  the new orientation, so the panel places were reset in the wrong place. `buildInputView` resets
+  them when the orientation it builds for changes.
+- Notepad rows kept their children's parents, so they never looked detached and piled up in the
+  pinch list. Rows are forgotten before the list is rebuilt. The store is written after a 300 ms
+  pause and at once on close, hide and destroy. The draw signature no longer reads preferences per
+  frame.
+
 ## 15a. Remote-desktop editors: a wire with no editor behind it
 
 A remote-desktop client (Microsoft Remote Desktop, Chrome Remote Desktop) gives the IME an

@@ -269,7 +269,7 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
                 // the old three steps are still the only shape those editors understand.
                 if (!composeByCommits() && !composesOffScreen()) {
                     return DispatchResult.handled(
-                        KeyAction.recomposePrevious(2, reopened.preedit()));
+                        KeyAction.recomposePrevious(2, 1, reopened.preedit()));
                 }
                 return DispatchResult.handled(
                     KeyAction.setComposingText(""),
@@ -408,7 +408,8 @@ public final class HangulInputProcessor implements StatelessInputProcessor {
 
     private DispatchResult replacePrevious(String preedit) {
         if (!composeByCommits() && !composesOffScreen()) {
-            return DispatchResult.handled(KeyAction.recomposePrevious(1, preedit));
+            // A cold transform: the character is committed text, nothing is composing.
+            return DispatchResult.handled(KeyAction.recomposePrevious(1, 0, preedit));
         }
         return DispatchResult.handled(
             KeyAction.deleteBackward(),

@@ -122,6 +122,11 @@ final class ActionBarView extends HorizontalScrollView {
         }
     }
 
+    /** Lets every latched chord up through the listener, while this bar is still on screen. */
+    void releaseHeldKeys() {
+        releaseAllLatchedAndActive();
+    }
+
     private void releaseAllLatchedAndActive() {
         if (activeTouch != null) {
             activeTouch.cancelActive();

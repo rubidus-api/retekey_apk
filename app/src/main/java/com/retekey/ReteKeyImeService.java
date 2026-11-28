@@ -28,7 +28,6 @@ import com.retekey.core.EditorCapabilities;
 import com.retekey.core.EditorEndpoint;
 import com.retekey.core.EditorProfile;
 import com.retekey.core.ExecutionResult;
-import com.retekey.core.HangulComposer;
 import com.retekey.core.HangulInputProcessor;
 import com.retekey.core.HardwareSemanticMapper;
 import com.retekey.core.IdleSyllableSettle;
@@ -122,11 +121,14 @@ public class ReteKeyImeService extends InputMethodService {
     private boolean floatingMode;
     /** The notepad panel above the keyboard, or null when it is not open. */
     private NotepadView notepad;
-    /** The notepad's own Hangul composer: what is typed there is not going through the editor. */
-    private final HangulComposer notepadComposer = new HangulComposer();
-    /** The notepad's own Latin composers, used while their layout is the one showing. */
-    private final TelexComposer notepadTelex = new TelexComposer();
-    private final RomajiKanaComposer notepadRomaji = new RomajiKanaComposer();
+    /** The notepad's own composers: what is typed there is not going through the editor. */
+    private final NotepadTyping notepadTyping = new NotepadTyping();
+    /** The one way the input view is replaced, never from inside itself (RFC-0014 F1). */
+    private final ViewSwap viewSwap = new ViewSwap();
+    /** Preference keys the service is writing itself, which need no rebuild (RFC-0014 F11). */
+    private final OwnPrefWrites ownWrites = new OwnPrefWrites();
+    /** The action bar of the view on screen, or null: its latched chords are let up before a swap. */
+    private ActionBarView actionBar;
     /** The editor's Latin composers; one is handed to the processor while its layout is up. */
     private final TelexComposer telex = new TelexComposer();
     private final RomajiKanaComposer romaji = new RomajiKanaComposer();
@@ -164,7 +166,7 @@ public class ReteKeyImeService extends InputMethodService {
         (changed, key) -> onViewPrefChanged(key);
 
     private void onViewPrefChanged(String key) {
-        if (AppPrefs.requiresInputViewRebuild(key)) {
+        if (AppPrefs.requiresInputViewRebuild(key) && !ownWrites.isOwn(key)) {
             rebuildInputView();
         } else if (AppPrefs.requiresOpacityRefresh(key)) {
             if (floatingFrame != null) {
@@ -201,12 +203,15 @@ public class ReteKeyImeService extends InputMethodService {
      * the clipboard every time it comes up, so without this the forgotten text would walk straight
      * back into the list the next time the keyboard was shown.
      */
-    private String forgottenClip;
+    private final ForgottenClip forgottenClip = new ForgottenClip();
     /** Text shared into ReteKey, kept out of the system clipboard on purpose (issue #10). */
     private StashHistory stash = StashHistory.empty();
 
     @Override
     public View onCreateInputView() {
+        // The framework rebuilds the view itself too (a rotation of a visible keyboard): what the
+        // old view holds is let up first here, as swapInputView does for our own rebuilds.
+        releaseHeldKeys();
         View root = createBandFrame();
         commitBuiltSnapshot();
         return root;
@@ -228,7 +233,16 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private View buildInputView() {
+        ScreenOrientation previous = builtFor;
         builtFor = OrientedPrefs.current(this);
+        if (previous != null && previous != builtFor) {
+            // Each orientation keeps its own panel places. Reset here, where every rebuild passes:
+            // a visible keyboard is rebuilt by the framework itself on a rotation, before
+            // onConfigurationChanged can see that the orientation moved (RFC-0014 F10).
+            floatingBounds = null;
+            unicodeBounds = null;
+            hanjaBounds = null;
+        }
         pendingBuiltWithBar = false;
         pendingBuiltBarPosition = ActionBarPosition.ABOVE;
         // Whatever candidate view the last build made belongs to a tree that is going away. A
@@ -402,11 +416,6 @@ public class ReteKeyImeService extends InputMethodService {
         if (keyboardView == null || (now == builtFor && uiMode == builtUiMode)) {
             return;
         }
-        if (now != builtFor) {
-            floatingBounds = null;
-            unicodeBounds = null;
-            hanjaBounds = null;
-        }
         // Turning the device sideways or switching system dark/light theme changes the view.
         replaceInputViewIfCreated();
         updateInputViewShown();
@@ -427,6 +436,7 @@ public class ReteKeyImeService extends InputMethodService {
             builtFor != null ? builtFor : OrientedPrefs.current(this));
         pendingBuiltBarPosition = position;
         ActionBarView bar = new ActionBarView(this);
+        actionBar = bar;
         bar.setSlots(ActionBarSlots.parse(viewPrefs().getString(ActionBarSlots.KEY_SLOTS, null)));
         bar.setRepeatTimings(
             KeyRepeatSettings.clampDelay(viewPrefs().getInt(
@@ -707,7 +717,7 @@ public class ReteKeyImeService extends InputMethodService {
             // Re-read storage so edits from Settings are never overwritten by a stale cache.
             freshClips();
             String normalized = normalizedClip(text);
-            if (normalized != null && normalized.equals(forgottenClip)) {
+            if (forgottenClip.holdsBack(normalized)) {
                 // Taken off the list on purpose while it is still on the clipboard: leave it off
                 // until the clipboard moves on to something else.
                 return;
@@ -817,7 +827,7 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onForget(String text) {
-                forgottenClip = normalizedClip(text);
+                forgottenClip.forget(normalizedClip(text));
                 clips = freshClips().remove(text);
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
@@ -825,7 +835,7 @@ public class ReteKeyImeService extends InputMethodService {
 
             @Override
             public void onClearAll() {
-                forgottenClip = currentNormalizedSystemClip();
+                forgottenClip.forget(currentNormalizedSystemClip());
                 clips = freshClips().clearUnpinned();
                 ClipStore.save(ReteKeyImeService.this, clips);
                 showPanelLists(panel);
@@ -1050,11 +1060,16 @@ public class ReteKeyImeService extends InputMethodService {
     private void cycleTheme() {
         ThemeMode[] modes = ThemeMode.values();
         ThemeMode next = modes[(ScreenTheme.mode(this).ordinal() + 1) % modes.length];
-        ScreenTheme.setMode(this, next);
+        ownWrites.write(ThemeMode.PREF_KEY, () -> ScreenTheme.setMode(this, next));
         showFunctionToast(getString(themeLabel(next)));
-        // No rebuild: the keyboard's own preference listener repaints it, which keeps the user on
-        // the menu page they pressed the key from. The frames around it — the floating panel, the
-        // candidate strip — resolve the palette when they are next created.
+        // One rebuild, ours: the bar, the band and the floating frame take their palette when they
+        // are made, so they need it. The listener's rebuild left the user on the letters page after
+        // every press; this one puts them back on the menu page the key is on (RFC-0014 F11).
+        replaceInputViewIfCreated();
+        if (keyboardView != null) {
+            keyboardView.showMenuPage();
+        }
+        updateInputViewShown();
     }
 
     private static int themeLabel(ThemeMode mode) {
@@ -1079,7 +1094,8 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     private void setFloatingMode(boolean enabled) {
-        FloatingKeyboardSettings.setEnabled(viewPrefs(), OrientedPrefs.current(this), enabled);
+        ownWrites.write(FloatingKeyboardSettings.KEY_ENABLED, () -> FloatingKeyboardSettings.setEnabled(
+            viewPrefs(), OrientedPrefs.current(this), enabled));
         // Rebuilding is the whole switch: onCreateInputView re-reads the mode and returns either
         // the bare keyboard or the floating frame around it.
         replaceInputViewIfCreated();
@@ -1606,8 +1622,14 @@ public class ReteKeyImeService extends InputMethodService {
     public void onFinishInput() {
         // Finalize any half-formed preedit into the editor before tearing down, so leaving a field
         // mid-syllable doesn't drop the underlined composing text. The teardown after it runs
-        // whatever the editor does with that last call (manual §15.5, review R10).
+        // whatever the editor does with that last call (manual §15.5, review R10). A held Tab or
+        // chord is let up here, on the editor it was held in, not on the next one (RFC-0014 F3).
         try {
+            try {
+                releaseHeldKeys();
+            } catch (RuntimeException editorFailed) {
+                logTeardownFailure("release held keys", editorFailed);
+            }
             finishComposingInEditor();
         } finally {
             if (sessionActive) {
@@ -1653,6 +1675,17 @@ public class ReteKeyImeService extends InputMethodService {
      * A catch this wide could hide a bug of our own (HANDOFF, Hazards), so it leaves a trace —
      * the step and the exception's class only, never a message that might carry typed text.
      */
+    /**
+     * After an exception mid-interaction: the editor's composition is finished where it stands
+     * before the composer starts clean. Resetting only the composer left the editor composing,
+     * and the next jamo replaced the syllable on screen (RFC-0014 F12).
+     */
+    private void recoverAfterCrash(String step, RuntimeException crash) {
+        logTeardownFailure(step, crash);
+        finishComposingInEditor();
+        inputProcessor.reset();
+    }
+
     private static void logTeardownFailure(String step, RuntimeException failure) {
         android.util.Log.w("ReteKey", "teardown step failed: " + step + ": "
             + failure.getClass().getName());
@@ -1864,8 +1897,7 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         try {
-            setInputView(createBandFrame());
-            commitBuiltSnapshot();
+            swapInputView();
             updateInputViewShown();
         } catch (RuntimeException ignored) {
             // Rebuilding while the window is going away must not take the keyboard with it.
@@ -1882,10 +1914,42 @@ public class ReteKeyImeService extends InputMethodService {
             return;
         }
         try {
-            setInputView(createBandFrame());
-            commitBuiltSnapshot();
+            swapInputView();
         } catch (RuntimeException ignored) {
             // Input frame not initialized yet; updateInputViewShown() will trigger creation.
+        }
+    }
+
+    /**
+     * The one place the input view is replaced (RFC-0014 F1, F3). The keys the old view holds — a
+     * chord latched on the bar, a latched Tab — are let up first, on this editor, while the old
+     * view is still the one on screen; its detach then has nothing left to dispatch. A rebuild
+     * asked for meanwhile (letting a key up can close a panel) is served by this one, and one asked
+     * for from inside setInputView runs after it rather than inside it.
+     */
+    private void swapInputView() {
+        viewSwap.run(this::releaseHeldKeys, () -> {
+            actionBar = null;
+            setInputView(createBandFrame());
+            commitBuiltSnapshot();
+        });
+    }
+
+    /** True while held keys are being let up: their releases go straight to the editor. */
+    private boolean releasingHeldKeys;
+
+    /** Lets up what the keys on screen hold, so nothing held outlives its view or its editor. */
+    private void releaseHeldKeys() {
+        releasingHeldKeys = true;
+        try {
+            if (actionBar != null) {
+                actionBar.releaseHeldKeys();
+            }
+            if (keyboardView != null) {
+                keyboardView.releaseHeldKeys();
+            }
+        } finally {
+            releasingHeldKeys = false;
         }
     }
 
@@ -2001,8 +2065,17 @@ public class ReteKeyImeService extends InputMethodService {
         }
     }
 
-    /** Clears every other panel so only one modal/panel state is live at once (M-15). */
-    private void clearOtherPanels(ActivePanel opening) {
+    /**
+     * Clears every other panel so only one modal/panel state is live at once (M-15). Returns
+     * whether a panel that owned the window was closed, so the caller rebuilds the view even when
+     * the panel it opens needs no rebuild of its own (RFC-0014 F4).
+     */
+    private boolean clearOtherPanels(ActivePanel opening) {
+        boolean ownedWindow = (opening != ActivePanel.NOTEPAD && notepad != null)
+            || (opening != ActivePanel.CLIPBOARD && clipboardPanel != null)
+            || (opening != ActivePanel.IPA && ipaPanel != null)
+            || (opening != ActivePanel.HANJA && (hanjaDocked || hanjaFloating))
+            || (opening != ActivePanel.UNICODE && unicodeFloating);
         if (opening != ActivePanel.NOTEPAD) {
             putNotepadAway();
         }
@@ -2013,7 +2086,10 @@ public class ReteKeyImeService extends InputMethodService {
             ipaPanel = null;
             keysOwnedByIpaPanel.clear();
         }
-        if (opening != ActivePanel.HANJA && opening != ActivePanel.IPA) {
+        // The phonetic search shows itself in the candidate view, but it is not the Hanja list:
+        // left docked or floating, the list came back empty after the search and its ✕ closed the
+        // list instead of the search (RFC-0014 F5).
+        if (opening != ActivePanel.HANJA) {
             pendingSource = null;
             pendingReading = null;
             pendingCandidates = null;
@@ -2029,6 +2105,7 @@ public class ReteKeyImeService extends InputMethodService {
                 keyboardView.setUnicodeEntry(false);
             }
         }
+        return ownedWindow;
     }
 
     @Override
@@ -2121,9 +2198,9 @@ public class ReteKeyImeService extends InputMethodService {
                 }
             }
             sessionController.updateSelection(sessionController.generation(), reported);
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException crash) {
             // A selection update must never crash the IME and make the keyboard disappear.
-            inputProcessor.reset();
+            recoverAfterCrash("onUpdateSelection", crash);
         }
     }
 
@@ -2183,6 +2260,13 @@ public class ReteKeyImeService extends InputMethodService {
      * soft path end to end is to hand the service the same event a touch would have produced.
      */
     void dispatchSoftwareInput(ProjectKeyEvent event) {
+        if (releasingHeldKeys) {
+            // A held key let up belongs to the editor it was pressed in. The panels may already be
+            // in the state of the view about to be built — the Hanja list just opened — and must
+            // neither take the release nor be closed by it (RFC-0014 F1, F3).
+            sendToEditor(event);
+            return;
+        }
         if (unicodeEntry != null && consumeForUnicodeEntry(event)) {
             return;
         }
@@ -2197,6 +2281,10 @@ public class ReteKeyImeService extends InputMethodService {
         }
         hideHanjaCandidatesIfShown();
         syncLatinComposer();
+        sendToEditor(event);
+    }
+
+    private void sendToEditor(ProjectKeyEvent event) {
         // A single misbehaving editor must never crash the IME and make the keyboard vanish.
         try {
             ExecutionResult result = execute(dispatcher.dispatch(event));
@@ -2205,7 +2293,7 @@ public class ReteKeyImeService extends InputMethodService {
             }
         } catch (RuntimeException crash) {
             dispatcher.reset();
-            inputProcessor.reset();
+            recoverAfterCrash("dispatchSoftwareInput", crash);
         }
     }
 
@@ -2350,18 +2438,18 @@ public class ReteKeyImeService extends InputMethodService {
         }
     }
 
-    /** The notepad's own composer for the current letter layout, or null. */
-    private LatinComposer wantedNotepadLatin() {
+    /** The notepad's own Latin composer for the current letter layout. */
+    private NotepadTyping.Latin wantedNotepadLatin() {
         if (keyboardView == null) {
-            return null;
+            return NotepadTyping.Latin.NONE;
         }
         switch (keyboardView.letterLayoutId()) {
             case VI_TELEX:
-                return notepadTelex;
+                return NotepadTyping.Latin.TELEX;
             case JA_ROMAJI:
-                return notepadRomaji;
+                return NotepadTyping.Latin.ROMAJI;
             default:
-                return null;
+                return NotepadTyping.Latin.NONE;
         }
     }
 
@@ -2536,12 +2624,18 @@ public class ReteKeyImeService extends InputMethodService {
     private void startUnicodeEntry() {
         finishComposingInEditor();
         inputProcessor.reset();
-        clearOtherPanels(ActivePanel.UNICODE);
+        boolean closedAPanel = clearOtherPanels(ActivePanel.UNICODE);
         unicodeEntry = UnicodeEntry.empty();
         if (panelPlacement() == PanelPlacement.DOCKED && keyboardView != null) {
-            // Following a docked keyboard: the pad takes the keys' place and nothing moves.
+            // Following a docked keyboard: the pad takes the keys' place and nothing moves —
+            // unless a panel that owned the window was just closed, which only a rebuild takes
+            // off the screen (RFC-0014 F4). The rebuild keeps the pad (buildInputView).
             unicodeFloating = false;
-            keyboardView.setUnicodeEntry(true);
+            if (closedAPanel) {
+                replaceInputViewIfCreated();
+            } else {
+                keyboardView.setUnicodeEntry(true);
+            }
             updateInputViewShown();
             showUnicodeEntry();
             return;
@@ -2842,11 +2936,18 @@ public class ReteKeyImeService extends InputMethodService {
     }
 
     /** Saves and forgets the notepad without rebuilding, for whoever rebuilds next. */
+    private static final long NOTE_SAVE_DELAY_MS = 300;
+
+    private final Runnable saveNotes = () -> {
+        if (notepad != null) {
+            NoteStore.save(this, notepad.notes());
+        }
+    };
+
     private void putNotepadAway() {
         flushNotepadComposition();
-        notepadComposer.reset();
-        notepadTelex.reset();
-        notepadRomaji.reset();
+        notepadTyping.reset();
+        mainHandler.removeCallbacks(saveNotes);
         if (notepad != null) {
             NoteStore.save(this, notepad.notes());
             notepad = null;
@@ -2870,7 +2971,13 @@ public class ReteKeyImeService extends InputMethodService {
     private NotepadView buildNotepad() {
         final NotepadView panel = detached(notepad);
         panel.setOnClose(this::closeNotepad);
-        panel.setOnChanged(() -> NoteStore.save(this, panel.notes()));
+        // Every keystroke changes the note; the store is written once typing pauses, and at once
+        // when the panel goes away (putNotepadAway), so a note is never lost to a hidden keyboard
+        // (RFC-0014 F14).
+        panel.setOnChanged(() -> {
+            mainHandler.removeCallbacks(saveNotes);
+            mainHandler.postDelayed(saveNotes, NOTE_SAVE_DELAY_MS);
+        });
         // Send: the note goes into the app as typed input, the same road a key takes, so a
         // terminal or a remote desktop receives it like anything else the keyboard types.
         panel.setOnSendToApp(text -> {
@@ -2896,44 +3003,25 @@ public class ReteKeyImeService extends InputMethodService {
             return false;
         }
         switch (input.kind()) {
-            case JAMO: {
-                HangulComposer.Result result = notepadComposer.input(input.jamo());
-                notepad.typeComposed(result.commit(), result.preedit());
+            case JAMO:
+                // A Latin word being composed settles before the syllable starts (RFC-0014 F8).
+                notepadTyping.jamo(notepad, input.jamo());
                 return true;
-            }
-            case TEXT: {
-                LatinComposer latin = wantedNotepadLatin();
-                if (latin != null && latin.accepts(input.text())) {
-                    // A composer letter: the Hangul syllable, if any, settles first.
-                    flushNotepadHangul();
-                    LatinComposer.Result result = latin.input(input.text());
-                    notepad.typeComposed(result.commit, result.preedit);
-                    return true;
-                }
-                flushNotepadComposition();
-                notepad.type(input.text());
+            case TEXT:
+                notepadTyping.text(notepad, wantedNotepadLatin(), input.text());
                 return true;
-            }
-            case DELETE_BACKWARD: {
-                LatinComposer notepadLatin = notepadTelex.isComposing() ? notepadTelex
-                    : notepadRomaji.isComposing() ? notepadRomaji : null;
-                if (notepadLatin != null) {
-                    LatinComposer.Result result = notepadLatin.backspace();
-                    notepad.typeComposed("", result == null ? "" : result.preedit);
+            case DELETE_BACKWARD:
+                if (notepadTyping.backspaceLatin(notepad)) {
                     return true;
                 }
                 if (notepad.isComposing()) {
                     // Inside a syllable, backspace takes it apart rather than deleting it whole.
-                    HangulComposer.Result result = notepadComposer.backspace();
-                    notepad.typeComposed("", result == null ? "" : result.preedit());
+                    notepadTyping.backspaceHangul(notepad);
                     return true;
                 }
-                notepadComposer.reset();
-        notepadTelex.reset();
-        notepadRomaji.reset();
+                notepadTyping.reset();
                 notepad.deleteBackward();
                 return true;
-            }
             case PRIMARY_ACTION:
                 flushNotepadComposition();
                 notepad.newLine();
@@ -3037,22 +3125,7 @@ public class ReteKeyImeService extends InputMethodService {
 
     /** Settles whatever syllable the notepad was building, so the next thing types after it. */
     private void flushNotepadComposition() {
-        String flushed = notepadComposer.flush() + notepadTelex.flush() + notepadRomaji.flush();
-        if (notepad == null) {
-            return;
-        }
-        if (!flushed.isEmpty()) {
-            notepad.typeComposed(flushed, "");
-        }
-        notepad.endComposition();
-    }
-
-    /** Settles only the Hangul syllable, leaving a Telex word to carry on. */
-    private void flushNotepadHangul() {
-        String flushed = notepadComposer.flush();
-        if (notepad != null && !flushed.isEmpty()) {
-            notepad.typeComposed(flushed, "");
-        }
+        notepadTyping.flush(notepad);
     }
 
     private void handleHanja() {
@@ -3408,7 +3481,7 @@ public class ReteKeyImeService extends InputMethodService {
             return executed;
         } catch (RuntimeException crash) {
             // The keyboard must survive any single bad editor interaction.
-            inputProcessor.reset();
+            recoverAfterCrash("execute", crash);
             return null;
         }
     }

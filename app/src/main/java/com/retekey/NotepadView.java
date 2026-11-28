@@ -30,7 +30,7 @@ import android.widget.TextView;
  * why "select all" here selects the body alone. The stamp is written when the note is made and
  * never edited: it is the note's name as much as its date.
  */
-public final class NotepadView extends LinearLayout {
+public final class NotepadView extends LinearLayout implements NotepadTyping.Sink {
     /** What the panel is showing. */
     private enum Screen { LIST, NOTE }
 
@@ -322,6 +322,7 @@ public final class NotepadView extends LinearLayout {
     }
 
     /** Types text into whichever field the cursor is in. */
+    @Override
     public void type(String text) {
         EditText target = focusedField();
         String insert = target == titleField
@@ -345,6 +346,7 @@ public final class NotepadView extends LinearLayout {
      * whatever is still composing. Called for every jamo, so Hangul builds up in the note the same
      * way it builds up in an app.
      */
+    @Override
     public void typeComposed(String commit, String preedit) {
         EditText target = focusedField();
         Editable editable = target.getText();
@@ -815,6 +817,7 @@ public final class NotepadView extends LinearLayout {
     }
 
     /** Forgets any half-written syllable, e.g. when the panel changes screens. */
+    @Override
     public void endComposition() {
         if (preeditLength > 0) {
             EditText settled = composingField != null ? composingField : focusedField();
@@ -887,6 +890,7 @@ public final class NotepadView extends LinearLayout {
         selectAll.setChecked(notes.allSelected());
         sortByStamp.setText(headerText("Date", NoteList.Sort.STAMP));
         sortByTitle.setText(headerText("Title", NoteList.Sort.TITLE));
+        forgetScaledViewsIn(listRows);
         listRows.removeAllViews();
         for (final Note note : notes.notes()) {
             listRows.addView(listRow(note), wide());
@@ -1091,6 +1095,29 @@ public final class NotepadView extends LinearLayout {
 
     private static android.content.SharedPreferences prefs(Context context) {
         return context.getSharedPreferences("retekey_view", Context.MODE_PRIVATE);
+    }
+
+    /**
+     * Stops following the pinch for every text view inside {@code group}, which is about to be
+     * emptied. A removed row keeps its own children, so they never looked detached and piled up
+     * with every refresh of the list (RFC-0014 F13).
+     */
+    private void forgetScaledViewsIn(android.view.ViewGroup group) {
+        for (int i = scaledViews.size() - 1; i >= 0; i--) {
+            if (isInside(scaledViews.get(i), group)) {
+                scaledViews.remove(i);
+                scaledBases.remove(i);
+            }
+        }
+    }
+
+    private static boolean isInside(View view, android.view.ViewGroup group) {
+        for (android.view.ViewParent p = view.getParent(); p != null; p = p.getParent()) {
+            if (p == group) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Registers a text view to follow the pinch, and sizes it for where the pinch is now. */
